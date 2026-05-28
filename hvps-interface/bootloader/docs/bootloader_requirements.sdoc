@@ -1,0 +1,139 @@
+[DOCUMENT]
+TITLE: Heracles Software Requirements Specification for HVPS Interface Board Bootloader
+UID: DHF-HRC-0021
+METADATA:
+  COMPONENT: hvps-interface/bootloader
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this document is to provide Software Requirements Specifications for the Heracles HVPS
+Interface Bootloader Firmware (FW).
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes all requirements of the Heracles HVPS Interface Bootloader FW.
+The information in this document has been derived from the VoxelRay Heracles Product Requirements
+Specification, as referenced in this document.
+
+\*The term Software applies to both Software and Firmware systems.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+HVPS
+  High Voltage Power Supply
+
+LED
+  Light Emitting Diode
+
+MCU
+  Microcontroller Unit
+
+PID
+  Proportional Integral Derivative controller
+
+PRS
+  Product Requirements Specification
+
+SDP
+  Software Development Plan
+
+SRS
+  Software Requirements Specification
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The HVPS Interface Bootloader firmware allows the system to be able to update the HVPS Interface
+application firmware. The HVPS Interface Bootloader firmware runs on the MCU of the HVPS interface
+board.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+EMS-WI-057-13: Generating Documents and Traceability Matrix Analysis in Ketryx WI
+
+EMS-SOP-057: Software Design Control
+
+DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
+
+DHF-HRC-0002: VoxelRay Product Requirements Specification (PRS)
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: RQ-H1FWHVPSIB-
+TITLE: Requirements
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-1
+TYPE: Functional
+TITLE: Jump to Application on Valid CRC
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall jump to execution of the HVPS interface application
+if and only if the existing application code at startup is valid. The application code is valid if the
+programmed CRC value matches the application firmware loaded in flash memory.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-2
+TYPE: Functional
+TITLE: Write Flash Memory Page
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall be able to write a specified flash memory page with
+provided data from the PC.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-3
+TYPE: Functional
+TITLE: Erase Flash Memory
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall be able to erase a predetermined area of flash
+memory, corresponding to the application firmware programming area.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-4
+TYPE: Functional
+TITLE: PC Communication Ping Response
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall be able to respond to a ping command from the PC,
+indicating that the system is in bootloader mode.
+<<<
+
+[[/SECTION]]

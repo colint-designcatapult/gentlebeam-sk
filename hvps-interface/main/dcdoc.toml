@@ -1,0 +1,3 @@
+[component]
+name = "hvps-interface/main"
+include_docs = [ "docs/*.sdoc" ]

@@ -1,0 +1,255 @@
+[DOCUMENT]
+TITLE: Heracles HVPS Interface Bootloader FW Software Design Document
+UID: DHF-HRC-0105
+METADATA:
+  COMPONENT: hvps-interface/bootloader
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this document is to outline the design specifications of the Heracles HVPS Interface
+Bootloader Firmware.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes the design modules and sub-modules of the Heracles HVPS Interface
+Bootloader Firmware.
+The information in this document is derived from the HVPS Interface Bootloader FW SRS, referenced in
+this document.
+
+\*The term Software applies to both Software and Firmware components.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+MCU
+  Microcontroller Unit
+
+PRS
+  Product Requirements Specification
+
+SDP
+  Software Development Plan
+
+SRS
+  Software Requirements Specification
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The HVPS Interface Bootloader firmware allows the system to be able to update the HVPS Interface
+application firmware. The HVPS Interface Bootloader firmware runs on the MCU of the HVPS interface
+board.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
+
+DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
+
+[LINK: DHF-HRC-0021]
+
+DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Architecture Overview
+
+[[SECTION]]
+TITLE: High Level System Architecture
+
+[TEXT]
+STATEMENT: >>>
+See source document DHF-HRC-0105 for the high-level system architecture diagram.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Main Modules
+
+[TEXT]
+STATEMENT: >>>
+**HVPS Bootloader Firmware** – The firmware is stored at the base memory address on the
+microcontroller and facilitates the loading of new HVPS Interface firmware (.hex) files in the remaining
+flash memory.
+
+**HVPS Bootloader PC Application** – This app offers a desktop GUI that loads the HVPS Interface
+firmware at the location in memory specified and managed by the bootloader. The GUI allows the
+selection of a COM port that corresponds to the USB port established by the bootloader.
+
+**Flash Memory** – Where the bootloader firmware is stored and new HVPS Interface firmware is flashed.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: SW-H1FWHVPSIB-
+TITLE: Design Items
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-11
+TITLE: Application Program Handling
+STATEMENT: >>>
+At the beginning of bootloader firmware execution, the program will parse a predesignated area of
+application memory on the microcontroller and calculate a checksum over the existing values
+present in flash memory. The firmware then compares the calculated value to a designated location
+where the application checksum value is stored. If the calculated value matches the stored value,
+then this indicates to the firmware that a valid application exists in memory, and the firmware will
+then jump to the application firmware for execution.
+
+If the calculated value does not match the stored value, then the firmware will not jump to the
+application for execution but will instead wait for PC communication for commands to update the
+application memory.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-2
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-13
+TITLE: Flash Memory Processing
+STATEMENT: >>>
+The firmware can both erase and write to the flash memory of the microcontroller. The flash
+memory of the microcontroller is organized into pages which are 2048 bytes in size. When the
+firmware receives an erase command from the PC, it will erase a number of pages in flash memory
+which have been pre-designated for application memory. For writing to flash, the communication
+protocol is limited to fewer than 2048 bytes of each flash page size. As such, the firmware
+subdivides each flash page into "sub-pages". The firmware will program these "sub-pages" by
+using the "sub-page" index provided by the PC command. The firmware iterates word by word (32-
+bit value) for writing values.
+
+The flash memory controller for the microcontroller requires that the firmware lock and unlock the
+flash memory for manipulation, as a way to protect against unwanted corruption of the flash
+memory. When performing erase and write procedures, the firmware will appropriately unlock and
+lock the flash memory controller peripheral of the microcontroller.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-3
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-12
+TITLE: Manufacturer Hardware Abstraction
+STATEMENT: >>>
+The firmware integrates source code provided by the manufacturer of the microcontroller unit in
+order to interface with various peripherals of the microcontroller. These include functions to
+interface with the following peripherals of the microcontroller:
+
+- UART serial port
+- GPIO
+- Flash memory controller
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-1
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-2
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-3
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-4
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-9
+TITLE: PC Communication Interface
+STATEMENT: >>>
+The firmware communicates with the PC via the microcontroller's serial UART interface. The
+firmware both receives and transmits data on this UART port. Due to the nature of UART having
+independent transmit and receive lines, the transmit and receive functionality operate
+independently. As the UART baud rate is relatively slow compared to the processing speed of the
+microcontroller, both sending and receiving data is performed with non-blocking interrupt callback
+functions.
+
+Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
+the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
+when transmission is initiated, and clears the flag after transmission is finished, to not create
+transmission conflicts on the transmit line.
+
+Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
+available. The parsing of the received byte is done to determine whether a complete data packet
+has been received from the PC, as according to the communication protocol. Once a completed
+data packet has been received, the firmware sets a flag for further data processing outside of the
+parsing inside of the interrupt callback.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-2
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-10
+TITLE: PC Communication Processing
+STATEMENT: >>>
+The communication protocol the firmware employs for communicating with the PC utilizes ASCII
+character bytes. The firmware both sends and receives data packets. Each received data packet
+from the PC begins with an asterisk character ('*') and terminates with a newline character ('\n'). The
+value of the bytes in between these are comprised of a fixed length command, and a variable
+length data payload. Both command and data payload are also represented by ASCII character
+bytes.
+
+There are four different valid commands that the PC can send: ping, erase, write, and verify. Each
+command is represented in the transmitted packet by preset 5-character values. The firmware
+compares the received command to these preset values. There is no associated data payload for
+the ping and erase command. The 'write' command has a data payload containing the flash page
+index and the values to be written to said flash page. The verify command has a CRC value as its
+data payload. The data payload for both commands are sent as ASCII characters which are
+formatted as human readable hexadecimal values.
+
+Each transmitted data packet from the firmware to the PC begins with a period character ('.') and
+terminates with a newline character ('\n'). The value of the bytes in between are a fixed length
+response. The fixed length response are 13 ASCII characters which correspond to the specific
+incoming command that is being responded to (e.g. ping, erase, write, and verify).
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-1
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-4
+  ROLE: Refines
+
+[[/SECTION]]
+
+[[/SECTION]]

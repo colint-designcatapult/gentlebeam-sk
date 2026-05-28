@@ -1,0 +1,621 @@
+[DOCUMENT]
+TITLE: Heracles HVPS Interface Application FW Verification Testing Protocol
+UID: DHF-HRC-0101
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+This document provides the full test protocol (a full collection of test cases) for the HVPS Interface
+Application Firmware for the Heracles 1.0 system.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This report contains a detailed test description to conduct verification testing of Heracles 1.0 HVPS
+Interface Application Firmware that covers Heracles HVPS Interface Application FW SRS.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+HVPS
+  High Voltage Power Supply
+
+SDP
+  Software Development Plan
+
+SVP
+  Software Verification Plan
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+DHF-HRC-0001, Rev. 2: Heracles SDP
+
+DHF-HRC-0003, Rev. 2: Heracles SVP
+
+[LINK: DHF-HRC-0019]
+
+DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Prerequisites
+
+[TEXT]
+STATEMENT: >>>
+**Pre-Execution Approval**
+
+A Pre-Execution meeting shall take place, and approved by the project manager and QA/RA.
+
+**Objective(s)**
+
+Verify that:
+
+* All software, firmware, hardware, and test equipment version configurations are identified and listed in the test report prior to execution.
+* Test personnel is assigned and available.
+
+**Assumptions & Constraints**
+
+None
+
+**Acceptance Criteria**
+
+All objectives met; test execution can start.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: TC-H1FWHVPS-
+TITLE: Test Protocol
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-18
+TITLE: Grid control clock - Test Case
+STATEMENT: >>>
+The firmware shall be able to generate an output for a grid control clock at a frequency between 1
+kHz and 20 kHz. Also, current output of an emission will be different from existing / non-existing
+grid control clock.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Load a 20 second treatment plan.
+3. Start the emission.
+4. Wait for 5 seconds.
+5. Wait another 10 seconds.
+6. Check if the grid counter clock is present.
+7. Check the emission's current.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the plan is loaded successfully.
+3. Verify the emission started.
+4. Record the current of emission.
+5. Record the current of emission.
+6. Verify the grid counter clock is present, and its frequency is between 1-20 kHz.
+7. Verify the emission's current is <0.2 mA.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-1
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-19
+TITLE: High voltage setpoint 1 - Test Case
+STATEMENT: >>>
+When user loads a treatment plan and it is ready for running, make sure the firmware provides and
+sets the high voltage setpoint.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Load a 20 second treatment plan.
+3. Check the state of the system.
+4. Check the value of the reported high voltage.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the plan is loaded successfully.
+3. Verify its state is Ready.
+4. Record the value and verify it's within 10% of loaded treatment target.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-17
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-20
+TITLE: Main control reporting - Test Case
+STATEMENT: >>>
+When the system is powered on, LED TBD on mainboard should pulse at a rate much faster than
+1 Hz.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Check LED TBD on the Main Board.
+3. Measure the pulsing of the LED TBD on the Main board.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify it's pulsing.
+3. Verify it's pulsing at a rate much faster than 1 Hz.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-4
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-21
+TITLE: HVPS digital status signals - Test Case
+STATEMENT: >>>
+When the system is powered, the service user should check the reported value of HVPS digital
+signals in the Service screen with / without a running treatment plan.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* The user of the system needs to be a service user.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Click Services symbol in the left side of the screen.
+3. Look for HVPS digital signal's value in the service screen.
+4. Load a treatment plan.
+5. Look for HVPS digital signal's value in the service screen.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the service screen displayed.
+3. Record the value and verify HV status should indicate no HV.
+4. Verify the plan is loaded successfully.
+5. Record the value and verify HV status should indicate HV.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-5
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-22
+TITLE: Filament current setpoint - Test Case
+STATEMENT: >>>
+When the system is powered, the service user should check the reported value of filament current
+in the Service screen with / without a running treatment plan.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* The user of the system needs to be a service user.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Click Services symbol in the left side of the screen.
+3. Look for value of filament current in the service screen.
+4. Load a treatment plan.
+5. Check the status of the system.
+6. Look for value of filament current in the service screen.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the service screen displayed.
+3. Record the value and verify the output control signal of the filament current is provided by firmware application.
+4. Verify the plan is loaded successfully.
+5. Verify the status of the system is ready.
+6. Record the value and verify the output control signal of the filament current is provided by firmware application.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-6
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-23
+TITLE: Adjustment grid setpoint - Test Case
+STATEMENT: >>>
+When the system is powered, the service user should check the reported value of adjustment grid
+voltage in the Service screen with / without a running treatment plan.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* The user of the system needs to be a service user.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Click Services symbol in the left side of the screen.
+3. Look for value of adjustment grid voltage in the service screen.
+4. Load a treatment plan.
+5. Check the status of the system.
+6. Look for value of adjustment grid voltage in the service screen.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the service screen displayed.
+3. Record the value and verify the output control signal of the adjustment grid voltage is provided by firmware application.
+4. Verify the plan is loaded successfully.
+5. Verify the status of the system is ready.
+6. Record the value and verify the output control signal of the adjustment grid voltage is provided by firmware application.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-7
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-24
+TITLE: High voltage setpoint 2 - Test Case
+STATEMENT: >>>
+When the system is powered, the service user should check the reported value of high voltage
+which should be > 10 kV with loaded treatment plan.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Load a treatment plan.
+3. Check the status of the system.
+4. Look for value of the reported high voltage.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the plan is loaded successfully.
+3. Verify the status of the system is ready.
+4. Record the value and verify the value of the reported high voltage is greater than 10 kV.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-8
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-25
+TITLE: Cathode current limiter setpoint - Test Case
+STATEMENT: >>>
+When user powered on the system, load and run a 20 second treatment plan, verify the treatment
+plan run and finished without any types of faults.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Load a 20 second treatment plan.
+3. Start to run the loaded plan.
+4. Wait for 20 seconds.
+5. Click Logs symbol in the left panel of the screen.
+6. Check the logs of the running treatment plan.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the plan is loaded successfully.
+3. Verify the emission and run is started successfully without any issues.
+4. Verify the running of the plan is finished without any issues.
+5. Verify the logs displayed in the middle of the screen.
+6. Verify there is not any error or emission current fault in the logs related to the latest run of the loaded treatment plan. Also, verify there is not any kV output fault in the logs.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-9
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-26
+TITLE: Cathode current feedback - Test Case
+STATEMENT: >>>
+When user powered on the system, load and run a 20 second treatment plan, verify user can
+record the emission/cathode current value at approximately 5 seconds and approximately 15
+seconds which is provided by firmware application.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Load a 20 second treatment plan.
+3. Start the emission.
+4. Wait for 5 seconds.
+5. Wait another 10 seconds.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the plan is loaded successfully.
+3. Verify the emission started.
+4. Record the emission/cathode current which is provided by firmware application.
+5. Record the emission/cathode current which is provided by firmware application.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-10
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-27
+TITLE: High voltage feedback - Test Case
+STATEMENT: >>>
+When user loads a treatment plan and it is ready for running, make sure the firmware provides and
+sets the value of the reported high voltage.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to run any treatment plan.
+* A treatment plan is ready to load into the system.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Load a treatment plan.
+3. Check the state of the system.
+4. Check the value of the reported high voltage.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the plan is loaded successfully.
+3. Verify its state is Ready.
+4. Record the value and verify it's within 10% of loaded treatment target.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-11
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-28
+TITLE: Adjustment grid voltage feedback - Test Case
+STATEMENT: >>>
+When the system is powered, the service user should check the reported value of adjustment grid
+voltage in the Service screen with / without a running treatment plan.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* The user of the system needs to be a service user.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Click Services symbol in the left-hand side of screen.
+3. Check the value of the reported grid voltage.
+4. Load a treatment plan.
+5. Check the state of the system.
+6. Check the value of the reported grid voltage.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the services displayed in the middle of screen.
+3. Record the reported adjustment grid voltage.
+4. Verify the plan is loaded successfully.
+5. Verify its state is Ready.
+6. Record the reported adjustment grid voltage which is provided by firmware application.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-12
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-29
+TITLE: Filament current feedback - Test Case
+STATEMENT: >>>
+When the system is powered, the service user should check the reported value of filament current
+in the Service screen with / without a running treatment plan.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* The user of the system needs to be a service user.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Click Services symbol in the left side of the screen.
+3. Look for value of filament current in the service screen.
+4. Load a treatment plan.
+5. Check the status of the system.
+6. Look for value of filament current in the service screen.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the service screen displayed.
+3. Record the value and verify the output control signal of the filament current is provided by firmware application.
+4. Verify the plan is loaded successfully.
+5. Verify the status of the system is ready.
+6. Record the value and verify the output control signal of the filament current is provided by firmware application.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-13
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-30
+TITLE: Control loop - Test Case
+STATEMENT: >>>
+When the system powered on and started to run the loaded treatment plan, make sure the firmware
+provided a control loop to automatically adjust output parameters during emission to establish a
+stable and smooth emission.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* A treatment plan should be ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Load a 20 second treatment plan. Record the value of TBD before starting the emission.
+3. Start the emission.
+4. Wait for 5 seconds.
+5. Wait another 10 seconds.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the plan is loaded successfully.
+3. Verify the emission started.
+4. Record the value of TBD.
+5. Record the value of TBD.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-14
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-31
+TITLE: PC Communication 1 - Test Case
+STATEMENT: >>>
+When the system is powered on, the user can send a request through firmware to run bootloader
+application and load a new set of firmware through the USB.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* Bootloader application should be loaded in the USB and should be present for user to run it.
+* A new set of firmware should be in the USB.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Run bootloader application through USB.
+3. Click Logs symbol in the left-hand side of screen.
+4. Check the utility log.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully and there is not any treatment plan loaded into system.
+2. Verify the application started to run.
+3. Verify the logs displayed in the middle of screen.
+4. Record the utility log and verify system enters into bootloader mode.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-15
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-32
+TITLE: PC Communication 2 - Test Case
+STATEMENT: >>>
+When the system is powered on, the user can send a request through firmware to erase a
+predetermined area of flash memory, corresponding to application CRC verification area when
+requested by the PC.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* A new set of firmware should be in the USB.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Run bootloader application through USB.
+3. Click Logs symbol in the left-hand side of screen.
+4. Check the utility log.
+5. Check the USB free space.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully and there is not any treatment plan loaded into system.
+2. Verify the application started to run.
+3. Verify the logs displayed in the middle of screen.
+4. Record the utility log and verify system enters into bootloader mode.
+5. Verify an area in the USB which was corresponded to application CRC verification area was erased.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-16
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-33
+TITLE: Filament current ramping - Test Case
+STATEMENT: >>>
+The user powered on the system, loaded a treatment plan. Then after warmup procedure, user has
+to make sure the warm up is logged in the system.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* A treatment plan is ready to load.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Load a treatment plan.
+3. Check the state of the system.
+4. Wait till the Warmup procedure is finished.
+5. Click the Logs symbol in the left side of the screen.
+6. Check the logs.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the plan is loaded successfully.
+3. Verify its state is Warmup.
+4. Verify the status of the system is not Warmup anymore.
+5. Verify the logs displayed in the screen.
+6. Verify the log for readings of the filament current ramp up during the warmup procedure. Values in the log should indicate a ramp rate of less than 1A/sec.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-8
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-34
+TITLE: High voltage setpoint 1 - Test Case
+STATEMENT: >>>
+When user loads a treatment plan and it is ready for running, make sure the firmware provides and
+sets the high voltage setpoint.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to run any treatment plan.
+* A treatment plan is ready to load into the system.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Load a 20 second treatment plan.
+3. Check the state of the system.
+4. Check the value of the reported high voltage.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on successfully.
+2. Verify the plan is loaded successfully.
+3. Verify its state is Ready.
+4. Record the value and verify it's within 10% of loaded treatment target.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-2
+  ROLE: Verifies
+
+[[/SECTION]]
