@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.1.9.0</Version> <!--Major.Minor.Build.Revision-->
+    <VersionPrefix>1.1.9</VersionPrefix><!--Used as version of nuget package-->
+    <Description>A common class library for Empyrean projects.</Description>
+    <RepositoryUrl>https://bitbucket.org/empyrean-medical-devices/xcc/src/dev/Empyrean/Empyrean.Common/</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Authors>Empyreanmed</Authors>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Platforms>x64</Platforms>
+  </PropertyGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="echo dotnet nuget push $(AssemblyName).$(VersionPrefix).nupkg --source Empyreanmed -k az &gt; $(TargetDir)..\PushNugetPackage.bat" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.1" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,44 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/BaseStyle.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+
+    <Style x:Key="TelemetryValueStyle" TargetType="Label">
+        <Setter Property="FontFamily" Value="{StaticResource TelemetryLCDFont}"/>
+        <Setter Property="FontSize" Value="40"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BlockBorderBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TelemetryLCDForeground}"/>
+        <Setter Property="Background" Value="{StaticResource TelemetryLCDBackground}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="UseLayoutRounding" Value="True"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Label">
+                    <Border 
+                        VerticalAlignment="Stretch"
+                        Background="{TemplateBinding Background}" 
+                        BorderBrush="{TemplateBinding BorderBrush}" 
+                        CornerRadius="{StaticResource FieldCornerRadius}"
+                        BorderThickness="{TemplateBinding BorderThickness}" 
+                        Padding="{TemplateBinding Padding}"
+                        SnapsToDevicePixels="True">
+
+                        <ContentPresenter
+                            RecognizesAccessKey="True"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

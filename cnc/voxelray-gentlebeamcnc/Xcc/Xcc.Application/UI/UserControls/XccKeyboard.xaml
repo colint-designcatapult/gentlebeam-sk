@@ -1,0 +1,647 @@
+﻿<UserControl 
+    x:Class="Xcc.Application.UI.UserControls.XccKeyboard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters"
+
+    x:Name="Root"
+    mc:Ignorable="d" 
+    Height="380" Width="1280">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ButtonStyle.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/KeyboardIcons.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style TargetType="Button" BasedOn="{StaticResource ButtonDefaultStyle}">
+                <Setter Property="Focusable" Value="False"/>
+                <Setter Property="IsTabStop" Value="False"/>
+                <Setter Property="Margin" Value="3"/>
+            </Style>
+
+            <Thickness x:Key="ButtonInnerMargin">6</Thickness>
+            <Brush x:Key="SpecialKeyBrush">#464646</Brush>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border 
+        CornerRadius="{Binding CornerRadius, ElementName=Root}" 
+        BorderBrush="{StaticResource BlockBorderColor}" 
+        Background="{Binding Background, ElementName=Root}"
+        BorderThickness="1">
+
+        <Grid>
+            <Grid.Resources>
+                <Style x:Key="DockButtonStyleBase" TargetType="Button" BasedOn="{StaticResource ButtonDefaultStyle}">
+                    <Setter Property="Focusable" Value="False"/>
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderBrush" Value="{StaticResource FieldDisabledBorderBrush}"/>
+                </Style>
+                
+                <Style x:Key="TopLeftButtonStyle" TargetType="Button" BasedOn="{StaticResource DockButtonStyleBase}">
+                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                    <Setter Property="Border.CornerRadius">
+                        <Setter.Value>
+                            <MultiBinding>
+                                <MultiBinding.Converter>
+                                    <convx:ButtonCornerRadiusConverter Horizontal="Left" Vertical="Top" CornerRadius="8,0,8,0"/>
+                                </MultiBinding.Converter>
+                                <Binding Path="CornerRadius" ElementName="Root" />
+                                <Binding Path="HorizontalAlignment" ElementName="Root" />
+                                <Binding Path="VerticalAlignment" ElementName="Root" />
+                            </MultiBinding>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="VerticalAlignment" Value="Top"/>
+                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                </Style>
+                
+                <Style x:Key="TopButtonStyle" TargetType="Button" BasedOn="{StaticResource DockButtonStyleBase}">
+                    <Setter Property="BorderThickness" Value="1,0,1,1"/>
+                    <Setter Property="Border.CornerRadius" Value="0,0,8,8"/>
+                    <Setter Property="VerticalAlignment" Value="Top"/>
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+                
+                
+                <Style x:Key="TopRightButtonStyle" TargetType="Button" BasedOn="{StaticResource DockButtonStyleBase}">
+                    <Setter Property="BorderThickness" Value="1,0,0,1"/>
+                    <Setter Property="Border.CornerRadius">
+                        <Setter.Value>
+                            <MultiBinding>
+                                <MultiBinding.Converter>
+                                    <convx:ButtonCornerRadiusConverter Horizontal="Right" Vertical="Top" CornerRadius="0,8,0,8"/>
+                                </MultiBinding.Converter>
+                                <Binding Path="CornerRadius" ElementName="Root" />
+                                <Binding Path="HorizontalAlignment" ElementName="Root" />
+                                <Binding Path="VerticalAlignment" ElementName="Root" />
+                            </MultiBinding>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="VerticalAlignment" Value="Top"/>
+                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                </Style>
+                
+                
+                <Style x:Key="BottomLeftButtonStyle" TargetType="Button" BasedOn="{StaticResource DockButtonStyleBase}">
+                    <Setter Property="BorderThickness" Value="0,1,1,0"/>
+                    <Setter Property="Border.CornerRadius">
+                        <Setter.Value>
+                            <MultiBinding>
+                                <MultiBinding.Converter>
+                                    <convx:ButtonCornerRadiusConverter Horizontal="Left" Vertical="Bottom" CornerRadius="0,8,0,8"/>
+                                </MultiBinding.Converter>
+                                <Binding Path="CornerRadius" ElementName="Root" />
+                                <Binding Path="HorizontalAlignment" ElementName="Root" />
+                                <Binding Path="VerticalAlignment" ElementName="Root" />
+                            </MultiBinding>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="VerticalAlignment" Value="Bottom"/>
+                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                </Style>
+                
+                <Style x:Key="BottomButtonStyle" TargetType="Button" BasedOn="{StaticResource DockButtonStyleBase}">
+                    <Setter Property="BorderThickness" Value="1,1,1,0"/>
+                    <Setter Property="Border.CornerRadius" Value="8,8,0,0"/>
+                    <Setter Property="VerticalAlignment" Value="Bottom"/>
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+                
+                <Style x:Key="BottomRightButtonStyle" TargetType="Button" BasedOn="{StaticResource DockButtonStyleBase}">
+                    <Setter Property="BorderThickness" Value="1,1,0,0"/>
+                    <Setter Property="Border.CornerRadius">
+                        <Setter.Value>
+                            <MultiBinding>
+                                <MultiBinding.Converter>
+                                    <convx:ButtonCornerRadiusConverter Horizontal="Right" Vertical="Bottom" CornerRadius="8,0,8,0"/>
+                                </MultiBinding.Converter>
+                                <Binding Path="CornerRadius" ElementName="Root" />
+                                <Binding Path="HorizontalAlignment" ElementName="Root" />
+                                <Binding Path="VerticalAlignment" ElementName="Root" />
+                            </MultiBinding>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="VerticalAlignment" Value="Bottom"/>
+                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                </Style>
+            </Grid.Resources>
+            
+            <Grid Margin="32">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="{StaticResource BlockContentMarginGridLength}"/>
+                    <ColumnDefinition Width="0.08*"/>
+                    <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                    <ColumnDefinition Width="0.08*"/>
+                </Grid.ColumnDefinitions>
+
+                <!--QWERTY keyboard-->
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Строки клавиатуры -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="2*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Escape}" Content="Esc" Background="{StaticResource SpecialKeyBrush}"/>
+                            <Button Grid.Column="1" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.Oem3}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="~" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="`" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="2" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.D1}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="!" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="1" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="3" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.D2}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="@" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="2" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="4" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.D3}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="#" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="3" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="5" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.D4}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="$" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="4" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="6" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.D5}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="%" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="5" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="7" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.D6}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="^" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="6" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="8" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.D7}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="&amp;" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="7" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="9" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.D8}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="*" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="8" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="10" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.D9}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="(" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="9" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="11" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.D0}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text=")" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="0" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="12" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.OemMinus}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="_" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="-" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+
+                            <Button Grid.Column="13" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.OemPlus}">
+                                <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                    <TextBlock Text="+" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}"/>
+                                    <TextBlock Text="=" Tag="Default" VerticalAlignment="Bottom"/>
+                                </Grid>
+                            </Button>
+                        <Button Grid.Column="14" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Back}" Content="Backspace" Background="{StaticResource SpecialKeyBrush}"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.4*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="1.6*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Tab}" Content="Tab"  Background="{StaticResource SpecialKeyBrush}"/>
+                        <Button Grid.Column="1" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Q}" Content="q"/>
+                        <Button Grid.Column="2" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.W}" Content="w"/>
+                        <Button Grid.Column="3" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.E}" Content="e"/>
+                        <Button Grid.Column="4" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.R}" Content="r"/>
+                        <Button Grid.Column="5" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.T}" Content="t"/>
+                        <Button Grid.Column="6" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Y}" Content="y"/>
+                        <Button Grid.Column="7" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.U}" Content="u"/>
+                        <Button Grid.Column="8" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.I}" Content="i"/>
+                        <Button Grid.Column="9" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.O}" Content="o"/>
+                        <Button Grid.Column="10" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.P}" Content="p"/>
+                        <Button Grid.Column="11" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.OemOpenBrackets}">
+                            <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                <TextBlock Text="{}{" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}" />
+                                <TextBlock Text="[" Tag="Default" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Grid.Column="12" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp"
+                                VerticalContentAlignment="Stretch" Tag="{x:Static Key.OemCloseBrackets}">
+                            <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                <TextBlock Text="{}}" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}" />
+                                <TextBlock Text="]" Tag="Default" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Grid.Column="13" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp"
+                                VerticalContentAlignment="Stretch" Tag="{x:Static Key.OemPipe}">
+                            <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                <TextBlock Text="|" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}" />
+                                <TextBlock Text="\" Tag="Default" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="14" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Delete}" Content="Del"  Background="{StaticResource SpecialKeyBrush}"/>
+
+                    </Grid>
+
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.6*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="2.4*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button 
+                            Grid.Column="0" 
+                            PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" 
+                            Tag="{x:Static Key.CapsLock}" 
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"
+                            Background="{StaticResource SpecialKeyBrush}">
+                        
+                            <Grid Margin="8">
+                                <TextBlock Text="Caps&#10;Lock"  HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
+                                <Ellipse 
+                                    Width="6" Height="6" 
+                                    Fill="Gray" 
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    x:Name="CapsLockIndicator">
+
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect x:Name="CapsLockIndicatorEffect" Color="Orange" ShadowDepth="0" Opacity="0" BlurRadius="8"></DropShadowEffect>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="1" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.A}" Content="a"/>
+                        <Button Grid.Column="2" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.S}" Content="s"/>
+                        <Button Grid.Column="3" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.D}" Content="d"/>
+                        <Button Grid.Column="4" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.F}" Content="f"/>
+                        <Button Grid.Column="5" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.G}" Content="g"/>
+                        <Button Grid.Column="6" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.H}" Content="h"/>
+                        <Button Grid.Column="7" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.J}" Content="j"/>
+                        <Button Grid.Column="8" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.K}" Content="k"/>
+                        <Button Grid.Column="9" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.L}" Content="l"/>
+                        <Button Grid.Column="10" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp"
+                                VerticalContentAlignment="Stretch" Tag="{x:Static Key.OemSemicolon}">
+                            <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                <TextBlock Text=":" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}" />
+                                <TextBlock Text=";" Tag="Default" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Grid.Column="11" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp"
+                                VerticalContentAlignment="Stretch" Tag="{x:Static Key.OemQuotes}">
+                            <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                <TextBlock Text="&quot;" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}" />
+                                <TextBlock Text="'" Tag="Default" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="12" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Return}" Content="Enter"  Background="{StaticResource SpecialKeyBrush}"/>
+                    </Grid>
+
+                    <Grid Grid.Row="3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="2*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button 
+                            Grid.Column="0" 
+                            Click="LShiftButtonClick" 
+                            Tag="{x:Static Key.LeftShift}" 
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"  
+                            Background="{StaticResource SpecialKeyBrush}">
+                        
+                            <Grid Margin="8">
+                                <TextBlock Text="Shift"  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Ellipse 
+                                    Width="6" Height="6" 
+                                    Fill="Gray" 
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    x:Name="LShiftIndicator">
+
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect x:Name="LShiftIndicatorEffect" Color="Orange" ShadowDepth="0" Opacity="0" BlurRadius="8"/>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="1" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Z}" Content="z"/>
+                        <Button Grid.Column="2" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.X}" Content="x"/>
+                        <Button Grid.Column="3" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.C}" Content="c"/>
+                        <Button Grid.Column="4" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.V}" Content="v"/>
+                        <Button Grid.Column="5" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.B}" Content="b"/>
+                        <Button Grid.Column="6" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.N}" Content="n"/>
+                        <Button Grid.Column="7" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.M}" Content="m"/>
+                        <Button Grid.Column="8" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.OemComma}">
+                            <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                <TextBlock Text="&lt;" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}" />
+                                <TextBlock Text="," Tag="Default" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Grid.Column="9" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.OemPeriod}">
+                            <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                <TextBlock Text="&gt;" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}" />
+                                <TextBlock Text="." Tag="Default" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Grid.Column="10" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" VerticalContentAlignment="Stretch" Tag="{x:Static Key.OemQuestion}">
+                            <Grid Margin="{StaticResource ButtonInnerMargin}">
+                                <TextBlock Text="?" Tag="Shift" VerticalAlignment="Top" Foreground="{StaticResource ButtonStrokeDisabledColor}" />
+                                <TextBlock Text="/" Tag="Default" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="11" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Up}" Content="↑"  Background="{StaticResource SpecialKeyBrush}"/>
+                    
+                        <Button 
+                            Grid.Column="12" 
+                            Click="RShiftButtonClick" 
+                            Tag="{x:Static Key.RightShift}" 
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                            Background="{StaticResource SpecialKeyBrush}">
+                        
+                            <Grid Margin="8">
+                                <TextBlock Text="Single&#10;Shift" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
+                                <Ellipse 
+                                    Width="6" Height="6" 
+                                    Fill="Gray" 
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    x:Name="RShiftIndicator">
+
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect x:Name="RShiftIndicatorEffect" Color="Orange" ShadowDepth="0" Opacity="0" BlurRadius="8"/>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                            </Grid>
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.5*"/>
+                            <ColumnDefinition Width="0"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="6*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1.5*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button 
+                            Grid.Column="0" 
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" 
+                            Click="CtrlButtonClick" 
+                            Tag="{x:Static Key.LeftCtrl}" 
+                            Background="{StaticResource SpecialKeyBrush}">
+                            
+                            <Grid Margin="8">
+                                <TextBlock Text="Ctrl" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Ellipse 
+                                    Width="6" Height="6" 
+                                    Fill="Gray" 
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    x:Name="LCtrlIndicator">
+
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect x:Name="LCtrlIndicatorEffect" Color="Orange" ShadowDepth="0" Opacity="0" BlurRadius="8"/>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="1" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.LWin}" Content="Win"  Background="{StaticResource SpecialKeyBrush}"/>
+                        <Button 
+                            Grid.Column="2" 
+                            Click="AltButtonClick" 
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" 
+                            Tag="{x:Static Key.LeftAlt}"  
+                            Background="{StaticResource SpecialKeyBrush}">
+
+                            <Grid Margin="8">
+                                <TextBlock Text="Alt" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Ellipse 
+                                    Width="6" Height="6" 
+                                    Fill="Gray" 
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    x:Name="LAltIndicator">
+
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect x:Name="LAltIndicatorEffect" Color="Orange" ShadowDepth="0" Opacity="0" BlurRadius="8"/>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="3" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Space}" Content=""/>
+                        <Button 
+                            Grid.Column="4" 
+                            Click="AltButtonClick" 
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" 
+                            Tag="{x:Static Key.RightAlt}" 
+                            Background="{StaticResource SpecialKeyBrush}">
+                            
+                            <Grid Margin="8">
+                                <TextBlock Text="Alt" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Ellipse 
+                                    Width="6" Height="6" 
+                                    Fill="Gray" 
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    x:Name="RAltIndicator">
+
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect x:Name="RAltIndicatorEffect" Color="Orange" ShadowDepth="0" Opacity="0" BlurRadius="8"/>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                            </Grid>
+                        </Button>
+                        <Button 
+                            Grid.Column="5" 
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" 
+                            Click="CtrlButtonClick"
+                            Tag="{x:Static Key.RightCtrl}" 
+                            Background="{StaticResource SpecialKeyBrush}">
+                            
+                            <Grid Margin="8">
+                                <TextBlock Text="Ctrl" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Ellipse 
+                                    Width="6" Height="6" 
+                                    Fill="Gray" 
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    x:Name="RCtrlIndicator">
+
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect x:Name="RCtrlIndicatorEffect" Color="Orange" ShadowDepth="0" Opacity="0" BlurRadius="8"/>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                            </Grid>
+                        </Button>                        
+                        <Button Grid.Column="6" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Left}" Content="←" Background="{StaticResource SpecialKeyBrush}"/>
+                        <Button Grid.Column="7" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Down}" Content="↓" Background="{StaticResource SpecialKeyBrush}"/>
+                        <Button Grid.Column="8" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Right}" Content="→" Background="{StaticResource SpecialKeyBrush}"/>
+                        <Button Grid.Column="9" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Tag="{x:Static Key.Apps}" Content="Menu" Background="{StaticResource SpecialKeyBrush}"/>
+                    </Grid>
+                </Grid>
+
+                <!--Clipboard shortcuts-->
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Button Grid.Row="0" Click="SelectClick" Content="Select&#10;All"/>
+                    <Button Grid.Row="1" Click="CutClick" Content="Cut"/>
+                    <Button Grid.Row="2" Click="CopyClick" Content="Copy"/>
+                    <Button Grid.Row="3" Click="PasteClick" Content="Paste"/>
+                    <Button Grid.Row="4" Click="ClearClick" Content="Clear"/>
+                </Grid>
+
+                <!--Edit buttons-->
+                <Grid Grid.Column="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Button Grid.Row="0" Click="UndoClick" Content="Undo"/>
+                    <Button Grid.Row="1" Click="RedoClick" Content="Redo"/>
+                    <Button Grid.Row="2" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Content="Page&#10;Up" Tag="{x:Static Key.PageUp}"/>
+                    <Button Grid.Row="3" PreviewMouseDown="KeyButtonMouseDown" PreviewMouseUp="KeyButtonMouseUp" Content="Page&#10;Down" Tag="{x:Static Key.PageDown}"/>
+                    <Button Grid.Row="4" Click="HideKeyboardClick">
+                        <Image Source="{StaticResource KeyboardIcon}" Style="{StaticResource ButtonImageStyle}"/>
+                    </Button>
+                </Grid>
+            </Grid>
+
+            <Button x:Name="TopLeft" Click="DockTopLeftButtonClick" Style="{StaticResource TopLeftButtonStyle}" Visibility="{Binding DockButtonsVisibility, ElementName=Root}">
+                <Image Source="{StaticResource KeyboardDockTopLeft}" Style="{StaticResource ButtonImageStyle}" Margin="4,4,28,4"/>
+            </Button>
+
+            <Button Click="DockTopButtonClick" Style="{StaticResource TopButtonStyle}" Visibility="{Binding DockButtonsVisibility, ElementName=Root}">
+                <Image Source="{StaticResource KeyboardDockTop}" Style="{StaticResource ButtonImageStyle}" Margin="16,4"/>
+            </Button>
+            <Button x:Name="TopRight" Click="DockTopRightButtonClick" Style="{StaticResource TopRightButtonStyle}" Visibility="{Binding DockButtonsVisibility, ElementName=Root}">
+                <Image Source="{StaticResource KeyboardDockTopRight}" Style="{StaticResource ButtonImageStyle}"  Margin="28,4,4,4"/>
+            </Button>
+
+            <Button x:Name="BottomLeft" Click="DockTopBottomLeftButtonClick" Style="{StaticResource BottomLeftButtonStyle}" Visibility="{Binding DockButtonsVisibility, ElementName=Root}">
+                <Image Source="{StaticResource KeyboardDockBottomLeft}" Style="{StaticResource ButtonImageStyle}" Margin="4,4,28,4"/>
+            </Button>
+
+            <Button Click="DockBottomButtonClick" Style="{StaticResource BottomButtonStyle}" Visibility="{Binding DockButtonsVisibility, ElementName=Root}">
+                <Image Source="{StaticResource KeyboardDockBottom}" Style="{StaticResource ButtonImageStyle}" Margin="16,4"/>
+            </Button>
+
+            <Button x:Name="BottomRight" Click="DockTopBottomRightButtonClick" Style="{StaticResource BottomRightButtonStyle}" Visibility="{Binding DockButtonsVisibility, ElementName=Root}">
+                <Image Source="{StaticResource KeyboardDockBottomRight}" Style="{StaticResource ButtonImageStyle}" Margin="28,4,4,4"/>
+            </Button>
+        </Grid>
+    </Border>
+</UserControl>

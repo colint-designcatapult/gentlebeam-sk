@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.treatment_devices.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a treatment device used in a simulation.
+message TreatmentDevice {
+  // Device id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Simulation id associated with the device
+  optional int64 simulation_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Device creation date
+  optional google.protobuf.Timestamp creation_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Type of the treatment device
+  optional com.empyreanmed.heracles.enums.v1.DEVICETYPE device_name = 4 [(google.api.field_behavior) = REQUIRED];
+}

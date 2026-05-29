@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.coil_configurations.v1;
+
+import "com/empyreanmed/heracles/coil_configurations/v1/coil_configuration.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on coil configurations.
+service CoilConfigurationService {
+  // Lists coil configurations matching request parameters.
+  rpc ListCoilConfigurations(ListCoilConfigurationsRequest) returns (ListCoilConfigurationsResponse);
+
+  // Returns a single coil configuration.
+  rpc GetCoilConfiguration(GetCoilConfigurationRequest) returns (GetCoilConfigurationResponse);
+
+  // Creates a new coil configuration.
+  rpc CreateCoilConfiguration(CreateCoilConfigurationRequest) returns (CreateCoilConfigurationResponse);
+
+  // Updates a single coil configuration.
+  rpc UpdateCoilConfiguration(UpdateCoilConfigurationRequest) returns (UpdateCoilConfigurationResponse);
+
+  // Deletes a single coil configuration.
+  rpc DeleteCoilConfiguration(DeleteCoilConfigurationRequest) returns (DeleteCoilConfigurationResponse);
+}
+
+// Request message for listing coil configurations.
+message ListCoilConfigurationsRequest {
+  // The maximum number of coil configurations to return.
+  optional int32 page_size = 1;
+
+  // A page token received from a previous `ListCoilConfigurations` call.
+  optional string page_token = 2;
+
+  // The preset configuration ID to filter coil configurations by.
+  optional int64 preset_configuration_id = 3;
+}
+
+// Response message with the listed coil configurations.
+message ListCoilConfigurationsResponse {
+  // The coil configurations matching the list request.
+  repeated CoilConfiguration coil_configurations = 1;
+
+  // A token to retrieve the next page of results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single coil configuration.
+message GetCoilConfigurationRequest {
+  // The ID of the coil configuration to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single coil configuration.
+message GetCoilConfigurationResponse {
+  // The coil configuration with the provided ID.
+  CoilConfiguration coil_configuration = 1;
+}
+
+// Request message for creating a new coil configuration.
+message CreateCoilConfigurationRequest {
+  // The coil configuration to be created.
+  optional CoilConfiguration coil_configuration = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created coil configuration.
+message CreateCoilConfigurationResponse {
+  // The created coil configuration.
+  CoilConfiguration coil_configuration = 1;
+}
+
+// Request message for updating an existing coil configuration.
+message UpdateCoilConfigurationRequest {
+  // The coil configuration to be updated.
+  optional CoilConfiguration coil_configuration = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated coil configuration.
+message UpdateCoilConfigurationResponse {
+  // The updated coil configuration.
+  CoilConfiguration coil_configuration = 1;
+}
+
+// Request message for deleting a coil configuration.
+message DeleteCoilConfigurationRequest {
+  // The ID of the coil configuration to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteCoilConfiguration`.
+message DeleteCoilConfigurationResponse {}

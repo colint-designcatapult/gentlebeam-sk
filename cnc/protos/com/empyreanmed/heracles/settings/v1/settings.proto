@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.settings.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Settings represents configuration settings.
+message Settings {
+  // Settings id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The date the settings were created
+  optional google.protobuf.Timestamp create_date = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The serial number of the device
+  optional string device_serial = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Endpoint for record and verify IP
+  optional string record_and_verify_ip = 4;
+
+  // Endpoint for record and verify port
+  optional string record_and_verify_port = 5;
+
+  // Endpoint for database IP
+  optional string database_ip = 6;
+
+  // Endpoint for database port
+  optional string database_port = 7;
+
+  // Endpoint for imaging head camera IP
+  optional string imaging_headcam_ip = 8;
+
+  // Endpoint for imaging head camera port
+  optional string imaging_headcam_port = 9;
+
+  // Endpoint for treatment head camera IP
+  optional string treatment_headcam_ip = 10;
+
+  // Endpoint for treatment head camera port
+  optional string treatment_headcam_port = 11;
+
+  // Endpoint for robot camera IP
+  optional string robotcam_ip = 12;
+
+  // Endpoint for robot camera port
+  optional string robotcam_port = 13;
+
+  // Endpoint for GCB telemetry IP
+  optional string gcb_telemetry_ip = 14;
+
+  // Endpoint for GCB telemetry port
+  optional string gcb_telemetry_port = 15;
+
+  // Endpoint for GCB commands IP
+  optional string gcb_commands_ip = 16;
+
+  // Endpoint for GCB commands port
+  optional string gcb_commands_port = 17;
+
+  // Endpoint for robotic ROS IP
+  optional string robotic_ros_ip = 18;
+
+  // Endpoint for robotic ROS port
+  optional string robotic_ros_port = 19;
+
+  // Endpoint for data acquisition IP
+  optional string data_acquisition_ip = 20;
+
+  // Endpoint for data acquisition port
+  optional string data_acquisition_port = 21;
+
+  // Endpoint for DC data reconstruction IP
+  optional string dc_data_reconstruction_ip = 22;
+
+  // Endpoint for DC data reconstruction port
+  optional string dc_data_reconstruction_port = 23;
+
+  // Endpoint for DC data progress websocket IP
+  optional string dc_data_progress_websocket_ip = 24;
+
+  // Endpoint for DC data progress websocket port
+  optional string dc_data_progress_websocket_port = 25;
+
+  // Endpoint for DC data reconstruction Z MQ IP
+  optional string dc_data_reconstruction_z_mq_ip = 26;
+
+  // Endpoint for DC data reconstruction Z MQ port
+  optional string dc_data_reconstruction_z_mq_port = 27;
+
+  // Endpoint for DC database IP
+  optional string dc_database_ip = 28;
+
+  // Endpoint for DC database port
+  optional string dc_database_port = 29;
+}

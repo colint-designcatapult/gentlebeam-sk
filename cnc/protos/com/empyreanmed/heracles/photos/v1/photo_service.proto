@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.photos.v1;
+
+import "com/empyreanmed/heracles/photos/v1/photo.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on photos.
+service PhotosService {
+  // Lists photos for a given patient.
+  rpc ListPhotos(ListPhotosRequest) returns (ListPhotosResponse);
+
+  // Returns a single photo.
+  rpc GetPhoto(GetPhotoRequest) returns (GetPhotoResponse);
+
+  // Creates a new photo for a patient.
+  rpc CreatePhoto(CreatePhotoRequest) returns (CreatePhotoResponse);
+
+  // Updates an existing photo.
+  rpc UpdatePhoto(UpdatePhotoRequest) returns (UpdatePhotoResponse);
+
+  // Deletes a photo.
+  rpc DeletePhoto(DeletePhotoRequest) returns (DeletePhotoResponse);
+
+  // send photo to server.
+  rpc SendPhoto(stream SendPhotoRequest) returns (SendPhotoResponse);
+
+  // Receive photo  from server.
+  rpc ReceivePhoto(ReceivePhotoRequest) returns (stream ReceivePhotoResponse);
+}
+
+// Request message for listing photos.
+message ListPhotosRequest {
+  // The ID of the diagnosis for which to list photos.
+  optional int64 diagnosis_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed photos.
+message ListPhotosResponse {
+  // The photos matching the list request. The order is unspecified.
+  repeated Photo photos = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single photo.
+message GetPhotoRequest {
+  // The ID of the photo to fetch.
+  optional int64 photo_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched photo.
+message GetPhotoResponse {
+  // The photo with the provided ID.
+  Photo photo = 1;
+}
+
+// Request message for creating a new photo.
+message CreatePhotoRequest {
+  // Details of the photo to create.
+  optional Photo photo = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created photo.
+message CreatePhotoResponse {
+  // The photo that was created.
+  Photo photo = 1;
+}
+
+// Request message for updating an existing photo.
+message UpdatePhotoRequest {
+  // The photo to update.
+  optional Photo photo = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the photo to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated photo.
+message UpdatePhotoResponse {
+  // The updated photo.
+  Photo photo = 1;
+}
+
+// Request message for deleting a photo.
+message DeletePhotoRequest {
+  // The ID of the photo to delete.
+  optional int64 photo_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeletePhoto`.
+message DeletePhotoResponse {}
+
+// Request message for sending photo data.
+message SendPhotoRequest {
+  // The binary data of the photo chunk.
+  bytes chunk_data = 1;
+  // Metadata about the photo
+  optional int64 photo_id = 2 [(google.api.field_behavior) = REQUIRED];
+  // Chunk index
+  int32 chunk_index = 3;
+  // Total number of chunks in the file.
+  int32 total_chunks = 4;
+}
+
+// Response message for acknowledging the received photo files.
+message SendPhotoResponse {
+  // Message indicating whether the upload was successful.
+  string message = 1;
+  // The total number of files received.
+  int32 total_files_received = 2;
+}
+
+// Request message for streaming photo files.
+message ReceivePhotoRequest {
+  // The ID of the photo to be streamed.
+  optional int64 photo_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for streaming photo files.
+message ReceivePhotoResponse {
+  // Data of a single photo file chunk.
+  bytes chunk_data = 1;
+  // Chunk index in the sequence.
+  int32 chunk_index = 3;
+  // The index of the photo in the sequence.
+  int32 total_chunks = 4;
+}

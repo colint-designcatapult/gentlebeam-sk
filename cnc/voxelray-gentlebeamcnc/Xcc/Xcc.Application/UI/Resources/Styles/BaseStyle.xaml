@@ -1,0 +1,24 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+    
+    <Style x:Key="BaseStyle" TargetType="{x:Type Window}" >
+        <Setter Property="FontFamily" Value="pack://application:,,,/Xcc.Application;Component/UI/Resources/Fonts/#Work Sans" />
+    </Style>
+
+    <FontFamily x:Key="TelemetryLCDFont" >
+        pack://application:,,,/Xcc.Application;Component/UI/Resources/Fonts/#LCD
+    </FontFamily>
+
+    <FontFamily x:Key="BaseFont" >
+        pack://application:,,,/Xcc.Application;Component/UI/Resources/Fonts/#Work Sans
+    </FontFamily>
+
+    <FontFamily x:Key="PasswordFont" >
+        pack://application:,,,/Xcc.Application;Component/UI/Resources/Fonts/#Password
+    </FontFamily>
+</ResourceDictionary>

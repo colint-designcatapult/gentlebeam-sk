@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.preset_configurations.v1;
+
+import "com/empyreanmed/heracles/preset_configurations/v1/preset_configuration.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on preset configurations.
+service PresetConfigurationService {
+  // Lists preset configurations matching request parameters.
+  rpc ListPresetConfigurations(ListPresetConfigurationsRequest) returns (ListPresetConfigurationsResponse);
+
+  // Returns a single preset configuration.
+  rpc GetPresetConfiguration(GetPresetConfigurationRequest) returns (GetPresetConfigurationResponse);
+
+  // Creates a new preset configuration.
+  rpc CreatePresetConfiguration(CreatePresetConfigurationRequest) returns (CreatePresetConfigurationResponse);
+
+  // Updates a single preset configuration.
+  rpc UpdatePresetConfiguration(UpdatePresetConfigurationRequest) returns (UpdatePresetConfigurationResponse);
+
+  // Deletes a single preset configuration.
+  rpc DeletePresetConfiguration(DeletePresetConfigurationRequest) returns (DeletePresetConfigurationResponse);
+
+  // Approves a preset configuration.
+  rpc ApprovePresetConfiguration(ApprovePresetConfigurationRequest) returns (ApprovePresetConfigurationResponse);
+}
+
+// Request message for listing preset configurations.
+message ListPresetConfigurationsRequest {
+  // The maximum number of preset configurations to return. The service may return fewer than this value.
+  // If unset or zero, all preset configurations will be returned.
+  optional int32 page_size = 1;
+
+  // A page token, received from a previous `ListPresetConfigurations` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListPresetConfigurations` must match
+  // the call that provided the page token.
+  optional string page_token = 2;
+
+  // The collimator configuration ID to filter preset configurations by.
+  optional int64 collimator_configuration_id = 3;
+}
+
+// Response message with the listed preset configurations.
+message ListPresetConfigurationsResponse {
+  // The preset configurations matching the list request. The order is unspecified.
+  repeated PresetConfiguration preset_configurations = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+
+  // A token that can be sent as `page_token` to retrieve the next page of
+  // results. If this field is omitted, there are no more results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single preset configuration.
+message GetPresetConfigurationRequest {
+  // The ID of the preset configuration to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single preset configuration.
+message GetPresetConfigurationResponse {
+  // The preset configuration with the ID provided in the request.
+  PresetConfiguration preset_configuration = 1;
+}
+
+// Request message for creating a new preset configuration.
+message CreatePresetConfigurationRequest {
+  // The preset configuration to be created.
+  optional PresetConfiguration preset_configuration = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created preset configuration.
+message CreatePresetConfigurationResponse {
+  // The preset configuration that was created.
+  optional PresetConfiguration preset_configuration = 1;
+}
+
+// Request message for updating an existing preset configuration.
+message UpdatePresetConfigurationRequest {
+  // The preset configuration to be updated.
+  optional PresetConfiguration preset_configuration = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the preset configuration to update. Must not be empty.
+  // Fields that have `OUTPUT_ONLY` behavior may not be updated.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated preset configuration.
+message UpdatePresetConfigurationResponse {
+  // The updated preset configuration.
+  PresetConfiguration preset_configuration = 1;
+}
+
+// Request message for deleting a preset configuration.
+message DeletePresetConfigurationRequest {
+  // The ID of the preset configuration to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeletePresetConfiguration`.
+message DeletePresetConfigurationResponse {}
+
+// Request message for approving a preset configuration.
+message ApprovePresetConfigurationRequest {
+  // The username of the user approving the preset configuration.
+  string username = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The password of the user approving the preset configuration.
+  string password = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID of the preset configuration to approve.
+  int64 preset_configuration_id = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for approving a preset configuration.
+message ApprovePresetConfigurationResponse {
+  // The approved preset configuration.
+  PresetConfiguration approved_preset_configuration = 1;
+}

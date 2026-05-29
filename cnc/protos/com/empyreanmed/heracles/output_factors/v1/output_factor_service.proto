@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.output_factors.v1;
+
+import "com/empyreanmed/heracles/output_factors/v1/output_factor.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on OutputFactors.
+service OutputFactorService {
+  // Lists OutputFactors matching request parameters.
+  rpc ListOutputFactors(ListOutputFactorsRequest) returns (ListOutputFactorsResponse);
+
+  // Returns a single OutputFactor.
+  rpc GetOutputFactor(GetOutputFactorRequest) returns (GetOutputFactorResponse);
+
+  // Creates a new OutputFactor.
+  rpc CreateOutputFactor(CreateOutputFactorRequest) returns (CreateOutputFactorResponse);
+
+  // Updates a single OutputFactor.
+  rpc UpdateOutputFactor(UpdateOutputFactorRequest) returns (UpdateOutputFactorResponse);
+
+  // Deletes a single OutputFactor.
+  rpc DeleteOutputFactor(DeleteOutputFactorRequest) returns (DeleteOutputFactorResponse);
+}
+
+// Request message for listing OutputFactors.
+message ListOutputFactorsRequest {
+  // The maximum number of OutputFactors to return. The service may return fewer than this value.
+  // If unset or zero, all OutputFactors will be returned.
+  optional int32 page_size = 1;
+
+  // A page token, received from a previous `ListOutputFactors` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListOutputFactors` must match
+  // the call that provided the page token.
+  optional string page_token = 2;
+
+  // The preset configuration ID to filter OutputFactors by.
+  optional int64 preset_configuration_id = 3;
+}
+
+// Response message with the listed OutputFactors.
+message ListOutputFactorsResponse {
+  // The OutputFactors matching the list request. The order is unspecified.
+  repeated OutputFactor output_factors = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+
+  // A token that can be sent as `page_token` to retrieve the next page of
+  // results. If this field is omitted, there are no more results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single OutputFactor.
+message GetOutputFactorRequest {
+  // The ID of the OutputFactor to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single OutputFactor.
+message GetOutputFactorResponse {
+  // The OutputFactor with the ID provided in the request.
+  OutputFactor output_factor = 1;
+}
+
+// Request message for creating a new OutputFactor.
+message CreateOutputFactorRequest {
+  // The OutputFactor to be created.
+  optional OutputFactor output_factor = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created OutputFactor.
+message CreateOutputFactorResponse {
+  // The OutputFactor that was created.
+  optional OutputFactor output_factor = 1;
+}
+
+// Request message for updating an existing OutputFactor.
+message UpdateOutputFactorRequest {
+  // The OutputFactor to be updated.
+  optional OutputFactor output_factor = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the OutputFactor to update. Must not be empty.
+  // Fields that have `OUTPUT_ONLY` behavior may not be updated.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated OutputFactor.
+message UpdateOutputFactorResponse {
+  // The updated OutputFactor.
+  OutputFactor output_factor = 1;
+}
+
+// Request message for deleting an OutputFactor.
+message DeleteOutputFactorRequest {
+  // The ID of the OutputFactor to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteOutputFactor`.
+message DeleteOutputFactorResponse {}

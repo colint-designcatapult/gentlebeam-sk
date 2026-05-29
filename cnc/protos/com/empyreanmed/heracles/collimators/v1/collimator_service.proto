@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.collimators.v1;
+
+import "com/empyreanmed/heracles/collimators/v1/collimator.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on collimators.
+service CollimatorService {
+  // Lists collimators matching request parameters.
+  rpc ListCollimators(ListCollimatorsRequest) returns (ListCollimatorsResponse);
+
+  // Returns a single collimator.
+  rpc GetCollimator(GetCollimatorRequest) returns (GetCollimatorResponse);
+
+  // Creates a new collimator.
+  rpc CreateCollimator(CreateCollimatorRequest) returns (CreateCollimatorResponse);
+
+  // Updates a single collimator.
+  rpc UpdateCollimator(UpdateCollimatorRequest) returns (UpdateCollimatorResponse);
+
+  // Deletes a single collimator.
+  rpc DeleteCollimator(DeleteCollimatorRequest) returns (DeleteCollimatorResponse);
+}
+
+// Request message for listing collimators.
+message ListCollimatorsRequest {
+  // The maximum number of collimators to return. The service may return fewer than this value.
+  // If unset or zero, all collimators will be returned.
+  optional int32 page_size = 1;
+
+  // A page token, received from a previous `ListCollimators` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListCollimators` must match
+  // the call that provided the page token.
+  optional string page_token = 2;
+
+  // The head ID to filter collimators by.
+  optional int64 collimator_configuration_id = 3;
+}
+
+// Response message with the listed collimators.
+message ListCollimatorsResponse {
+  // The collimators matching the list request. The order is unspecified.
+  repeated Collimator collimators = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+
+  // A token that can be sent as `page_token` to retrieve the next page of
+  // results. If this field is omitted, there are no more results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single collimator.
+message GetCollimatorRequest {
+  // The Serial of the collimator to be returned.
+  optional string serial = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single collimator.
+message GetCollimatorResponse {
+  // The collimator with the ID provided in the request.
+  Collimator collimator = 1;
+}
+
+// Request message for creating a new collimator.
+message CreateCollimatorRequest {
+  // The collimator to be created.
+  optional Collimator collimator = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created collimator.
+message CreateCollimatorResponse {
+  // The collimator that was created.
+  optional Collimator collimator = 1;
+}
+
+// Request message for updating an existing collimator.
+message UpdateCollimatorRequest {
+  // The collimator to be updated.
+  optional Collimator collimator = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the collimator to update. Must not be empty.
+  // Fields that have `OUTPUT_ONLY` behavior may not be updated.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated collimator.
+message UpdateCollimatorResponse {
+  // The updated collimator.
+  Collimator collimator = 1;
+}
+
+// Request message for deleting a collimator.
+message DeleteCollimatorRequest {
+  // The ID of the collimator to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteCollimator`.
+message DeleteCollimatorResponse {}

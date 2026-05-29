@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.dosimetry.v1;
+
+import "com/empyreanmed/heracles/dosimetry/v1/dosimetry.proto";
+import "google/api/field_behavior.proto";
+
+// This service provies Monte Carlo simulation files for dosimetry calculation purposes
+service DosimetryService {
+  // Returns the body file for the given request which contains the actual dosimetry data
+  rpc GetDosimetryBody(GetDosimetryBodyRequest) returns (stream GetDosimetryBodyResponse);
+}
+
+// Response message for a header file
+message GetDosimetryBodyRequest {
+  // Can be either 50, 60, 70 etc
+  string energy = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Drift tube target name, e.g A1/D3 for a large head
+  string point = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for a chunk of a body file
+message GetDosimetryBodyResponse {
+  // Single chunk of a dosimetry body file
+  DosimetryBodyChunk body_chunk = 1;
+}

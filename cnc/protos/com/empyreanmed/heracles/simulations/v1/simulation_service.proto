@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.simulations.v1;
+
+import "com/empyreanmed/heracles/simulations/v1/simulation.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on simulations.
+service SimulationService {
+  // Lists simulations for a given diagnosis.
+  rpc ListSimulations(ListSimulationsRequest) returns (ListSimulationsResponse);
+
+  // Returns a single simulation.
+  rpc GetSimulation(GetSimulationRequest) returns (GetSimulationResponse);
+
+  // Creates a new simulation for a diagnosis.
+  rpc CreateSimulation(CreateSimulationRequest) returns (CreateSimulationResponse);
+
+  // Updates an existing simulation.
+  rpc UpdateSimulation(UpdateSimulationRequest) returns (UpdateSimulationResponse);
+
+  // Deletes a simulation.
+  rpc DeleteSimulation(DeleteSimulationRequest) returns (DeleteSimulationResponse);
+}
+
+// Request message for listing simulations.
+message ListSimulationsRequest {
+  // The ID of the diagnosis for which to list simulations.
+  optional int64 diagnosis_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed simulations.
+message ListSimulationsResponse {
+  // The simulations matching the list request. The order is unspecified.
+  repeated Simulation simulations = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single simulation.
+message GetSimulationRequest {
+  // The ID of the simulation to fetch.
+  optional int64 simulation_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched simulation.
+message GetSimulationResponse {
+  // The simulation with the provided ID.
+  Simulation simulation = 1;
+}
+
+// Request message for creating a new simulation.
+message CreateSimulationRequest {
+  // Details of the simulation to create.
+  optional Simulation simulation = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created simulation.
+message CreateSimulationResponse {
+  // The simulation that was created.
+  Simulation simulation = 1;
+}
+
+// Request message for updating an existing simulation.
+message UpdateSimulationRequest {
+  // The simulation to update.
+  optional Simulation simulation = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the simulation to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated simulation.
+message UpdateSimulationResponse {
+  // The updated simulation.
+  optional Simulation simulation = 1;
+}
+
+// Request message for deleting a simulation.
+message DeleteSimulationRequest {
+  // The ID of the simulation to delete.
+  optional int64 simulation_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteSimulation`.
+message DeleteSimulationResponse {}

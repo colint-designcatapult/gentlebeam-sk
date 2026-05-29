@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.users.v1;
+
+import "com/empyreanmed/heracles/users/v1/user.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on users.
+service UsersService {
+  // Lists users.
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+
+  // Returns a single user.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Creates a new user.
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // Updates an existing user.
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+
+  // Deletes a user.
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+// Request message for listing users.
+message ListUsersRequest {}
+
+// Response message with the listed users.
+message ListUsersResponse {
+  // The users matching the list request. The order is unspecified.
+  repeated User users = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single user.
+message GetUserRequest {
+  // The ID of the user to fetch.
+  optional int64 user_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched user.
+message GetUserResponse {
+  // The user with the provided ID.
+  User user = 1;
+}
+
+// Request message for creating a new user.
+message CreateUserRequest {
+  // Details of the user to create.
+  optional User user = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created user.
+message CreateUserResponse {
+  // The user that was created.
+  User user = 1;
+}
+
+// Request message for updating an existing user.
+message UpdateUserRequest {
+  // The user to update.
+  optional User user = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the user to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated user.
+message UpdateUserResponse {
+  // The updated user.
+  User user = 1;
+}
+
+// Request message for deleting a user.
+message DeleteUserRequest {
+  // The ID of the user to delete.
+  optional int64 user_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteUser`.
+message DeleteUserResponse {}

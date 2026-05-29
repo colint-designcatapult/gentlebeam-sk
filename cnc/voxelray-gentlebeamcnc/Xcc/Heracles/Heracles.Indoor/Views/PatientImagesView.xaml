@@ -1,0 +1,190 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.PatientImagesView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+ 
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
+    
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+
+    xmlns:appx="clr-namespace:Xcc.Application.UI;assembly=Xcc.Application"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+
+    mc:Ignorable="d" 
+    d:DesignWidth="1000" d:DesignHeight="600"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:PatientImagesViewModel}, IsDesignTimeCreatable=True}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Grid ClipToBounds="True" Margin="{StaticResource BlockContentMargin}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Padding="{StaticResource BlockContentMargin}" Grid.Row="2" CornerRadius="8" Background="{StaticResource BlockBackgroundColor}">
+                <ContentControl x:Name="PatientImagesViewer" prism:RegionManager.RegionName="{x:Static appx:Regions+Main+ClinicalData+Images.ViewerRegion}" />
+            </Border>
+
+            <Border Grid.Row="4" CornerRadius="8,8,8,8" Background="{StaticResource BlockBackgroundColor}">
+                <DockPanel LastChildFill="False" Margin="12">
+                    <!--Back button-->
+                    <Button 
+                        Grid.Column="1"
+                        Width="{StaticResource ButtonWidth}" 
+                        Height="{StaticResource ButtonHeight}"
+                        DockPanel.Dock="Left"
+                        Command="{Binding ExitCommand}">
+
+                        <Grid Margin="12,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+
+                            <Image Source="{StaticResource GoBackIcon}" Stretch="None"/>
+                            <TextBlock Text="Back" Grid.Column="2" Style="{StaticResource ButtonTextBlockStyle}"/>
+                        </Grid>
+                    </Button>
+
+                    <ToggleButton x:Name="View_2d_3D" Visibility="Hidden"
+                        Tag="2D"
+                        Content="3D"
+                        IsChecked="{Binding Switch2D3D}"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource ToggleButtonSwitchStyle}"/>
+
+                </DockPanel>
+            </Border>
+            
+            <Grid Grid.Column="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <DockPanel Grid.Column="0">
+                    <TextBlock
+                        Text="Field:"
+                        FontSize="{StaticResource BaseFontSize}"
+                        Style="{StaticResource TextBlockLegendStylePale}"/>
+
+                    <TextBlock
+                        Text="{Binding TreatmentInfoStore.Diagnosis.SiteName}"
+                            Style="{StaticResource TextBlockLegendStyle}"
+                        FontSize="{StaticResource BaseFontSize}"
+                        VerticalAlignment="Center"
+                
+                        Margin="{StaticResource BlockContentMarginRight}"/>
+                </DockPanel>
+
+                <DockPanel Grid.Column="2">
+                    <TextBlock
+                        Text="Pathology:"
+                        FontSize="{StaticResource BaseFontSize}"
+                        Style="{StaticResource TextBlockLegendStylePale}"/>
+
+                    <TextBlock
+                        Text="{Binding TreatmentInfoStore.Diagnosis.Pathology, Converter={convx:EnumValueToDisplayNameConverter}}"
+                            Style="{StaticResource TextBlockLegendStyle}"
+                        FontSize="{StaticResource BaseFontSize}"
+                        VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <DockPanel Grid.Column="4">
+                    <TextBlock
+                        Text="Location:"
+                        FontSize="{StaticResource BaseFontSize}"
+                        Style="{StaticResource TextBlockLegendStylePale}"/>
+
+                    <TextBlock
+                        Text="{Binding TreatmentInfoStore.Diagnosis.SiteLocation, Converter={convx:EnumValueToDisplayNameConverter}}"
+                            Style="{StaticResource TextBlockLegendStyle}"
+                        FontSize="{StaticResource BaseFontSize}"
+                        VerticalAlignment="Center"/>
+                </DockPanel>
+
+
+                <DockPanel Grid.Column="6">
+                    <TextBlock
+                        Text="Provider Name:"
+                        FontSize="{StaticResource BaseFontSize}"
+                        Style="{StaticResource TextBlockLegendStylePale}"/>
+
+                    <TextBlock
+                        Text="{Binding TreatmentInfoStore.Diagnosis.ReferringProvider}"
+                            Style="{StaticResource TextBlockLegendStyle}"
+                        FontSize="{StaticResource BaseFontSize}"
+                        VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <DockPanel Grid.Column="8">
+                    <TextBlock
+                        Text="ICD code:"
+                        FontSize="{StaticResource BaseFontSize}"
+                        Style="{StaticResource TextBlockLegendStylePale}"/>
+
+                    <TextBlock
+                        Text="{Binding TreatmentInfoStore.Diagnosis.IcdCode, Converter={convx:EnumValueToDisplayNameConverter}}"
+                            Style="{StaticResource TextBlockLegendStyle}"
+                        FontSize="{StaticResource BaseFontSize}"
+                        VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <DockPanel Grid.Column="10">
+                    <TextBlock
+                        Text="Subcell:"
+                        FontSize="{StaticResource BaseFontSize}"
+                        Style="{StaticResource TextBlockLegendStylePale}"/>
+
+                    <TextBlock
+                        Text="{Binding TreatmentInfoStore.Diagnosis.SubcellOne, Converter={convx:EnumValueToDisplayNameConverter}}"
+                            Style="{StaticResource TextBlockLegendStyle}"
+                        FontSize="{StaticResource BaseFontSize}"
+                        VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <DockPanel Grid.Column="12">
+                    <TextBlock
+                        Text="Description:"
+                        FontSize="{StaticResource BaseFontSize}"
+                        Style="{StaticResource TextBlockLegendStylePale}"/>
+
+                    <TextBlock
+                        Text="{Binding TreatmentInfoStore.Diagnosis.Description, Converter={convx:EnumValueToDisplayNameConverter}}"
+                            Style="{StaticResource TextBlockLegendStyle}"
+                        FontSize="{StaticResource BaseFontSize}"
+                        VerticalAlignment="Center"/>
+                </DockPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</ContentControl>

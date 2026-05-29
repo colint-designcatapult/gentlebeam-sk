@@ -1,0 +1,10 @@
+image: node:24
+
+pipelines:
+  default:
+    - step:
+        name: "Node checks"
+        script:
+          - npm install
+          - npm run check_formatting
+          - npm run lint

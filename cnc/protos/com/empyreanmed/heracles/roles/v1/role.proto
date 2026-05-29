@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.roles.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a named role in the system with certain permissions.
+message Role {
+  // Unique identifier for this role (auto-increment).
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Timestamp when the role was created in the database.
+  optional google.protobuf.Timestamp creation_date = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The name assigned to this role, cannot be null.
+  optional string role_name = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // An optional description of what this role signifies.
+  optional string description = 4;
+}

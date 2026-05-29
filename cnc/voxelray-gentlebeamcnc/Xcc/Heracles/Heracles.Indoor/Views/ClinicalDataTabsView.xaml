@@ -1,0 +1,48 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.ClinicalDataTabsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
+                
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+             
+    xmlns:appx="clr-namespace:Xcc.Application.UI;assembly=Xcc.Application"
+    UseLayoutRounding="True"
+                
+    IsTabStop="False"
+
+    mc:Ignorable="d" 
+    d:DesignWidth="1600" d:DesignHeight="980"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:ClinicalDataTabsViewModel}, IsDesignTimeCreatable=True}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/TabControl/FolderTabControl.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+    
+    <TabControl 
+        TextElement.FontSize="15"
+        Style="{StaticResource FolderTabControl}"
+        SelectedIndex="{Binding SelectedTabIndex}"
+        Grid.IsSharedSizeScope="True">
+
+        <TabItem Header="Simulation">
+            <ContentControl IsTabStop="False" prism:RegionManager.RegionName="{x:Static appx:Regions+Main+ClinicalData.PlanRegion}"/>
+        </TabItem>
+
+        <TabItem Header="Treatments">
+            <ContentControl IsTabStop="False" prism:RegionManager.RegionName="{x:Static appx:Regions+Main+ClinicalData.TreatmentsRegion}"/>
+        </TabItem>
+                
+        <TabItem Header="Images">
+            <ContentControl IsTabStop="False" prism:RegionManager.RegionName="{x:Static appx:Regions+Main+ClinicalData.ImagesRegion}"/>
+        </TabItem>
+    </TabControl>
+</ContentControl>

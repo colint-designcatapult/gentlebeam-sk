@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Heracles.Indoor": {
+      "commandName": "Project"
+    },
+    "Heracles.Indoor.KK-Dummy": {
+      "commandName": "Project",
+      "commandLineArgs": "--appsettings=\"C:\\Empyrean\\Xcc.AppSettings\\heracles.internal.dummy.appsettings.json\""
+    }
+  }
+}

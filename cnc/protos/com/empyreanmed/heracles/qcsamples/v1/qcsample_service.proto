@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.qcsamples.v1;
+
+import "com/empyreanmed/heracles/qcsamples/v1/qcsample.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on QCSamples.
+service QCSampleService {
+  // Lists quality control samples for a given collimator.
+  rpc ListQCSamples(ListQCSamplesRequest) returns (ListQCSamplesResponse);
+
+  // Returns a single quality control sample.
+  rpc GetQCSample(GetQCSampleRequest) returns (GetQCSampleResponse);
+
+  // Creates a new quality control sample.
+  rpc CreateQCSample(CreateQCSampleRequest) returns (CreateQCSampleResponse);
+
+  // Updates an existing quality control sample.
+  rpc UpdateQCSample(UpdateQCSampleRequest) returns (UpdateQCSampleResponse);
+
+  // Deletes a quality control sample.
+  rpc DeleteQCSample(DeleteQCSampleRequest) returns (DeleteQCSampleResponse);
+
+  // Approves a quality control sample.
+  rpc ApproveQCSample(ApproveQCSampleRequest) returns (ApproveQCSampleResponse);
+}
+
+// Request message for listing quality control samples.
+message ListQCSamplesRequest {
+  // The ID of the collimator_configuration_id for which to list quality control samples.
+  optional int64 collimator_configuration_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed quality control samples.
+message ListQCSamplesResponse {
+  // The quality control samples matching the list request. The order is unspecified.
+  repeated QCSample qcsamples = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single quality control sample.
+message GetQCSampleRequest {
+  // The ID of the quality control sample to fetch.
+  optional int64 qcsample_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched quality control sample.
+message GetQCSampleResponse {
+  // The quality control sample with the provided ID.
+  QCSample qcsample = 1;
+}
+
+// Request message for creating a new quality control sample.
+message CreateQCSampleRequest {
+  // Details of the quality control sample to create.
+  optional QCSample qcsample = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created quality control sample.
+message CreateQCSampleResponse {
+  // The quality control sample that was created.
+  QCSample qcsample = 1;
+}
+
+// Request message for updating an existing quality control sample.
+message UpdateQCSampleRequest {
+  // The quality control sample to update.
+  optional QCSample qcsample = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the quality control sample to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated quality control sample.
+message UpdateQCSampleResponse {
+  // The updated quality control sample.
+  QCSample qcsample = 1;
+}
+
+// Request message for deleting a quality control sample.
+message DeleteQCSampleRequest {
+  // The ID of the quality control sample to delete.
+  optional int64 qcsample_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteQCSample`.
+message DeleteQCSampleResponse {}
+
+// Request message for approving a quality control sample.
+message ApproveQCSampleRequest {
+  // The username of the user approving the data.
+  string username = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The password of the user approving the data.
+  string password = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID of the quality control sample to approve.
+  int64 qcsample_id = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for approving a quality control sample.
+message ApproveQCSampleResponse {
+  // The approved quality control sample.
+  QCSample approved_qcsample = 1;
+}

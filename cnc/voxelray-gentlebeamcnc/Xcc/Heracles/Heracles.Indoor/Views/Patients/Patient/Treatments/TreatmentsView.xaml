@@ -1,0 +1,318 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.Patients.Patient.Treatments.TreatmentsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+ 
+    xmlns:views ="clr-namespace:Heracles.Indoor.Views"
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels.Patients.Patient.Treatments"
+    
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:common="clr-namespace:Heracles.Application.Common;assembly=Heracles.Application"
+    xmlns:userControls="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+
+    FontFamily="{StaticResource BaseFont}"
+    UseLayoutRounding="True"
+    
+    mc:Ignorable="d" 
+    d:DesignWidth="1920" d:DesignHeight="1080"
+    d:DataContext="{d:DesignInstance viewModels:TreatmentsViewModel}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Heracles.Application;Component/UI/Resources/ListViewTemplates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Grid Margin="{StaticResource LabeledBlockContentMargin}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.25*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <views:FieldDetailsView Grid.Row="0" Grid.ColumnSpan="5"/>
+
+        <GridSplitter 
+            Margin="10"
+            Grid.Column="1" Grid.RowSpan="8" 
+            Width="2" Height="{StaticResource ButtonWidth}"
+            Background="{StaticResource BlockBorderColor}" 
+            HorizontalAlignment="Center"
+            FocusVisualStyle="{x:Null}"
+            IsTabStop="False"/>
+
+        <views:SitesView Grid.Column="0" Grid.Row="2" Grid.RowSpan="3"/>
+
+        <Grid Grid.Column="2" Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+                <RowDefinition Height="4.8*"/>
+            </Grid.RowDefinitions>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*" />
+                    <ColumnDefinition Width="{StaticResource BlockMarginGridLength}" />
+                    <ColumnDefinition Width="2.4*" />
+                </Grid.ColumnDefinitions>
+
+                <!--Simulation-->
+                <views:SimulationSummaryView Grid.Column="0" Grid.Row="0" IsEnabled="False"/>
+
+                <!--Prescription-->
+                <views:PrescriptionSummaryView Grid.Column="2" Grid.Row="0" IsEnabled="False"/>
+            </Grid>
+
+            <Grid Grid.Row="2" Grid.Column="0" Grid.IsSharedSizeScope="True" >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.RowSpan="3" Style="{StaticResource BorderBlockStyle}">
+                    <Grid Margin="{StaticResource LabeledBlockContentMargin}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" SharedSizeGroup="Header"/>
+                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource BlockContentMarginGridLength}" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+
+                            <TextBlock 
+                                Grid.Row="0"
+                                Text="Treatments"  
+                                FontSize="{StaticResource LargeFontSize}" 
+                                Style="{StaticResource TextBlockLegendStyle}"
+                                Foreground="{StaticResource ForegroundPaleBrush}"
+                                HorizontalAlignment="Left" />
+                            
+                            <TextBlock 
+                                Grid.Column="2" 
+                                Style="{StaticResource TextBlockLegendStyle}"
+                                Visibility="{Binding TreatmentHistoryModel.Summary, Converter={convx:ObjectToVisibilityConverter}}">
+                                
+                                <Run Text="Total Fraction: "/>
+                                <Run Text="{Binding TreatmentHistoryModel.Summary.TotalFractions}" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                <Run Text="/"/>
+                                <Run Text="{Binding TreatmentHistoryModel.Summary.TotalPlannedFractions}" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                            </TextBlock>
+
+                            <TextBlock 
+                                Grid.Column="4" 
+                                Style="{StaticResource TextBlockLegendStyle}"
+                                Visibility="{Binding TreatmentHistoryModel.Summary, Converter={convx:ObjectToVisibilityConverter}}">
+                                
+                                <Run Text="Total Dose Delivered"/>
+                                <Run Text="[cGy]" Foreground="{StaticResource ForegroundPaleBrush}"/><Run Text=":"/>
+                                <Run Text="{Binding TreatmentHistoryModel.Summary.TotalDeliveredDose}" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                <Run Text="/"/>
+                                <Run Text="{Binding TreatmentHistoryModel.Summary.TotalPlannedDose}" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                            </TextBlock>
+                        </Grid>
+
+                        <ListView
+                            Grid.Row="2"
+                            Background="{StaticResource ButtonBackgroundColor}"
+                            Style="{StaticResource TableListView}"
+                            Tag="{StaticResource TreatmentsListHeaderTemplate}"
+                            ItemTemplate="{StaticResource TreatmentsListItemTemplate}"
+                            ItemsSource="{Binding TreatmentHistoryModel.Treatments}"
+                            SelectedItem="{Binding TreatmentHistoryModel.SelectedTreatment}"/>
+                    </Grid>
+                </Border>
+
+                <Border
+                    Grid.Row="0" Grid.Column="1" 
+                    Style="{StaticResource BorderBlockStyle}"
+                    Margin="{StaticResource BlockContentMarginLeft}"
+                    Visibility="{Binding TreatmentHistoryModel.SelectedTreatment, Converter={convx:ObjectToVisibilityConverter}}">
+
+                    <Grid>
+                        <Grid Margin="{StaticResource LabeledBlockContentMargin}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" SharedSizeGroup="Header"/>
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock 
+                                Grid.Row="0"
+                                Style="{StaticResource TextBlockLegendStyle}">
+
+                                <Run Text="Fx:"/>
+                                <Run Text="{Binding TreatmentHistoryModel.SelectedTreatment.Fraction}" Foreground="{StaticResource AccentForegroundColor}"/>
+                                <Run Text="Date:"/>
+                                <Run Text="{Binding TreatmentHistoryModel.SelectedTreatment.CreationDate, StringFormat=G}" Foreground="{StaticResource AccentForegroundColor}"/>
+                            </TextBlock>
+
+                            <ListView 
+                                Grid.Row="2"
+                                Background="{StaticResource ButtonBackgroundColor}"
+                                Style="{StaticResource TableListView}"
+                                Tag="{StaticResource ActualTreatmentFieldsHeaderTemplate}"
+                                ItemTemplate="{StaticResource ActualTreatmentFieldsItemTemplate}"
+                                ItemsSource="{Binding TreatmentHistoryModel.SelectedTreatment.ActualTreatmentFields}"/>
+                        </Grid>
+
+                        <Button 
+                            Grid.Row="0"
+                            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="4"
+                            Style="{StaticResource ButtonCloseStyle}"
+                            Command="{Binding ClearTreatmentSelectionCommand}"/>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border 
+                Style="{StaticResource BorderBlockStyle}"
+                Grid.Row="0" Grid.Column="0" Grid.RowSpan="3"
+                Visibility="{Binding TreatmentHistoryModel.Summary, Converter={convx:ObjectToInvisibilityConverter}, FallbackValue=Hidden}">
+                
+                <TextBlock 
+                    Text="{x:Static common:StringConstants+EMR.TreatmentSummaryNotAvailable}" 
+                    FontSize="{StaticResource HugeFontSize}" 
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Style="{StaticResource TextBlockLegendStyle}"/>
+            </Border>
+        </Grid>
+
+
+        <!--Buttons block-->
+        <Border Grid.Column="2" Grid.Row="4" Style="{StaticResource BorderBlockStyle}">
+            <Grid Margin="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource ButtonDoubleMarginGridLength}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource ButtonMarginGridLength}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource ButtonMarginGridLength}" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="{StaticResource ButtonMarginGridLength}" />
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button 
+                    Grid.Column="0"
+                    Width="{StaticResource ButtonWidth}" 
+                    Height="{StaticResource ButtonHeight}"
+                    Command="{Binding ExitCommand}">
+
+                    <Grid Margin="12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Image Source="{StaticResource GoBackIcon}" Stretch="None"/>
+                        <TextBlock Text="Back" Grid.Column="2" Style="{StaticResource ButtonTextBlockStyle}"/>
+                    </Grid>
+                </Button>
+
+                <!--Capture photo button-->
+                <Button 
+                    Grid.Column="4"
+                    Height="{StaticResource ButtonHeight}"
+                    Width="{StaticResource ButtonWidthLarge}"
+                    Command="{Binding CapturePhotoCommand}">
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Path 
+                            Data="{StaticResource AcquisitionCameraIcon}" 
+                            Style="{StaticResource ButtonPathStyle}" 
+                            Width="32" Height="32"/>
+
+                        <TextBlock Grid.Column="2" Style="{StaticResource ButtonTextBlockStyle}" Text="Camera"/>
+                    </Grid>
+                </Button>
+
+                <!--Scan button-->
+                <Button 
+                    Grid.Column="2"
+                    Height="{StaticResource ButtonHeight}"
+                    Width="{StaticResource ButtonWidth}"
+                    Command="{Binding ScanVolumeCommand}">
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Path 
+                            Data="{StaticResource UltrasoundIcon}" 
+                            Style="{StaticResource ButtonPathStyle}" 
+                            Width="38" Height="38"/>
+
+                        <TextBlock Grid.Column="2" Style="{StaticResource ButtonTextBlockStyle}" Text="Scan"/>
+                    </Grid>
+                </Button>
+
+                <userControls:XccWarningLabel
+                    Grid.Column="6" 
+                    FontSize="{StaticResource SmallFontSize}"
+                    Text="{Binding ApplicatorCompatibilityStatus.CompatibilityMessage}"
+                    Visibility="{Binding ApplicatorCompatibilityStatus.IsCompatible, Converter={convx:BooleanToInvisibilityConverter Invisibility=Hidden}}"/>
+
+                <Button 
+                    Grid.Column="8"
+                    Height="{StaticResource ButtonHeight}"
+                    Command="{Binding LoadForTreatmentCommand}">
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Path 
+                            Data="{StaticResource ScanIcon}" 
+                            Style="{StaticResource ButtonPathStyle}" 
+                            Width="36" Height="36"/>
+
+                        <TextBlock Grid.Column="2" Style="{StaticResource ButtonTextBlockStyle}" Text="Load For&#10;Treatment"/>
+                    </Grid>
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentControl>

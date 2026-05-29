@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.collimator_configurations.v1;
+
+import "com/empyreanmed/heracles/collimator_configurations/v1/collimator_configuration.proto";
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Service definition for CollimatorConfiguration
+service CollimatorConfigurationService {
+  // RPC method to list all collimator configurations
+  rpc ListCollimatorConfigurations(ListCollimatorConfigurationsRequest) returns (ListCollimatorConfigurationsResponse);
+
+  // RPC method to get a single collimator configuration by ID
+  rpc GetCollimatorConfiguration(GetCollimatorConfigurationRequest) returns (GetCollimatorConfigurationResponse);
+
+  // RPC method to create a new collimator configuration
+  rpc CreateCollimatorConfiguration(CreateCollimatorConfigurationRequest) returns (CreateCollimatorConfigurationResponse);
+
+  // RPC method to update an existing collimator configuration
+  rpc UpdateCollimatorConfiguration(UpdateCollimatorConfigurationRequest) returns (UpdateCollimatorConfigurationResponse);
+
+  // RPC method to delete a collimator configuration by ID
+  rpc DeleteCollimatorConfiguration(DeleteCollimatorConfigurationRequest) returns (DeleteCollimatorConfigurationResponse);
+  //RPC method to search collimator configurations
+  rpc SearchCollimatorConfiguration(SearchCollimatorConfigurationRequest) returns (SearchCollimatorConfigurationResponse);
+}
+
+// Request message for listing collimator configurations
+message ListCollimatorConfigurationsRequest {}
+
+// Response message for listing collimator configurations
+message ListCollimatorConfigurationsResponse {
+  // List of collimator configurations
+  repeated CollimatorConfiguration collimator_configurations = 1;
+}
+
+// Request message for getting a single collimator configuration by ID
+message GetCollimatorConfigurationRequest {
+  // ID of the requested configuration
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for getting a single collimator configuration
+message GetCollimatorConfigurationResponse {
+  // The requested collimator configuration
+  CollimatorConfiguration collimator_configuration = 1;
+}
+
+// Request message for creating a new collimator configuration
+message CreateCollimatorConfigurationRequest {
+  // Collimator configuration to create
+  CollimatorConfiguration collimator_configuration = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for creating a new collimator configuration
+message CreateCollimatorConfigurationResponse {
+  // The created collimator configuration
+  CollimatorConfiguration collimator_configuration = 1;
+}
+
+// Request message for updating an existing collimator configuration
+message UpdateCollimatorConfigurationRequest {
+  // Collimator configuration with updates
+  CollimatorConfiguration collimator_configuration = 1 [(google.api.field_behavior) = REQUIRED];
+  // A FieldMask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for updating an existing collimator configuration
+message UpdateCollimatorConfigurationResponse {
+  // The updated collimator configuration
+  CollimatorConfiguration collimator_configuration = 1;
+}
+
+// Request message for deleting a collimator configuration by ID
+message DeleteCollimatorConfigurationRequest {
+  // ID of the collimator configuration to delete
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for deleting a collimator configuration
+message DeleteCollimatorConfigurationResponse {}
+
+// Request message for searching collimator configurations
+message SearchCollimatorConfigurationRequest {
+  // Filter by target type
+  optional com.empyreanmed.heracles.enums.v1.TARGETTYPE target_type = 1;
+
+  // Filter by energy
+  optional com.empyreanmed.heracles.enums.v1.ENERGY energy = 2;
+
+  // Filter by SSD type
+  optional com.empyreanmed.heracles.enums.v1.SSDTYPE ssd = 3;
+}
+
+// Response message for searching collimator configurations
+message SearchCollimatorConfigurationResponse {
+  // List of collimator configurations matching the search criteria
+  CollimatorConfiguration collimator_configurations = 1;
+}

@@ -1,0 +1,164 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:uc="clr-namespace:Heracles.Application.UI.UserControls"
+    xmlns:conv="clr-namespace:Heracles.Application.UI.Converters"
+    xmlns:models="clr-namespace:Heracles.Core.Models.EMR;assembly=Heracles.Core">
+    
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Constants.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <PathGeometry 
+        x:Key="CircleIcon" 
+        Figures="M512 256C512 397.4 397.4 512 256 512C114.6 512 0 397.4 0 256C0 114.6 114.6 0 256 0C397.4 0 512 114.6 512 256z" />
+
+    <PathGeometry 
+        x:Key="HexCell" 
+        Figures="m 18.1 62.475 v -32 l 28.0002 -16 l 27.9998 16 v 32 L 46.1 78.475 Z" />
+
+    <PathGeometry 
+        x:Key="LargeCentralCell" 
+        Figures="M 74.1 -33.525 L 46.1 -17.525 L 46.1 14.475 L 18.1 30.475 L 18.1 62.475 L 46.1 78.475 L 46.1 110.475 L 74.1 126.475 L 102.1 110.475 L 130.1 126.475 L 158.1 110.475 L 158.1 78.475 L 186.1 62.475 L 186.1 30.475 L 158.1 14.475 L 158.1 -17.525 L 130.1 -33.525 L 102.1 -17.525 L 74.1 -33.525 z" />
+
+    <Style TargetType="{x:Type uc:HoneycombList}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type uc:HoneycombList}">
+                    <Grid Background="Transparent">
+                        <!--<Path 
+                            Margin="-36"
+                            Fill="#202020" 
+                            Stretch="Uniform"
+                            Data="{StaticResource HexCell}"
+                            RenderTransformOrigin="0.5,0.5">
+
+                            <Path.RenderTransform>
+                                <RotateTransform Angle="30"></RotateTransform>
+                            </Path.RenderTransform>
+                        </Path>-->
+
+                        <Canvas IsItemsHost="True"/>
+                        
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="OpacityMask" Value="{StaticResource DisabledControlOpacityMaskBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Setter Property="ItemTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type models:ITreatmentField}">
+                    <Grid>
+                        <Path 
+                            x:Name="HexItem"
+                            Fill="{Binding Background, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" 
+                            Stroke="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                            StrokeThickness="2"
+                            RenderTransformOrigin="0.5,0.5"
+                            Stretch="Fill">
+                                            
+                            <Path.Data>
+                                <MultiBinding Converter="{conv:TreatmentFieldToGeometryConverter}">
+                                    <Binding Path="."/>
+                                    <Binding Path="TargetType" RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type uc:HoneycombList}}"/>
+                                </MultiBinding>
+                            </Path.Data>
+                                        
+                            <Path.RenderTransform>
+                                <ScaleTransform x:Name="ScaleAnimation" ScaleX="1" ScaleY="1"/>
+                            </Path.RenderTransform>
+                        </Path>
+                        
+                        <TextBlock 
+                            MaxWidth="{TemplateBinding ActualWidth}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" 
+                            FontWeight="SemiBold">
+
+                            <TextBlock.Text>
+                                <MultiBinding Converter="{conv:TreatmentFieldNameToStringConverter}">
+                                    <Binding Path="Name"/>
+                                    <Binding Path="TargetType" RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type uc:HoneycombList}}"/>
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </Grid>
+
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                            <Setter Property="Stroke" TargetName="HexItem" Value="{StaticResource SelectedForegroundBrush}"/>
+                        </DataTrigger>
+                        
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!--<ThicknessAnimation 
+                                            Duration="0:0:0.2" 
+                                            To="2" 
+                                            Storyboard.TargetProperty="Margin" 
+                                            Storyboard.Target="{Binding RelativeSource={RelativeSource TemplatedParent}}"/>-->
+
+                                        <DoubleAnimation Duration="0:0:0.3" To="1" Storyboard.TargetName="ScaleAnimation" Storyboard.TargetProperty="ScaleX" />
+                                        <DoubleAnimation Duration="0:0:0.3" To="1" Storyboard.TargetName="ScaleAnimation" Storyboard.TargetProperty="ScaleY" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!--<ThicknessAnimation 
+                                            Duration="0:0:0.02" 
+                                            To="0" 
+                                            Storyboard.TargetProperty="Margin" 
+                                            Storyboard.Target="{Binding RelativeSource={RelativeSource TemplatedParent}}"/>-->
+
+                                        <DoubleAnimation Duration="0:0:0.05" To="1.10" Storyboard.TargetName="ScaleAnimation" Storyboard.TargetProperty="ScaleX" />
+                                        <DoubleAnimation Duration="0:0:0.05" To="1.10" Storyboard.TargetName="ScaleAnimation" Storyboard.TargetProperty="ScaleY" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+
+                            <Setter  Property="Panel.ZIndex" Value="100"/>
+                        </Trigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Setter Property="ItemContainerStyle">
+            <Setter.Value>
+                <Style TargetType="{x:Type ListBoxItem}">
+                    <Setter Property="Background" Value="#505050"/>
+                    <Setter Property="BorderBrush" Value="#a0a0a0"/>
+                    <Setter Property="Foreground" Value="{StaticResource BaseForegroundColor}"/>
+                    <Setter Property="UseLayoutRounding" Value="False"/>
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                <ContentPresenter/>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{StaticResource SelectedForegroundBrush}"/>
+                            <Setter Property="BorderBrush" Value="{StaticResource SelectedForegroundBrush}"/>
+                            <Setter Property="Foreground" Value="Black"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

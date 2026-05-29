@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.user_roles.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a link between a user and a role in the system.
+message UserRole {
+  // Unique identifier for the plan.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The id of the user who has the role.
+  optional string user_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID of the role that is assigned to the user.
+  optional int64 role_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Timestamp indicating when this user-role link was created.
+  optional google.protobuf.Timestamp creation_date = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

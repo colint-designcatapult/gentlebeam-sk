@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.preset_configurations.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// PresetConfiguration represents a preset configuration for a target.
+message PresetConfiguration {
+  // Unique identifier for the preset configuration.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Foreign key to the collimator configuration entity.
+  optional int64 collimator_configuration_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The creation date of the preset configuration.
+  optional google.protobuf.Timestamp create_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Name of the preset configuration.
+  optional string preset_name = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates if this is the default preset configuration.
+  optional bool is_default = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates if the preset configuration is active.
+  optional bool is_active = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // The user ID of the approver this item.
+  optional string approved_by = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

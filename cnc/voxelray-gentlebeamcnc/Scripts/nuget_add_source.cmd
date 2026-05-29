@@ -1,0 +1,1 @@
+dotnet nuget Add source https://pkgs.dev.azure.com/Empyreanmed/_packaging/Empyreanmed/nuget/v3/index.json --name Empyreanmed --username azure@empyreanmed.com --password 93pIiM0KE4IOiF6oxIylcxtXTfQ7W5NUtSKWRcgjc4jHA1Iz6DnkJQQJ99BGACAAAAAYah3uAAASAZDO1atc

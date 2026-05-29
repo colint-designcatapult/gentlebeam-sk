@@ -1,0 +1,2 @@
+sbom-tool.exe generate -b C:\GentleBeam\Heracles\Heracles.Indoor -bc C:\GentleBeam\src\xcc -pn Heracles.Indoor -pv 1.0.2 -ps Empyrean -nsb https://bitbucket.org/empyrean-medical-devices/xcc/
+sbom-tool.exe generate -b C:\GentleBeam\Heracles\Heracles.External -bc C:\GentleBeam\src\xcc -pn Heracles.External -pv 1.0.2 -ps Empyrean -nsb https://bitbucket.org/empyrean-medical-devices/xcc/

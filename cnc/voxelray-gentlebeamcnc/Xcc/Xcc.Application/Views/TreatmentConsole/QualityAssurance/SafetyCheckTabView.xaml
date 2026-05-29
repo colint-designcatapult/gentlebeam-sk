@@ -1,0 +1,44 @@
+﻿<ContentControl 
+    x:Class="Xcc.Application.Views.TreatmentConsole.QualityAssurance.SafetyCheckTabView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    
+    xmlns:application="clr-namespace:Xcc.Application.UI"
+
+    IsTabStop="False"
+
+    mc:Ignorable="d" 
+    d:DesignWidth="1280" d:DesignHeight="720"
+    xmlns:viewModels="clr-namespace:Xcc.Application.ViewModels.TreatmentConsole.QualityAssurance"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:SafetyCheckTabViewModel}}">
+    
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/ToggleButton/ToggleButtonSwitchStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Grid Margin="{StaticResource ViewMargin}" d:ShowGridLines="False">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+     
+        <ToggleButton
+            Tag="Report"
+            Content="Daily"
+            IsChecked="{Binding SwitchView}"
+            IsEnabled="{Binding CommonProperties.IsInSafeState}"
+            HorizontalAlignment="Right"
+            Style="{StaticResource ToggleButtonSwitchStyle}"/>
+            
+        <ContentControl Grid.Row="2" prism:RegionManager.RegionName="{x:Static application:Regions+External+QualityAssurance.SafetyChecksViewRegion}" IsTabStop="False"/>
+    </Grid>
+</ContentControl>

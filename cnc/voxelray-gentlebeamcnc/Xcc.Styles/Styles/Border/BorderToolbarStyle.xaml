@@ -1,0 +1,18 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/BaseStyle.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <Style x:Key="BorderToolbarStyle" TargetType="Border" >
+        <Setter Property="DockPanel.Dock" Value="Bottom" />
+        <Setter Property="CornerRadius" Value="{StaticResource BlockBottomCornerRadius}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+        <Setter Property="BorderBrush" Value="{StaticResource BlockBorderBrush}" />
+        <Setter Property="Background" Value="{StaticResource  BlockFooterBackgroundBrush}"/>
+        <Setter Property="Padding" Value="4,6"/>
+    </Style>
+</ResourceDictionary>
+    

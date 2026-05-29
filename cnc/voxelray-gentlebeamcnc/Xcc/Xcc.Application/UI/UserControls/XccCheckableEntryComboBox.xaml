@@ -1,0 +1,212 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters"
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <GridLength x:Key="ToggleButtonIconWidth">32</GridLength>
+    
+    <Style x:Key="ComboBoxToggleButtonStyle" TargetType="{x:Type ToggleButton}" >
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="{StaticResource ToggleButtonIconWidth}" />
+                        </Grid.ColumnDefinitions>
+
+                        <Path 
+                            Grid.Column="1"
+                            Name="Arrow"
+                            Data="M 1 0 H 2 V 1 H 3 V 2 H 4 V 3 H 5 V 4 H 6 V 3 H 7 V 2 H 8 V 1 H 9 V 0 H 10 V 1 H 11 V 2 H 10 V 3 H 9 V 4 H 8 V 5 H 7 V 6 H 6 V 7 H 5 V 6 H 4 V 5 H 3 V 4 H 2 V 3 H 1 V 2 H 0 V 1 H 1 Z"
+                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Margin="0,0,8,0"
+                            Fill="White"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <Style TargetType="{x:Type ucx:XccCheckableEntryComboBox}" >
+        <Setter Property="IsEditable" Value="False"/>
+        <Setter Property="IsTextSearchEnabled" Value="True"/>
+        <Setter Property="IsTextSearchCaseSensitive" Value="False"/>
+        <Setter Property="UseLayoutRounding" Value="True"/>
+
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+
+        <Setter Property="Foreground" Value="{StaticResource FieldForegroundColor}"/>
+        <Setter Property="Background" Value="{StaticResource FieldBackgroundColor}"/>
+        <Setter Property="FontSize" Value="{StaticResource BaseFontSize}"/>
+
+        <Setter Property="FrameworkElement.FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ucx:XccCheckableEntryComboBox}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock 
+                            Text="{TemplateBinding Tag}" 
+                            Style="{StaticResource TextBlockLegendStylePale}"
+                            Margin="{StaticResource FieldLegendMargin}" 
+                            Visibility="{TemplateBinding Tag, Converter={convx:ObjectToVisibilityConverter}}"/>
+                            
+                        <Border
+                            x:Name="PART_Border"
+                            Grid.Row="1"
+                            BorderThickness="1"
+                            BorderBrush="{StaticResource BlockBorderBrush}"
+                            CornerRadius="6"
+                            Background="{TemplateBinding Background}">
+
+                            <Grid x:Name="PART_ContentHost">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="{StaticResource ToggleButtonIconWidth}" />
+                                </Grid.ColumnDefinitions>
+
+                                <ucx:TagListControl 
+                                    Margin="1,3"
+                                    ItemsSource="{TemplateBinding CheckedItemsSource}"
+                                    ItemTemplate="{TemplateBinding CheckedEntriesItemTemplate}"/>
+
+                                <ToggleButton 
+                                    Name="PART_ToggleButton" 
+                                    Grid.Column="1"
+                                    Margin="1,0,0,0"
+                                    HorizontalAlignment="Right"
+                                    ClickMode="Press" 
+                                    Focusable="False"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                    Style="{StaticResource ComboBoxToggleButtonStyle}"/>
+
+                                <!-- Popup showing items -->
+                                <Popup 
+                                    x:Name="PART_DropDown" 
+                                    Placement="Bottom"
+                                    Focusable="False" 
+                                    VerticalOffset="2"
+                                    HorizontalOffset="-2"
+                                    AllowsTransparency="True"
+                                    IsOpen="{TemplateBinding IsDropDownOpen}"
+                                    PopupAnimation="Slide">
+
+                                    <Border 
+                                        Name="PART_DropDownBorder" 
+                                        MinWidth="{TemplateBinding ActualWidth}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}" 
+                                        Background="{StaticResource PopupBackgroundBrush}" 
+                                        CornerRadius="5" 
+                                        BorderThickness="0,0,0,1" 
+                                        BorderBrush="Black">
+
+                                        <ScrollViewer Margin="0,4" SnapsToDevicePixels="True" >
+                                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="BorderThickness" TargetName="PART_Border" Value="2"/>
+                            <Setter Property="Margin" TargetName="PART_Border" Value="-1"/>
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter Property="BorderBrush" TargetName="PART_Border" Value="{StaticResource ForegroundSelectedBrush}"/>
+                        </Trigger>
+                        <Trigger Property="ItemsControl.HasItems" Value="False">
+                            <Setter Property="FrameworkElement.MinHeight" TargetName="PART_DropDownBorder" Value="95"/>
+                        </Trigger>
+                        <Trigger Property="UIElement.IsEnabled" Value="False">
+                            <Setter Property="TextElement.Foreground" Value="{StaticResource FieldDisabledForegroundBrush}"/>
+                            <Setter Property="OpacityMask" Value="{StaticResource DisabledControlOpacityMaskBrush}"/>
+                        </Trigger>
+                        <Trigger Property="ItemsControl.IsGrouping" Value="True">
+                            <Setter Property="ScrollViewer.CanContentScroll" Value="False"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter Property="BorderBrush" TargetName="PART_Border" Value="{StaticResource ForegroundSelectedBrush}"/>
+                            <Setter Property="BorderThickness" TargetName="PART_Border" Value="2"/>
+                            <Setter Property="Margin" TargetName="PART_Border" Value="-1"/>
+                        </Trigger>
+
+                        <Trigger Property="Validation.HasError" Value="true">
+                            <Setter Property="BorderBrush" TargetName="PART_Border" Value="{StaticResource ForegroundSelectedBrush}"/>
+                            <Setter Property="BorderThickness" TargetName="PART_Border" Value="2"/>
+                            <Setter Property="Margin" TargetName="PART_Border" Value="-1"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Setter Property="ItemContainerStyle">
+            <Setter.Value>
+                <Style TargetType="{x:Type ComboBoxItem}">
+                    <Setter Property="BorderThickness" Value="0"/>
+
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                                <Border 
+                                    BorderThickness="{TemplateBinding Border.BorderThickness}"
+                                    Padding="{TemplateBinding Control.Padding}"
+                                    BorderBrush="{TemplateBinding Border.BorderBrush}"
+                                    Background="{TemplateBinding Panel.Background}">
+                                   
+                                    <ContentPresenter
+                                        Margin="6,3,6,3"
+                                        HorizontalAlignment="{TemplateBinding Control.HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding Control.VerticalContentAlignment}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource ForegroundSelectedBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#434343" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource FieldDisabledForegroundBrush}" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Setter.Value>
+        </Setter>
+
+        <Setter Property="ItemTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <CheckBox 
+                        IsChecked="{Binding IsChecked}" 
+                        Content="{Binding DisplayName}" 
+                        Style="{StaticResource CheckBoxDefaultStyle}"/>
+                </DataTemplate>            
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="{x:Type ComboBox}" TargetType="{x:Type ComboBox}" BasedOn="{StaticResource ComboBoxDefaultStyle}"/>
+</ResourceDictionary>

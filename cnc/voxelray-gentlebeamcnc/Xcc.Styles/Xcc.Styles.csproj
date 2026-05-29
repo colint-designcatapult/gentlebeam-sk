@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.39" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Xcc.Controls\Xcc.Controls.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Fonts\lcd.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Fonts\Password.ttf" />
+    <Resource Include="Resources\Fonts\WorkSans-Black.otf" />
+    <Resource Include="Resources\Fonts\WorkSans-Bold.otf" />
+    <Resource Include="Resources\Fonts\WorkSans-ExtraBold.otf" />
+    <Resource Include="Resources\Fonts\WorkSans-ExtraLight.otf" />
+    <Resource Include="Resources\Fonts\WorkSans-Hairline.otf" />
+    <Resource Include="Resources\Fonts\WorkSans-Light.otf" />
+    <Resource Include="Resources\Fonts\WorkSans-Medium.otf" />
+    <Resource Include="Resources\Fonts\WorkSans-Regular.otf" />
+    <Resource Include="Resources\Fonts\WorkSans-SemiBold.otf" />
+    <Resource Include="Resources\Fonts\WorkSans-Thin.otf" />
+  </ItemGroup>
+
+</Project>

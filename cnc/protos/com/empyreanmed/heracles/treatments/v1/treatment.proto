@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.treatments.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a treatment administered to a patient during a visit.
+message Treatment {
+  // Treatment id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Plan id associated with the treatment
+  optional int64 plan_id = 2;
+
+  // Visit id associated with the treatment
+  optional int64 visit_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // User who performed the treatment
+  optional string performed_by = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Treatment creation date
+  optional google.protobuf.Timestamp creation_date = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Number of fractions
+  optional int32 fraction = 6;
+
+  // Depth of the lesion in millimeters
+  optional double lesion_depth = 7;
+
+  // Daily dose in centi-gray
+  optional double daily_dose = 8;
+
+  // Cumulative dose in centi-gray
+  optional double cumulative_dose = 9;
+}

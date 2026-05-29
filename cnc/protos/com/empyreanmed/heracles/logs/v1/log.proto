@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.logs.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Log represents a log in the system.
+message Log {
+  // Primary key. Auto incremental
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Timestamp
+  optional google.protobuf.Timestamp timestamp = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Status Enum
+  optional com.empyreanmed.heracles.enums.v1.SEVERITY severity = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Type Enum
+  optional com.empyreanmed.heracles.enums.v1.LOGTYPE type = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // The Log Message
+  optional string message = 5 [(google.api.field_behavior) = REQUIRED];
+}

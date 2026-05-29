@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.positions.v1;
+
+import "com/empyreanmed/heracles/positions/v1/position.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// PositionService provides CRUD operations for managing patient positions.
+service PositionService {
+  // Retrieves a single position by simulation ID.
+  rpc ListPositions(ListPositionsRequest) returns (ListPositionsResponse);
+
+  // Retrieves a single position by its ID.
+  rpc GetPosition(GetPositionRequest) returns (GetPositionResponse);
+
+  // Creates a new position.
+  rpc CreatePosition(CreatePositionRequest) returns (CreatePositionResponse);
+
+  // Updates an existing position.
+  rpc UpdatePosition(UpdatePositionRequest) returns (UpdatePositionResponse);
+
+  // Deletes a position by its ID.
+  rpc DeletePosition(DeletePositionRequest) returns (DeletePositionResponse);
+}
+
+// list all positions by simulation ID
+message ListPositionsRequest {
+  // The ID of the simulation for positions list.
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched Positions.
+message ListPositionsResponse {
+  // The fetched positions list.
+  repeated Position positions = 1;
+}
+
+// Request message for fetching a single position.
+message GetPositionRequest {
+  // The ID of the position to fetch.
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched position.
+message GetPositionResponse {
+  // The fetched position.
+  Position position = 1;
+}
+
+// Request message for creating a new position.
+message CreatePositionRequest {
+  // The details of the position to create.
+  Position position = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created position.
+message CreatePositionResponse {
+  // The newly created position.
+  Position position = 1;
+}
+
+// Request message for updating an existing position.
+message UpdatePositionRequest {
+  // The position to update.
+  Position position = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A field mask specifying which fields to update.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated position.
+message UpdatePositionResponse {
+  // The updated position.
+  Position position = 1;
+}
+
+// Request message for deleting a position.
+message DeletePositionRequest {
+  // The ID of the position to delete.
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Empty response message for delete operations.
+message DeletePositionResponse {}

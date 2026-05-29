@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.robot_stored_positions.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// RobotStoredPosition represents a stored position of a robot.
+message RobotStoredPosition {
+  // Unique identifier for the robot stored position.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The creation date of the robot stored position.
+  optional google.protobuf.Timestamp create_date = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Name of the stored position.
+  optional string position_name = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Joint 1 position value.
+  optional float j1 = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Joint 2 position value.
+  optional float j2 = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Joint 3 position value.
+  optional float j3 = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Joint 4 position value.
+  optional float j4 = 7 [(google.api.field_behavior) = REQUIRED];
+
+  // Joint 5 position value.
+  optional float j5 = 8 [(google.api.field_behavior) = REQUIRED];
+
+  // Joint 6 position value.
+  optional float j6 = 9 [(google.api.field_behavior) = REQUIRED];
+}

@@ -1,0 +1,285 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.Settings.TargetManagementView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels.Settings"
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+                
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+             
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:enums ="clr-namespace:Heracles.Core.Enums;assembly=Heracles.Core"
+    xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+
+    mc:Ignorable="d" 
+    d:DesignWidth="1280" d:DesignHeight="800"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:TargetManagementViewModel}}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Heracles.Application;Component/UI/Resources/ListViewTemplates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <ObjectDataProvider x:Key="EnergyDataSource" ObjectType="{x:Type system:Enum}" MethodName="GetValues">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="enums:Energy"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Grid d:ShowGridLines="True" Margin="{StaticResource ViewMargin}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!--Targets list-->
+        <Border 
+            Style="{StaticResource BorderBlockStyle}">
+
+            <ListView 
+                ItemsSource="{Binding CollimatorModel.Collimators}"
+                SelectedItem="{Binding SelectedCollimator}"
+                Style="{StaticResource TableListView}"
+                Tag="{StaticResource TargetsManagementListHeaderTemplate}"
+                ItemTemplate="{StaticResource TargetsManagementListItemTemplate}"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                IsHitTestVisible="{Binding CollimatorToEdit, Converter={convx:ObjectIsNullConverter}}"/>
+        </Border>
+
+        <!--Edit target view-->
+        <DockPanel
+            Grid.Column="1" 
+            Width="360"
+            Visibility="{Binding CollimatorToEdit, Converter={convx:ObjectToVisibilityConverter}, FallbackValue=Visible}"
+            Margin="30,0,0,0">
+
+            <Border 
+                Style="{StaticResource BorderToolbarStyle}">
+
+                <Button 
+                    HorizontalAlignment="Right"
+                    Grid.Column="3"
+                    Style="{StaticResource ButtonToolbarAccentStyle}" 
+                    Command="{Binding SaveCollimatorCommand}">
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Path Data="{StaticResource SaveToDiskIcon}" Style="{StaticResource PathButtonAccentStyle}"/>
+                        <TextBlock Grid.Column="2" Text="Save" VerticalAlignment="Center"/>
+                    </Grid>
+                </Button>
+            </Border>
+
+            <Border 
+                Style="{StaticResource BorderBlockStyle}"
+                CornerRadius="8,8,0,0">
+
+                <Grid Margin="10" >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*" />
+                    </Grid.RowDefinitions>
+
+                    <ScrollViewer 
+                    Grid.Row="0" 
+                    Margin="10,30,10,10" 
+                    VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden" 
+                    PanningMode="VerticalOnly">
+
+                        <DockPanel Margin="1">
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+                                    <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Serial"/>
+                                    <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                </TextBlock>
+                                <controls:XccTextBox 
+                                    x:Name="SerialTextBox" 
+                                    Grid.Row="1" Grid.Column="0"  
+                                    IsReadOnly="True"
+                                    
+                                    Text="{Binding CollimatorToEdit.Serial}"/>
+                            </Grid>
+
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,10" >
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+                                    <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Type"/>
+                                    <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                </TextBlock>
+                                <ComboBox 
+                                Grid.Row="1" Grid.Column="2" 
+                                IsReadOnly="True"
+                                IsEditable="False"                                         
+                                ItemsSource="{Binding AvailableTargetTypeValues}"
+                                SelectedItem="{Binding CollimatorToEdit.CollimatorType}"
+                                Foreground="{StaticResource FieldForegroundColor}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,10"
+                                  Visibility="{Binding CollimatorToEdit.CollimatorType, Converter={convx:ObjectToInvisibilityConverter}, ConverterParameter={x:Static enums:TargetType.TargetType_QC_Collimator}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+                                    <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="SSD"/>
+                                    <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                </TextBlock>
+                                <controls:XccTextBox
+                                    IsReadOnly="True"
+                                    Text="{Binding CollimatorToEdit.SsdType, Converter={convx:EnumValueToDisplayNameConverter}}"
+                                    x:Name="DoseRateTextBox" 
+                                    Grid.Row="1" Grid.Column="2"/>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Energy"/>
+                                    <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                </TextBlock>
+                                <ComboBox 
+                                    Grid.Row="1" Grid.Column="0" 
+                                    IsReadOnly="True"
+                                    IsEditable="False"
+                                    IsEnabled="{Binding CollimatorToEdit.CollimatorType, Converter={convx:ObjectIsNotEqualConverter}, ConverterParameter={x:Static enums:TargetType.TargetType_QC_Collimator}}"
+                                    ItemsSource="{Binding Source={StaticResource EnergyDataSource}}" 
+                                    SelectedItem="{Binding CollimatorToEdit.Energy}"
+                                    Foreground="{StaticResource FieldForegroundColor}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+                                    <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                                </Grid.RowDefinitions>
+
+                                <CheckBox 
+                                
+                                IsChecked="{Binding CollimatorToEdit.IsActive}"
+                                Foreground="{StaticResource BaseForegroundColor}"
+                                Content="Active"/>
+                            </Grid>
+                        </DockPanel>
+                    </ScrollViewer>
+
+                    <Button 
+                        Grid.Row="0" 
+                        VerticalAlignment="Top" 
+                        HorizontalAlignment="Right"
+                        Command="{Binding CancelEditCommand}"
+                        Style="{StaticResource ButtonCloseStyle}"/>
+                </Grid>
+            </Border>
+        </DockPanel>
+
+        <!--Buttons-->
+        <Border 
+            Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+            Style="{StaticResource BorderBlockStyle}">
+
+            <Grid Margin="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource ButtonMarginGridLength}" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Button 
+                    Grid.Column="0"
+                    Height="{StaticResource ButtonHeight}"
+                    Command="{Binding NewApplicatorCommand}">
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Path 
+                            Data="{StaticResource RoboticArmIcon}" 
+                            Style="{StaticResource ButtonPathStyle}"
+                            Height="36" Width="24" 
+                            Margin="0,0,5,0"/>
+
+                        <TextBlock Grid.Column="2" Text="New Applicator"  Style="{StaticResource TextBlockButtonStyle}"/>
+                    </Grid>
+                </Button>
+
+                <Button 
+                    Grid.Column="2"
+                    Height="{StaticResource ButtonHeight}"
+                    Command="{Binding EditApplicatorCommand}">
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Path 
+                            Data="{StaticResource RoboticArmIcon}" 
+                            Style="{StaticResource ButtonPathStyle}"
+                            Height="36" Width="24" 
+                            Margin="0,0,5,0"/>
+
+                        <TextBlock Grid.Column="2" Text="Edit Applicator"  Style="{StaticResource TextBlockButtonStyle}"/>
+                    </Grid>
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentControl>

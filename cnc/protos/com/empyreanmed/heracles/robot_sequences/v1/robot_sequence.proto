@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.robot_sequences.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// RobotSequence represents a robot sequence entity in the system.
+message RobotSequence {
+  // Unique identifier for the robot sequence.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The creation date of the robot sequence.
+  optional google.protobuf.Timestamp creation_date = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Name of the sequence.
+  optional string sequences_name = 3 [(google.api.field_behavior) = REQUIRED];
+}

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Platforms>x64</Platforms>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
+    <VersionPrefix>1.1.0</VersionPrefix><!--Used as version of nuget package-->
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Command &amp; Control desktop apps base library.</Title>
+    <PackageProjectUrl>https://bitbucket.org/empyrean-medical-devices/xcc/src/master/</PackageProjectUrl>
+  </PropertyGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="echo dotnet nuget push $(AssemblyName).$(VersionPrefix).nupkg --source OrimtechAzureComponents -k az &gt; $(TargetDir)..\PushNugetPackage.bat" />
+  </Target>
+  <ItemGroup>
+    <Compile Remove="Models\RDBMS\Common\**" />
+    <EmbeddedResource Remove="Models\RDBMS\Common\**" />
+    <None Remove="Models\RDBMS\Common\**" />
+    <Page Remove="Models\RDBMS\Common\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Prism.Core" Version="8.1.97" />
+  </ItemGroup>
+</Project>

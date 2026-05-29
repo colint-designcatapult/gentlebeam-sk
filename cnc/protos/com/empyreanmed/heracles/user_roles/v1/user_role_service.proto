@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.user_roles.v1;
+
+import "com/empyreanmed/heracles/user_roles/v1/user_role.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// UserRoleService manages the link between users and roles (many-to-many pivot).
+service UserRoleService {
+  // Lists user-role links.
+  rpc ListUserRoles(ListUserRolesRequest) returns (ListUserRolesResponse);
+
+  // Retrieves a single user-role link by user_id and role_id.
+  rpc GetUserRole(GetUserRoleRequest) returns (GetUserRoleResponse);
+
+  // Creates a new user-role link.
+  rpc CreateUserRole(CreateUserRoleRequest) returns (CreateUserRoleResponse);
+
+  // Updates an existing user-role link.
+  rpc UpdateUserRole(UpdateUserRoleRequest) returns (UpdateUserRoleResponse);
+
+  // Deletes a user-role link.
+  rpc DeleteUserRole(DeleteUserRoleRequest) returns (DeleteUserRoleResponse);
+}
+
+// Request message for listing user-role links.
+message ListUserRolesRequest {
+  // Filter results by parent's ID.
+  optional string user_id = 1;
+}
+
+// Response containing multiple user-role links.
+message ListUserRolesResponse {
+  // The list of user-role pivot records.
+  repeated UserRole user_roles = 1;
+}
+
+// Request message for retrieving a single user-role link.
+message GetUserRoleRequest {
+  // The user ID part of the composite key.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response containing one user-role link.
+message GetUserRoleResponse {
+  // The user-role pivot record matching the requested composite key.
+  UserRole user_role = 1;
+}
+
+// Request message for creating a new user-role link.
+message CreateUserRoleRequest {
+  // The user-role record to create.
+  optional UserRole user_role = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response with the newly created user-role link.
+message CreateUserRoleResponse {
+  // The user-role pivot record that was just created.
+  UserRole user_role = 1;
+}
+
+// Request message for updating an existing user-role link.
+message UpdateUserRoleRequest {
+  // The user-role pivot record with updated fields.
+  optional UserRole user_role = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Field mask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response containing the updated user-role link record.
+message UpdateUserRoleResponse {
+  // The user-role pivot record after updates.
+  UserRole user_role = 1;
+}
+
+// Request message for deleting a user-role link.
+message DeleteUserRoleRequest {
+  // The user ID part of the composite key.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The role ID part of the composite key.
+  optional int64 role_id = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response confirming successful deletion (empty).
+message DeleteUserRoleResponse {}

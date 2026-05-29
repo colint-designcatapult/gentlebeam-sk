@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.actual_treatment_fields.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents an actual treatment field used in a treatment.
+message ActualTreatmentField {
+  // Actual treatment field id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Treatment id associated with the actual treatment field
+  optional int64 treatment_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Actual treatment field creation date
+  optional google.protobuf.Timestamp creation_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Name of the actual treatment field
+  optional com.empyreanmed.heracles.enums.v1.FIELDNAME field_name = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Actual energy of the actual treatment field
+  optional double actual_energy = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Actual dwell time of the actual treatment field
+  optional double actual_dwell_time = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Actual dose delivered by the actual treatment field
+  optional double actual_dose = 7 [(google.api.field_behavior) = REQUIRED];
+
+  // Actual current of the actual treatment field
+  optional double actual_current = 8 [(google.api.field_behavior) = REQUIRED];
+
+  // Completed dose
+  optional int32 completed = 9 [(google.api.field_behavior) = REQUIRED];
+
+  // Resume partial treatment
+  optional int32 resume_partial = 10;
+}
