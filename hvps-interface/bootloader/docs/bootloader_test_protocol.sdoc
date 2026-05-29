@@ -1,0 +1,223 @@
+[DOCUMENT]
+TITLE: Heracles HVPS Interface Bootloader FW Verification Testing Protocol
+UID: DHF-HRC-0110
+METADATA:
+  COMPONENT: hvps-interface/bootloader
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+This document provides the full test protocol (a full collection of test cases) for the HVPS Interface
+Bootloader Firmware for the Heracles 1.0 system.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This report contains a detailed test description to conduct verification testing of Heracles 1.0 HVPS
+Interface Bootloader Firmware that covers Heracles HVPS Interface Bootloader FW SRS.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+HVPS
+  High Voltage Power Supply
+
+SDP
+  Software Development Plan
+
+SVP
+  Software Verification Plan
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+DHF-HRC-0001, Rev. 2: Heracles SDP
+
+DHF-HRC-0003, Rev. 2: Heracles SVP
+
+[LINK: DHF-HRC-0021]
+
+DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Prerequisites
+
+[TEXT]
+STATEMENT: >>>
+**Pre-Execution Approval**
+
+A Pre-Execution meeting shall take place, and approved by the project manager and QA/RA.
+
+**Objective(s)**
+
+Verify that:
+
+* All software, firmware, hardware, and test equipment version configurations are identified and listed in the test report prior to execution.
+* Test personnel is assigned and available.
+
+**Assumptions & Constraints**
+
+None
+
+**Acceptance Criteria**
+
+All objectives met; test execution can start.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: TC-H1FWHVPSIB-
+TITLE: Test Protocol
+
+[TEST_CASE]
+UID: TC-H1FWHVPSIB-5
+TITLE: Functional 1 - Test Case
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall jump to execution of the HVPS interface application
+if and only if the existing application code at startup is valid. The application code is valid if the
+programmed CRC value matches the application firmware loaded in flash memory.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* Flash memory is present which contains firmware application.
+<<<
+STEPS: >>>
+1. Start the system from power.
+2. Do not load any treatment plan.
+3. Utilize the bootloader utility to load a new set of application firmware from the flash memory, but partway through, terminate the PC utility.
+4. Power cycle the system.
+5. Load a treatment plan.
+6. Run the loaded treatment.
+7. While keeping power on, load the application firmware once more through to completion from the flash memory.
+8. Power cycle the system.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system starts up successfully.
+2. Verify system does not have any treatment plan loaded on it.
+3. Verify the system is off.
+4. Verify system starts up successfully.
+5. Verify the plan is loaded successfully.
+6. Verify the treatment plan cannot be executed.
+7. Verify the application is loaded successfully.
+8. Verify the system powered up successfully and the loaded treatment can now be performed.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-1
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPSIB-6
+TITLE: Functional 2 - Test Case
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall be able to write a specified flash memory page with
+provided data from the PC.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* Flash memory is present which contains firmware application.
+<<<
+STEPS: >>>
+1. Start the system from power.
+2. Do not load any treatment plan.
+3. Utilize the bootloader utility to load a new set of application firmware.
+4. Record the utility log to ensure application writes data to flash memory.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system starts up successfully.
+2. Verify system does not have any treatment plan loaded on it.
+3. Verify the system is off.
+4. Verify system starts up successfully.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-2
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPSIB-7
+TITLE: Functional 3 - Test Case
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall be able to erase a predetermined area of flash
+memory, corresponding to the application firmware programming area.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* Flash memory is present which contains firmware application.
+<<<
+STEPS: >>>
+1. Start the system from power.
+2. Do not load any treatment plan.
+3. Utilize the bootloader utility to load a new set of application firmware from the flash memory.
+4. Record the utility log to ensure application erases MCU memory.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system starts up successfully.
+2. Verify system does not have any treatment plan loaded on it.
+3. Verify the new firmware application is loaded successfully.
+4. Verify application erases MCU memory.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-3
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPSIB-8
+TITLE: PC Communication - Test Case
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall be able to respond to a ping command from the PC,
+indicating that the system is in bootloader mode.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* Flash memory is present which contains firmware application.
+<<<
+STEPS: >>>
+1. Start the system from power.
+2. Do not load any treatment plan.
+3. Utilize the bootloader utility to load a new set of application firmware from the flash memory.
+4. Record the utility log to ensure application enters bootloader mode.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system starts up successfully.
+2. Verify system does not have any treatment plan loaded on it.
+3. Verify the new firmware application is loaded successfully.
+4. Verify application enters bootloader mode.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-4
+  ROLE: Verifies
+
+[[/SECTION]]
