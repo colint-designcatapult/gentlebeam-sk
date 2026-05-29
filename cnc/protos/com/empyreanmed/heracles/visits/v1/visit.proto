@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.visits.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a visit of a patient.
+message Visit {
+  // Visit id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Visit creation date
+  optional google.protobuf.Timestamp creation_date = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Patient id associated with the visit
+  optional int64 patient_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Type of the visit
+  optional com.empyreanmed.heracles.enums.v1.VISITTYPE type = 4;
+}

@@ -1,0 +1,11 @@
+!ifndef SETUP_SECTIONS_SHORTCUTS_SEC_DESKTOP_SHORTCUTS_NSH
+!define SETUP_SECTIONS_SHORTCUTS_SEC_DESKTOP_SHORTCUTS_NSH
+
+LangString DESC_SEC_DESKTOP_SHORTCUTS   ${LANG_ENGLISH} "Create shortcuts on Desktop"
+
+!macro AddSection_SEC_DESKTOP_SHORTCUTS
+    Section /o "Desktop shortcuts" SEC_DESKTOP_SHORTCUTS
+    SectionEnd
+!macroend
+
+!endif

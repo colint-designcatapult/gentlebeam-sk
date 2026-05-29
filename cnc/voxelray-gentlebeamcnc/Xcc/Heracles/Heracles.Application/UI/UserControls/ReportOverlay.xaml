@@ -1,0 +1,146 @@
+﻿<UserControl 
+    x:Class="Heracles.Application.UI.UserControls.ReportOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+    xmlns:local="clr-namespace:Heracles.Application.UI.UserControls"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:enums="clr-namespace:Xcc.Core.Enums;assembly=Xcc.Core"
+    
+    mc:Ignorable="d" 
+    d:DesignHeight="450" d:DesignWidth="1000"
+    x:Name="RootElement"
+    
+    Visibility="{Binding Report, 
+    RelativeSource={RelativeSource Self}, 
+    Converter={convx:ObjectToVisibilityConverter}, 
+    FallbackValue=Visible}"
+    UseLayoutRounding="True">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml"/>
+
+                <ResourceDictionary>
+                    <system:String x:Key="Header">Failed to do something..</system:String>
+                    <system:String x:Key="Message">..or not. There may also be a message with useful information here. Or the progress of a task (then the "Close" button will be hidden)</system:String>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border CornerRadius="{Binding CornerRadius, ElementName=RootElement}" Background="{StaticResource DisabledControlBrush}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="660"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border 
+                x:Name="ErrorOverlay"
+                Grid.Column="1" Grid.Row="1"
+                Background="{StaticResource BlockBackgroundColor}"
+                BorderBrush="{StaticResource AppBorderActiveColor}"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                <Grid Margin="16,16,24,16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid>
+                            <Label 
+                                HorizontalAlignment="Center"
+                                Content="{StaticResource ExclamationIcon}"
+                            
+                                Visibility="{Binding
+                                Report.Type,
+                                ElementName=RootElement, 
+                                Converter={convx:ObjectToVisibilityConverter},
+                                ConverterParameter={x:Static enums:ReportType.Error}}">
+                            </Label>
+
+                            <Label 
+                                HorizontalAlignment="Center"
+                            
+                                Visibility="{Binding
+                                Report.Type,
+                                ElementName=RootElement, 
+                                Converter={convx:ObjectToInvisibilityConverter},
+                                ConverterParameter={x:Static enums:ReportType.Error}}">
+                                <Path HorizontalAlignment="Center"
+                                        Data="{StaticResource SucceededIcon}" 
+                                        Stroke="{StaticResource ButtonStrokeColor}" 
+                                        StrokeThickness="2.5" 
+                                        Width="50" Height="50" Stretch="Fill" />
+
+                            </Label>
+                        </Grid>
+
+                        <ContentControl 
+                            Grid.Column="2" 
+                            FontSize="{StaticResource HugeFontSize}"
+                            Style="{StaticResource ContentTextWithShadowStyle}" 
+                            Content="{Binding Report.Header, ElementName=RootElement, FallbackValue={StaticResource Header}}"/>
+                    </Grid>
+
+                    <ContentControl 
+                        Grid.Row="1"
+                        Margin="0,20"
+                        FontSize="{StaticResource BaseFontSize}"
+                        Style="{StaticResource ContentTextWithShadowStyle}" 
+                        Visibility="{Binding Report.Type, ElementName=RootElement, Converter={convx:ObjectToInvisibilityConverter}, ConverterParameter={x:Static enums:ReportType.Progress}}"
+                        Content="{Binding Report.Message,  ElementName=RootElement, FallbackValue={StaticResource Message}}"/>
+
+                    <ProgressBar 
+                        Margin="0,20,0,40"
+                        Grid.Row="2" 
+                        Value="{Binding Report.Progress, ElementName=RootElement, Mode=OneWay}"
+                        
+                        Visibility="{Binding
+                        Report.Type,
+                        ElementName=RootElement, 
+                        Converter={convx:ObjectToVisibilityConverter},
+                        ConverterParameter={x:Static enums:ReportType.Progress}}"/>
+
+                    <Button 
+                        Grid.Row="3" 
+                        Width="100" Height="40"
+                        FontSize="16"
+                        Content="Close" 
+                        Click="CloseButton_Click"
+                        IsCancel="True"
+                        
+                        Visibility="{Binding
+                        Report.Type,
+                        ElementName=RootElement, 
+                        Converter={convx:ObjectToInvisibilityConverter},
+                        ConverterParameter={x:Static enums:ReportType.Progress}}"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

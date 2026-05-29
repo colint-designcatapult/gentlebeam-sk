@@ -1,0 +1,193 @@
+﻿<ContentControl 
+    x:Class="Xcc.Application.Views.UserRolesView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+             
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters"
+
+    UseLayoutRounding="True"
+
+    mc:Ignorable="d" 
+    d:DesignWidth="1920" d:DesignHeight="1080"
+    xmlns:viewModels="clr-namespace:Xcc.Application.ViewModels"
+    xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:UserRolesViewModel}}">
+    
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/UserPermissionListTemplates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+
+    <Grid>
+        <Grid Margin="{StaticResource ViewMargin}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="{StaticResource BlockMarginGridLength}" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+        
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!--Imaging Protocols list-->
+            <ListView 
+                Grid.Column="0" 
+                ItemsSource="{Binding UserRoles}"
+                SelectedItem="{Binding SelectedUserRole}"
+                Style="{StaticResource TableListView}"
+                ItemTemplate="{StaticResource UserPermissionItemTemplate}"
+                Tag="{StaticResource UserPermissionHeaderTemplate}"/>
+
+
+            <!--New\Edit User role form-->
+            <Border 
+                Width="300"
+                Grid.Row="0" Grid.Column="1" 
+                Style="{StaticResource BorderBlockStyle}" 
+                Visibility="{Binding UserRoleToEdit, Converter={convx:ObjectToVisibilityConverter}}"               
+                Margin="{StaticResource BlockMarginLeft}">
+
+                
+
+                <DockPanel Margin="{StaticResource BlockContentMargin}">
+                    <!--Close (cancel) button-->
+                    <Button 
+                        DockPanel.Dock="Top" 
+                        HorizontalAlignment="Right"
+                        Command="{Binding CancelEditCommand}"
+                        Style="{StaticResource ButtonCloseStyle}"/>
+                    
+                    <!--Save button-->
+                    <Button 
+                        DockPanel.Dock="Bottom" 
+                        HorizontalAlignment="Right"
+                        Height="{StaticResource ButtonHeight}" Width="{StaticResource ButtonWidth}" 
+                        Command="{Binding SaveCommand}">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+
+                            <Image Source="{StaticResource SaveIcon}" Style="{StaticResource ButtonImageStyle}"/>
+                            <TextBlock Text="Save" Grid.Column="2" Style="{StaticResource ButtonTextBlockStyle}"/>
+                        </Grid>
+                    </Button>
+
+                    <Grid Margin="{StaticResource BlockContentMarginBottom}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="{StaticResource TaggedFieldGridLength}" />
+                            <RowDefinition Height="{StaticResource BlockMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <controls:XccTextBox 
+                            Grid.Row="0" 
+                            
+                            Text="{Binding UserRoleNameToEdit,
+                            UpdateSourceTrigger=PropertyChanged,
+                            ValidatesOnNotifyDataErrors=True,
+                            NotifyOnValidationError=True}"
+                            Tag="Role:"/>
+                        
+                        <TextBlock Grid.Row="2"  Style="{StaticResource TextBlockLegendStyle}" Text="Permissions:"/>
+                        <CheckBox Grid.Row="4" Content="Patient's Clinical Data" IsChecked="{Binding UserRoleToEdit.Permissions.ClinicalData}"/>
+                        <CheckBox Grid.Row="6" Content="Patient's Treatment" IsChecked="{Binding UserRoleToEdit.Permissions.Treatment}"/>
+                        <CheckBox Grid.Row="8" Content="System Physics" IsChecked="{Binding UserRoleToEdit.Permissions.SystemCalibration}"/>
+                        <CheckBox Grid.Row="10" Content="Quality Assurance" IsChecked="{Binding UserRoleToEdit.Permissions.QualityAssurance}"/>
+                        <CheckBox Grid.Row="12" Content="System Settings" IsChecked="{Binding UserRoleToEdit.Permissions.SystemSettings}"/>
+                        <CheckBox Grid.Row="14" Content="User Management" IsChecked="{Binding UserRoleToEdit.Permissions.UserManagement}"/>
+                        <CheckBox Grid.Row="16" Content="Services" IsChecked="{Binding UserRoleToEdit.Permissions.Services}"/>
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+            <!--'New' and 'Delete' buttons-->
+            <Border 
+                Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" 
+                Style="{StaticResource BorderBlockStyle}">
+                
+                <DockPanel LastChildFill="False" Margin="12">
+                    <Button 
+                        DockPanel.Dock="Left"
+                        Height="{StaticResource ButtonHeight}"
+                        Command="{Binding NewCommand}">
+                    
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path Data="{StaticResource AddIcon}" Style="{StaticResource ButtonPathStyleThickness2}"/>
+                            <TextBlock Grid.Column="2" Text="New Role" VerticalAlignment="Center" Style="{StaticResource ButtonTextBlockStyle}"/>
+                        </Grid>
+                    </Button>
+
+                    <Button 
+                        Margin="20,0,0,0"
+                        DockPanel.Dock="Left"
+                        Height="{StaticResource ButtonHeight}" Width="{StaticResource ButtonWidth}" 
+                        Command="{Binding DeleteCommand}">
+
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path Data="{StaticResource DeleteIcon}" Style="{StaticResource ButtonPathStyleThickness2}"/>
+                            <TextBlock Grid.Column="2" Text="Delete" VerticalAlignment="Center" Style="{StaticResource ButtonTextBlockStyle}"/>
+                        </Grid>
+                    </Button>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <ucx:TaskOverlay 
+            Visibility="{Binding UserRoleTask.IsSuccessfullyCompleted, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue=Collapsed}"
+            ObservedTask="{Binding UserRoleTask}"
+            RetryCommand="{Binding RetryUserRolesTaskCommand}"
+            CancelCommand="{Binding CancelUserRoleTaskCommand}"
+            Description="{Binding UserRoleTask.ErrorMessage}"
+            CornerRadius="7,7,7,7"/>
+    </Grid>
+</ContentControl>

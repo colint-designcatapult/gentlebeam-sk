@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.reference_fields.v1;
+
+import "com/empyreanmed/heracles/reference_fields/v1/reference_field.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on reference fields.
+service ReferenceFieldService {
+  // Lists reference fields matching request parameters.
+  rpc ListReferenceFields(ListReferenceFieldsRequest) returns (ListReferenceFieldsResponse);
+
+  // Returns a single reference field.
+  rpc GetReferenceField(GetReferenceFieldRequest) returns (GetReferenceFieldResponse);
+
+  // Creates a new reference field.
+  rpc CreateReferenceField(CreateReferenceFieldRequest) returns (CreateReferenceFieldResponse);
+
+  // Updates a single reference field.
+  rpc UpdateReferenceField(UpdateReferenceFieldRequest) returns (UpdateReferenceFieldResponse);
+
+  // Deletes a single reference field.
+  rpc DeleteReferenceField(DeleteReferenceFieldRequest) returns (DeleteReferenceFieldResponse);
+}
+
+// Request message for listing reference fields.
+message ListReferenceFieldsRequest {
+  // The maximum number of reference fields to return.
+  optional int32 page_size = 1;
+
+  // A page token received from a previous `ListReferenceFields` call.
+  optional string page_token = 2;
+
+  // The preset configuration ID to filter reference fields by.
+  optional int64 preset_configuration_id = 3;
+}
+
+// Response message with the listed reference fields.
+message ListReferenceFieldsResponse {
+  // The reference fields matching the list request.
+  repeated ReferenceField reference_fields = 1;
+
+  // A token to retrieve the next page of results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single reference field.
+message GetReferenceFieldRequest {
+  // The ID of the reference field to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single reference field.
+message GetReferenceFieldResponse {
+  // The reference field with the provided ID.
+  ReferenceField reference_field = 1;
+}
+
+// Request message for creating a new reference field.
+message CreateReferenceFieldRequest {
+  // The reference field to be created.
+  optional ReferenceField reference_field = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created reference field.
+message CreateReferenceFieldResponse {
+  // The created reference field.
+  ReferenceField reference_field = 1;
+}
+
+// Request message for updating an existing reference field.
+message UpdateReferenceFieldRequest {
+  // The reference field to be updated.
+  optional ReferenceField reference_field = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated reference field.
+message UpdateReferenceFieldResponse {
+  // The updated reference field.
+  ReferenceField reference_field = 1;
+}
+
+// Request message for deleting a reference field.
+message DeleteReferenceFieldRequest {
+  // The ID of the reference field to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteReferenceField`.
+message DeleteReferenceFieldResponse {}

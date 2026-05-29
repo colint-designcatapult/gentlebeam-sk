@@ -1,0 +1,194 @@
+﻿<ContentControl x:Class="Heracles.Indoor.Views.MainTabsView"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+                xmlns:local ="clr-namespace:Heracles.Indoor.Views"
+                xmlns:quality ="clr-namespace:Heracles.Indoor.Views.QualityCheck"
+                xmlns:calibration ="clr-namespace:Heracles.Indoor.Views.Physics"
+                xmlns:settings ="clr-namespace:Heracles.Indoor.Views.Settings"
+                xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
+                xmlns:sharedViews="clr-namespace:Xcc.Shared.Views;assembly=Xcc.Shared"
+                xmlns:sharedHeraclesViews="clr-namespace:Heracles.Application.UI.Views;assembly=Heracles.Application"
+                
+                xmlns:prism="http://prismlibrary.com/"
+                prism:ViewModelLocator.AutoWireViewModel="True"
+             
+                xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+                xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+                xmlns:viewsx="clr-namespace:Xcc.Application.Views;assembly=Xcc.Application"
+
+                mc:Ignorable="d" 
+                d:DataContext="{d:DesignInstance {x:Type viewModels:MainTabsViewModel}}"
+                d:DesignWidth="1920" d:DesignHeight="1080"
+                IsTabStop="False">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonTransparentStyle.xaml"/>
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/TabControlMainIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/TabControlMainStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Grid Margin="{StaticResource MainTabsContainerMargin}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="180"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <viewsx:AuthorizedUserView 
+            Grid.ColumnSpan="2"
+            HorizontalAlignment="Right"
+            Margin="{StaticResource BlockContentSmallMarginBottom}"
+            IsTabStop="False"/>
+        
+        <sharedHeraclesViews:MonitorView 
+            Grid.Row="1" Grid.Column="1"
+            HorizontalAlignment="Right"
+            Margin="32,32,0,0"
+            IsTabStop="False"/>
+        
+        <ucx:XccTabControl 
+            Grid.Row="1" Grid.Column="0"
+            Style="{StaticResource TabControlMainStyle}"
+            SelectedItem="{Binding SelectedTab}"
+            TabChangePreventedCommand="{Binding TabChangePreventedCommand}"
+            SelectFirstVisibleItem="True">
+
+            <!--Patients Tab-->
+            <TabItem
+                Visibility="{Binding AuthorizedUserStore.AuthorizedUser.Role.Permissions.ClinicalData, Converter={convx:BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                <TabItem.Header>
+                    <StackPanel>
+                        <Path Data="{StaticResource EmrIcon}" Style="{StaticResource TabItemPathMainStyle}"/>
+                        <Label Content="Patients" Style="{StaticResource TabItemLabelMainStyle}" />
+                    </StackPanel>
+                </TabItem.Header>
+
+                <local:PatientsView VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+            </TabItem>
+
+            <!--Log Tab-->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel>
+                        <Path Data="{StaticResource LogIcon}" Style="{StaticResource TabItemPathMainStyle}"/>
+                        <Label Content="Log" Style="{StaticResource TabItemLabelMainStyle}" />
+                    </StackPanel>
+                </TabItem.Header>
+
+                <sharedViews:LogView/>
+            </TabItem>
+
+            <!--Physics Tab-->
+            <ucx:XccTabItem Tag="Physics" IsTabStop="False"
+                    Visibility="{Binding AuthorizedUserStore.AuthorizedUser.Role.Permissions.SystemCalibration, Converter={convx:BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                <ucx:XccTabItem.PreventTabChange>
+                    <MultiBinding Converter="{convx:BoolDisjunction}">
+                        <Binding Path="HeaterCurrentStore.IsModified"/>
+                        <Binding Path="MagnetometerCorrectionsStore.IsModified"/>
+                        <Binding Path="CoilConfigurationStore.IsModified"/>
+                        <Binding Path="OutputFactorConfigurationStore.IsModified"/>
+                    </MultiBinding>
+                </ucx:XccTabItem.PreventTabChange>
+                
+                <TabItem.Header>
+                    <StackPanel>
+                        <Path Data="{StaticResource PhysicsIcon}" Style="{StaticResource TabItemPathMainStyle}"/>
+                        <Label Content="{Binding Tag, RelativeSource={RelativeSource AncestorType=TabItem}}" Style="{StaticResource TabItemLabelMainStyle}" />
+                    </StackPanel>
+                </TabItem.Header>
+                <calibration:ConfigurationView VerticalAlignment="Stretch" HorizontalAlignment="Stretch" IsTabStop="False"/>
+            </ucx:XccTabItem>
+
+            <!--QA Tab-->
+            <TabItem
+                Visibility="{Binding AuthorizedUserStore.AuthorizedUser.Role.Permissions.QualityAssurance, Converter={convx:BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                
+                <TabItem.Header>
+                    <StackPanel>
+                        <Path Data="{StaticResource QualityAssuranceIcon}" Width="44" Height="44" Style="{StaticResource TabItemPathMainStyle}"/>
+                        <Label Content="Quality" Style="{StaticResource TabItemLabelMainStyle}" Padding="0,5,0,0" Margin="0"/>
+                        <Label Content="Assurance" Style="{StaticResource TabItemLabelMainStyle}" Padding="0" />
+                    </StackPanel>
+                </TabItem.Header>
+                
+                <quality:QualityCheckView IsTabStop="False"/>
+            </TabItem>
+
+            <!--Settings Tab-->
+            <TabItem
+                Visibility="{Binding AuthorizedUserStore.AuthorizedUser.Role.Permissions.SystemSettings, Converter={convx:BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+
+                <TabItem.Header>
+                    <StackPanel>
+                        <Path Data="{StaticResource SettingsIcon}" Style="{StaticResource TabItemPathMainStyle}"/>
+                        <Label Content="Settings" Style="{StaticResource TabItemLabelMainStyle}" />
+                    </StackPanel>
+                </TabItem.Header>
+                <settings:SettingsTabsView/>
+            </TabItem>
+            
+            <!--Service Tab-->
+            <TabItem Visibility="{Binding AuthorizedUserStore.AuthorizedUser.Role.Permissions.Services, Converter={convx:BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                <TabItem.Header>
+                    <StackPanel>
+                        <Path Data="{StaticResource ServiceIcon}" Style="{StaticResource TabItemPathMainStyle}"/>
+                        <Label Content="Service" Style="{StaticResource TabItemLabelMainStyle}" />
+                    </StackPanel>
+                </TabItem.Header>
+
+                <local:ServiceTabView/>
+            </TabItem>
+
+            <!--Exit Tab (button)-->
+            <TabItem>
+                <TabItem.Header>
+                    <Button 
+                        Style="{StaticResource ButtonTransparentStyle}"
+                        Command="{Binding ExitApplicationCommand}">
+                        
+                        <StackPanel>
+                            <Path Data="{StaticResource ExitIcon}" Style="{StaticResource TabItemPathMainStyle}"/>
+                            <Label Content="Exit" Style="{StaticResource TabItemLabelMainStyle}" />
+                        </StackPanel>
+                    </Button>
+                </TabItem.Header>
+            </TabItem>
+        </ucx:XccTabControl>
+
+        <!-- About button moved out of the TabControl and anchored to the bottom of the same cell -->
+        <Button 
+            Grid.Row="1" Grid.Column="0"
+            Style="{StaticResource ButtonTransparentStyle}"
+            Command="{Binding AboutCommand}"
+            VerticalAlignment="Bottom"
+            HorizontalAlignment="Left"
+            Margin="30,0,0,20"
+            IsTabStop="False"
+            UseLayoutRounding="True"
+            Panel.ZIndex="1">
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Image Style="{StaticResource ButtonImageStyle}" Source="{StaticResource AboutIcon}"/>
+
+                <Label Grid.Row="1" Content="About" Foreground="{StaticResource ViewTabHeaderUnselectedColor}" />
+            </Grid>
+        </Button>
+    </Grid>
+</ContentControl>

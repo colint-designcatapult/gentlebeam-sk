@@ -1,0 +1,90 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="clr-namespace:Xcc.Styles.Behaviors">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/BaseStyle.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+        
+    <Style x:Key="CheckBoxSliderStyle" TargetType="CheckBox">
+        <Setter Property="IsThreeState" Value="True"/>
+        <Setter Property="UseLayoutRounding" Value="True"/>
+        <Setter Property="Foreground" Value="{StaticResource ForegroundDefaultBrush}"/>
+        <Setter Property="IsChecked" Value="{x:Null}"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="b:BehaviorHelper.EnableThreeStateCheckBox" Value="True"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <BulletDecorator VerticalAlignment="Center">
+                        <BulletDecorator.Bullet>
+                            
+                            <!--Checkbox mark-->
+                            <Grid>
+                                <Border
+                                    x:Name="PART_Outline"
+                                    Width="{StaticResource ToggleButtonTrackOutlineWidth}" Height="{StaticResource ToggleButtonTrackOutlineHeight}"
+                                    CornerRadius="10"
+                                    Visibility="Hidden"
+                                    Background="{StaticResource ForegroundFocusedBrush}"/>
+
+                                <Border 
+                                    x:Name="PART_Track"
+                                    Width="{StaticResource ToggleButtonTrackWidth}"
+                                    Height="{StaticResource ToggleButtonTrackHeight}"
+                                    Background="{StaticResource ButtonBackgroundBrush}"
+                                    CornerRadius="8">
+                                </Border>
+
+                                <Ellipse 
+                                    x:Name="PART_Thumb" 
+                                    Width="{StaticResource ToggleButtonThumbWidth}" 
+                                    Height="{StaticResource ToggleButtonThumbHeight}" 
+                                    Fill="{StaticResource ButtonStrokeBrush}"
+                                    Stroke="{StaticResource BlockBackgroundBrush}" 
+                                    StrokeThickness="1"
+                                    Margin="-1,0"/>
+                            </Grid>
+                        </BulletDecorator.Bullet>
+                        
+                        <ContentPresenter 
+                            x:Name="PART_Content"
+                            Margin="{StaticResource BlockContentSmallMarginLeft}" 
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                            RecognizesAccessKey="True"/>
+                    </BulletDecorator>
+                        
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="PART_Thumb" Property="HorizontalAlignment" Value="Right"/>
+                            <Setter TargetName="PART_Track" Property="Background" Value="{StaticResource CheckedBackgroundColor}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="{x:Null}">
+                            <Setter TargetName="PART_Thumb" Property="HorizontalAlignment" Value="Center" />
+                            <Setter TargetName="PART_Track" Property="Background" Value="{StaticResource ButtonBackgroundBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="False">
+                            <Setter TargetName="PART_Thumb" Property="HorizontalAlignment" Value="Left"/>
+                            <Setter TargetName="PART_Track" Property="Background" Value="{StaticResource UncheckedBackgroundColor}" />
+                        </Trigger>
+                        <Trigger Property="Content" Value="{x:Null}">
+                            <Setter TargetName="PART_Content" Property="Margin" Value="0"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="PART_Outline" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Thumb" Property="Fill" Value="{StaticResource ButtonDisabledStrokeBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource ForegroundPaleBrush}"></Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>    
+</ResourceDictionary>

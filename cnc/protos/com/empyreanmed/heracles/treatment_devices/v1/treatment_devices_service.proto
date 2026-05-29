@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.treatment_devices.v1;
+
+import "com/empyreanmed/heracles/treatment_devices/v1/treatment_device.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on treatment devices.
+service TreatmentDevicesService {
+  // Lists treatment devices for a given clinic.
+  rpc ListTreatmentDevices(ListTreatmentDevicesRequest) returns (ListTreatmentDevicesResponse);
+
+  // Returns a single treatment device.
+  rpc GetTreatmentDevice(GetTreatmentDeviceRequest) returns (GetTreatmentDeviceResponse);
+
+  // Creates a new treatment device for a clinic.
+  rpc CreateTreatmentDevice(CreateTreatmentDeviceRequest) returns (CreateTreatmentDeviceResponse);
+
+  // Updates an existing treatment device.
+  rpc UpdateTreatmentDevice(UpdateTreatmentDeviceRequest) returns (UpdateTreatmentDeviceResponse);
+
+  // Deletes a treatment device.
+  rpc DeleteTreatmentDevice(DeleteTreatmentDeviceRequest) returns (DeleteTreatmentDeviceResponse);
+}
+
+// Request message for listing treatment devices.
+message ListTreatmentDevicesRequest {
+  // The ID of the simulation for which to list treatment devices.
+  optional int64 simulation_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed treatment devices.
+message ListTreatmentDevicesResponse {
+  // The treatment devices matching the list request. The order is unspecified.
+  repeated TreatmentDevice treatment_devices = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single treatment device.
+message GetTreatmentDeviceRequest {
+  // The ID of the treatment device to fetch.
+  optional int64 treatment_device_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched treatment device.
+message GetTreatmentDeviceResponse {
+  // The treatment device with the provided ID.
+  TreatmentDevice treatment_device = 1;
+}
+
+// Request message for creating a new treatment device.
+message CreateTreatmentDeviceRequest {
+  // Details of the treatment device to create.
+  optional TreatmentDevice treatment_device = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created treatment device.
+message CreateTreatmentDeviceResponse {
+  // The treatment device that was created.
+  optional TreatmentDevice treatment_device = 1;
+}
+
+// Request message for updating an existing treatment device.
+message UpdateTreatmentDeviceRequest {
+  // The treatment device to update.
+  optional TreatmentDevice treatment_device = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the treatment device to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated treatment device.
+message UpdateTreatmentDeviceResponse {
+  // The updated treatment device.
+  TreatmentDevice treatment_device = 1;
+}
+
+// Request message for deleting a treatment device.
+message DeleteTreatmentDeviceRequest {
+  // The ID of the treatment device to delete.
+  optional int64 treatment_device_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteTreatmentDevice`.
+message DeleteTreatmentDeviceResponse {}

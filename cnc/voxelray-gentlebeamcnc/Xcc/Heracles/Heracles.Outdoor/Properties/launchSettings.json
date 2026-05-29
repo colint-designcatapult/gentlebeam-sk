@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Heracles.External": {
+      "commandName": "Project"
+    },
+    "Heracles.External.KK-Dummy": {
+      "commandName": "Project",
+      "commandLineArgs": "--appsettings=\"C:\\Empyrean\\Xcc.AppSettings\\heracles.external.dummy.appsettings.json\""
+    }
+  }
+}

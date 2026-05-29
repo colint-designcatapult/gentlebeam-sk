@@ -1,0 +1,172 @@
+﻿<UserControl 
+    x:Class="Xcc.Application.Views.TreatmentConsole.QualityAssurance.DailyWarmUpView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters"
+    xmlns:dailyWarmUpStateMachine="clr-namespace:Xcc.Application.ViewModels.TreatmentConsole.QualityAssurance.DailyWarmUpUiStateMachine"
+    
+    UseLayoutRounding="True"
+    IsTabStop="False"
+    
+    mc:Ignorable="d" 
+    d:FontSize="{StaticResource BaseFontSize}"
+    d:DesignWidth="1280" d:DesignHeight="720"
+    xmlns:viewModels="clr-namespace:Xcc.Application.ViewModels.TreatmentConsole.QualityAssurance"
+    d:DataContext="{d:DesignInstance Type=viewModels:DailyWarmUpViewModel}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/BaseStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Border/BorderBlockStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/CheckBox/CheckBoxDefaultStyle.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;component/Styles/ProgressBar/ProgressBarXRayStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ListViewTemplates.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonDefaultStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style TargetType="Button" BasedOn="{StaticResource ButtonDefaultStyle}">
+                <Setter Property="FontSize" Value="{StaticResource LargeFontSize}"></Setter>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+
+    <Grid Margin="{StaticResource ViewMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+            <RowDefinition Height="{StaticResource XRayButtonHeightGridLength}"/>
+        </Grid.RowDefinitions>
+
+        <!--Warmup list-->
+        <ListView
+            Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="3"
+            Style="{StaticResource TableListView}"
+            Tag="{StaticResource DailyWarmupListHeaderTemplate}"
+            ItemTemplate="{StaticResource DailyWarmupListItemTemplate}"
+            ItemsSource="{Binding WarmUpViewSource.View}"/>
+
+        <!--Show All-->
+        <CheckBox
+            Grid.Row="0" 
+            HorizontalAlignment="Right"
+            Content="Show All"
+            Margin="0,0,16,0"
+            IsChecked="{Binding ShowAll}"/>
+
+        <!--Buttons-->
+        <Border 
+            Grid.Row="3"
+            Style="{StaticResource BorderBlockStyle}">
+
+            <DockPanel Margin="{StaticResource BlockContentMargin}" LastChildFill="False" HorizontalAlignment="Center">
+                <Grid
+                    Width="{StaticResource XRayButtonWidth}" 
+                    Margin="{StaticResource BlockContentMarginLeft}">
+                    
+                    <!--Warmup-->
+                    <Button      
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Command="{Binding FullWarmupCommand}"
+                        IsEnabled="{Binding UIStateMachine.LeftButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.LeftButton.State, 
+                        Converter={convx:IntToVisibilityVisibleConverter}, 
+                        ConverterParameter={x:Static dailyWarmUpStateMachine:UIButtonState.Conditioning}}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Grid>
+                                    <Path 
+                                        Data="{StaticResource PrepareIconPath}" 
+                                        Style="{StaticResource XRayButtonsIconStyle}"
+                                        StrokeEndLineCap="Round"
+                                        StrokeStartLineCap="Round"
+                                        StrokeLineJoin="Round"/>
+                                    <Path 
+                                        Data="{StaticResource LightningIconPath}"
+                                        Style="{StaticResource XRayButtonsIconStyle}"
+                                        Height="24"
+                                        StrokeThickness="0"
+                                        StrokeLineJoin="Round"
+                                        Fill="White"/>      
+                                </Grid>
+                                <TextBlock Text="Warmup" Style="{StaticResource TextBlockButtonStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+
+                    <!--'Clear Errors' button-->
+                    <Button 
+                        Command="{Binding ClearErrorsCommand}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        IsEnabled="{Binding UIStateMachine.LeftButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.LeftButton.State, 
+                            Converter={convx:IntToVisibilityVisibleConverter}, 
+                            ConverterParameter={x:Static dailyWarmUpStateMachine:UIButtonState.ClearErrors}}">
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Grid>
+                                <Path 
+                                    Data="{StaticResource RefreshIcon3}" 
+                                    Style="{StaticResource XRayButtonsIconStyle}"/>
+                                <Path 
+                                    Data="{StaticResource CancelIconPath}"
+                                    Style="{StaticResource XRayButtonsIconStyle}"
+                                    Height="10"
+                                    Stroke="Red"
+                                    StrokeEndLineCap="Square"
+                                    StrokeStartLineCap="Square"/>
+                            </Grid>
+                            <TextBlock Text="Clear&#10;Errors" Style="{StaticResource TextBlockButtonStyle}"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <ProgressBar 
+                        Style="{StaticResource ProgressBarXRayStyle}" 
+                        Background="CornflowerBlue"
+                        Maximum="100" Minimum="0"
+                        Value="{Binding GcbIndicators.WarmUpProgress.Value, Mode=OneWay}"
+                        Tag="Warmup"
+                        IsEnabled="{Binding UIStateMachine.LeftButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.LeftButton.State, 
+                            Converter={convx:IntToVisibilityVisibleConverter}, 
+                            ConverterParameter={x:Static dailyWarmUpStateMachine:UIButtonState.WarmUpProgress}}"/>
+                </Grid>
+                
+
+                <!--Stop-->
+                <Button 
+                    Margin="{StaticResource BlockContentMarginLeft}"
+                    Width="{StaticResource XRayButtonWidth}"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    Command="{Binding StopCommand}"
+                    IsEnabled="{Binding UIStateMachine.RightButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.RightButton.State, 
+                            Converter={convx:IntToVisibilityVisibleConverter}, 
+                            ConverterParameter={x:Static dailyWarmUpStateMachine:UIButtonState.Stop}}">
+
+                    <Grid Margin="0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Path Data="{StaticResource StopEmissionSequenceIcon}" Style="{StaticResource XRayButtonsIconStyle}"/>
+                            <TextBlock Text="Stop" Style="{StaticResource TextBlockButtonStyle}"/>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.dosimetry.v1;
+
+// Chunk of a dosimetry body file
+message DosimetryBodyChunk {
+  // Chunk of a dosimetry body file
+  bytes data = 1;
+}

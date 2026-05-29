@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.qcsamples.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// QCSample represents a quality control sample.
+message QCSample {
+  // QCSample id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The associated collimator configuration id
+  optional int64 collimator_configuration_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The email of the user who performed the qc sample
+  optional string performed_by = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // The date the sample was created
+  optional google.protobuf.Timestamp create_date = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // emission current of the qc sample
+  optional float emission_current = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // heater current of the qc sample
+  optional float heater_current = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // The duration of the sample in seconds
+  optional float duration = 7 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates if the sample is referenced
+  optional bool referenced = 8 [(google.api.field_behavior) = REQUIRED];
+
+  // notes about the qc sample
+  optional string notes = 9 [(google.api.field_behavior) = OPTIONAL];
+
+  // The user ID of the user who approved this item.
+  optional string approved_by = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

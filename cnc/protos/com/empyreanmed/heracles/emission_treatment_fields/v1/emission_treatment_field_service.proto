@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.emission_treatment_fields.v1;
+
+import "com/empyreanmed/heracles/emission_treatment_fields/v1/emission_treatment_field.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on emission treatment fields.
+service EmissionTreatmentFieldService {
+  // Lists emission treatment fields for a given plan.
+  rpc ListEmissionTreatmentFields(ListEmissionTreatmentFieldsRequest) returns (ListEmissionTreatmentFieldsResponse);
+
+  // Returns a single emission treatment field.
+  rpc GetEmissionTreatmentField(GetEmissionTreatmentFieldRequest) returns (GetEmissionTreatmentFieldResponse);
+
+  // Creates a new emission treatment field for a plan.
+  rpc CreateEmissionTreatmentField(CreateEmissionTreatmentFieldRequest) returns (CreateEmissionTreatmentFieldResponse);
+
+  // Updates an existing emission treatment field.
+  rpc UpdateEmissionTreatmentField(UpdateEmissionTreatmentFieldRequest) returns (UpdateEmissionTreatmentFieldResponse);
+
+  // Deletes an emission treatment field.
+  rpc DeleteEmissionTreatmentField(DeleteEmissionTreatmentFieldRequest) returns (DeleteEmissionTreatmentFieldResponse);
+}
+
+// Request message for listing emission treatment fields.
+message ListEmissionTreatmentFieldsRequest {
+  // The ID of the ActualTreatmentField_id for which to list emission treatment fields.
+  optional int64 actual_treatment_field_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed emission treatment fields.
+message ListEmissionTreatmentFieldsResponse {
+  // The emission treatment fields matching the list request. The order is unspecified.
+  repeated EmissionTreatmentField emission_treatment_fields = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single emission treatment field.
+message GetEmissionTreatmentFieldRequest {
+  // The ID of the emission treatment field to fetch.
+  optional int64 emission_treatment_field_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched emission treatment field.
+message GetEmissionTreatmentFieldResponse {
+  // The emission treatment field with the provided ID.
+  EmissionTreatmentField emission_treatment_field = 1;
+}
+
+// Request message for creating a new emission treatment field.
+message CreateEmissionTreatmentFieldRequest {
+  // Details of the emission treatment field to create.
+  optional EmissionTreatmentField emission_treatment_field = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created emission treatment field.
+message CreateEmissionTreatmentFieldResponse {
+  // The emission treatment field that was created.
+  EmissionTreatmentField emission_treatment_field = 1;
+}
+
+// Request message for updating an existing emission treatment field.
+message UpdateEmissionTreatmentFieldRequest {
+  // The emission treatment field to update.
+  optional EmissionTreatmentField emission_treatment_field = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the emission treatment field to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated emission treatment field.
+message UpdateEmissionTreatmentFieldResponse {
+  // The updated emission treatment field.
+  EmissionTreatmentField emission_treatment_field = 1;
+}
+
+// Request message for deleting an emission treatment field.
+message DeleteEmissionTreatmentFieldRequest {
+  // The ID of the emission treatment field to delete.
+  optional int64 emission_treatment_field_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteEmissionTreatmentField`.
+message DeleteEmissionTreatmentFieldResponse {}

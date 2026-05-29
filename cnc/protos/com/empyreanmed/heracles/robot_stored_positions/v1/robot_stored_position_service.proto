@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.robot_stored_positions.v1;
+
+import "com/empyreanmed/heracles/robot_stored_positions/v1/robot_stored_position.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on robot stored positions.
+service RobotStoredPositionService {
+  // Lists robot stored positions matching request parameters.
+  rpc ListRobotStoredPositions(ListRobotStoredPositionsRequest) returns (ListRobotStoredPositionsResponse);
+
+  // Returns a single robot stored position.
+  rpc GetRobotStoredPosition(GetRobotStoredPositionRequest) returns (GetRobotStoredPositionResponse);
+
+  // Creates a new robot stored position.
+  rpc CreateRobotStoredPosition(CreateRobotStoredPositionRequest) returns (CreateRobotStoredPositionResponse);
+
+  // Updates a single robot stored position.
+  rpc UpdateRobotStoredPosition(UpdateRobotStoredPositionRequest) returns (UpdateRobotStoredPositionResponse);
+
+  // Deletes a single robot stored position.
+  rpc DeleteRobotStoredPosition(DeleteRobotStoredPositionRequest) returns (DeleteRobotStoredPositionResponse);
+}
+
+// Request message for listing robot stored positions.
+message ListRobotStoredPositionsRequest {
+  // The maximum number of robot stored positions to return.
+  optional int32 page_size = 1;
+
+  // A page token received from a previous `ListRobotStoredPositions` call.
+  optional string page_token = 2;
+}
+
+// Response message with the listed robot stored positions.
+message ListRobotStoredPositionsResponse {
+  // The robot stored positions matching the list request.
+  repeated RobotStoredPosition robot_stored_positions = 1;
+
+  // A token to retrieve the next page of results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single robot stored position.
+message GetRobotStoredPositionRequest {
+  // The ID of the robot stored position to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single robot stored position.
+message GetRobotStoredPositionResponse {
+  // The robot stored position with the provided ID.
+  RobotStoredPosition robot_stored_position = 1;
+}
+
+// Request message for creating a new robot stored position.
+message CreateRobotStoredPositionRequest {
+  // The robot stored position to be created.
+  optional RobotStoredPosition robot_stored_position = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created robot stored position.
+message CreateRobotStoredPositionResponse {
+  // The created robot stored position.
+  RobotStoredPosition robot_stored_position = 1;
+}
+
+// Request message for updating an existing robot stored position.
+message UpdateRobotStoredPositionRequest {
+  // The robot stored position to be updated.
+  optional RobotStoredPosition robot_stored_position = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated robot stored position.
+message UpdateRobotStoredPositionResponse {
+  // The updated robot stored position.
+  RobotStoredPosition robot_stored_position = 1;
+}
+
+// Request message for deleting a robot stored position.
+message DeleteRobotStoredPositionRequest {
+  // The ID of the robot stored position to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteRobotStoredPosition`.
+message DeleteRobotStoredPositionResponse {}

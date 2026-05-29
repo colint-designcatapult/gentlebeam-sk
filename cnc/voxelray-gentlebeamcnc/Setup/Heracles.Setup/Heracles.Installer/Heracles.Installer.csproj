@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{107FD044-FEA4-4407-BF30-12C048EDC821}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Heracles.Installer</RootNamespace>
+    <AssemblyName>Heracles.Installer</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="Heracles.nsi" />
+    <None Include="include\InputFolders.nsh" />
+    <None Include="include\OutputFolders.nsh" />
+    <None Include="include\Sections.nsh" />
+    <None Include="include\Sections\Programs\SEC_HERACLES_INDOOR.nsh" />
+    <None Include="include\Sections\Programs\SEC_HERACLES_OUTDOOR.nsh" />
+    <None Include="include\Sections\SEC_BackupExistsInstalled.nsh" />
+    <None Include="include\Sections\SEC_CopyEula.nsh" />
+    <None Include="include\Sections\SEC_CreateUninstaller.nsh" />
+    <None Include="include\Sections\Shortcuts\SEC_DESKTOP_SHORTCUTS.nsh" />
+    <None Include="include\Sections\Shortcuts\SEC_START_MENU_SHORTCUTS.nsh" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="src\EndUserLicenseAgreement.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>dotnet build $(SolutionDir)..\..\Xcc.sln /p:Configuration=Release /p:Platform=x64</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>"c:\Program Files (x86)\NSIS\makensis.exe" "$(ProjectDir)Heracles.nsi"</PostBuildEvent>
+  </PropertyGroup>
+</Project>

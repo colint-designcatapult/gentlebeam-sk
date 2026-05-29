@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.settings.v1;
+
+import "com/empyreanmed/heracles/settings/v1/settings.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on Settings.
+service SettingsService {
+  // Retrieves the current settings.
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
+
+  // Updates the settings.
+  rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);
+}
+
+// Request message for retrieving the current settings.
+message GetSettingsRequest {}
+
+// Response message with the current settings.
+message GetSettingsResponse {
+  // The current settings.
+  Settings settings = 1;
+}
+
+// Request message for updating the settings.
+message UpdateSettingsRequest {
+  // The settings to update.
+  optional Settings settings = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the settings to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated settings.
+message UpdateSettingsResponse {
+  // The updated settings.
+  Settings settings = 1;
+}

@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.treatment_fields.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a treatment field within a treatment plan.
+message TreatmentField {
+  // Treatment field id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Plan id associated with the treatment field
+  optional int64 plan_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Treatment field creation date
+  optional google.protobuf.Timestamp creation_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Name of the treatment field
+  optional com.empyreanmed.heracles.enums.v1.FIELDNAME field_name = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Energy of the treatment field
+  optional com.empyreanmed.heracles.enums.v1.ENERGY energy = 5;
+
+  // Dwell time of the treatment field
+  optional double dwell_time = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Calculated dose for the treatment field
+  optional double calculated_dose = 7;
+
+  // Current of the treatment field
+  optional double current = 8;
+}

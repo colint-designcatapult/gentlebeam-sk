@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.plans.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Plan is a description of a treatment plan, containing a sequence of fields.
+message Plan {
+  // Plan id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The associated prescription
+  optional int64 prescription_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  //The associated user approving the Plan
+  optional string approved_by = 3 [(google.api.field_behavior) = REQUIRED];
+
+  //Plan's series id
+  optional int64 origin_series_id = 4;
+
+  // Plan creation date
+  optional google.protobuf.Timestamp creation_date = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The type of the head/target/applicator
+  optional com.empyreanmed.heracles.enums.v1.TARGETTYPE target_type = 8 [(google.api.field_behavior) = REQUIRED];
+
+  // The plan's status
+  optional com.empyreanmed.heracles.enums.v1.STATUS status = 9 [(google.api.field_behavior) = REQUIRED];
+
+  // treatmentLoadingState Enum
+  optional com.empyreanmed.heracles.enums.v1.TREATMENTLOADINGSTATE treatment_loading_state = 12 [(google.api.field_behavior) = REQUIRED];
+
+  //The associated plan's name
+  optional string name = 13;
+}

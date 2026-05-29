@@ -1,0 +1,76 @@
+﻿<UserControl x:Class="Xcc.Application.UI.UserControls.VideoLiveFeedControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
+             xmlns:userControls="clr-namespace:Xcc.Application.UI.UserControls"
+             xmlns:converters="clr-namespace:Xcc.Application.UI.Converters"
+             mc:Ignorable="d"
+             d:DesignWidth="720"
+             Unloaded="FFMEVideoPlayer_Unloaded"
+             Loaded="UserControl_Loaded"
+             x:Name="Root">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ButtonStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <Border 
+                x:Key="OpacityMaskBorder" 
+                Width="{Binding ActualWidth, ElementName=Root}" 
+                Height="{Binding ActualHeight, ElementName=Root}" 
+                CornerRadius="{StaticResource BlockCornerRadius}"
+                Background="Red"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+
+            <DockPanel>
+            <Grid Visibility="{Binding ControlPanelVisibility, ElementName=Root}" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="20" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="20" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <FrameworkElement Grid.Row="1" Width="32" Height="32"/>
+                
+                <Button 
+                    x:Name="ScreenshotButton" 
+                    Grid.Row="3" 
+                    Width="64" Height="64" 
+                    Content="{StaticResource CameraIcon}" 
+                    Click="ScreenshotButton_Click"/>
+            </Grid>
+            
+            <ffme:MediaElement 
+                x:Name="FFMEVideoPlayer" 
+                LoadedBehavior="Play" 
+                UnloadedBehavior="Manual"
+                MediaFailed="FFMEVideoPlayer_MediaFailed" 
+                MediaClosed="FFMEVideoPlayer_MediaClosed"
+                IsDesignPreviewEnabled="True"
+                Background="Black">
+                
+                <ffme:MediaElement.OpacityMask>
+                    <VisualBrush Visual="{StaticResource OpacityMaskBorder}"/>
+                </ffme:MediaElement.OpacityMask>
+            </ffme:MediaElement>
+        </DockPanel>
+
+        <userControls:TaskOverlay 
+            Visibility="{Binding CurrentTask.IsSuccessfullyCompleted, ElementName=Root, Converter={converters:BooleanToInvisibilityConverter}, FallbackValue=Collapsed}"
+            ObservedTask="{Binding CurrentTask, ElementName=Root}"
+            Description="{Binding CurrentTask.ErrorMessage, ElementName=Root}"
+            CornerRadius="{StaticResource BlockInnerCornerRadius}"/>
+    </Grid>
+</UserControl>

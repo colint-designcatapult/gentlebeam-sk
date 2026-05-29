@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.documents.v1;
+
+import "com/empyreanmed/heracles/documents/v1/document.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on documents.
+service DocumentsService {
+  // Lists documents for a given patient.
+  rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
+
+  // Returns a single document.
+  rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
+
+  // Creates a new document for a patient.
+  rpc CreateDocument(CreateDocumentRequest) returns (CreateDocumentResponse);
+
+  // Updates an existing document.
+  rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);
+
+  // Deletes a document.
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
+}
+
+// Request message for listing documents.
+message ListDocumentsRequest {
+  // The ID of the patient for which to list documents.
+  optional int64 patient_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed documents.
+message ListDocumentsResponse {
+  // The documents matching the list request. The order is unspecified.
+  repeated Document documents = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single document.
+message GetDocumentRequest {
+  // The ID of the document to fetch.
+  optional int64 document_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched document.
+message GetDocumentResponse {
+  // The document with the provided ID.
+  Document document = 1;
+}
+
+// Request message for creating a new document.
+message CreateDocumentRequest {
+  // The ID of the patient for which to create the document.
+  optional Document document = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created document.
+message CreateDocumentResponse {
+  // The document that was created.
+  Document document = 1;
+}
+
+// Request message for updating an existing document.
+message UpdateDocumentRequest {
+  // The document to update.
+  optional Document document = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the document to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated document.
+message UpdateDocumentResponse {
+  // The updated document.
+  Document document = 1;
+}
+
+// Request message for deleting a document.
+message DeleteDocumentRequest {
+  // The ID of the document to delete.
+  optional int64 document_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteDocument`.
+message DeleteDocumentResponse {}

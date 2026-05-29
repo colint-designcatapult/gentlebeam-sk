@@ -1,0 +1,61 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <Platforms>x64</Platforms>
+    <AssemblyVersion>1.1.21</AssemblyVersion>
+    <BuildNumber>0</BuildNumber>
+    <InformationalVersion>$(AssemblyVersion) SP $(BuildNumber) </InformationalVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NoWarn>1701;1702;CS0436</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NoWarn>1701;1702;CS0436</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="UI\Resources\deepColor.png" />
+    <None Remove="UI\Resources\DemoPatient.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Api.CommonProtos" Version="2.14.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.30.0" />
+    <PackageReference Include="Grpc.Core.Api" Version="2.71.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.71.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- heracles.protos: generated locally from ../../../protos (auto-included by default) -->
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Generate gRPC service clients from service definitions in proto files -->
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Xcc.Styles\Xcc.Styles.csproj" />
+    <ProjectReference Include="..\..\Xcc.Application\Xcc.Application.csproj" />
+    <ProjectReference Include="..\..\Xcc.Infra\Xcc.Infra.csproj" />
+    <ProjectReference Include="..\Heracles.Core\Heracles.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="UI\Resources\deepColor.png" />
+    <Resource Include="UI\Resources\DemoPatient.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="AppLayer\CurrentSystem\" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.warmups.v1;
+
+import "com/empyreanmed/heracles/warmups/v1/warmup.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on warmup configurations.
+service WarmupService {
+  // Lists warmup configurations matching request parameters.
+  rpc ListWarmups(ListWarmupsRequest) returns (ListWarmupsResponse);
+
+  // Returns a single warmup configuration.
+  rpc GetWarmup(GetWarmupRequest) returns (GetWarmupResponse);
+
+  // Creates a new warmup configuration.
+  rpc CreateWarmup(CreateWarmupRequest) returns (CreateWarmupResponse);
+
+  // Updates a single warmup configuration.
+  rpc UpdateWarmup(UpdateWarmupRequest) returns (UpdateWarmupResponse);
+
+  // Deletes a single warmup configuration.
+  rpc DeleteWarmup(DeleteWarmupRequest) returns (DeleteWarmupResponse);
+}
+
+// Request message for listing warmup configurations.
+message ListWarmupsRequest {
+  // The maximum number of warmup configurations to return.
+  optional int32 page_size = 1;
+
+  // A page token received from a previous `ListWarmups` call.
+  optional string page_token = 2;
+}
+
+// Response message with the listed warmup configurations.
+message ListWarmupsResponse {
+  // The warmup configurations matching the list request.
+  repeated Warmup warmups = 1;
+
+  // A token to retrieve the next page of results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single warmup configuration.
+message GetWarmupRequest {
+  // The ID of the warmup configuration to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single warmup configuration.
+message GetWarmupResponse {
+  // The warmup configuration with the provided ID.
+  Warmup warmup = 1;
+}
+
+// Request message for creating a new warmup configuration.
+message CreateWarmupRequest {
+  // The warmup configuration to be created.
+  optional Warmup warmup = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created warmup configuration.
+message CreateWarmupResponse {
+  // The created warmup configuration.
+  Warmup warmup = 1;
+}
+
+// Request message for updating an existing warmup configuration.
+message UpdateWarmupRequest {
+  // The warmup configuration to be updated.
+  optional Warmup warmup = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated warmup configuration.
+message UpdateWarmupResponse {
+  // The updated warmup configuration.
+  Warmup warmup = 1;
+}
+
+// Request message for deleting a warmup configuration.
+message DeleteWarmupRequest {
+  // The ID of the warmup configuration to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteWarmup`.
+message DeleteWarmupResponse {}

@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <Platforms>x64</Platforms>
+    <AssemblyVersion>1.1.21</AssemblyVersion>
+    <BuildNumber>0</BuildNumber>
+    <InformationalVersion>$(AssemblyVersion) SP $(BuildNumber) </InformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Models\Settings\**" />
+    <EmbeddedResource Remove="Models\Settings\**" />
+    <None Remove="Models\Settings\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Xcc.Application\Xcc.Application.csproj" />
+    <ProjectReference Include="..\..\Xcc.Core\Xcc.Core.csproj" />
+  </ItemGroup>
+</Project>

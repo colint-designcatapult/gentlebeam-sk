@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.safety_checks.v1;
+
+import "com/empyreanmed/heracles/safety_checks/v1/safety_check.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Service definition for SafetyCheck
+service SafetyCheckService {
+  // RPC method to list all safety checks
+  rpc ListSafetyChecks(ListSafetyChecksRequest) returns (ListSafetyChecksResponse);
+
+  // RPC method to get a single safety check by ID
+  rpc GetSafetyCheck(GetSafetyCheckRequest) returns (GetSafetyCheckResponse);
+
+  // RPC method to create a new safety check
+  rpc CreateSafetyCheck(CreateSafetyCheckRequest) returns (CreateSafetyCheckResponse);
+
+  // RPC method to update an existing safety check
+  rpc UpdateSafetyCheck(UpdateSafetyCheckRequest) returns (UpdateSafetyCheckResponse);
+
+  // RPC method to delete a safety check by ID
+  rpc DeleteSafetyCheck(DeleteSafetyCheckRequest) returns (DeleteSafetyCheckResponse);
+}
+
+// Request message for listing safety checks
+message ListSafetyChecksRequest {}
+
+// Response message for listing safety checks
+message ListSafetyChecksResponse {
+  // List of safety checks
+  repeated SafetyCheck safety_checks = 1;
+}
+
+// Request message for getting a single safety check by ID
+message GetSafetyCheckRequest {
+  // ID of the requested safety check
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for getting a single safety check
+message GetSafetyCheckResponse {
+  // The requested safety check
+  SafetyCheck safety_check = 1;
+}
+
+// Request message for creating a new safety check
+message CreateSafetyCheckRequest {
+  // Safety check to create
+  SafetyCheck safety_check = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for creating a new safety check
+message CreateSafetyCheckResponse {
+  // The created safety check
+  SafetyCheck safety_check = 1;
+}
+
+// Request message for updating an existing safety check
+message UpdateSafetyCheckRequest {
+  // Safety check with updates
+  SafetyCheck safety_check = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for updating an existing safety check
+message UpdateSafetyCheckResponse {
+  // The updated safety check
+  SafetyCheck safety_check = 1;
+}
+
+// Request message for deleting a safety check by ID
+message DeleteSafetyCheckRequest {
+  // ID of the safety check to delete
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for deleting a safety check
+message DeleteSafetyCheckResponse {}

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.reference_fields.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// ReferenceField represents the reference field for an energy configuration.
+message ReferenceField {
+  // Unique identifier for the reference field.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Foreign key to the preset_configuration entity.
+  optional int64 preset_configuration_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The creation date of the reference field.
+  optional google.protobuf.Timestamp create_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The type of magnetometer.
+  optional com.empyreanmed.heracles.enums.v1.MAGNETOMETERTYPE magnetometer_type = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Reference field element RF11.
+  optional float rf11 = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Reference field element RF21.
+  optional float rf21 = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Reference field element RF31.
+  optional float rf31 = 7 [(google.api.field_behavior) = REQUIRED];
+}

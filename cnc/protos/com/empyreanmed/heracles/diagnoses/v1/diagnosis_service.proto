@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.diagnoses.v1;
+
+import "com/empyreanmed/heracles/diagnoses/v1/diagnosis.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on diagnoses.
+service DiagnosisService {
+  // Lists diagnoses matching request parameters.
+  rpc ListDiagnoses(ListDiagnosesRequest) returns (ListDiagnosesResponse);
+
+  // Returns a single diagnosis.
+  rpc GetDiagnosis(GetDiagnosisRequest) returns (GetDiagnosisResponse);
+
+  // Creates a new diagnosis.
+  rpc CreateDiagnosis(CreateDiagnosisRequest) returns (CreateDiagnosisResponse);
+
+  // Updates a single diagnosis.
+  rpc UpdateDiagnosis(UpdateDiagnosisRequest) returns (UpdateDiagnosisResponse);
+
+  // Deletes a single diagnosis.
+  rpc DeleteDiagnosis(DeleteDiagnosisRequest) returns (DeleteDiagnosisResponse);
+}
+
+// Request message for listing diagnoses.
+message ListDiagnosesRequest {
+  // Filter results by a given patient.
+  optional int64 patient_id = 1;
+}
+
+// Response message with the listed diagnoses.
+message ListDiagnosesResponse {
+  // The diagnoses matching the list request. The order is unspecified.
+  repeated Diagnosis diagnoses = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single diagnosis.
+message GetDiagnosisRequest {
+  // The ID of the diagnosis to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single diagnosis.
+message GetDiagnosisResponse {
+  // The diagnosis with the ID provided in the request.
+  Diagnosis diagnosis = 1;
+}
+
+// Request message for creating a new diagnosis.
+message CreateDiagnosisRequest {
+  // The diagnosis to be created.
+  optional Diagnosis diagnosis = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created diagnosis.
+message CreateDiagnosisResponse {
+  // The diagnosis that was created.
+  Diagnosis diagnosis = 1;
+}
+
+// Request message for updating an existing diagnosis.
+message UpdateDiagnosisRequest {
+  // The diagnosis to be updated.
+  optional Diagnosis diagnosis = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the diagnosis to update. Must not be empty.
+  // Fields that have `OUTPUT_ONLY` behavior may not be updated.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated diagnosis.
+message UpdateDiagnosisResponse {
+  // The updated diagnosis.
+  Diagnosis diagnosis = 1;
+}
+
+// Request message for deleting a diagnosis.
+message DeleteDiagnosisRequest {
+  // The ID of the diagnosis to be deleted.
+  optional uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteDiagnosis`.
+message DeleteDiagnosisResponse {}

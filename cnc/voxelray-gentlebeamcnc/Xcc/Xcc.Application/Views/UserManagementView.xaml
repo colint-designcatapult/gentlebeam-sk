@@ -1,0 +1,324 @@
+﻿<ContentControl 
+    x:Class="Xcc.Application.Views.UserManagementView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    
+    xmlns:sys="clr-namespace:System;assembly=netstandard"
+                
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+             
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters"
+
+    UseLayoutRounding="True"
+
+    mc:Ignorable="d" 
+    d:DesignWidth="1280" d:DesignHeight="800"
+    xmlns:viewModels="clr-namespace:Xcc.Application.ViewModels"
+    xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:UserManagementViewModel}}">
+    
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ToggleButton/RevealToggleButton.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/UserListTemplates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <sys:Double x:Key="UserImageSize">160</sys:Double>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+
+    <Grid>
+        <Grid Margin="{StaticResource ViewMargin}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="{StaticResource BlockMarginGridLength}" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+        
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Border 
+                Width="600"
+                Grid.Column="1" Style="{StaticResource BorderBlockStyle}" 
+                Visibility="{Binding UserToEdit, Converter={convx:ObjectToVisibilityConverter}}"
+                Margin="{StaticResource BlockMarginLeft}">
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <DockPanel Margin="{StaticResource BlockContentMargin}">
+                        <!--Close (cancel) button-->
+                        <Button 
+                            DockPanel.Dock="Top" 
+                            HorizontalAlignment="Right"
+                            Style="{StaticResource ButtonCloseStyle}"
+                            Command="{Binding CancelEditCommand}">
+                        </Button>
+                        
+                        <!--Save button-->
+                        <Button 
+                            DockPanel.Dock="Bottom" 
+                            HorizontalAlignment="Right"
+                            Height="{StaticResource ButtonHeight}" Width="{StaticResource ButtonWidth}" 
+                            Command="{Binding SaveCommand}" >
+                        
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+
+                                <Image Source="{StaticResource SaveIcon}" Style="{StaticResource ButtonImageStyle}"/>
+                                <TextBlock Text="Save" Grid.Column="2" Style="{StaticResource ButtonTextBlockStyle}"/>
+                            </Grid>
+                        </Button>
+
+                        <Grid Margin="{StaticResource BlockContentMarginBottom}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="{StaticResource FieldMarginGridLength}"/>
+                                <ColumnDefinition Width="1.5*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource FieldLargeMarginGridLength}" />
+                                <RowDefinition Height="{StaticResource TaggedFieldGridLength}" />
+                                <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}" />
+                                <RowDefinition Height="{StaticResource TaggedFieldGridLength}" />
+                                <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}" />
+                                <RowDefinition Height="{StaticResource TaggedFieldGridLength}" />
+                                <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}" />
+                                <RowDefinition Height="{StaticResource TaggedFieldGridLength}" />
+                                <RowDefinition Height="{StaticResource FieldLargeMarginGridLength}" />
+                                <RowDefinition Height="{StaticResource TaggedFieldGridLength}" />
+                                <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <!--User picture-->
+                            <Button 
+                                Style="{StaticResource ButtonTransparentStyle}"
+                                Command="{Binding LoadPictureCommand}" 
+                                Width="{StaticResource UserImageSize}"
+                                Height="{StaticResource UserImageSize}">
+
+                                <ucx:ProfileImageControl PathToImage="{Binding UserToEdit.Picture}"/>
+                            </Button>
+
+                            <!--Email and role-->
+                            <Grid 
+                                Grid.Column="2" Grid.Row="0"
+                                VerticalAlignment="Center" HorizontalAlignment="Center"
+                                Margin="{StaticResource BlockContentMarginBottom}">
+                                
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                            
+                                <TextBlock 
+                                    Style="{StaticResource TextBlockLegendStyle}"
+                                    Text="{Binding UserToEdit.EmailAddress, FallbackValue=admin@example.com}"
+                                    FontSize="{StaticResource HugeFontSize}"/>
+
+                                <TextBlock 
+                                    Grid.Row="2"
+                                    Style="{StaticResource TextBlockLegendStyle}"
+                                    Text="{Binding UserToEdit.Role.Name, FallbackValue=Administrator}"/>
+                            </Grid>
+
+
+                            <controls:XccTextBox 
+                                Grid.Row="2" Grid.Column="0"
+                                Text="{Binding UserToEdit.Username}">
+
+                                <controls:XccTextBox.Tag>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextBlockLegendStyle}">
+                                        <Run Text="Username"/>
+                                        <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                    </TextBlock>
+                                </controls:XccTextBox.Tag>
+                            </controls:XccTextBox>
+
+
+                            <ComboBox 
+                                Grid.Row="2" Grid.Column="2"
+                                ItemsSource="{Binding UserRoles}"
+                                SelectedItem="{Binding SelectedUserRole}">
+
+                                <ComboBox.Tag>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextBlockLegendStyle}">
+                                        <Run Text="Role"/>
+                                        <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                    </TextBlock>
+                                </ComboBox.Tag>
+
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                            <controls:XccTextBox 
+                                Grid.Row="4" Grid.Column="0"
+                                Text="{Binding UserToEdit.FirstName}">
+
+                                <controls:XccTextBox.Tag>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextBlockLegendStyle}">
+                                        <Run Text="First Name"/>
+                                        <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                    </TextBlock>
+                                </controls:XccTextBox.Tag>
+                            </controls:XccTextBox>
+
+                            <controls:XccTextBox 
+                                Grid.Row="4" Grid.Column="2"
+                                x:Name="LastnameTextBox"
+                                Text="{Binding UserToEdit.LastName}">
+
+                                <controls:XccTextBox.Tag>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextBlockLegendStyle}">
+                                        <Run Text="Last Name"/>
+                                        <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                    </TextBlock>
+                                </controls:XccTextBox.Tag>
+                            </controls:XccTextBox>
+
+                            <controls:XccTextBox 
+                                Grid.Row="6" Grid.Column="0"
+                                x:Name="PasswordTextBox"
+                                FontFamily="{Binding RevealPassword, Converter={convx:PasswordFontConverter}}"
+                                IsClipboardDisabled="True"
+                                Text="{Binding UserToEdit.Password}">
+
+                                <controls:XccTextBox.Tag>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextBlockLegendStyle}">
+                                        <Run Text="Password"/>
+                                        <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                    </TextBlock>
+                                </controls:XccTextBox.Tag>
+                            </controls:XccTextBox>
+
+                            <Grid Grid.Row="6" Grid.Column="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+                                </Grid.RowDefinitions>
+
+                                <ToggleButton 
+                                    Grid.Row="1" 
+                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Style="{StaticResource RevealToggleButton}"
+                                    IsChecked="{Binding RevealPassword}"/>
+                            </Grid>
+
+                            <controls:XccTextBox 
+                                Grid.Row="8" Grid.Column="0"
+                                x:Name="PasswordConfirmationTextBox"
+                                FontFamily="{Binding RevealConfirmPassword, Converter={convx:PasswordFontConverter}}"
+                                IsClipboardDisabled="True"
+                                Text="{Binding UserToEdit.PasswordConfirm}">
+
+
+                                <controls:XccTextBox.Tag>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextBlockLegendStyle}">
+                                        <Run Text="Confirm Password"/>
+                                        <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                    </TextBlock>
+                                </controls:XccTextBox.Tag>
+                            </controls:XccTextBox>
+
+                            <Grid Grid.Row="8" Grid.Column="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+                                </Grid.RowDefinitions>
+
+                                <ToggleButton 
+                                    Grid.Row="1" 
+                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Style="{StaticResource RevealToggleButton}"
+                                    IsChecked="{Binding RevealConfirmPassword}"/>
+                            </Grid>
+
+                            <controls:XccTextBox 
+                                Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="3"
+                                Tag="Email *"
+                                Text="{Binding UserToEdit.EmailAddress}"/>
+                        </Grid>
+                    </DockPanel>
+                </ScrollViewer>
+            </Border>
+
+            <ListView 
+                Grid.Row="0" Grid.Column="0" 
+                ItemsSource="{Binding Users}"
+                SelectedItem="{Binding SelectedUser}"
+                Style="{StaticResource TableListView}"
+                ItemTemplate="{StaticResource UserItemTemplate}"
+                Tag="{StaticResource UserHeaderTemplate}"/>
+
+            <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource BorderBlockStyle}">
+                <DockPanel LastChildFill="False" Margin="12">
+                    <Button 
+                        DockPanel.Dock="Left"
+                        Height="{StaticResource ButtonHeight}" Width="{StaticResource ButtonWidthLarge}" 
+                        Command="{Binding NewCommand}">
+                    
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path Data="{StaticResource AddIcon}" Style="{StaticResource ButtonPathStyleThickness2}"/>
+                            <TextBlock Grid.Column="2" Text="New User" Style="{StaticResource ButtonTextBlockStyle}"/>
+                        </Grid>
+                    </Button>
+
+                    <Button 
+                        Margin="20,0,0,0"
+                        DockPanel.Dock="Left"
+                        Height="{StaticResource ButtonHeight}" Width="{StaticResource ButtonWidth}" 
+                        Command="{Binding DeleteCommand}">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path Data="{StaticResource DeleteIcon}" Style="{StaticResource ButtonPathStyleThickness2}"/>
+                            <TextBlock Grid.Column="2" Text="Delete" Style="{StaticResource ButtonTextBlockStyle}"/>
+                        </Grid>
+                    </Button>
+                </DockPanel>
+            </Border>
+
+
+        </Grid>
+
+        <ucx:TaskOverlay 
+            Visibility="{Binding UserTask.IsSuccessfullyCompleted, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue=Collapsed}"
+            ObservedTask="{Binding UserTask}"
+            RetryCommand="{Binding RetryUserTaskCommand}"
+            CancelCommand="{Binding CancelUserTaskCommand}"
+            Description="{Binding UserTask.ErrorMessage}"
+            CornerRadius="7,7,7,7"/>
+    </Grid>
+</ContentControl>

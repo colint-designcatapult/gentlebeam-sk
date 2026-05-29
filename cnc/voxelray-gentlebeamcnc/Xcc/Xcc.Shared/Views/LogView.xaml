@@ -1,0 +1,220 @@
+﻿<ContentControl x:Class="Xcc.Shared.Views.LogView"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:prism="http://prismlibrary.com/" 
+                
+                xmlns:sys="clr-namespace:System;assembly=System.Runtime" 
+                KeyboardNavigation.IsTabStop="False"
+                prism:ViewModelLocator.AutoWireViewModel="True" 
+                
+                xmlns:behaviors="clr-namespace:Xcc.Application.UI.Behaviors;assembly=Xcc.Application"
+                xmlns:modelsx="clr-namespace:Xcc.Application.Models;assembly=Xcc.Application"
+                xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                
+                
+                xmlns:viewModels="clr-namespace:Xcc.Shared.ViewModels"
+                xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+                xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+
+                UseLayoutRounding="True"
+                
+                mc:Ignorable="d" 
+                d:FontSize="{StaticResource BaseFontSize}"
+                d:DesignHeight="720" d:DesignWidth="1280"
+                d:DataContext="{d:DesignInstance {x:Type viewModels:LogViewModel}}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ListViewTemplates.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/TextBox/XccTextBoxDefaultStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonDefaultStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Border/BorderOutlineStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <sys:Double x:Key="LogRecordHeight">32</sys:Double>
+            <sys:Double x:Key="FieldOrButtonHeight">36</sys:Double>
+
+            <Brush x:Key="ButtonPathForegroundColor" >#d7d7d7</Brush>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Border Style="{StaticResource BorderOutlineStyle}">
+        <Grid Margin="{StaticResource ViewMargin}">
+            <Grid d:ShowGridLines="True" IsEnabled="{Binding IsBusy, Converter={convx:InverseBooleanConverter}}">
+                <!--Search field-->
+                <Grid Grid.Column="0" Grid.ColumnSpan="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                        
+                    <controls:XccTextBox 
+                        Grid.ColumnSpan="2"
+                        Watermark="Search"
+                        x:Name="SearchPhraseTextBox" 
+                        HorizontalAlignment="Stretch"
+                        Style="{StaticResource XccTextBoxDefaultStyle}"
+                        Text="{Binding SearchPhrase}"
+                        behaviors:FocusBehaviors.FocusOnLoad="True"/>
+
+                    <Button 
+                        Grid.Column="1"
+                        Height="22" Width="22" 
+                        Margin="6,0"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource ButtonCrossStyle}"
+                        Command="{Binding RemoveSearchPhraseCommand}"/>
+                </Grid>                
+                
+                <!--Date range button-->
+                <Button
+                    Grid.Column="4"
+                    ToolTip="Search by date range" 
+                    Command="{Binding ShowDatePickerCommand}"
+                    Width="{StaticResource FieldOrButtonHeight}" Height="{StaticResource FieldOrButtonHeight}"
+                    Padding="6,0,6,4">
+
+                    <Path 
+                        Style="{StaticResource PathButtonStyle}" 
+                        Data="{StaticResource CalendarIcon}" 
+                        Stretch="Uniform" />
+                </Button>
+
+                <!--Date range textbox-->
+                <controls:XccTextBox
+                    Height="36"
+                    Grid.Row="0" Grid.Column="6"
+                    Style="{StaticResource XccTextBoxDefaultStyle}"
+                    IsReadOnly="True"
+                    IsTabStop="False">
+
+                    <controls:XccTextBox.Text>
+                        <MultiBinding Converter="{convx:DateRangeToStringConverter}">
+                            <Binding Path="FilterFromDate"/>
+                            <Binding Path="FilterToDate"/>
+                        </MultiBinding>
+                    </controls:XccTextBox.Text>
+                </controls:XccTextBox>
+
+                 <!--Refresh button-->
+                <Button 
+                    Grid.Column="8"
+                    ToolTip="Refresh log" 
+                    Width="{StaticResource FieldOrButtonHeight}" 
+                    Height="{StaticResource FieldOrButtonHeight}"
+                    Command="{Binding FetchLogCommand}"
+                    Padding="0">
+
+                    <Path Style="{StaticResource PathButtonStyle}" Data="{StaticResource ReloadIcon}"/>
+                </Button>
+
+                <Button 
+                    Grid.Column="8" Grid.Row="2"
+                    ToolTip="Remove" 
+                    Width="{StaticResource FieldOrButtonHeight}" 
+                    Height="{StaticResource FieldOrButtonHeight}"
+                    Visibility="Collapsed">
+
+                    <Path 
+                        Height="16" 
+                        StrokeThickness="1" 
+                        Fill="Transparent" 
+                        Stroke="{StaticResource ButtonPathForegroundColor}" 
+                        Data="{StaticResource DeleteIcon}" Stretch="Uniform" />
+                </Button>
+
+                <!--Add Filter button-->
+                <Button 
+                    Grid.Column="0" Grid.Row="2"
+                    ToolTip="Refresh log" 
+                    Command="{Binding AddFilterCommand}">
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Path Data="{StaticResource AddIcon}" Style="{StaticResource PathButtonStyle}"/>
+                        <TextBlock Grid.Column="2" Text="Add Filter" VerticalAlignment="Center"/>
+                    </Grid>
+                </Button>
+
+                
+                <ucx:TagListControl 
+                    Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="7"
+                    Height="{StaticResource FieldHeight}"
+                    ItemsSource="{Binding Filters}">
+
+                    <ucx:TagListControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type modelsx:Filter}">
+                            <Grid Margin="2,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="{Binding FieldName}"/><Run Text=":"/>
+                                    <Run Text="{Binding Value}" Foreground="{StaticResource FieldForegroundPaleColor}"/>
+                                </TextBlock>
+                            </Grid>
+                        </DataTemplate>
+                    </ucx:TagListControl.ItemTemplate>
+                </ucx:TagListControl>
+                
+                
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="8" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+            </Grid>
+
+            <ListView 
+                Grid.Row="2"
+                ItemsSource="{Binding LogRecordsViewSource.View}"
+                Style="{StaticResource TableListView}"
+                Tag="{StaticResource LogHeaderTemplate}"
+                ItemTemplate="{StaticResource LogItemTemplate}"
+                x:Name="Log"/>
+
+            <Border  
+                Grid.Row="2" 
+                CornerRadius="{StaticResource BlockCornerRadius}" 
+                Background="{StaticResource DisabledControlBrush}"
+                Visibility="{Binding IsBusy, Converter={convx:BooleanToVisibilityConverter Invisibility=Hidden}}">
+
+                <ucx:SpinnerControl 
+                    Width="40" Height="40"
+                    Color="Cyan"/>
+            </Border>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="{StaticResource BlockContentMarginGridLength}" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+        </Grid>
+    </Border>
+</ContentControl>

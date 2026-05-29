@@ -1,0 +1,202 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.plans.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "com/empyreanmed/heracles/patients/v1/patient.proto";
+import "com/empyreanmed/heracles/plans/v1/plan.proto";
+import "com/empyreanmed/heracles/treatment_fields/v1/treatment_field.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on plans.
+service PlanService {
+  // Lists plans for a given prescription.
+  rpc ListPlans(ListPlansRequest) returns (ListPlansResponse);
+
+  // Returns a single plan.
+  rpc GetPlan(GetPlanRequest) returns (GetPlanResponse);
+
+  // Creates a new plan for a prescription.
+  rpc CreatePlan(CreatePlanRequest) returns (CreatePlanResponse);
+
+  // Updates an existing plan.
+  rpc UpdatePlan(UpdatePlanRequest) returns (UpdatePlanResponse);
+
+  // Deletes a plan.
+  rpc DeletePlan(DeletePlanRequest) returns (DeletePlanResponse);
+
+  // Change treatment state from TREATMENTLOADINGSTATE_UNLOADED to TREATMENTLOADINGSTATE_PENDINGLOAD.
+  rpc LoadForTreatment(LoadForTreatmentRequest) returns (LoadForTreatmentResponse);
+
+  // Change treatment state from TREATMENTLOADINGSTATE_PENDINGLOAD to TREATMENTLOADINGSTATE_LOADED.
+  rpc TreatmentLoadAck(TreatmentLoadAckRequest) returns (TreatmentLoadAckResponse);
+
+  // Change treatment state from TREATMENTLOADINGSTATE_LOADED to TREATMENTLOADINGSTATE_UNLOADED.
+  rpc UnloadFromTreatment(UnloadFromTreatmentRequest) returns (UnloadFromTreatmentResponse);
+
+  // Find the plan which it's TREATMENTLOADINGSTATE is PENDINGLOAD
+  rpc FindPendingPlan(FindPendingPlanRequest) returns (FindPendingPlanResponse);
+
+  // Find the plan which it's TREATMENTLOADINGSTATE is LOADED
+  rpc FindLoadedPlan(FindLoadedPlanRequest) returns (FindLoadedPlanResponse);
+
+  // External listen's for load for treatment events
+  rpc LoadForTreatmentEvents(LoadForTreatmentEventsRequest) returns (stream LoadForTreatmentEventsResponse);
+
+  //events for changes in Plans
+  rpc PlanEvents(PlanEventsRequest) returns (stream PlanEventsResponse);
+
+  // Updates the status of a Plan, its associated Prescription, and Simulation in a single transaction.
+  rpc UpdatePlanPrescriptionSimulationStatus(UpdatePlanPrescriptionSimulationStatusRequest) returns (UpdatePlanPrescriptionSimulationStatusResponse);
+}
+
+// Request message for listing plans.
+message ListPlansRequest {
+  // The ID of the prescription for which to list plans.
+  optional int64 prescription_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed plans.
+message ListPlansResponse {
+  // The plans matching the list request. The order is unspecified.
+  repeated Plan plans = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single plan.
+message GetPlanRequest {
+  // The ID of the plan to fetch.
+  optional int64 plan_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched plan.
+message GetPlanResponse {
+  // The plan with the provided ID.
+  Plan plan = 1;
+}
+
+// Request message for creating a new plan.
+message CreatePlanRequest {
+  // Details of the plan to create.
+  optional Plan plan = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created plan.
+message CreatePlanResponse {
+  // The plan that was created.
+  Plan plan = 1;
+}
+
+// Request message for updating an existing plan.
+message UpdatePlanRequest {
+  // The plan to update.
+  optional Plan plan = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the plan to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated plan.
+message UpdatePlanResponse {
+  // The updated plan.
+  Plan plan = 1;
+}
+
+// Request message for deleting a plan.
+message DeletePlanRequest {
+  // The ID of the plan to delete.
+  optional int64 plan_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeletePlan`.
+message DeletePlanResponse {}
+
+// Request for changing Plan's treatment_loading_state to TREATMENTLOADINGSTATE_PENDINGLOAD and sending an event of load for treatment.
+message LoadForTreatmentRequest {
+  // The ID of the plan to be loaded for Treatment.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  // Boolean flag to select between PENDINGLOAD and PARTIALPENDINGLOAD states.
+  optional bool is_partial = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response for changing Plan's treatment_loading_state and sending an event of load for treatment.
+message LoadForTreatmentResponse {}
+
+// Request for changing Plan's treatment_loading_state to TREATMENTLOADINGSTATE_LOADED and sending an event of load for treatment.
+message TreatmentLoadAckRequest {
+  // The ID of the plan to be loaded for Treatment.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response for changing Plan's treatment_loading_state to TREATMENTLOADINGSTATE_LOADED and sending an event of load for treatment.
+message TreatmentLoadAckResponse {}
+
+// Request for sending an event of load for treatment
+message UnloadFromTreatmentRequest {
+  // The ID of the plan to be loaded for Treatment.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response for an event occurrence
+message UnloadFromTreatmentResponse {}
+
+// Request for finding the pending Plan
+message FindPendingPlanRequest {}
+
+// Response with the pending plan
+message FindPendingPlanResponse {
+  //Loaded Plan
+  Plan plan = 1;
+}
+
+// Request for finding the loaded Plan
+message FindLoadedPlanRequest {}
+
+// Response with the loaded plan
+message FindLoadedPlanResponse {
+  //Loaded Plan
+  Plan plan = 1;
+}
+
+// Request for opening a long-running stream of events of load for treatment, optionally replaying events for Patient.
+message LoadForTreatmentEventsRequest {}
+
+// Response for an event occurrence
+message LoadForTreatmentEventsResponse {
+  // Patient loaded for treatment
+  com.empyreanmed.heracles.patients.v1.Patient patient = 1;
+  //Plan Loaded for treatment
+  Plan plan = 2;
+  //Treatment Field Loaded for treatment
+  com.empyreanmed.heracles.treatment_fields.v1.TreatmentField treatment_field = 3;
+}
+
+// Request for opening a long-running stream of events of changes in Plan's table.
+message PlanEventsRequest {}
+
+// Response for an event occurrence of changes in Plan's table.
+message PlanEventsResponse {
+  //Plan changed
+  Plan plan = 1;
+}
+
+// Request message for updating the status of a Plan, Prescription, and Simulation.
+message UpdatePlanPrescriptionSimulationStatusRequest {
+  // The username of the user performing the update.
+  string username = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The password of the user performing the update.
+  string password = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID of the plan to update.
+  int64 plan_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // The new status to set for the Plan, Prescription, and Simulation.
+  com.empyreanmed.heracles.enums.v1.STATUS status = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for the update of Plan, Prescription, and Simulation.
+message UpdatePlanPrescriptionSimulationStatusResponse {
+  // The updated plan with the new status and approved_by field.
+  Plan updated_plan = 1;
+}

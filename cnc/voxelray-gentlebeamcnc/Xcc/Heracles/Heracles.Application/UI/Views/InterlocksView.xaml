@@ -1,0 +1,43 @@
+﻿<ContentControl 
+    x:Class="Heracles.Application.UI.Views.InterlocksView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    
+    xmlns:viewModels="clr-namespace:Heracles.Application.UI.ViewModels"
+    xmlns:constants="clr-namespace:Xcc.Core.Constants;assembly=Xcc.Core"
+
+    x:Name="Root"
+    mc:Ignorable="d"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:InterlocksViewModel}}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/CheckBox/CheckBoxThumbStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <StackPanel Orientation="{Binding Orientation, ElementName=Root}">
+        <CheckBox 
+            Style="{StaticResource CheckBoxThumbStyle}"
+            IsChecked="{Binding SystemIsReady, Mode=OneWay}"
+            Margin="{StaticResource BlockContentSmallMargin}">
+
+            <TextBlock d:Text="{x:Static constants:StringConstants.SystemNotReadyUiMessage}" Text="{Binding SystemInterlockText}" TextWrapping="Wrap"/>
+        </CheckBox>
+
+        <CheckBox 
+            Style="{StaticResource CheckBoxThumbStyle}"
+            IsChecked="{Binding GcbDataStore.Interlocks.HeraclesCollimator, Mode=OneWay}"
+            Margin="{StaticResource BlockContentSmallMargin}">
+
+            <TextBlock Text="Applicator"/>
+        </CheckBox>
+    </StackPanel>
+</ContentControl>

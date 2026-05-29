@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.documents.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a document associated with a patient.
+message Document {
+  // Document id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Patient id associated with the document
+  optional int64 patient_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Visit id associated with the document
+  optional int64 visit_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Document creation date
+  optional google.protobuf.Timestamp creation_date = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Title of the document
+  optional string title = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Description of the document
+  optional string description = 6;
+
+  // URL or file path of the document
+  optional string document_url = 7 [(google.api.field_behavior) = REQUIRED];
+}

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.output_factors.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// OutputFactor represents an output factor entity in the system.
+message OutputFactor {
+  // Unique identifier for the output factor.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The creation date of the output factor.
+  optional google.protobuf.Timestamp create_date = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The ID of the related preset configuration.
+  optional int64 preset_configuration_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // The name of the field associated with this output factor.
+  optional com.empyreanmed.heracles.enums.v1.FIELDNAME field_name = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // The factor value for this output factor.
+  optional float factor = 5 [(google.api.field_behavior) = REQUIRED];
+}

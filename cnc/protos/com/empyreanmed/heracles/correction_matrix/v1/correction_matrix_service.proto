@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.correction_matrix.v1;
+
+import "com/empyreanmed/heracles/correction_matrix/v1/correction_matrix.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on correction matrices.
+service CorrectionMatrixService {
+  // Lists correction matrices matching request parameters.
+  rpc ListCorrectionMatrices(ListCorrectionMatricesRequest) returns (ListCorrectionMatricesResponse);
+
+  // Returns a single correction matrix.
+  rpc GetCorrectionMatrix(GetCorrectionMatrixRequest) returns (GetCorrectionMatrixResponse);
+
+  // Creates a new correction matrix.
+  rpc CreateCorrectionMatrix(CreateCorrectionMatrixRequest) returns (CreateCorrectionMatrixResponse);
+
+  // Updates a single correction matrix.
+  rpc UpdateCorrectionMatrix(UpdateCorrectionMatrixRequest) returns (UpdateCorrectionMatrixResponse);
+
+  // Deletes a single correction matrix.
+  rpc DeleteCorrectionMatrix(DeleteCorrectionMatrixRequest) returns (DeleteCorrectionMatrixResponse);
+}
+
+// Request message for listing correction matrices.
+message ListCorrectionMatricesRequest {
+  // The maximum number of correction matrices to return.
+  optional int32 page_size = 1;
+
+  // A page token received from a previous `ListCorrectionMatrices` call.
+  optional string page_token = 2;
+
+  // The preset configuration ID to filter correction matrices by.
+  optional int64 preset_configuration_id = 3;
+}
+
+// Response message with the listed correction matrices.
+message ListCorrectionMatricesResponse {
+  // The correction matrices matching the list request.
+  repeated CorrectionMatrix correction_matrices = 1;
+
+  // A token to retrieve the next page of results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single correction matrix.
+message GetCorrectionMatrixRequest {
+  // The ID of the correction matrix to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single correction matrix.
+message GetCorrectionMatrixResponse {
+  // The correction matrix with the provided ID.
+  CorrectionMatrix correction_matrix = 1;
+}
+
+// Request message for creating a new correction matrix.
+message CreateCorrectionMatrixRequest {
+  // The correction matrix to be created.
+  optional CorrectionMatrix correction_matrix = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created correction matrix.
+message CreateCorrectionMatrixResponse {
+  // The created correction matrix.
+  CorrectionMatrix correction_matrix = 1;
+}
+
+// Request message for updating an existing correction matrix.
+message UpdateCorrectionMatrixRequest {
+  // The correction matrix to be updated.
+  optional CorrectionMatrix correction_matrix = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated correction matrix.
+message UpdateCorrectionMatrixResponse {
+  // The updated correction matrix.
+  CorrectionMatrix correction_matrix = 1;
+}
+
+// Request message for deleting a correction matrix.
+message DeleteCorrectionMatrixRequest {
+  // The ID of the correction matrix to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteCorrectionMatrix`.
+message DeleteCorrectionMatrixResponse {}

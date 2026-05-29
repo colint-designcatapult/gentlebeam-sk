@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.patients.v1;
+
+import "com/empyreanmed/heracles/patients/v1/patient.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on patients.
+service PatientService {
+  // Lists patients matching request parameters.
+  rpc ListPatients(ListPatientsRequest) returns (ListPatientsResponse);
+
+  // Returns a single patient.
+  rpc GetPatient(GetPatientRequest) returns (GetPatientResponse);
+
+  // Creates a new patient.
+  rpc CreatePatient(CreatePatientRequest) returns (CreatePatientResponse);
+
+  // Updates a single patient.
+  rpc UpdatePatient(UpdatePatientRequest) returns (UpdatePatientResponse);
+
+  // Deletes a single patient.
+  rpc DeletePatient(DeletePatientRequest) returns (DeletePatientResponse);
+
+  // Searches for patients based on name parameters and return the list patient response.
+  rpc SearchPatients(SearchPatientsRequest) returns (SearchPatientsResponse);
+}
+
+// Request message for listing patients.
+message ListPatientsRequest {
+  // The maximum number of patients to return. The service may return fewer than this value.
+  // If unset or zero, all patients will be returned.
+  optional int32 page_size = 1;
+
+  // A page token, received from a previous `ListPatients` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListPatients` must match
+  // the call that provided the page token.
+  optional string page_token = 2;
+}
+
+// Response message with the listed patients.
+message ListPatientsResponse {
+  // The patients matching the list request. The order is unspecified.
+  repeated Patient patients = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+
+  // A token that can be sent as `page_token` to retrieve the next page of
+  // results. If this field is omitted, there are no more results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single patient.
+message GetPatientRequest {
+  // The ID of the patient to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single patient.
+message GetPatientResponse {
+  // The patient with the ID provided in the request.
+  Patient patient = 1;
+}
+
+// Request message for creating a new patient.
+message CreatePatientRequest {
+  // The patient to be created.
+  optional Patient patient = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created patient.
+message CreatePatientResponse {
+  // The patient that was created.
+  optional Patient patient = 1;
+}
+
+// Request message for updating an existing patient.
+message UpdatePatientRequest {
+  // The patient to be updated.
+  optional Patient patient = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the patient to update. Must not be empty.
+  // Fields that have `OUTPUT_ONLY` behavior may not be updated.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated patient.
+message UpdatePatientResponse {
+  // The updated patient.
+  Patient patient = 1;
+}
+
+// Request message for deleting a patient.
+message DeletePatientRequest {
+  // The ID of the patient to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeletePatient`.
+message DeletePatientResponse {}
+
+// Request message for searching patients.
+message SearchPatientsRequest {
+  // Optional first name for searching
+  optional string first_name = 1;
+  // Optional middle name for searching
+  optional string middle_name = 2;
+  // Optional last name for searching
+  optional string last_name = 3;
+}
+
+// Response message with the listed patients.
+message SearchPatientsResponse {
+  // The patients matching the list request. The order is unspecified.
+  repeated Patient patients = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}

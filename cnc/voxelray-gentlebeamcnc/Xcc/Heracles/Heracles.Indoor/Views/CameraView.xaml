@@ -1,0 +1,68 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.CameraView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+    xmlns:views ="clr-namespace:Heracles.Indoor.Views"
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+                
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+             
+    xmlns:conv2="clr-namespace:Heracles.Application.UI.Converters;assembly=Heracles.Application"
+    xmlns:uc="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+                
+    mc:Ignorable="d" 
+    d:DesignWidth="800" d:DesignHeight="600"
+    d:DataContext="{d:DesignInstance viewModels:CameraViewModel, IsDesignTimeCreatable=True}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+
+    <Grid Margin="{StaticResource BlockContentMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <Border>
+            <uc:VideoLiveFeedControl 
+                UriSource="{Binding CameraUriSource}"
+                ControlPanelVisibility="Collapsed"
+                ScreenshotCommand="{Binding ScreenshotCommand}"
+                PathToDatabase="{Binding PathToDatabase}"/>
+        </Border>
+        
+        <Border Grid.Column="0" Grid.ColumnSpan="5" Grid.Row="8" Style="{StaticResource BorderBlockStyle}">
+            <DockPanel LastChildFill="False" Margin="12">
+                <!--Back button-->
+                <Button 
+                    Width="{StaticResource ButtonWidth}" 
+                    Height="{StaticResource ButtonHeight}"
+                    Command="{Binding ExitCommand}">
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Path 
+                            Data="{StaticResource ExitIcon}" 
+                            Style="{StaticResource ButtonPathStyle}" 
+                            Height="26" Width="26" 
+                            Margin="0,0,10,0"/>
+
+                        <Label Content="Back" Style="{StaticResource ButtonLabelStyle}" Padding="0" />
+                    </StackPanel>
+                </Button>
+            </DockPanel>
+        </Border>
+    </Grid>
+
+</ContentControl>

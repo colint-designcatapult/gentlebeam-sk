@@ -1,0 +1,104 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.Settings.SettingsTabsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+    xmlns:views ="clr-namespace:Heracles.Indoor.Views.Settings"
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels.Settings"
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+                
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+             
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    xmlns:enums="clr-namespace:Heracles.Core.Enums;assembly=Heracles.Core"
+    xmlns:appx="clr-namespace:Xcc.Application.UI;assembly=Xcc.Application"
+
+    mc:Ignorable="d" 
+    d:DesignWidth="1920" d:DesignHeight="1080"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:SettingsTabsViewModel}, IsDesignTimeCreatable=True}">
+    
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Constants.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ButtonStyle.xaml" />
+                
+                
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/TabControl/FolderTabControl.xaml" />
+                
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Border Style="{StaticResource BorderOutlineStyle}" Background="{StaticResource ApplicationBackgroundColor}">
+        <Grid Margin="{StaticResource ViewMargin}" d:ShowGridLines="False">
+            <ucx:XccTabControl 
+                Grid.Row="4" Grid.ColumnSpan="2" 
+                Style="{StaticResource FolderTabControl}">
+
+                <!--<ucx:XccTabControl.PreventTabChange>
+                    <MultiBinding Converter="{convx:BoolDisjunction}">
+                        <Binding Path="HeaterCurrentStore.HeaterCurrent.IsModified"/>
+                        <Binding Path="MagnetometerCorrectionsStore.IsModified"/>
+                        <Binding Path="CoilConfigurationStore.IsModified"/>
+                        <Binding Path="OutputFactorConfigurationStore.IsModified"/>
+                    </MultiBinding>
+                </ucx:XccTabControl.PreventTabChange>-->
+
+                <TabItem Header="Endpoints Configuration" Height="34" VerticalAlignment="Bottom">
+                    <views:EndPointsConfigurationView/>
+                </TabItem>
+                
+                <TabItem Header="Access Control" Visibility="Collapsed">
+                </TabItem>
+                
+                <TabItem Header="User Management">
+                    <ContentControl prism:RegionManager.RegionName="{x:Static appx:Regions+Main+Settings.UserManagementRegion}"/>
+                </TabItem>
+
+                <TabItem Header="User Permissions">
+                    <ContentControl prism:RegionManager.RegionName="{x:Static appx:Regions+Main+Settings.UserPermissionsRegion}"/>
+                </TabItem>
+                                
+                <TabItem Header="Robotic Arm Configuration" Visibility="Collapsed">
+                </TabItem>
+                
+                <TabItem Header="Applicator Management">
+                    <views:TargetManagementView/>
+                </TabItem>
+            </ucx:XccTabControl>
+
+            
+            <!--Save button-->
+            <Border Visibility="Collapsed"
+                Grid.Row="8" Grid.ColumnSpan="2"
+                Style="{StaticResource BorderBlockStyle}">
+
+                <DockPanel Margin="{StaticResource BlockContentMargin}" LastChildFill="False">
+                    <Button 
+                        DockPanel.Dock="Left"
+                        Width="{StaticResource ButtonWidth}" 
+                        Height="{StaticResource ButtonHeight}">
+
+                        <StackPanel Orientation="Horizontal">
+                            <Path 
+                                Data="{StaticResource ImportIcon}" 
+                                Style="{StaticResource ButtonPathStyle}"
+                                Height="24" Width="24" 
+                                Margin="0,0,5,0"/>
+
+                            <Label 
+                                Content="Import"
+                                Style="{StaticResource ButtonLabelStyle}"/>
+                        </StackPanel>
+                    </Button>
+                </DockPanel>
+            </Border>   
+        </Grid>
+    </Border>
+</ContentControl>

@@ -1,0 +1,261 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:system="clr-namespace:System;assembly=System.Runtime">
+
+    <!--Fonts-->
+    <FontFamily x:Key="TelemetryLCDFont">
+        pack://application:,,,/Xcc.Styles;Component/Resources/Fonts/#LCD
+    </FontFamily>
+
+    <FontFamily x:Key="BaseFont">
+        pack://application:,,,/Xcc.Styles;Component/Resources/Fonts/#Work Sans
+    </FontFamily>
+
+    <FontFamily x:Key="PasswordFont">
+        pack://application:,,,/Xcc.Styles;Component/Resources/Fonts/#Password
+    </FontFamily>
+
+
+    <!--Common colors-->
+    <Brush x:Key="ApplicationBackgroundColor">#242424</Brush>
+    <Brush x:Key="ForegroundAccentBrush">#f0f0f0</Brush>
+    <Brush x:Key="ForegroundDefaultBrush">#b0b0b0</Brush>
+    <Brush x:Key="ForegroundPaleBrush">#808080</Brush>
+    <Brush x:Key="ForegroundSelectedBrush">Orange</Brush>
+    <Brush x:Key="ForegroundFocusedBrush">Orange</Brush>
+    <Brush x:Key="ShadowForegroundColor">Black</Brush>
+    <Brush x:Key="PopupBackgroundBrush">#525252</Brush>
+    <Brush x:Key="SelectedItemBackgroundBrush">#434343</Brush>
+
+
+
+    <!--'Block' is a set of controls placed on a background different from the application background-->
+    <!--Block resources-->
+    <Brush x:Key="BlockBorderBrush">#6a6a6a</Brush>
+    <Brush x:Key="BlockBackgroundBrush">#3a3a3a</Brush>
+    <Brush x:Key="BlockFooterBackgroundBrush">#1a1a1a</Brush>
+    <Brush x:Key="BlockHeaderBackgroundBrush">#1a1a1a</Brush>
+
+    <system:Double x:Key="BlockCornerRadiusValue">8</system:Double>
+    <CornerRadius x:Key="BlockCornerRadius">8</CornerRadius>
+    <CornerRadius 
+        x:Key="BlockTopCornerRadius"
+        TopLeft="{StaticResource BlockCornerRadiusValue}"
+        TopRight="{StaticResource BlockCornerRadiusValue}"/>
+    
+    <CornerRadius 
+        x:Key="BlockBottomCornerRadius"
+        BottomLeft="{StaticResource BlockCornerRadiusValue}"
+        BottomRight="{StaticResource BlockCornerRadiusValue}"/>
+
+    
+
+    <!--Common resources-->
+    <DrawingBrush
+        x:Key="ControlDisabledBackgroundBrush"
+        Stretch="None"
+        TileMode="Tile"
+        Viewport="0,0,2,2"
+        ViewportUnits="Absolute">
+
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Geometry="M0,0 H16 V16 H32 V32 H16 V16 H0Z" Brush="#CC000000"/>
+                <GeometryDrawing Geometry="M 32 0 V 16 H 16 V 32 H 0 V 16 H 16 V 0 Z" Brush="#2BFFFFFF"/>
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+
+    <DrawingBrush
+        x:Key="DisabledControlOpacityMaskBrush"
+        Stretch="None"
+        TileMode="Tile"
+        Viewport="0,0,2,2"
+        ViewportUnits="Absolute">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Geometry="M0,0 H32 V32 H0Z" Brush="#C0000000"/>
+                <GeometryDrawing Geometry="M0,0 H16 V16 H32 V32 H16 V16 H0Z" Brush="#C0606060"/>
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+
+    <SolidColorBrush x:Key="ControlIsMouseOverBackground">#30FFFFFF</SolidColorBrush>
+
+
+
+    <!--Telemetry Label-->
+    <Brush x:Key="TelemetryLCDForeground">Cyan</Brush>
+    <Brush x:Key="TelemetryLCDForegroundDisabled">Gray</Brush>
+    <Brush x:Key="TelemetryLCDBackground">#1a1a1a</Brush>
+
+
+
+    <!--Button-->
+    <SolidColorBrush x:Key="ButtonStrokeBrush">#d0d0d0</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonDisabledStrokeBrush">#8c8c8c</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonBackgroundBrush">#505050</SolidColorBrush>
+
+    <SolidColorBrush x:Key="ButtonCloseIsMouseOverBrush">#8b0000</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonCloseIsPressedBrush">#7d0e0e</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonCloseFocusedForegroundBrush">White</SolidColorBrush>
+    
+    <system:Double x:Key="ButtonHeight">54</system:Double>
+    <system:Double x:Key="ButtonWidth">150</system:Double>
+
+    <SolidColorBrush x:Key="ButtonToolbarIsPressedBackground">#383838</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonToolbarIsMouseOverBackground">#505050</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonToolBarIsCheckedBackground">#80000000</SolidColorBrush>
+
+    <!--GroupBox-->
+    <Brush x:Key="GroupBoxBorderBrush">#6a6a6a</Brush>
+    <Brush x:Key="GroupBoxInnerBorderBrush">#242424</Brush>
+    <CornerRadius x:Key="GroupBoxCornerRadius">10</CornerRadius>
+    <CornerRadius x:Key="GroupBoxInnerCornerRadius">9</CornerRadius>
+
+
+
+    <!--ScrollBar resources-->
+    <Brush x:Key="ScrollBarButtonsBackgroundBrush">#585858</Brush>
+    <Brush x:Key="ScrollBarButtonsMouseOverBackgroundBrush">#686868</Brush>
+    <Brush x:Key="ScrollBarButtonsMousePressedBackgroundBrush">#8a8a8a</Brush>
+    <Brush x:Key="ScrollBarBackgroundBrush" >Transparent</Brush>
+    <system:Double x:Key="ScrollBarButtonSize">20</system:Double>
+    <GridLength x:Key="ScrollBarButtonGridLength">20</GridLength>
+
+
+    <!--CheckBox and ToggleButton resources-->
+    <Brush x:Key="CheckedBackgroundColor">#07b16a</Brush>
+    <Brush x:Key="UncheckedBackgroundColor">Crimson</Brush>
+    <system:Double x:Key="ToggleButtonTrackOutlineWidth">52</system:Double>
+    <system:Double x:Key="ToggleButtonTrackOutlineHeight">22</system:Double>
+    <system:Double x:Key="ToggleButtonTrackWidth">48</system:Double>
+    <system:Double x:Key="ToggleButtonTrackHeight">18</system:Double>
+    <system:Double x:Key="ToggleButtonThumbWidth">29</system:Double>
+    <system:Double x:Key="ToggleButtonThumbHeight">28</system:Double>
+
+
+
+    <!--'Field' (refers to controls for entering some single-line data: TexBox, ComboBox) resources-->
+    <SolidColorBrush x:Key="FieldForegroundColor">#e0e0e0</SolidColorBrush>
+    <SolidColorBrush x:Key="FieldBackgroundColor" >#282828</SolidColorBrush>
+    <SolidColorBrush x:Key="FieldBorderBrush" Color="#68686c" />
+    <SolidColorBrush x:Key="FieldDisabledBackgroundBrush" Color="#353535" />
+    <SolidColorBrush x:Key="FieldDisabledForegroundBrush" Color="#888" />
+    <SolidColorBrush x:Key="FieldDisabledBorderBrush" Color="#545458" />
+    <SolidColorBrush x:Key="FieldIsMouseOverBorderBrush" Color="#88888c" />
+    <SolidColorBrush x:Key="FieldWatermarkColor">#505050</SolidColorBrush>
+    <SolidColorBrush x:Key="FieldCaretBrush" Color="White" />
+    <SolidColorBrush x:Key="FieldValidationErrorBrush" Color="#ab0000"/>
+    <Thickness       x:Key="FieldLegendMargin" Bottom="6" Right="6"/>
+    <GridLength      x:Key="FieldLegendMarginGridLength">6</GridLength>
+
+    <CornerRadius x:Key="FieldCornerRadius">5</CornerRadius>
+    
+    <system:Double x:Key="FieldHeight">36.0</system:Double>
+    <GridLength x:Key="FieldHeightGridLength">36</GridLength>
+    
+    <!--Tagged field is a style for field controls with a specified Tag property-->
+    <system:Double x:Key="TaggedFieldHeight">62</system:Double>
+    <GridLength x:Key="TaggedFieldGridLength">62</GridLength>
+
+
+
+    <!--Block content resources-->
+    <!--Margins for content inside views (padding) and between content within a block-->
+    <system:Double x:Key="BlockContentSmallMarginValue">8</system:Double>
+    <system:Double x:Key="BlockContentMarginValue">16</system:Double>
+    <GridLength x:Key="BlockContentMarginGridLength">16</GridLength>
+
+    <Thickness x:Key="BlockContentMarginLeft" Left="{StaticResource BlockContentMarginValue}"/>
+    <Thickness x:Key="BlockContentMarginRight" Right="{StaticResource BlockContentMarginValue}"/>
+    <Thickness x:Key="BlockContentMarginTop" Top="{StaticResource BlockContentMarginValue}"/>
+    <Thickness x:Key="BlockContentMarginBottom" Bottom="{StaticResource BlockContentMarginValue}"/>
+
+    <Thickness 
+        x:Key="BlockContentMarginLeftTop" 
+        Left="{StaticResource BlockContentMarginValue}" 
+        Top="{StaticResource BlockContentMarginValue}"/>
+
+    <Thickness 
+        x:Key="BlockContentMarginLeftRightBottom" 
+        Left="{StaticResource BlockContentMarginValue}" 
+        Right="{StaticResource BlockContentMarginValue}"
+        Bottom="{StaticResource BlockContentMarginValue}"/>
+
+    <Thickness 
+        x:Key="BlockContentMarginHorizontal" 
+        Left="{StaticResource BlockContentMarginValue}" 
+        Right="{StaticResource BlockContentMarginValue}"/>
+    
+    
+    <Thickness 
+        x:Key="BlockContentMarginBottomRight" 
+        Right="{StaticResource BlockContentMarginValue}" 
+        Bottom="{StaticResource BlockContentMarginValue}"/>
+
+    <Thickness 
+        x:Key="BlockContentMargin" 
+        Left="{StaticResource BlockContentMarginValue}" Top="{StaticResource BlockContentMarginValue}" 
+        Right="{StaticResource BlockContentMarginValue}" Bottom="{StaticResource BlockContentMarginValue}"/>
+
+    <Thickness 
+        x:Key="LabeledBlockContentMargin" 
+        Left="{StaticResource BlockContentMarginValue}" Top="{StaticResource BlockContentSmallMarginValue}" 
+        Right="{StaticResource BlockContentMarginValue}" Bottom="{StaticResource BlockContentMarginValue}"/>
+
+
+    <Thickness 
+        x:Key="ButtonContentMargin" 
+        Left="{StaticResource BlockContentSmallMarginValue}" 
+        Right="{StaticResource BlockContentSmallMarginValue}"/>
+
+
+    <GridLength x:Key="BlockContentSmallMarginLength">8</GridLength>
+    <Thickness x:Key="BlockContentSmallMarginLeft" Left="{StaticResource BlockContentSmallMarginValue}"/>
+    <Thickness x:Key="BlockContentSmallMarginRight" Right="{StaticResource BlockContentSmallMarginValue}"/>
+    <Thickness x:Key="BlockContentSmallMarginTop" Top="{StaticResource BlockContentSmallMarginValue}"/>
+    <Thickness x:Key="BlockContentSmallMarginBottom" Bottom="{StaticResource BlockContentSmallMarginValue}"/>
+    
+    <Thickness 
+        x:Key="BlockContentSmallMargin"
+        Left="{StaticResource BlockContentSmallMarginValue}" Top="{StaticResource BlockContentSmallMarginValue}" 
+        Right="{StaticResource BlockContentSmallMarginValue}" Bottom="{StaticResource BlockContentSmallMarginValue}"/>
+
+
+
+    <!--View resources-->
+    <system:Double x:Key="ViewMarginValue">24</system:Double>
+    <Thickness 
+        x:Key="ViewMargin" 
+        Left="{StaticResource ViewMarginValue}" Top="{StaticResource ViewMarginValue}"
+        Right="{StaticResource ViewMarginValue}" Bottom="{StaticResource ViewMarginValue}"/>
+
+
+
+    <!--List view column margins-->
+    <system:Double x:Key="ListColumnHorizontalMarginValue">8</system:Double>
+    <system:Double x:Key="ListColumnVerticalMarginValue">6</system:Double>
+
+    <Thickness 
+        x:Key="ListColumnHeaderMargin" 
+        Left="{StaticResource ListColumnHorizontalMarginValue}" Top="{StaticResource ListColumnVerticalMarginValue}" 
+        Right="{StaticResource ListColumnHorizontalMarginValue}" Bottom="{StaticResource ListColumnVerticalMarginValue}"/>
+
+    <Thickness 
+        x:Key="ListColumnItemMargin" 
+        Left="{StaticResource ListColumnHorizontalMarginValue}" Right="{StaticResource ListColumnHorizontalMarginValue}"/>
+
+    <system:Double x:Key="ListColumnHorizontalMarginValueSmall">4</system:Double>
+
+    <Thickness
+        x:Key="ListColumnHeaderMarginSmall" 
+        Left="{StaticResource ListColumnHorizontalMarginValueSmall}" Top="{StaticResource ListColumnVerticalMarginValue}" 
+        Right="{StaticResource ListColumnHorizontalMarginValueSmall}" Bottom="{StaticResource ListColumnVerticalMarginValue}"/>
+
+    <Thickness 
+        x:Key="ListColumnItemMarginSmall" 
+        Left="{StaticResource ListColumnHorizontalMarginValueSmall}" Right="{StaticResource ListColumnHorizontalMarginValueSmall}"/>
+
+</ResourceDictionary>

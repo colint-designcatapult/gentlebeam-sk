@@ -1,0 +1,72 @@
+﻿<ContentControl
+    x:Class="Xcc.Application.Views.ServiceButtonsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    
+    xmlns:viewModels="clr-namespace:Xcc.Application.ViewModels"
+    
+    IsTabStop="False"
+
+    mc:Ignorable="d"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:ServiceButtonsViewModel}}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonDefaultStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonToolbarStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <!--<Button 
+            Grid.Column="0"
+            Width="{StaticResource ButtonHeight}" Height="{StaticResource ButtonHeight}"
+            Command="{Binding GetFaultsCommand}"
+            Style="{StaticResource ButtonToolbarStyle}"
+            ToolTip="Show Faults"
+            Visibility="{Binding UIStateMachine.CentralButton.State, 
+                Converter={convx:IntToVisibilityVisibleConverter}, 
+                ConverterParameter={x:Static enums:UICentralButtonState.ClearErrors}}">
+                        
+            <Image Source="{StaticResource FaultsIcon36x36}" Style="{StaticResource ButtonImageStyle}"/>
+        </Button>-->
+        
+        <Button 
+            Grid.Column="2"
+            Width="{StaticResource ButtonHeight}"
+            Command="{Binding ShowInterlocksCommand}"
+            Style="{StaticResource ButtonToolbarStyle}"
+            HorizontalContentAlignment="Center"
+            VerticalContentAlignment="Center"
+            FontSize="36"
+            ToolTip="Show Interlocks">
+
+            <Image Source="{StaticResource InterlocksIcon36x36}" Style="{StaticResource ButtonImageStyle}"/>
+        </Button>
+        
+        <Button 
+            Grid.Column="4"
+            Width="{StaticResource ButtonHeight}" Height="{StaticResource ButtonHeight}"
+            Command="{Binding ShowDetailedTelemetryCommand}"
+            Style="{StaticResource ButtonToolbarStyle}">
+                        
+            <Image Source="{StaticResource ServiceIcon36x36}" Style="{StaticResource ButtonImageStyle}"/>
+        </Button>
+    </Grid>
+</ContentControl>

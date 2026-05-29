@@ -1,0 +1,65 @@
+<Playlist Version="2.0">
+  <Rule Name="Includes" Match="Any">
+    <Rule Match="All">
+      <Property Name="Solution" />
+      <Rule Match="Any">
+        <Rule Match="All">
+          <Property Name="Project" Value="Heracles.Robot.IntegrationTest" />
+          <Rule Match="Any">
+            <Rule Match="All">
+              <Property Name="Namespace" Value="Heracles.Robot.IntegrationTest.Motions" />
+              <Rule Match="Any">
+                <Rule Match="All">
+                  <Property Name="Class" Value="MoveByJointsTests" />
+                  <Rule Match="Any">
+                    <Rule Match="All">
+                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Heracles.Robot.IntegrationTest.Motions.MoveByJointsTests.PositiveTest" />
+                      <Rule Match="Any">
+                        <Property Name="DisplayName" Value="PositiveTest" />
+                      </Rule>
+                    </Rule>
+                    <Rule Match="All">
+                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Heracles.Robot.IntegrationTest.Motions.MoveByJointsTests.NegativeTest" />
+                      <Rule Match="Any">
+                        <Property Name="DisplayName" Value="NegativeTest(90,00, 90,00, 90,00, 90,00, 90,00, 90,00)" />
+                        <Property Name="DisplayName" Value="NegativeTest(90,00, -45,00, 0,00, 0,00, 0,00)" />
+                      </Rule>
+                    </Rule>
+                    <Rule Match="All">
+                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Heracles.Robot.IntegrationTest.Motions.MoveByJointsTests.PositiveTestWithStop" />
+                      <Rule Match="Any">
+                        <Property Name="DisplayName" Value="PositiveTestWithStop" />
+                      </Rule>
+                    </Rule>
+                  </Rule>
+                </Rule>
+                <Rule Match="All">
+                  <Property Name="Class" Value="MoveByWorldFramePositionTests" />
+                  <Rule Match="Any">
+                    <Rule Match="All">
+                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Heracles.Robot.IntegrationTest.Motions.MoveByWorldFramePositionTests.PositiveTest" />
+                      <Rule Match="Any">
+                        <Property Name="DisplayName" Value="PositiveTest(X,0,Y,-20)" />
+                        <Property Name="DisplayName" Value="PositiveTest(X,3,X,0)" />
+                        <Property Name="DisplayName" Value="PositiveTest(X,0,Z,40)" />
+                        <Property Name="DisplayName" Value="PositiveTest(Y,-5,X,0)" />
+                        <Property Name="DisplayName" Value="PositiveTest(Z,7,X,0)" />
+                        <Property Name="DisplayName" Value="PositiveTest(X,-5,Z,12)" />
+                        <Property Name="DisplayName" Value="PositiveTest(X,0,X,10)" />
+                        <Property Name="DisplayName" Value="PositiveTest(X,4,Y,-11)" />
+                        <Property Name="DisplayName" Value="PositiveTest(X,-3,X,10)" />
+                        <Property Name="DisplayName" Value="PositiveTest(X,0,Y,20)" />
+                        <Property Name="DisplayName" Value="PositiveTest(X,0,X,-10)" />
+                        <Property Name="DisplayName" Value="PositiveTest(X,0,Z,-40)" />
+                      </Rule>
+                    </Rule>
+                  </Rule>
+                </Rule>
+              </Rule>
+            </Rule>
+          </Rule>
+        </Rule>
+      </Rule>
+    </Rule>
+  </Rule>
+</Playlist>

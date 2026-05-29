@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.diagnoses.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Diagnoses represent a diagnosis of a pathology in a physical region (or "site") on a patient.
+message Diagnosis {
+  // Diagnosis id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The diagnosed patient
+  optional int64 patient_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Diagnosis creation date
+  optional google.protobuf.Timestamp creation_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The name of the physical site on the patient's body where the pathology was diagnosed
+  optional string site_name = 4 [(google.api.field_behavior) = REQUIRED];
+
+  //Diagnosed site location
+  optional com.empyreanmed.heracles.enums.v1.SITELOCATION site_location = 5 [(google.api.field_behavior) = REQUIRED];
+
+  //IDC code for Diagnoses
+  optional com.empyreanmed.heracles.enums.v1.ICDCODE icd_code = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // The diagnosed pathology
+  optional com.empyreanmed.heracles.enums.v1.PATHOLOGY pathology = 7 [(google.api.field_behavior) = REQUIRED];
+
+  // The diagnosed sub_cell_type_one
+  optional com.empyreanmed.heracles.enums.v1.CELLTYPE sub_cell_type_one = 8;
+
+  // The diagnosed sub_cell_type_two
+  optional com.empyreanmed.heracles.enums.v1.CELLTYPE sub_cell_type_two = 9;
+
+  // The diagnosis description
+  optional com.empyreanmed.heracles.enums.v1.DESCRIPTION description = 10 [(google.api.field_behavior) = OPTIONAL];
+
+  // Whether the record is archived. Default is false.
+  bool archived = 11;
+
+  // The name of the referring provider
+  optional string referring = 12;
+}

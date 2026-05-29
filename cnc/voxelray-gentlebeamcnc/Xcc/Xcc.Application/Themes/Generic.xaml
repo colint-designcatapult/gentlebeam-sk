@@ -1,0 +1,10 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;component/UI/UserControls/TagListControl.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;component/UI/UserControls/EndPointInputControl.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;component/UI/UserControls/XccTrapezoidBorder.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;component/UI/UserControls/XccCheckableEntryComboBox.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>

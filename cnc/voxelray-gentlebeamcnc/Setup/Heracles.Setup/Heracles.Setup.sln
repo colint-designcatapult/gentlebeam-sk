@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35208.52
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Heracles.Installer", "Heracles.Installer\Heracles.Installer.csproj", "{107FD044-FEA4-4407-BF30-12C048EDC821}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{44478945-6364-4FED-B6CD-9B0CC3B0DF50}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{A58148E3-8C6D-4995-A731-33BDB65636EF}"
+	ProjectSection(SolutionItems) = preProject
+		..\Common\include\Functions.nsh = ..\Common\include\Functions.nsh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Functions", "Functions", "{64C9B34E-2C54-44BE-A070-0EFBB77E59F2}"
+	ProjectSection(SolutionItems) = preProject
+		..\Common\include\Functions\DotNetRuntimeCheck.nsh = ..\Common\include\Functions\DotNetRuntimeCheck.nsh
+		..\Common\include\Functions\DumpLog.nsh = ..\Common\include\Functions\DumpLog.nsh
+		..\Common\include\Functions\EnvVar.nsh = ..\Common\include\Functions\EnvVar.nsh
+		..\Common\include\Functions\FileEx.nsh = ..\Common\include\Functions\FileEx.nsh
+		..\Common\include\Functions\KillProcess.nsh = ..\Common\include\Functions\KillProcess.nsh
+		..\Common\include\Functions\Log.nsh = ..\Common\include\Functions\Log.nsh
+		..\Common\include\Functions\ShellExecWait.nsh = ..\Common\include\Functions\ShellExecWait.nsh
+		..\Common\include\Functions\Shortcuts.nsh = ..\Common\include\Functions\Shortcuts.nsh
+		..\Common\include\Functions\Timestamp.nsh = ..\Common\include\Functions\Timestamp.nsh
+		..\Common\include\Functions\UnzipArchive.nsh = ..\Common\include\Functions\UnzipArchive.nsh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{ED9D98B4-D8B5-4120-BD96-CDAB6E206EE4}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{107FD044-FEA4-4407-BF30-12C048EDC821}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{107FD044-FEA4-4407-BF30-12C048EDC821}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{107FD044-FEA4-4407-BF30-12C048EDC821}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{107FD044-FEA4-4407-BF30-12C048EDC821}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A58148E3-8C6D-4995-A731-33BDB65636EF} = {44478945-6364-4FED-B6CD-9B0CC3B0DF50}
+		{64C9B34E-2C54-44BE-A070-0EFBB77E59F2} = {A58148E3-8C6D-4995-A731-33BDB65636EF}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D7E3B085-1188-475B-A3B3-AAD6915D1158}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.auth.v1;
+
+import "google/api/field_behavior.proto";
+
+// Authentication service for logging in users and returning JWTs.
+service AuthService {
+  // Logs in a user and returns a JWT if successful.
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+// Request message for logging in a user.
+message LoginRequest {
+  // Username of the user.
+  optional string username = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Password of the user.
+  optional string password = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the JWT token.
+message LoginResponse {
+  // The JWT token for the logged-in user.
+  optional string jwt_token = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.correction_matrix.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// CorrectionMatrix represents the correction matrix for an energy configuration.
+message CorrectionMatrix {
+  // Unique identifier for the correction matrix.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Foreign key to the preset_configuration_id entity.
+  optional int64 preset_configuration_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The creation date of the correction matrix.
+  optional google.protobuf.Timestamp create_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The type of magnetometer.
+  optional com.empyreanmed.heracles.enums.v1.MAGNETOMETERTYPE magnetometer_type = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Correction matrix element CM11.
+  optional float cm11 = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Correction matrix element CM12.
+  optional float cm12 = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Correction matrix element CM13.
+  optional float cm13 = 7 [(google.api.field_behavior) = REQUIRED];
+
+  // Correction matrix element CM21.
+  optional float cm21 = 8 [(google.api.field_behavior) = REQUIRED];
+
+  // Correction matrix element CM22.
+  optional float cm22 = 9 [(google.api.field_behavior) = REQUIRED];
+
+  // Correction matrix element CM23.
+  optional float cm23 = 10 [(google.api.field_behavior) = REQUIRED];
+}

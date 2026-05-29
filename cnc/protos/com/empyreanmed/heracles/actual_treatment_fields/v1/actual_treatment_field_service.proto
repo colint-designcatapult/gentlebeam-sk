@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.actual_treatment_fields.v1;
+
+import "com/empyreanmed/heracles/actual_treatment_fields/v1/actual_treatment_field.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on actual treatment fields.
+service ActualTreatmentFieldService {
+  // Lists actual treatment fields for a given plan.
+  rpc ListActualTreatmentFields(ListActualTreatmentFieldsRequest) returns (ListActualTreatmentFieldsResponse);
+
+  // Returns a single actual treatment field.
+  rpc GetActualTreatmentField(GetActualTreatmentFieldRequest) returns (GetActualTreatmentFieldResponse);
+
+  // Creates a new actual treatment field for a plan.
+  rpc CreateActualTreatmentField(CreateActualTreatmentFieldRequest) returns (CreateActualTreatmentFieldResponse);
+
+  // Updates an existing actual treatment field.
+  rpc UpdateActualTreatmentField(UpdateActualTreatmentFieldRequest) returns (UpdateActualTreatmentFieldResponse);
+
+  // Deletes a actual treatment field.
+  rpc DeleteActualTreatmentField(DeleteActualTreatmentFieldRequest) returns (DeleteActualTreatmentFieldResponse);
+}
+
+// Request message for listing actual treatment fields.
+message ListActualTreatmentFieldsRequest {
+  // The ID of the treatment_field for which to list actual treatment fields.
+  optional int64 treatment_field_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed actual treatment fields.
+message ListActualTreatmentFieldsResponse {
+  // The actual treatment fields matching the list request. The order is unspecified.
+  repeated ActualTreatmentField actual_treatment_fields = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single actual treatment field.
+message GetActualTreatmentFieldRequest {
+  // The ID of the actual treatment field to fetch.
+  optional int64 actual_treatment_field_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched actual treatment field.
+message GetActualTreatmentFieldResponse {
+  // The actual treatment field with the provided ID.
+  ActualTreatmentField actual_treatment_field = 1;
+}
+
+// Request message for creating a new actual treatment field.
+message CreateActualTreatmentFieldRequest {
+  // Details of the actual treatment field to create.
+  optional ActualTreatmentField actual_treatment_field = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created actual treatment field.
+message CreateActualTreatmentFieldResponse {
+  // The actual treatment field that was created.
+  ActualTreatmentField actual_treatment_field = 1;
+}
+
+// Request message for updating an existing actual treatment field.
+message UpdateActualTreatmentFieldRequest {
+  // The actual treatment field to update.
+  optional ActualTreatmentField actual_treatment_field = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the actual treatment field to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated actual treatment field.
+message UpdateActualTreatmentFieldResponse {
+  // The updated actual treatment field.
+  ActualTreatmentField actual_treatment_field = 1;
+}
+
+// Request message for deleting a actual treatment field.
+message DeleteActualTreatmentFieldRequest {
+  // The ID of the actual treatment field to delete.
+  optional int64 actual_treatment_field_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteActualTreatmentField`.
+message DeleteActualTreatmentFieldResponse {}

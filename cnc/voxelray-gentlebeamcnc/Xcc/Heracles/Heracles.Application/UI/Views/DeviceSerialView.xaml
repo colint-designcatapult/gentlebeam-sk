@@ -1,0 +1,137 @@
+﻿<ContentControl 
+    x:Class="Heracles.Application.UI.Views.DeviceSerialView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+    xmlns:viewModels="clr-namespace:Heracles.Application.UI.ViewModels"
+                
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+    xmlns:converters="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    xmlns:rules="clr-namespace:Xcc.Application.UI.ValidationRules;assembly=Xcc.Application"
+    xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+
+    UseLayoutRounding="True"
+    FontSize="{StaticResource BaseFontSize}"
+
+
+    mc:Ignorable="d" 
+    d:DataContext="{d:DesignInstance {x:Type viewModels:DeviceSerialViewModel}, IsDesignTimeCreatable=True}"
+    IsTabStop="False">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml"/>
+
+                <ResourceDictionary>
+                    <system:String x:Key="Header">Device Serial ID</system:String>
+                    <system:String x:Key="Message">You can not run the application without entering the device's serial ID. The ID is attached to the device. Make sure you enter the correct number.</system:String>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <prism:Dialog.WindowStyle>
+        <Style TargetType="Window">
+            <Setter Property="prism:Dialog.WindowStartupLocation" Value="CenterScreen"/>
+            <Setter Property="ResizeMode" Value="NoResize"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="WindowStyle" Value="None"/>
+            <Setter Property="SizeToContent" Value="WidthAndHeight"/>
+            <Setter Property="AllowsTransparency" Value="True"/>
+        </Style>
+    </prism:Dialog.WindowStyle>
+
+    <Border
+        Width="640"
+        Background="{StaticResource BlockBackgroundColor}"
+        BorderBrush="{StaticResource AppBorderActiveColor}"
+        BorderThickness="1"
+        CornerRadius="8">
+
+        <Grid Margin="{StaticResource BlockContentMargin}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!--Header-->
+            <Grid Grid.Row="0" HorizontalAlignment="Left">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <ContentControl
+                    IsTabStop="False"
+                    Content="{StaticResource ExclamationIcon}"/>
+
+                <ContentControl 
+                    Grid.Column="2" 
+                    FontWeight="SemiBold"
+                    FontSize="{StaticResource HugeFontSize}"
+                    Style="{StaticResource ContentTextWithShadowStyle}" 
+                    Content="{StaticResource Header}"/>
+            </Grid>
+
+            <!--Message-->
+            <ContentControl 
+                Grid.Row="1" 
+                Margin="0,20,0,0"
+                Style="{StaticResource ContentTextWithShadowStyle}" 
+                Content="{StaticResource Message}"/>
+
+            <!--Device Serial ID field-->
+            <Grid Grid.Row="3" Margin="{StaticResource BlockContentMarginHorizontal}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Device Serial ID:" Style="{StaticResource TextBlockLegendStyle}"/>
+
+                <controls:XccTextBox Grid.Column="2">
+                    <Binding Path="DeviceSerialId">
+                        <Binding.ValidationRules>
+                            <rules:DigitsAndDashesRule IsRequired="True"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </controls:XccTextBox>
+            </Grid>
+            
+            <!--Buttons-->
+            <StackPanel 
+                Grid.Row="5"
+                Orientation="Horizontal"
+                HorizontalAlignment="Center">
+
+                <Button
+                    Width="100" Height="40"
+                    FontSize="{StaticResource BaseFontSize}"
+                    Content="OK"
+                    IsDefault="True"
+                    Command="{Binding AcceptCommand}"/>
+                
+                <Button
+                    Margin="{StaticResource BlockContentMarginLeft}"
+                    Width="100" Height="40"
+                    FontSize="{StaticResource BaseFontSize}"
+                    Content="Close"
+                    IsCancel="True"
+                    Command="{Binding CloseDialogCommand}"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</ContentControl>

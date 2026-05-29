@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.prescriptions.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Prescription is a description of a treatment plan, containing a sequence of fields.
+message Prescription {
+  // Plan id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The associated simulation
+  optional int64 simulation_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Plan creation date
+  optional google.protobuf.Timestamp creation_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Number of fractions each week
+  optional int32 txs_per_week = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Prescribed Energy
+  optional com.empyreanmed.heracles.enums.v1.ENERGY energy = 5;
+
+  // prescribed dwell time
+  optional double dwell_time = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Time Dose Fractionation factor
+  optional com.empyreanmed.heracles.enums.v1.TDF tdf = 7 [(google.api.field_behavior) = REQUIRED];
+
+  // Minimum Time Dose Fractination factor
+  optional com.empyreanmed.heracles.enums.v1.TDF min_tdf = 8 [(google.api.field_behavior) = REQUIRED];
+
+  // Daily dose, or dose per fraction, in centi-gray
+  optional float daily_dose = 9 [(google.api.field_behavior) = REQUIRED];
+
+  // Total number of fractions
+  optional int32 number_of_fxs = 10 [(google.api.field_behavior) = REQUIRED];
+
+  // NumberofFXs * DailyDose [cGy]
+  optional float total_dose = 11;
+
+  // Status of the prescription
+  optional com.empyreanmed.heracles.enums.v1.STATUS status = 12 [(google.api.field_behavior) = REQUIRED];
+}

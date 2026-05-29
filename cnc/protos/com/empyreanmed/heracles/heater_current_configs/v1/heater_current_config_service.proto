@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.heater_current_configs.v1;
+
+import "com/empyreanmed/heracles/heater_current_configs/v1/heater_current_config.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on heater current configurations.
+service HeaterCurrentConfigService {
+  // Lists heater current configurations matching request parameters.
+  rpc ListHeaterCurrentConfigs(ListHeaterCurrentConfigsRequest) returns (ListHeaterCurrentConfigsResponse);
+
+  // Returns a single heater current configuration.
+  rpc GetHeaterCurrentConfig(GetHeaterCurrentConfigRequest) returns (GetHeaterCurrentConfigResponse);
+
+  // Creates a new heater current configuration.
+  rpc CreateHeaterCurrentConfig(CreateHeaterCurrentConfigRequest) returns (CreateHeaterCurrentConfigResponse);
+
+  // Updates a single heater current configuration.
+  rpc UpdateHeaterCurrentConfig(UpdateHeaterCurrentConfigRequest) returns (UpdateHeaterCurrentConfigResponse);
+
+  // Deletes a single heater current configuration.
+  rpc DeleteHeaterCurrentConfig(DeleteHeaterCurrentConfigRequest) returns (DeleteHeaterCurrentConfigResponse);
+}
+
+// Request message for listing heater current configurations.
+message ListHeaterCurrentConfigsRequest {
+  // The maximum number of heater current configurations to return.
+  optional int32 page_size = 1;
+
+  // A page token received from a previous `ListHeaterCurrentConfigs` call.
+  optional string page_token = 2;
+
+  // The preset configuration ID to filter heater current configurations by.
+  optional int64 preset_configuration_id = 3;
+}
+
+// Response message with the listed heater current configurations.
+message ListHeaterCurrentConfigsResponse {
+  // The heater current configurations matching the list request.
+  repeated HeaterCurrentConfig heater_current_configs = 1;
+
+  // A token to retrieve the next page of results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single heater current configuration.
+message GetHeaterCurrentConfigRequest {
+  // The ID of the heater current configuration to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single heater current configuration.
+message GetHeaterCurrentConfigResponse {
+  // The heater current configuration with the provided ID.
+  HeaterCurrentConfig heater_current_config = 1;
+}
+
+// Request message for creating a new heater current configuration.
+message CreateHeaterCurrentConfigRequest {
+  // The heater current configuration to be created.
+  optional HeaterCurrentConfig heater_current_config = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created heater current configuration.
+message CreateHeaterCurrentConfigResponse {
+  // The created heater current configuration.
+  HeaterCurrentConfig heater_current_config = 1;
+}
+
+// Request message for updating an existing heater current configuration.
+message UpdateHeaterCurrentConfigRequest {
+  // The heater current configuration to be updated.
+  optional HeaterCurrentConfig heater_current_config = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated heater current configuration.
+message UpdateHeaterCurrentConfigResponse {
+  // The updated heater current configuration.
+  HeaterCurrentConfig heater_current_config = 1;
+}
+
+// Request message for deleting a heater current configuration.
+message DeleteHeaterCurrentConfigRequest {
+  // The ID of the heater current configuration to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteHeaterCurrentConfig`.
+message DeleteHeaterCurrentConfigResponse {}

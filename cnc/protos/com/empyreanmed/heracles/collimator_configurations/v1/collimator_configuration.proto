@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.collimator_configurations.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a collimator configuration
+message CollimatorConfiguration {
+  // Unique identifier for the configuration
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Date when the configuration was created
+  optional google.protobuf.Timestamp create_date = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Type of the collimator
+  optional com.empyreanmed.heracles.enums.v1.TARGETTYPE type = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Energy level of the collimator
+  optional com.empyreanmed.heracles.enums.v1.ENERGY energy = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Power level
+  optional int32 power = 5;
+
+  // Source-to-skin distance
+  optional com.empyreanmed.heracles.enums.v1.SSDTYPE ssd = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Referenced dose rate
+  optional float referenced_dose_rate = 7;
+}

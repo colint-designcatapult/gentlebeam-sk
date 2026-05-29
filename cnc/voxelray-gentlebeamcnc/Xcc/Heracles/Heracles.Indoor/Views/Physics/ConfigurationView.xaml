@@ -1,0 +1,268 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.Physics.ConfigurationView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+    xmlns:views ="clr-namespace:Heracles.Indoor.Views.Physics"
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels.Physics"
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+                
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+             
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:enums="clr-namespace:Heracles.Core.Enums;assembly=Heracles.Core"
+    xmlns:commonx="clr-namespace:Xcc.Application.Common;assembly=Xcc.Application"
+    xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+    xmlns:appx="clr-namespace:Xcc.Core.Constants;assembly=Xcc.Core"
+
+    mc:Ignorable="d" 
+    d:DesignWidth="1600" d:DesignHeight="1000"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:ConfigurationViewModel}, IsDesignTimeCreatable=True}">
+    
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Constants.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ButtonStyle.xaml" />
+                
+                
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/TabControl/FolderTabControl.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Border Style="{StaticResource BorderOutlineStyle}" Background="{StaticResource ApplicationBackgroundColor}">
+        <Grid Margin="{StaticResource ViewMargin}" d:ShowGridLines="False" Grid.IsSharedSizeScope="True">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2.32*"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            
+            <Grid.RowDefinitions>
+                <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+                <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+                <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!--Import configuration-->
+            <Grid Grid.Row="0" Grid.Column="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="C1"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Style="{StaticResource TextBlockLegendStyle}" Text="Import from CSV: "/>
+                
+                <controls:XccTextBox 
+                    Grid.Column="1"
+                    IsReadOnly="True"
+                    Text="{Binding CsvConfigurationFilepath}"/>
+
+                <Button 
+                    Grid.Column="4" 
+                    HorizontalContentAlignment="Center"
+                    Command="{Binding CsvImportCommand}">
+
+                    <StackPanel Orientation="Horizontal">
+                        <Path 
+                            Data="{StaticResource ImportIcon}"
+                            Style="{StaticResource ButtonPathStyle}" 
+                            Height="25" Width="25" Margin="6,0" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+            
+            <!--Target and Energy-->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="C1"/>
+                    <ColumnDefinition Width="0"/>
+                    <ColumnDefinition Width="310"/>
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="175"/>
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="175"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock 
+                    Style="{StaticResource TextBlockLegendStyle}" 
+                    Text="Applicator Type:"/>
+
+                <ComboBox 
+                    Grid.Column="2"        
+                    Grid.ColumnSpan="2" 
+                    Height="36" Margin="0,0,16,0" VerticalAlignment="Top"
+                    IsEnabled="{Binding CanSave, Converter={convx:InverseBooleanConverter}}"
+                    DisplayMemberPath="DisplayName"
+                    SelectedValuePath="Value"
+                    SelectedValue="{Binding SelectedCollimatorType}"
+                    ItemsSource="{commonx:EnumToItemsSource {x:Type enums:TargetType}, SkipCount=4}"/>
+
+                <TextBlock 
+                    Grid.Row="0" Grid.Column="4"
+                    Style="{StaticResource TextBlockLegendStyle}">
+                    <Run Text="Energy Level"/>
+                    <Run Foreground="{StaticResource ForegroundPaleBrush}"  Text="[kV]"/><Run Text=": "/>
+                </TextBlock>
+
+                <ComboBox 
+                    x:Name="EnergyComboBox"
+                    Grid.Column="5"
+                    IsEnabled="{Binding CanSave, Converter={convx:InverseBooleanConverter}}"
+                    DisplayMemberPath="DisplayName"
+                    SelectedValuePath="Value"
+                    SelectedValue="{Binding SelectedEnergy}"
+                    ItemsSource="{commonx:EnumToItemsSource {x:Type enums:Energy}}"/>
+            </Grid>
+
+            <!--Configuration-->
+            <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="4*" />
+                    <ColumnDefinition Width="{StaticResource BlockMarginGridLength}" />
+                    <ColumnDefinition Width="3*" />
+                </Grid.ColumnDefinitions>
+
+                <views:MagnetometerView Grid.Row="0"/>
+
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <views:TargetPointsView Grid.Row="0"/>
+
+                    <views:HeaterCurrentView Grid.Row="2"/>
+
+                    <views:OutputFactorsView Grid.Row="4"/>
+                </Grid>
+            </Grid>        
+
+
+            <!--Buttons block-->
+            <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource BorderBlockStyle}">
+                <Grid Margin="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="{StaticResource ButtonMarginGridLength}" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="{StaticResource ButtonMarginGridLength}" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="{StaticResource ButtonMarginGridLength}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ucx:XccWarningLabel 
+
+                        Grid.Column="0"
+                        Text="{Binding CalibrationDataWarningMessage, FallbackValue={x:Static appx:StringConstants+Physics.PhysicsDataIsInvalid}}"
+                        Visibility="{Binding CalibrationDataWarningMessage, Converter={convx:ObjectToVisibilityConverter Invisibility=Hidden}}"/>
+
+
+                    <!--Reload button-->
+                    <Button 
+                        Grid.Column="2"
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Height="{StaticResource ButtonHeight}"
+                        Width="{StaticResource ButtonWidth}"
+                        Command="{Binding ReloadCommand}">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path 
+                                Data="{StaticResource RefreshIcon3}"
+                                Style="{StaticResource ButtonPathStyle}" 
+                                Height="25" Width="25" Margin="6,0" />
+
+                            <TextBlock Grid.Column="2" Text="Reload" Style="{StaticResource ButtonTextBlockStyle}"/>
+                        </Grid>
+                    </Button>
+
+                    <!--Approve button-->
+                    <Button 
+                        Grid.Column="4"
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Height="{StaticResource ButtonHeight}"
+                        Width="{StaticResource ButtonWidth}"
+                        Command="{Binding ApproveCommand}"> 
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                              
+                            <Path
+                                Data="{StaticResource ApproveIcon}" 
+                                Style="{StaticResource ButtonPathStyleThickness2}">
+
+                                <Path.RenderTransform>
+                                    <TranslateTransform Y="2"/>
+                                </Path.RenderTransform>
+                            </Path>
+
+                            <TextBlock Grid.Column="2" Text="Approve" Style="{StaticResource ButtonTextBlockStyle}"/>
+                        </Grid>
+                    </Button>
+
+                    <Button 
+                        Grid.Column="6"
+                        Width="{StaticResource ButtonWidth}" 
+                        Height="{StaticResource ButtonHeight}"
+                        Command="{Binding SaveCommand}">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path 
+                                Data="{StaticResource SaveToDiskIcon}" 
+                                Style="{StaticResource ButtonPathStyleThickness2}"/>
+
+                            <TextBlock Grid.Column="2" Text="Save" VerticalAlignment="Center" Style="{StaticResource ButtonTextBlockStyle}"/>
+                        </Grid>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <ucx:TaskOverlay 
+                Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Grid.RowSpan="7"
+                Margin="{StaticResource ViewMarginNegative}"
+                Visibility="{Binding CurrentTask.IsSuccessfullyCompleted, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue=Collapsed}"
+                ObservedTask="{Binding CurrentTask}"
+                RetryCommand="{Binding RetryCurrentTaskCommand}"
+                CancelCommand="{Binding  CancelCurrentTaskCommand}"
+                Description="{Binding CurrentTask.ErrorMessage}"
+                CornerRadius="7,7,7,7"/>
+        </Grid>
+    </Border>
+</ContentControl>

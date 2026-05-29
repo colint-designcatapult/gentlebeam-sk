@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.simulations.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Simulation represents a simulated treatment session for a specific diagnosis and visit.
+message Simulation {
+  // Simulation id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The associated diagnosis id
+  optional int64 diagnosis_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The associated visit id
+  optional int64 visit_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // The email of the user who performed the simulation
+  optional string performed_by = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Simulation creation date
+  optional google.protobuf.Timestamp creation_date = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Lesion size in length (L) in millimeters
+  optional double lesion_size_l = 6;
+
+  // Lesion size in width (W) in millimeters
+  optional double lesion_size_w = 7;
+
+  // Depth of the lesion in millimeters
+  optional double lesion_depth = 8;
+
+  // Margin size l
+  optional double margin_size_l = 9;
+
+  //Margin size w
+  optional double margin_size_w = 10;
+
+  //Shield Size l
+  optional double shield_size_l = 11;
+
+  //Shield Size l
+  optional double shield_size_w = 12;
+
+  // Target type simulation
+  optional com.empyreanmed.heracles.enums.v1.TARGETTYPE target_type = 13 [(google.api.field_behavior) = REQUIRED];
+
+  // Setup notes for the simulation
+  optional string setup_note = 14;
+
+  // Status of the simulation
+  optional com.empyreanmed.heracles.enums.v1.STATUS status = 15 [(google.api.field_behavior) = REQUIRED];
+}

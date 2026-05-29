@@ -1,0 +1,90 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/CheckBox/CheckBoxDefaultStyle.xaml"/>
+        
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/SortableColumnHeaderStyle.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ItemsControl/ColumnItemsControlStyleBase.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+    
+    <Style x:Key="UserPermissionColumns" TargetType="ItemsControl" BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1.25*"/>
+                            <ColumnDefinition Width="1.15*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1.15*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1.15*"/>
+                            <ColumnDefinition Width="0.8*"/>
+                            <ColumnDefinition Width="4" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="UserPermissionHeaderTemplate" >
+        <ItemsControl Style="{StaticResource UserPermissionColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Role"/>
+            <TextBlock Grid.Column="2" Text="Patient's Clinical Data"/>
+            <TextBlock Grid.Column="3" Text="Patient's Treatment"/>
+            <TextBlock Grid.Column="4" Text="System Physics"/>
+            <TextBlock Grid.Column="5" Text="Quality Assurance"/>
+            <TextBlock Grid.Column="6" Text="System Settings"/>
+            <TextBlock Grid.Column="7" Text="User Management"/>
+            <TextBlock Grid.Column="8" Text="Services"/>
+
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="UserPermissionItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource UserPermissionColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+                <Style TargetType="CheckBox" BasedOn="{StaticResource CheckBoxDefaultStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                    <Setter Property="IsHitTestVisible" Value="False"/>
+
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="{Binding Name}"/>
+            <CheckBox Grid.Column="2" IsChecked="{Binding Permissions.ClinicalData}"/>
+            <CheckBox Grid.Column="3" IsChecked="{Binding Permissions.Treatment}"/>
+            <CheckBox Grid.Column="4" IsChecked="{Binding Permissions.SystemCalibration}"/>
+            <CheckBox Grid.Column="5" IsChecked="{Binding Permissions.QualityAssurance}"/>
+            <CheckBox Grid.Column="6" IsChecked="{Binding Permissions.SystemSettings}"/>
+            <CheckBox Grid.Column="7" IsChecked="{Binding Permissions.UserManagement}"/>
+            <CheckBox Grid.Column="8" IsChecked="{Binding Permissions.Services}"/>
+        </ItemsControl>
+        
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+</ResourceDictionary>
