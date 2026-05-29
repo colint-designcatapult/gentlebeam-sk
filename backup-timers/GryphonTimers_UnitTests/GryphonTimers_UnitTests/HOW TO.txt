@@ -1,0 +1,246 @@
+Timers Unit Test HOW TO
+
+Overview
+This unit test setup verifies production timer logic on the real SAMD10 target while replacing hardware dependencies with test stubs.
+
+What this setup does
+- Builds and runs from a dedicated UnitTests project
+- Compiles the real production main.c by reference
+- Keeps production code mostly unchanged
+- Replaces hardware access with fake headers and stub functions
+- Executes tests on the real MCU through Atmel-ICE
+- Shows named PASS or FAIL results in the debugger Watch window
+
+What we tested for M20FT-19
+Failure mode context:
+- Timer Fault interlock signal is not output
+- System timers are unable to stop emission upon timing fault
+- Software defect does not trigger the intended timer fault handling path
+
+Current unit test coverage:
+1. test_m20ft_19_running_triggers_fault
+   Verifies that when timer_state is RUNNING and TC1_Handler is called:
+   - overflow flag clear function is called once
+   - timer disable function is called once
+   - fault GPIO is asserted once
+   - timer state changes to ELAPSED
+   - gpio_fault_state becomes false
+
+2. test_m20ft_19_not_running_no_fault
+   Verifies that when timer_state is CLEARED and TC1_Handler is called:
+   - overflow flag clear function is called once
+   - timer disable function is called once
+   - fault GPIO is not asserted
+   - timer state stays CLEARED
+   - gpio_fault_state stays true
+
+3. test_m20ft_19_already_elapsed_no_retrigger
+   Verifies that when timer_state is already ELAPSED and TC1_Handler is called:
+   - overflow flag clear function is called once
+   - timer disable function is called once
+   - fault GPIO is not asserted again
+   - timer state stays ELAPSED
+   - gpio_fault_state stays true
+
+Important limitation
+These are unit tests of the handler logic itself.
+They prove:
+- once TC1_Handler runs, the software response is correct
+
+They do not prove:
+- the hardware timer interrupt actually fires
+- the interrupt vector wiring invokes TC1_Handler
+- the full peripheral path triggers the handler automatically
+
+That stronger claim must be covered by an integration or hardware test.
+
+Project structure
+Production project contains the real firmware files.
+UnitTests project contains:
+- test_runner.c
+- test_main.c
+- test_framework.c
+- test_framework.h
+- test_m20ft_19.c
+- hw_stubs.c
+- ut_globals.c
+- local fake atmel_start.h
+- linked production main.c
+
+Key architecture
+- test_runner.c owns main() for the UnitTests build
+- production main.c is linked into the UnitTests project by reference
+- UNIT_TEST is defined in the UnitTests project
+- production main() is wrapped with #ifndef UNIT_TEST so only the test runner main() is used in the test build
+- production logic such as TC1_Handler remains compiled from the real production file
+- hardware functions are stubbed in hw_stubs.c
+
+Production file usage
+The UnitTests project must compile the real production main.c by reference, not a copied version.
+In Microchip Studio:
+- Right click UnitTests project
+- Add
+- Existing Item
+- Select production main.c
+- Use Add As Link
+
+Important production code change
+In the linked production main.c, wrap only the production main() function:
+
+#ifndef UNIT_TEST
+int main(void)
+{
+    atmel_start_init();
+
+    while (1)
+    {
+    }
+}
+#endif
+
+Do not wrap the logic you want to test, such as TC1_Handler.
+
+UnitTests compiler setup
+In GryphonTimers_UnitTests project:
+- Define symbol: UNIT_TEST
+- Include paths kept minimal and in this order:
+  1. $(ProjectDir).
+  2. $(ProjectDir)\..\..\..
+  3. C:\PROGRA~2\Atmel\Studio\7.0\Packs\arm\CMSIS\5.4.0\CMSIS\Core\Include
+  4. C:\PROGRA~2\Atmel\Studio\7.0\Packs\atmel\SAMD10_DFP\1.1.77\include
+
+Why the local atmel_start.h is needed
+The real Atmel Start include chain pulls in HAL, HPL, HRI, DSU, compiler.h, and other hardware specific dependencies that are unnecessary for unit testing logic.
+A local fake atmel_start.h in the UnitTests folder shadows the real one and provides:
+- fake GPIO macros
+- fake peripheral handles
+- fake IRQ names
+- prototypes for stubbed hardware functions
+
+Why the path syntax mattered
+Using $(ProjectDir) with a trailing backslash caused GCC command line parsing problems in Microchip Studio.
+Using $(ProjectDir). avoids the broken quoted path issue.
+
+Hardware stubs used
+The UnitTests project fakes the hardware functions used by production code, including:
+- gpio_set_pin_level
+- gpio_get_pin_level
+- gpio_set_pin_direction
+- gpio_set_pin_function
+- gpio_set_pin_pull_mode
+- ext_irq_register
+- NVIC_EnableIRQ
+- NVIC_DisableIRQ
+- hri_tc_clear_interrupt_OVF_bit
+- hri_tc_write_CTRLA_ENABLE_bit
+- hri_tccount32_read_COUNT_reg
+- hri_tccount32_write_COUNT_reg
+- i2c_s_init
+- i2c_s_enable
+- i2c_s_set_addr
+- i2c_s_get_status
+- i2c_s_read_byte
+- i2c_s_write_byte
+- i2c_s_async_flush_rx_buffer
+- io_read
+- io_write
+
+Global ownership rules
+To avoid multiple definition linker errors:
+- production main.c owns timer_state
+- ut_globals.c owns stub counters and gpio_fault_state
+- hw_stubs.c uses extern for those globals and does not define them again
+
+Timer state bug that was found and fixed
+An early test failure showed:
+- g_stub_gpio_calls stayed 0
+- timer_state stayed 1
+That turned out to be because the test used the wrong assumed timer state values.
+The real production enum in gryphon_timers.h is:
+- TIMER_STATE_CLEARED = 0
+- TIMER_STATE_PAUSED = 1
+- TIMER_STATE_RUNNING = 2
+- TIMER_STATE_ELAPSED = 3
+
+The fix was to include the real production gryphon_timers.h in the test and use those real enum values.
+
+Test framework result reporting
+The test framework tracks:
+- g_tests_run
+- g_tests_failed
+- g_last_failed_line
+- g_result_count
+- g_results[]
+
+Each g_results[i] entry contains:
+- name
+- status
+
+Status uses enum values:
+- FAIL
+- PASS
+
+This allows the Watch window to show readable output such as:
+- test_m20ft_19_running_triggers_fault -> PASS
+- test_m20ft_19_not_running_no_fault -> PASS
+- test_m20ft_19_already_elapsed_no_retrigger -> PASS
+
+How to run the tests
+1. Connect Atmel-ICE to the target board using the SAM port and the 20 pin adapter/cable
+2. Open Microchip Studio
+3. Select the GryphonTimers_UnitTests project
+4. Build or Rebuild the solution
+5. Start debugging
+6. Break at the end of the run, typically in test_runner.c or after run_all_tests
+7. Open Watch window and inspect:
+   - g_results[0]
+   - g_results[1]
+   - g_results[2]
+   - g_result_count
+   - g_tests_run
+   - g_tests_failed
+   - g_last_failed_line
+
+What the current passing result looks like
+- g_results[0].status = PASS
+- g_results[1].status = PASS
+- g_results[2].status = PASS
+- g_tests_failed = 0
+
+Recommended watch list
+- g_results[0]
+- g_results[1]
+- g_results[2]
+- g_result_count
+- g_tests_run
+- g_tests_failed
+- g_last_failed_line
+- g_stub_ovf_clear_calls
+- g_stub_disable_calls
+- g_stub_gpio_calls
+- gpio_fault_state
+- timer_state
+
+How to add a new timer unit test
+1. Add a new test function in test_m20ft_19.c or a new test file
+2. Reset stub state at the start of the test
+3. Set the production state or inputs needed for the scenario
+4. Call the real production function under test
+5. Assert expected stub call counts, state transitions, and fault outputs
+6. Register the test in test_main.c using:
+   - tf_begin_test("test_name")
+   - test_function()
+   - tf_end_test()
+
+Why this setup is useful
+- Tests real production logic without copying it
+- Keeps hardware isolated and deterministic
+- Runs on the real MCU target
+- Gives named PASS or FAIL output in the debugger
+- Creates a reusable pattern for future firmware unit tests
+
+Suggested next improvements
+- Add timer programming tests around set_timer and update_tx
+- Add integration tests for the real interrupt trigger path
+- Add negative tests for repeated interrupts or paused state transitions
+- Add UART output later if text logs are needed outside the debugger
