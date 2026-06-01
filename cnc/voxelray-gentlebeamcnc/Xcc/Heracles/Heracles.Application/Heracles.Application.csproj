@@ -34,7 +34,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- heracles.protos: generated locally from ../../../protos (auto-included by default) -->
+    <Protobuf Include="..\..\..\..\protos\com\empyreanmed\heracles\**\*.proto" GrpcServices="Client" 
+			  ProtoRoot="..\..\..\..\protos" />
   </ItemGroup>
 
   <PropertyGroup>

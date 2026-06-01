@@ -49,9 +49,9 @@
   </ItemGroup>
 
 
-  <ItemGroup>
-    <!-- Robot protos: generated locally from ../../../../protos_heracles_robotic_arm (auto-included by default) -->
-  </ItemGroup>
+<ItemGroup>
+	<Protobuf Include="..\..\..\..\protos_heracles_robotic_arm\com\empyreanmed\heracles_robotic_arm\**\*.proto" GrpcServices="Client" ProtoRoot="..\..\..\..\protos_heracles_robotic_arm" />
+</ItemGroup>
   <ItemGroup>
     <None Update="HeraclesRobotPositions.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
