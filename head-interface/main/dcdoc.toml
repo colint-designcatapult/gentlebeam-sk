@@ -1,0 +1,3 @@
+[component]
+name = "head-interface/main"
+include_docs = [ "docs/*.sdoc" ]

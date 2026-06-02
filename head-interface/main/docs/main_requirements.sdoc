@@ -1,0 +1,208 @@
+[DOCUMENT]
+TITLE: Heracles Software Requirements Specification for Head Interface Board Application
+UID: DHF-HRC-0023
+METADATA:
+  COMPONENT: hvps-interface/main
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this document is to provide Software Requirements Specifications for the Heracles Head
+Interface Firmware (FW).
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes all requirements of the Heracles Head Interface FW.
+The information in this document has been derived from the VoxelRay Heracles Product Requirements
+Specification, referenced in this document.
+
+\*The term Software applies to both Software and Firmware systems.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+LED
+  Light Emitting Diode
+
+MCU
+  Microcontroller Unit
+
+PRS
+  Product Requirements Specification
+
+SDP
+  Software Development Plan
+
+SRS
+  Software Requirements Specification
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The head interface firmware is used to read various input data from peripherals such as cooling system
+sensors, magnetometers, and collimator identification. This firmware sends feedback information to the
+main control application firmware. The head interface firmware can also set various patterns to the head
+base LED ring for visual indication. The pattern is based off commands received from the main control
+application firmware. The head interface FW can also enable and disable alignment lasers or illumination
+LEDs based on membrane keypad inputs.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+EMS-WI-057-13: Generating Documents and Traceability Matrix Analysis in Ketryx WI
+
+EMS-SOP-057: Software Design Control
+
+DHF-HRC-0001, Rev 2: Heracles Software Development Plan (SDP)
+
+DHF-HRC-0003, Rev 2: Heracles Software Verification Plan (SVP)
+
+DHF-HRC-0002: VoxelRay Product Requirements Specification (PRS)
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: RQ-H1FHI-
+TITLE: Requirements
+
+[REQUIREMENT]
+UID: RQ-H1FHI-1
+TYPE: Functional
+TITLE: Cooling system temperature
+STATEMENT: >>>
+The head interface firmware shall be able to read and convert a feedback signal for the system’s
+cooling water temperature
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-2
+TYPE: Safety
+TITLE: Collimator Interlock
+STATEMENT: >>>
+The head interface firmware shall monitor the presence of the collimator during emission and
+trigger an interlock fault during emission if the collimator disconnects
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-5
+TYPE: Functional
+TITLE: Head lasers
+STATEMENT: >>>
+The head interface firmware shall alternately enable and disable the head lasers after the
+detection of a user pressing the associated membrane button
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-6
+TYPE: Functional
+TITLE: Illumination LEDs
+STATEMENT: >>>
+The head interface firmware shall alternately enable and disable the illumination LEDs on the head
+LED board after detection of a user pressing the associated membrane button
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-8
+TYPE: Functional
+TITLE: Main Board Communication
+STATEMENT: >>>
+The head interface board shall periodically report values to the main control board at a rate
+greater than 1 Hz
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-9
+TYPE: Functional
+TITLE: Collimator
+STATEMENT: >>>
+The head interface firmware shall be able to read and report the digital ID value of a collimator
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-10
+TYPE: Functional
+TITLE: Magnetometers readings
+STATEMENT: >>>
+The head interface firmware shall be able to read and report magnetic field sensor data from two
+magnetometers.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-11
+TYPE: Functional
+TITLE: Membrane key switches
+STATEMENT: >>>
+The head interface firmware shall be able to monitor and report the states of 5 independent
+membrane key switches.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-12
+TYPE: Functional
+TITLE: Cooling system flow
+STATEMENT: >>>
+The head interface firmware shall be able to read and report a feedback signal for the system’s
+cooling water flow rate
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-13
+TYPE: Functional
+TITLE: Cooling system pressure
+STATEMENT: >>>
+The head interface firmware shall be able to read and report a feedback signal for the system’s
+cooling water pressure
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-53
+TYPE: Safety
+TITLE: QC Read
+STATEMENT: >>>
+The head interface firmware shall be able to read and report x-ray sensor data from two diodes
+when a quality check collimator is mounted
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-55
+TYPE: Functional
+TITLE: Robot Hand Guidance Button
+STATEMENT: >>>
+The head interface firmware shall monitor the activity state of the hand guidance button and pass
+it to the robotic arm controller
+<<<
+
+[[/SECTION]]
