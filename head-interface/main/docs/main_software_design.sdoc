@@ -2,7 +2,7 @@
 TITLE: Heracles Head Interface FW Software Design Document
 UID: DHF-HRC-0114
 METADATA:
-  COMPONENT: hvps-interface/main
+  COMPONENT: head-interface/main
 
 [GRAMMAR]
 IMPORT_FROM_FILE: @grammar

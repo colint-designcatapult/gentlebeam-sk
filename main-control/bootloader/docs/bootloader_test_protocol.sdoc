@@ -1,0 +1,248 @@
+[DOCUMENT]
+TITLE: Heracles Main Control Bootloader FW Verification Testing Protocol
+UID: DHF-HRC-0084
+METADATA:
+  COMPONENT: main-control/bootloader
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+This document provides the full test protocol (a full collection of test cases) for the Main Control Bootloader 
+Firmware for the Heracles 1.0 system.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This report contains a detailed test description to conduct verification testing of Heracles 1.0 Main Control Bootloader 
+Firmware that covers Heracles Main Control Bootloader FW SRS.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+SDP
+  Software Development Plan
+
+SVP
+  Software Verification Plan
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+DHF-HRC-0001, Rev. 2: Heracles SDP
+
+DHF-HRC-0003, Rev. 2: Heracles SVP
+
+[LINK: DHF-HRC-0015]
+
+DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+
+DHF-HRC-0083 Rev. 1: Heracles Main Control Bootloader FW Verification Protocol
+
+EMS-QR-002-12-(16-JAN-2025) Rev.1: Heracles Pre Verification Execution 1 Summary
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Prerequisites
+
+[TEXT]
+STATEMENT: >>>
+**Pre-Execution Approval**
+
+A Pre-Execution meeting shall take place, and approved by the project manager and QA/RA.
+
+**Objective(s)**
+
+Verify that:
+
+* All software, firmware, hardware, and test equipment version configurations are identified and listed in the test report prior to execution.
+* Test personnel is assigned and available.
+
+**Assumptions & Constraints**
+
+None
+
+**Acceptance Criteria**
+
+All objectives met; test execution can start.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: TC-H1FWMCBOOT-
+TITLE: Test Protocol
+
+[TEST_CASE]
+UID: TC-H1FWMCBOOT-6
+TITLE: Jump to Application on Valid CRC - Test Case
+STATEMENT: >>>
+The main control Bootloader firmware shall jump to execution of the main application if and only if the existing main application code at startup 
+is valid. The main application code is valid if the programmed CRC value matches the application firmware loaded in flash memory.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* Flash memory is present which contains firmware application.
+<<<
+STEPS: >>>
+1. Start the system from power
+2. Don’t load any treatment plan.
+3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory but terminate the PC utility partway through.
+4. Power cycle the system
+5. Load a treatment plan
+6. Run the loaded treatment.
+7. While keeping power on, load the application firmware once more to completion from the flash memory.
+8. Power cycle the system
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system is started up successfully
+2. The system doesn’t have any treatment plan loaded on it.
+3. The system is off
+4. The system is started up successfully
+5. The plan is loaded successfully
+6. The application is loaded successfully
+7. Verify the treatment plan cannot be executed.
+8. The system is powered up successfully and the loaded treatment can now be performed.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-1
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMCBOOT-7
+TITLE: Write Flash Memory Page - Test Case
+STATEMENT: >>>
+The main control Bootloader firmware shall be able to write a specified flash memory page with provided data from the PC
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* Flash memory is present which contains firmware application.
+<<<
+STEPS: >>>
+1. Start the system from power
+2. Don’t load any treatment plan.
+3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory but terminate the PC utility partway through.
+4. Record the utility log to ensure the application writes data to flash memory
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system is started up successfully
+2. The system doesn’t have any treatment plan loaded on it.
+3. The system is off
+4. The system is started up successfully
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-3
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMCBOOT-8
+TITLE: Functional 3 - Test Case
+STATEMENT: >>>
+The main control Bootloader firmware shall be able to write a specified flash memory page with provided data from the PC
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* Flash memory is present which contains firmware application.
+<<<
+STEPS: >>>
+1. Start the system from power
+2. Don’t load any treatment plan.
+3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory but terminate the PC utility partway through.
+4. Record the utility log to ensure the application writes data to flash memory
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system is started up successfully
+2. The system doesn’t have any treatment plan loaded on it.
+3. The system is off
+4. The system is started up successfully
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-3
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMCBOOT-9
+TITLE: Erase Flash Memory - Test Case
+STATEMENT: >>>
+The main control Bootloader firmware shall be able to erase a predetermined area of flash memory, corresponding 
+to the application firmware programming area.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* Flash memory is present which contains firmware application.
+<<<
+STEPS: >>>
+1. Start the system from power
+2. Don’t load any treatment plan.
+3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory
+4. Record the utility log to ensure the application erases MCU memory
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system is starting successfully
+2. The system doesn’t have any treatment plan loaded on it.
+3. The new firmware application is loaded successfully
+4. Record the utility log to ensure the application erases MCU memory
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-4
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMCBOOT-10
+TITLE: PC Communication - Test Case
+STATEMENT: >>>
+The main control Bootloader firmware shall be able to respond to a ping command from the PC, indicating that the system is in Bootloader mode.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* Flash memory is present which contains firmware application.
+<<<
+STEPS: >>>
+1. Start the system from power 
+2. Don’t load any treatment plan. 
+3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory. 
+4. Record the utility log to ensure application enters Bootloader mode
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify System is start up successfully 
+2. Verify System doesn’t have any treatment plan loaded on it. 
+3. Verify the new firmware application is loaded successfully 
+4. Verify application enters Bootloader mode
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-5
+  ROLE: Verifies
+
+[[/SECTION]]

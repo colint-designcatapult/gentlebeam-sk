@@ -1,0 +1,131 @@
+[DOCUMENT]
+TITLE: Heracles Software Requirements Specification for Main Control Bootloader FW
+UID: DHF-HRC-0015
+METADATA:
+  COMPONENT: main-control/bootloader
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this document is to provide Software Requirements Specifications for the Heracles Main
+Control Bootloader Firmware (FW).
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes all requirements of the Heracles Main Control Bootloader FW.
+The information in this document has been derived from the VoxelRay Heracles Product Requirements
+Specification, as referenced in this document.
+
+\*The term Software applies to both Software and Firmware systems.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+MCU
+  Microcontroller Unit
+
+PRS
+  Product Requirements Specification
+
+SDP
+  Software Development Plan
+
+SRS
+  Software Requirements Specification
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The Main Control Bootloader firmware allows the system to update the main control application
+firmware.
+
+The Main Board Bootloader firmware runs on the main control MCU of the main control board.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+EMS-WI-057-13: Generating Documents and Traceability Matrix Analysis in Ketryx WI
+
+EMS-SOP-057: Software Design Control
+
+DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
+
+DHF-HRC-0002: VoxelRay Product Requirements Specification (PRS)
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: RQ-H1FWMCBOOT-
+TITLE: Requirements
+
+[REQUIREMENT]
+UID: RQ-H1FWMCBOOT-1
+TYPE: Functional
+TITLE: Jump to Application on Valid CRC
+STATEMENT: >>>
+The main control bootloader firmware shall jump to execution of the main application if and only
+if the existing main application code at startup is valid. The main application code is valid if the
+programmed CRC value matches the application firmware loaded in flash memory.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWMCBOOT-3
+TYPE: Functional
+TITLE: Write Flash Memory Page
+STATEMENT: >>>
+The main control bootloader firmware shall be able to write a specified flash memory page with
+provided data from the PC
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWMCBOOT-4
+TYPE: Functional
+TITLE: Erase Flash Memory
+STATEMENT: >>>
+The main control bootloader firmware shall be able to erase a predetermined area of flash
+memory, corresponding to the application firmware programming area.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWMCBOOT-5
+TYPE: Functional
+TITLE: PC Communication Ping Response
+STATEMENT: >>>
+The main control bootloader firmware shall be able to respond to a ping command from the PC,
+indicating that the system is in bootloader mode.
+<<<
+
+[[/SECTION]]

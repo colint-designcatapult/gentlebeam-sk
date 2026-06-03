@@ -2,7 +2,7 @@
 TITLE: Heracles Software Requirements Specification for Head Interface Board Application
 UID: DHF-HRC-0023
 METADATA:
-  COMPONENT: hvps-interface/main
+  COMPONENT: head-interface/main
 
 [GRAMMAR]
 IMPORT_FROM_FILE: @grammar
