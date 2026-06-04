@@ -1,0 +1,371 @@
+[DOCUMENT]
+TITLE: Heracles Main Control Application FW Verification Testing Protocol
+UID: DHF-HRC-0075
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+This document provides the full test protocol (a full collection of test cases) for the Main Control
+Application Firmware for the Heracles 1.0 system.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This report contains a detailed test description to conduct verification testing of Heracles 1.0 Main
+Control Application Firmware that covers Heracles Main Control Application FW SRS.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+HVPS
+  High Voltage Power Supply
+
+SDP
+  Software Development Plan
+
+SVP
+  Software Verification Plan
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+DHF-HRC-0001, Rev. 2: Heracles SDP
+
+DHF-HRC-0003, Rev. 2: Heracles SVP
+
+[LINK: DHF-HRC-0019]
+
+DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Prerequisites
+
+[TEXT]
+STATEMENT: >>>
+**Pre-Execution Approval**
+
+A Pre-Execution meeting shall take place, and approved by the project manager and QA/RA.
+
+**Objective(s)**
+
+Verify that:
+
+* All software, firmware, hardware, and test equipment version configurations are identified and listed in the test report prior to execution.
+* Test personnel is assigned and available.
+
+**Assumptions & Constraints**
+
+None
+
+**Acceptance Criteria**
+
+All objectives met; test execution can start.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: TC-H1FWMC-
+TITLE: Test Protocol
+
+[TEST_CASE]
+UID: TC-H1FWMC-91
+TITLE: Head Interface Communication - Test Case
+STATEMENT: >>>
+When the head interface board is unplugged from main control board, a fault should display in the system after 1 seconds (0.5 s for timeout
++ 0.5 s for latency)
+<<<
+PREREQUISITES: >>>
+* The system is powered on, no faults present, and ready to run emission.
+* Headboard communication connector on the main control board is accessible.
+<<<
+STEPS: >>>
+1. Use the external console to open the quality assurance tab
+2. Disconnect head interface board communication connector from main control board (J601)
+3. Wait for 1 second and check the system status on the top view
+4. Open the error detail by pressing on the error message
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system is ready (green thumbs up icon present)
+2. J601 connector is disconnected from the main control board
+3. The system transitions into a “Fault” state
+4. The error message indicates headboard communication timeout
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-68
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-94
+TITLE: Interlocks - Test Case
+STATEMENT: >>>
+The firmware monitors and reports the status of the interlocks.
+<<<
+PREREQUISITES: >>>
+* The system is powered on, no faults present
+<<<
+STEPS: >>>
+1. Power on the system
+2. Use the external console to view the status of the interlocks (lock symbol on bottom right)
+3. Activate the E-stop button on the external console
+4. Activate the E-stop button on the base unit
+5. Open the Door
+6. Rotate the key on the external safety box to Safe
+7. Remove the Collimator
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system is on
+2. The interlock view is available (not gray)
+3. Ensure the remote e-stop interlock is triggered
+4. Ensure the remote e-stop interlock is triggered
+5. Ensure the door interlock is triggered
+6. Ensure the remote key interlock is triggered
+7. Ensure the applicator interlock is triggered
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-8
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-98
+TITLE: Operation 01: Filament conditioning 6 - Test Case
+STATEMENT: >>>
+The firmware will report a fault if the conditioning process didn’t complete within 360 seconds
+<<<
+PREREQUISITES: >>>
+* The system is powered on, no faults present, and ready to run emission.
+* A variant that using a 1mA / 1 sec is loaded on the HVPS interface board
+<<<
+STEPS: >>>
+1. Power on the system / prepare system for operation (wait for system to be “Cold” if it is in “Primed” state otherwise warmup will not run)
+2. Close all interlocks and open the quality assurance tab on the external console
+3. Inside “Startup Cycle” press the “Warmup” button (it runs the conditioning as the daily warmup)
+4. Go to the service tab and review the Filament Feedback value under the HVPS section
+5. Wait for 360 seconds
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system powers on in “Startup” state or is prepared in “Cold” or “Primed” states
+2. The system is ready (green thumbs up icon present) and the “Warmup” button is available
+3. Warmup begins and system transitions to “DailyWarmup” state (it is the conditioning state)
+4. The Filament Feedback \[mA] value is being updated
+5. The operation is not complete, and a timeout fault message is being triggered on the external console
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-12
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-99
+TITLE: Operation 02: Warmup procedure - Test Case
+STATEMENT: >>>
+The firmware will report a fault if the warmup process didn’t complete within 180 seconds.
+<<<
+PREREQUISITES: >>>
+* The system is powered on, no faults present, and ready to run emission.
+* A variant that using a 1mA / 1 sec is loaded on the HVPS interface board.
+* The QC collimator is connected to the x-ray source.
+<<<
+STEPS: >>>
+1. Power on the system / prepare system for operation (wait for system to be “Cold” if it is in “Primed” state otherwise warmup will not run)
+2. Use the external console to open the quality assurance tab
+3. Open “Beam QA” and select any available energy 50/70/100kV
+4. Press on “Prepare”
+5. Go to the service tab and review the Filament Feedback value under the HVPS section
+6. Wait for 180 seconds
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system powers on in “Startup” state or is prepared in “Cold” or “Primed” states
+2. Dropdown with energies is available (at least one from 50/70/100kV)
+3. At least one collimator is present in the table and “Prepare” button is enabled
+4. Warmup begins and system transitions to “Warmup” state
+5. The Filament Feedback \[mA] value is being updated
+6. The operation is not complete, and a timeout fault message is being triggered on the external console
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-13
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-129
+TITLE: Operation 05: Treatment plan release - Test Case
+STATEMENT: >>>
+If the user runs a treatment plan, its status changes from STAGED to HVPS check / HV setup.
+<<<
+PREREQUISITES: >>>
+* System is ready to run a treatment plan.
+* A treatment plan is not loaded into the system.
+<<<
+STEPS: >>>
+1. Start the system
+2. Enter the STAGED state by loading a treatment plan
+3. Toggle the door interlock, remote key interlock, and collimator interlock
+4. Run the treatment plan and move ahead to the next operational state
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is started and there isn’t any plan loaded into system
+2. Verify the status of the system says “STAGED” in the GUI
+3. Ensure the door interlock, remote key, or collimator interlock do not trigger an interlock fault
+4. Verify the states will be HV CHECK+HV SETUP after STAGED status
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-74
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-132
+TITLE: Undesired emission monitoring - Test Case
+STATEMENT: >>>
+The firmware will report a fault if the emission current is higher than the max threshold of 0.2mA when not in emission.
+<<<
+PREREQUISITES: >>>
+* The system is powered on, no faults present, and ready to run emission.
+* A variant that is reporting x10 emission current feedback is loaded on the HVPS interface board.
+<<<
+STEPS: >>>
+1. Power on the system
+2. Check the system status
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system is on
+2. The system transitions to “Fault” state with an error message about unwanted emission
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-71
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-162
+TITLE: Operation 03.1: Treatment staging - new session commencement - Test Case
+STATEMENT: >>>
+The firmware will not accept a plan with more than 5 operational points and will trigger a fault.
+<<<
+PREREQUISITES: >>>
+* The system is powered on, no faults present, and ready to run emission.
+* The QC collimator is connected to the x-ray source.
+* The variant of the main control FW which attempts to load a plan with more than 5 points is loaded on the main control board.
+<<<
+STEPS: >>>
+1. Close all interlocks and open the quality assurance tab on the external console (wait for system to be “Cold” if it is in “Primed” state otherwise warmup will not run)
+2. Use the external console to open the quality assurance tab
+3. Open “Beam QA” and select any available energy 50/70/100kV
+4. Press on “Prepare” and wait until warmup completes
+5. The firmware variant will try to load a plan with more than 5 operational points
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system is ready (green thumbs up icon present)
+2. Dropdown with energies is available (at least one from 50/70/100kV)
+3. All 5 collimators are present in the table (1.5, 2, 3, 4, 5) and “Prepare” button is enabled
+4. Warmup completes but high voltage is not ramping up
+5. Fault message appears on the user interface on the external console and the system transitions to “Fault” state
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-40
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-170
+TITLE: Operation 03.1: Treatment staging - new session commencement - Test Case
+STATEMENT: >>>
+The firmware will accept a plan with 1-5 operational points and will transition to a ready for emission state.
+<<<
+PREREQUISITES: >>>
+* The system is powered on, no faults present, and ready to run emission
+* The QC collimator is connected to the x-ray source
+* At least one energy (50/70/100) has approved physics data for all 5 collimators (1.5,2,3,4,5)
+<<<
+STEPS: >>>
+1. Close all interlocks and open the quality assurance tab on the external console (wait for system to be “Cold” if it is in “Primed” state otherwise warmup will not run)
+2. Use the external console to open the quality assurance tab
+3. Open “Beam QA” and select any available energy 50/70/100kV
+4. Press on “Prepare” and wait until warmup completes
+5. Wait until high voltage completes ramp up and the system is in “Ready” state
+6. Terminate the operation on the external application (no need to run emission)
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system is ready (green thumbs up icon present)
+2. Dropdown with energies is available (at least one from 50/70/100kV)
+3. All 5 collimators are present in the table (1.5, 2, 3, 4, 5) and “Prepare” button is enabled
+4. Warmup completes and high voltage is ramping up
+5. The “Ready” button is available (which means the plan was loaded successfully)
+6. High voltage ramps down below 2kV and system transitions to “Primed” or “Fault” states
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-32
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-306
+TITLE: QC Processing - Test Case
+STATEMENT: >>>
+The firmware receives a command from the console application, runs emission and records the accumulated values from the QC diodes
+with support from the headboard
+<<<
+PREREQUISITES: >>>
+* The system is powered on, no faults present, and ready to run emission.
+* The QC collimator is connected to the x-ray source.
+<<<
+STEPS: >>>
+1. Power on the system / prepare system for operation (wait for system to be “Cold” if it is in “Primed” state otherwise warmup will not run)
+2. Use the external console to open the quality assurance tab
+3. Open “Beam QA” and select any available energy 50/70/100kV
+4. Press on “Prepare” and wait until warmup completes
+5. Wait until high voltage completes ramp up and the system is in “Ready” state
+6. Press on “Beam On” (emission will start) and wait until the emission completes
+7. Toggle “Reports” on the top right corner
+8. Select the energy and collimator that was just tested
+9. Select the latest result and review the Intensity 1 and Intensity 2 values
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system powers on in “Startup” state or is prepared in “Cold” or “Primed” states
+2. Dropdown with energies is available (at least one from 50/70/100kV)
+3. At least one collimator is present in the table and “Prepare” button is enabled
+4. Warmup completes and high voltage is ramping up
+5. The “Ready” button is available
+6. Emission is ongoing and completed successfully without any interruption
+7. The reports’ view appears and energy and collimator dropdowns are enabled
+8. The latest QA execution matched the current time (the one just tested); results are available
+9. Intensity 1 and Intensity 2 values are in the range between 26k and 806k
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-305
+  ROLE: Verifies
+
+[[/SECTION]]
