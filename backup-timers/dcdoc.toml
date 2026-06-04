@@ -1,0 +1,3 @@
+[component]
+name = "backup-timers"
+include_docs = [ "docs/*.sdoc" ]

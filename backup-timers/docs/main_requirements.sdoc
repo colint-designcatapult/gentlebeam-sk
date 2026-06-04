@@ -1,0 +1,194 @@
+[DOCUMENT]
+TITLE: Heracles Software Requirements Specification for Backup Timer FW
+UID: DHF-HRC-0017
+METADATA:
+  COMPONENT: backup-timers
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this document is to provide Software Requirements Specifications for the Heracles
+Backup Timer Firmware (FW).
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes all requirements of the Heracles Backup Timer FW.
+The information in this document has been derived from the VoxelRay Heracles Product Requirements
+Specification, as referenced in this document.
+
+\*The term Software applies to both Software and Firmware systems.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+MCU
+  Microcontroller Unit
+
+PRS
+  Product Requirements Specification
+
+SDP
+  Software Development Plan
+
+SRS
+  Software Requirements Specification
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The Backup Timer firmware is used to interface with the main control firmware and count the registered
+course of time once prompted. If the set period has elapsed, the timer firmware will trigger the timer
+MCU to terminate the X-Ray emission.
+The Backup Timer firmware runs on the Timer MCUs located on the main control board.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+EMS-WI-057-13: Generating Documents and Traceability Matrix Analysis in Ketryx WI
+
+EMS-SOP-057: Software Design Control
+
+DHF-HRC-0001, Rev. 1: Heracles Software Development Plan (SDP)
+
+DHF-HRC-0002: VoxelRay Product Requirements Specification (PRS)
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: RQ-H1FWT-
+TITLE: Requirements
+
+[REQUIREMENT]
+UID: RQ-H1FWT-1
+TYPE: Functional
+TITLE: Timer Characteristics
+STATEMENT: >>>
+The timeout counter shall not continue to count once expired
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-2
+TYPE: Functional
+TITLE: Timer Functionality
+STATEMENT: >>>
+The firmware shall only allow the timer countdown to be reset if the timer is not running.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-3
+TYPE: Functional
+TITLE: Timer Functionality
+STATEMENT: >>>
+The timer firmware shall be able to reset and clear the timeout counter.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-4
+TYPE: Functional
+TITLE: Timer Functionality
+STATEMENT: >>>
+The firmware shall clear any latched faults when the timer value is reset by the main control
+microcontroller
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-5
+TYPE: Safety
+TITLE: Communication
+STATEMENT: >>>
+The firmware shall verify a checksum value to ensure valid communication with the main control
+microcontroller
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-6
+TYPE: Functional
+TITLE: Communication
+STATEMENT: >>>
+The timer firmware shall be able to send timer state information to the main control
+microcontroller.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-9
+TYPE: Safety
+TITLE: Timer Functionality
+STATEMENT: >>>
+The timer firmware shall set a latching fault status interlock signal if the timeout expires.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-10
+TYPE: Functional
+TITLE: Timer Characteristics
+STATEMENT: >>>
+The timeout counter shall be able to have a maximum period of 2 minutes or more.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-11
+TYPE: Functional
+TITLE: Timer Characteristics
+STATEMENT: >>>
+The timeout counter shall have a minimum resolution of 60 milliseconds or less.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-12
+TYPE: Functional
+TITLE: Timer Functionality
+STATEMENT: >>>
+The timer firmware shall be able to start a timeout counter.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-13
+TYPE: Functional
+TITLE: Timer Functionality
+STATEMENT: >>>
+The timer firmware shall be able to stop an ongoing timeout counter
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWT-14
+TYPE: Functional
+TITLE: Timer Functionality
+STATEMENT: >>>
+The timer firmware shall be able to program a timeout counter based on time parameters
+received from the main microcontroller.
+<<<
+
+[[/SECTION]]
