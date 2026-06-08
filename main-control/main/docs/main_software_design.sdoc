@@ -65,6 +65,7 @@ TITLE: Overview
 [TEXT]
 STATEMENT: >>>
 The main control application firmware serves as the main logical control for system operation.
+
 The main control application firmware monitors all the inputs from the various connections on the board
 hardware. It can also be used to set and control many of the components that the main control board
 interfaces with. For off the shelf components, the main control application can set/enable the Peltier

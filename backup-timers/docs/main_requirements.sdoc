@@ -66,6 +66,7 @@ STATEMENT: >>>
 The Backup Timer firmware is used to interface with the main control firmware and count the registered
 course of time once prompted. If the set period has elapsed, the timer firmware will trigger the timer
 MCU to terminate the X-Ray emission.
+
 The Backup Timer firmware runs on the Timer MCUs located on the main control board.
 <<<
 

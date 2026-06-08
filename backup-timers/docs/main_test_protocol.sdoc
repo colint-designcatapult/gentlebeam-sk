@@ -1,6 +1,6 @@
 [DOCUMENT]
 TITLE: Heracles Backup Timer FW Verification Testing Protocol
-UID: DHF-HRC-0093
+UID: DHF-HRC-0092
 
 [GRAMMAR]
 IMPORT_FROM_FILE: @grammar
@@ -10,7 +10,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-This document provides the full test protocol (a full collection of test cases) for the Backup Timer 
+This document provides the full test protocol (a full collection of test cases) for the Backup Timer
 Firmware for the Heracles 1.0 system.
 <<<
 
@@ -21,8 +21,8 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This report contains a detailed test description to conduct verification testing of Heracles 1.0 Backup Timer 
-Firmware that covers Heracles Backup Timer FW SRS.
+This report contains a detailed test description to conduct verification testing of Heracles 1.0 Backup
+Timer Firmware that covers Heracles Backup Timer FW SRS.
 <<<
 
 [[/SECTION]]
@@ -61,11 +61,7 @@ DHF-HRC-0003, Rev. 2: Heracles SVP
 
 [LINK: DHF-HRC-0017]
 
-DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
-
-DHF-HRC-0092 Rev. 1: Heracles Backup Timer SW Verification Protocol
-
-EMS-QR-002-12-(16-JAN-2025) Rev.1: Heracles Pre Verification Execution 1 Summary
+[LINK: DHF-HRC-0087]
 <<<
 
 [[/SECTION]]
@@ -134,8 +130,8 @@ STATEMENT: >>>
 If a user reset the timers in the middle of emission, verify the emission finishes as normal and basically resetting the timers doesn’t effect on emission. Also, the timers won’t count down.
 <<<
 PREREQUISITES: >>>
-* The system is ready to use and run a loaded treatment plan
-* A treatment plan is loaded into the system.
+1. The system is ready to use and run a loaded treatment plan
+2. A treatment plan is loaded into the system.
 <<<
 STEPS: >>>
 1. Run a normal treatment of 20 seconds
@@ -149,7 +145,7 @@ EXPECTED_BEHAVIOR: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWT-3
+  VALUE: RQ-H1FWT-2
   ROLE: Verifies
 
 [TEST_CASE]
@@ -159,8 +155,8 @@ STATEMENT: >>>
 When the system starts and finishes an emission, resetting the timers will set the timers to 0
 <<<
 PREREQUISITES: >>>
-* A treatment plan is loaded and ready for run
-* The system is ready to run without any issues.
+1. A treatment plan is loaded and ready for run
+2. The system is ready to run without any issues.
 <<<
 STEPS: >>>
 1. Run a normal treatment of 20 seconds
@@ -174,29 +170,44 @@ EXPECTED_BEHAVIOR: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWT-2
+  VALUE: RQ-H1FWT-3
   ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWT-18
 TITLE: Communication 1 - Test Case
 STATEMENT: >>>
-If a special version of the firmware application loads into Mainboard where the treatment won’t stop. The treatment can’t run because of the interlocks’ fault.
+Req:
+
+The firmware shall verify a checksum value to ensure valid communication with the main control microcontroller
+Methode:
+
+The tester will load a variant of Main Control FW where the checksum is corrupt. The timer will generate a fault.
 <<<
 PREREQUISITES: >>>
-* A treatment plan is loaded and ready for run
-* The system is ready to run without any issues.
-* Load a special version of Firmware application where won’t stop the treatment.
+1. Main Control FW variant <#TIMER_COMM_TEST_2_MODE> is loaded
 <<<
 STEPS: >>>
-1. Run a normal treatment of 20 seconds
+1. Prepare a treatment plan on the internal application:
+• Energy: 50kV
+• Dwell time: 20 sec
+• Collimator: any
+• Pixels: any
+
+2. Load the treatment plan
+to the external application
+
+3. Execute the treatment
+plan
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the emission can’t start because of the un-cleared interlock’s fault.
+1. Emission won’t start and
+timer checksum fault will
+appear
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWT-6
+  VALUE: RQ-H1FWT-5
   ROLE: Verifies
 
 [TEST_CASE]
@@ -206,8 +217,8 @@ STATEMENT: >>>
 When a user starts an emission, the timers will start to increase.
 <<<
 PREREQUISITES: >>>
-* A treatment plan is loaded and ready for run
-* The system is ready to run without any issues.
+1. A treatment plan is loaded and ready for run
+2. The system is ready to run without any issues.
 <<<
 STEPS: >>>
 1. Run a normal treatment of 20 seconds
@@ -226,25 +237,35 @@ RELATIONS:
 UID: TC-H1FWT-20
 TITLE: Timer Functionality 4 - Test Case
 STATEMENT: >>>
-If a special version of the firmware application loads into Mainboard where the treatment won’t stop, the backup timers will stop the emission. Also, the interlocks’ fault won’t clear and remains even after 10 minutes.
+Req:
+
+The timer firmware shall set a latching fault status interlock signal if the timeout expires
+Methode:
+
+The tester will load a variant of Main Control FW where the main timer won’t stop counting. The backup timers will stop the emission and latch the fault even after the timeout expires
 <<<
 PREREQUISITES: >>>
-* A treatment plan is loaded and ready for run
-* The system is ready to run without any issues.
-* Load a special version of Firmware application where the timers won’t stop the treatment.
+1 - Main Control FW variant <#TIMER_TEST_MODE> is loaded
 <<<
 STEPS: >>>
-1. Run a normal treatment of 20 seconds
-2. After 20 seconds, check the emission.
-3. Wait for at least 10 minutes
-4. Check the interlock faults
+1. Prepare a treatment plan on the internal application:
+• Energy: 50kV
+• Dwell time: 20 sec
+• Collimator: any
+• Pixels: any
+
+2. Load the treatment plan to the external application
+3. Execute the treatment plan
+4. Wait for 10 seconds after the completion of the execution
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the emission started
-2. Verify the emission stopped at 20 seconds +/- 10% because of the back timers even though the main timers won’t let the emission stop.
-3. Verify 10 minutes passed.
-4. Verify the faults still remains
+1. Emission stops after 20 seconds +/- 1 sec with a timer fault
+2. The timer fault still exists
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWT-9
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWT-22
@@ -253,8 +274,8 @@ STATEMENT: >>>
 When user has started to run a normal 20 second treatment plan, make sure the timers’ values increased and have a reported resolution of 0.01 seconds.
 <<<
 PREREQUISITES: >>>
-* A treatment plan is loaded and ready for run about 20 seconds
-* The system is ready to run without any issues.
+1. A treatment plan is loaded and ready for run about 20 seconds
+2. The system is ready to run without any issues.
 <<<
 STEPS: >>>
 1. Start a run for the loaded treatment plan for 20 seconds.
@@ -278,8 +299,8 @@ STATEMENT: >>>
 When a treatment plan started to run by user, the timers increase accordingly.
 <<<
 PREREQUISITES: >>>
-* A treatment plan is loaded and ready for run
-* The system is ready to run without any issues.
+1. A treatment plan is loaded and ready for run
+2. The system is ready to run without any issues.
 <<<
 STEPS: >>>
 1. Run a normal treatment of 20 seconds
@@ -289,6 +310,10 @@ EXPECTED_BEHAVIOR: >>>
 1. Verify the emission started
 2. Verify the timers increase during emission
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWT-12
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWT-24
@@ -297,8 +322,8 @@ STATEMENT: >>>
 The timers won’t increase when the emission stops.
 <<<
 PREREQUISITES: >>>
-* A treatment plan is loaded and ready for run
-* The system is ready to run without any issues.
+1. A treatment plan is loaded and ready for run
+2. The system is ready to run without any issues.
 <<<
 STEPS: >>>
 1. Run a normal treatment of 20 seconds
@@ -310,6 +335,10 @@ EXPECTED_BEHAVIOR: >>>
 2. Verify the emission stopped
 3. Verify the timers won’t increase and stops counting
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWT-13
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWT-25
@@ -318,8 +347,8 @@ STATEMENT: >>>
 When a user starts to run a treatment plan, verify backup timers can terminate the emission accordingly.
 <<<
 PREREQUISITES: >>>
-* A treatment plan is loaded and ready for run
-* The system is ready to run without any issues.
+1. A treatment plan is loaded and ready for run
+2. The system is ready to run without any issues.
 <<<
 STEPS: >>>
 1. Run a normal treatment of 20 seconds
@@ -329,28 +358,47 @@ EXPECTED_BEHAVIOR: >>>
 1. Verify the emission started
 2. Verify the emission stopped at 20 seconds +/- 10% because of the backup timers.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWT-14
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWT-26
 TITLE: Timer Functionality 3 - Test Case
 STATEMENT: >>>
-If a special version of the firmware application loads into Mainboard where the treatment won’t stop, the backup timers will stop the emission. Also, the interlocks’ fault won’t clear and remains till the timers resetting time.
+Req:
+
+The firmware shall clear any latched faults when the timer value is reset by the main control microcontroller
+
+Methode:
+
+The tester will load a variant of Main Control FW where the main timer won’t stop counting. The back timers will stop the emission and latch the fault even after the timeout expires. Only a reset from the main control board will reset the fault.
 <<<
 PREREQUISITES: >>>
-* A treatment plan is loaded and ready for run
-* The system is ready to run without any issues.
-* Load a special version of Firmware application where the timers won’t stop the treatment.
+1. Main Control FW variant <#TIMER_TEST_MODE> is loaded
 <<<
 STEPS: >>>
-1. Run a normal treatment of 20 seconds
-2. Wait till the emission is done after 20 seconds.
-3. Wait at least 1 minute and check the faults
+1. Prepare a treatment plan on the internal application:
+• Energy: 50kV
+• Dwell time: 20 sec
+• Collimator: any
+• Pixels: any
+2. Load the treatment plan to the external application
+3. Execute the treatment plan
+4. Check for a fault related to timers
+5. Reset the fault
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the emission started
-2. Verify the system’s state went back to ready. Also, verify that the backup timers stopped the emission after 20 seconds despite of the non-stopping timer version of the firmware.
-3. Verify that the interlock’s faults are not cleared
+1. Emission stops after 20
+seconds +/- 1 sec
+2. The fault still exists
+3. The fault is cleared
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWT-4
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWT-27
@@ -359,9 +407,9 @@ STATEMENT: >>>
 When a user starts to run the loaded treatment plan, it shouldn’t stop the treatment because of the special version of the firmware application.
 <<<
 PREREQUISITES: >>>
-* Specific version of firmware application is loaded which its main timer doesn’t stop the treatment.
-* The system is ready to use and run a loaded treatment plan
-* A treatment plan is loaded into the system.
+1. Specific version of firmware application is loaded which its main timer doesn’t stop the treatment.
+2. The system is ready to use and run a loaded treatment plan
+3. A treatment plan is loaded into the system.
 <<<
 STEPS: >>>
 1. Run the loaded treatment plan using a point of duration 20 seconds.
@@ -371,5 +419,35 @@ EXPECTED_BEHAVIOR: >>>
 1. Verify the emission started. Also, verify that the backup timers terminate the emission at 20 seconds +/- 10%
 2. Verify that the timers’ values on the screen do not continue to count
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWT-1
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWT-59
+TITLE: Timer Address Test
+STATEMENT: >>>
+The timers have a unique I2C address each, they need to be verified to be true and distinct.
+<<<
+PREREQUISITES: >>>
+1. Specific version of firmware application is loaded which its main timer doesn’t stop the treatment.
+2. The system is ready to use and run a loaded treatment plan
+3. A treatment plan is loaded into the system.
+<<<
+STEPS: >>>
+1. Send valid data packet to each Timer with correct I2C address in C file and validate
+2. Send the opposite addresses to each Timer and ensure communication fails
+3. Send incorrect addresses to the Timer and ensure communication fails
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Timer data integrity is maintained in the response
+2. ERROR - No timer data is output
+3. ERROR - No timer data is output
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWT-58
+  ROLE: Verifies
 
 [[/SECTION]]

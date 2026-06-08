@@ -1,6 +1,6 @@
 [DOCUMENT]
 TITLE: Heracles Main Control Application FW Verification Testing Protocol
-UID: DHF-HRC-0075
+UID: DHF-HRC-0074
 
 [GRAMMAR]
 IMPORT_FROM_FILE: @grammar
@@ -98,59 +98,191 @@ PREFIX: TC-H1FWMC-
 TITLE: Test Protocol
 
 [TEST_CASE]
-UID: TC-H1FWMC-91
-TITLE: Head Interface Communication - Test Case
+UID: TC-H1FWMC-88
+TITLE: Discharge 2
 STATEMENT: >>>
-When the head interface board is unplugged from main control board, a fault should display in the system after 1 seconds (0.5 s for timeout
-+ 0.5 s for latency)
+Warm the system into "Staged" status and leave the system running without intervention for 5 minutes. Ensure that the system returns to cold state.
 <<<
 PREREQUISITES: >>>
-* The system is powered on, no faults present, and ready to run emission.
-* Headboard communication connector on the main control board is accessible.
+1. System is ready to use
+2. The treatment plan is already loaded
+3. Launch a timer to set the time
 <<<
 STEPS: >>>
-1. Use the external console to open the quality assurance tab
-2. Disconnect head interface board communication connector from main control board (J601)
-3. Wait for 1 second and check the system status on the top view
-4. Open the error detail by pressing on the error message
+1. Click the Prepare button
+2. Check system's status
+3. Start the timer
+4. Wait for 5 minutes
+5. Check system's status
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system is ready (green thumbs up icon present)
-2. J601 connector is disconnected from the main control board
-3. The system transitions into a “Fault” state
-4. The error message indicates headboard communication timeout
+1. Verify the prepare button is clicked and the proper message is displaying in the GUI
+2. Verify system switches to "Staged" status (check the top section of the monitor to find the status)
+3. Verify 5 minutes passed
+4. Verify system goes to COLD status
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWMC-68
+  VALUE: RQ-H1FWMC-87
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-89
+TITLE: Operation 11: Termination
+STATEMENT: >>>
+When the user starts the emission and presses the stop button, make sure the emission terminated.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to use and runs an emission
+2. Treatment plan is loaded and ready to run and emission
+<<<
+STEPS: >>>
+1. Start running the treatment plan and start the emission
+2. Click the Stop button in the middle of emission
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the plan started to run and the emission is started
+2. Verify the emission is terminated
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-1
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-90
+TITLE: Head Interface 1
+STATEMENT: >>>
+When the user presses and releases keys in the keypad of the head of the system, the service screen should record all of the toggles.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run
+<<<
+STEPS: >>>
+1. Press and release keys in the keypad of the head in the system
+2. Click the Services symbol in the left panel of the screen
+3. Check the services
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the toggles of the keys that happened and record all of the toggles accordingly
+2. Verify services screen is displayed in the GUI
+3. Verify all of the keypad toggles are displayed and recorded in the services screen
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-2
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-91
+TITLE: Head Interface 2
+STATEMENT: >>>
+When the head interface board is unplugged from main control board, a fault should display in the system after 3 seconds.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run
+2. Treatment plan is uploaded and ready to run
+3. Head interface board is plugged into the main control board
+<<<
+STEPS: >>>
+1. Unplug the head interface board from main board
+2. Check the fault after 3 seconds
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify physically that the head interface is unplugged from main board
+2. Verify fault is displayed for unplugged head interface board
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-3
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-92
+TITLE: Fault Information 1
+STATEMENT: >>>
+When the user stops the system during run time, a fault will happen on GUI and the details of the fault can be seen in logs.
+<<<
+PREREQUISITES: >>>
+1. System is on and running
+<<<
+STEPS: >>>
+1. When the system is running, push the e-stop button
+2. Click the Logs symbol in the left panel of the screen
+3. Check the faults on the log screen
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system induces a fault and the status displays a fault status in the GUI
+2. Verify logs are displayed in the middle of the screen
+3. Verify the fault was logged with the type, state, expected and measured details
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-6
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-93
+TITLE: Emission Indicator
+STATEMENT: >>>
+The user can hear sounds during the emission which is provided by the audible indicator in the main board.
+<<<
+PREREQUISITES: >>>
+1. Emission is running
+<<<
+STEPS: >>>
+1. When an emission is running, check the sound
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the user can hear the sound which is enabled by firmware and can be heard because of the audible indicator in the main board
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-7
   ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWMC-94
-TITLE: Interlocks - Test Case
+TITLE: Interlocks
 STATEMENT: >>>
-The firmware monitors and reports the status of the interlocks.
+The firmware shall monitor the status of the interlocks and throw a fault if any unusual things happen.
 <<<
 PREREQUISITES: >>>
-* The system is powered on, no faults present
+1. The system is on and ready to run
 <<<
 STEPS: >>>
-1. Power on the system
-2. Use the external console to view the status of the interlocks (lock symbol on bottom right)
-3. Activate the E-stop button on the external console
-4. Activate the E-stop button on the base unit
-5. Open the Door
-6. Rotate the key on the external safety box to Safe
-7. Remove the Collimator
+1. Press and release the e-stop button in the system
+2. Click Services symbol in the left panel of the screen
+3. Check the services
+4. Change the state of Ion pump HV interlocks
+5. Click Services symbol in the left panel of the screen
+6. Check the services
+7. Change the state of KUKA robot arm interlocks
+8. Click Services symbol in the left panel of the screen
+9. Check the services
+10. Change the state of Door interlock
+11. Click Services symbol in the left panel of the screen
+12. Check the services
+13. Change the state of Coolant level sensor
+14. Click Services symbol in the left panel of the screen
+15. Check the services
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system is on
-2. The interlock view is available (not gray)
-3. Ensure the remote e-stop interlock is triggered
-4. Ensure the remote e-stop interlock is triggered
-5. Ensure the door interlock is triggered
-6. Ensure the remote key interlock is triggered
-7. Ensure the applicator interlock is triggered
+1. Verify the toggles of the e-stop button happened
+2. Verify services screen is displayed in the GUI
+3. Verify the e-stop toggle is recorded in the services screen after 1 second
+4. Verify Ion pump HV interlocks status changed
+5. Verify services screen is displayed in the GUI
+6. Verify Ion pump HV interlocks status is recorded in the services screen
+7. Verify KUKA robot arm interlocks status changed
+8. Verify services screen is displayed in the GUI
+9. Verify KUKA robot arm interlocks status is recorded in the services screen
+10. Verify Door interlock status changed
+11. Verify services screen is displayed in the GUI
+12. Verify Door interlock status is recorded in the services screen
+13. Verify Coolant level sensor status changed
+14. Verify services screen is displayed in the GUI
+15. Verify Coolant level sensor status is recorded in the services screen
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -158,28 +290,104 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FWMC-98
-TITLE: Operation 01: Filament conditioning 6 - Test Case
+UID: TC-H1FWMC-95
+TITLE: Coils 1
 STATEMENT: >>>
-The firmware will report a fault if the conditioning process didn’t complete within 360 seconds
+When an emission starts to run after the Focus Coil is unplugged, a fault can be found in the logs.
 <<<
 PREREQUISITES: >>>
-* The system is powered on, no faults present, and ready to run emission.
-* A variant that using a 1mA / 1 sec is loaded on the HVPS interface board
+1. System is ready to run an emission
 <<<
 STEPS: >>>
-1. Power on the system / prepare system for operation (wait for system to be “Cold” if it is in “Primed” state otherwise warmup will not run)
-2. Close all interlocks and open the quality assurance tab on the external console
-3. Inside “Startup Cycle” press the “Warmup” button (it runs the conditioning as the daily warmup)
-4. Go to the service tab and review the Filament Feedback value under the HVPS section
-5. Wait for 360 seconds
+1. Unplug the Focus Coil
+2. Run an emission
+3. Click the Log symbol in the left panel of the screen
+4. Check the log
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system powers on in “Startup” state or is prepared in “Cold” or “Primed” states
-2. The system is ready (green thumbs up icon present) and the “Warmup” button is available
-3. Warmup begins and system transitions to “DailyWarmup” state (it is the conditioning state)
-4. The Filament Feedback \[mA] value is being updated
-5. The operation is not complete, and a timeout fault message is being triggered on the external console
+1. Verify physically that the Focus Coil is unplugged
+2. Verify the emission started
+3. Verify logs are displayed in the middle of the screen
+4. Verify there are faults displayed in the log for values that are more than 150 mA out of tolerance
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-9
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-96
+TITLE: Backup Timer 1
+STATEMENT: >>>
+Load test version of timer firmware to simulate corrupted communication. Run system and look for timer fault in log.
+<<<
+PREREQUISITES: >>>
+1. The test version of timer firmware to simulate corrupted communication is loaded
+<<<
+STEPS: >>>
+1. Restart the system
+2. Click the Log button at the left-hand side of the monitor
+3. Look for timer fault in log and verify it's corrupted
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system is ready to operate and use
+2. Verify the logs are displayed in the screen
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-10
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-97
+TITLE: Backup Timer 2
+STATEMENT: >>>
+Delete timer firmware to simulate lack of communication. Run system and look for timer fault in log.
+<<<
+PREREQUISITES: >>>
+1. Timer firmware is deleted
+2. System is in Ready status
+<<<
+STEPS: >>>
+1. Restart the system
+2. Start the timer
+3. Click the Log button at the left-hand side of the monitor
+4. Look for fault in log and verify it's reported after TBD seconds
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system is ready to operate and use
+2. Verify it started from 0
+3. Verify the logs are displayed in the screen
+4. Verify the related fault is displayed in the log after TBD seconds
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-11
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-98
+TITLE: Operation 01: Filament Conditioning 6
+STATEMENT: >>>
+The firmware shall report a fault if the HVPS has not reached the target filament current setpoint during the conditioning procedure within a timeout period of 20 minutes.
+<<<
+PREREQUISITES: >>>
+1. HVPS firmware must have a filament limit of 1500 mA
+2. System is ready to run
+<<<
+STEPS: >>>
+1. Load specialized HVPS interface firmware
+2. Start up the system
+3. Create filament conditioning
+4. Wait for some time
+5. Check the fault
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the current of filament is 1500 mA
+2. Verify the system is started
+3. Verify the filament's conditioning is started
+4. Wait for 20 minutes +/- 10 seconds
+5. Verify a fault is triggered
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -188,30 +396,29 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-99
-TITLE: Operation 02: Warmup procedure - Test Case
+TITLE: Operation 02: Warmup Procedure
 STATEMENT: >>>
-The firmware will report a fault if the warmup process didn’t complete within 180 seconds.
+When user loads a firmware that reports a fault if the HVPS interface has a filament current limit of 1500 mA during the conditioning procedure within a timeout period of 30 minutes +/- 2 seconds.
 <<<
 PREREQUISITES: >>>
-* The system is powered on, no faults present, and ready to run emission.
-* A variant that using a 1mA / 1 sec is loaded on the HVPS interface board.
-* The QC collimator is connected to the x-ray source.
+1. HVPS firmware must have a filament limit of 1500 mA
+2. System is ready to run
 <<<
 STEPS: >>>
-1. Power on the system / prepare system for operation (wait for system to be “Cold” if it is in “Primed” state otherwise warmup will not run)
-2. Use the external console to open the quality assurance tab
-3. Open “Beam QA” and select any available energy 50/70/100kV
-4. Press on “Prepare”
-5. Go to the service tab and review the Filament Feedback value under the HVPS section
-6. Wait for 180 seconds
+1. Load specialized HVPS interface firmware
+2. Start up the system
+3. Create filament conditioning
+4. Start the Warmup
+5. Wait for some time
+6. Check the fault
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system powers on in “Startup” state or is prepared in “Cold” or “Primed” states
-2. Dropdown with energies is available (at least one from 50/70/100kV)
-3. At least one collimator is present in the table and “Prepare” button is enabled
-4. Warmup begins and system transitions to “Warmup” state
-5. The Filament Feedback \[mA] value is being updated
-6. The operation is not complete, and a timeout fault message is being triggered on the external console
+1. Verify the current of filament current is limited to 1500 mA
+2. Verify the system is started
+3. Verify the filament's conditioning is started
+4. Verify Warmup is started
+5. Wait for 30 minutes +/- 2 seconds
+6. Verify a fault is triggered
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -219,26 +426,796 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
+UID: TC-H1FWMC-100
+TITLE: Operation 07: Operational Point Setup
+STATEMENT: >>>
+When the high voltage interlock jumper is removed from the HVPS, verify that the system creates a fault.
+<<<
+PREREQUISITES: >>>
+1. The system is up and ready to run
+2. The high voltage interlock jumper is removed from the HVPS
+3. A treatment plan is ready to load and run
+<<<
+STEPS: >>>
+1. Remove the high voltage interlock jumper from the HVPS
+2. Start up the system
+3. Start running the treatment plan
+4. Wait for 90 +/- 5 seconds after HVPS check
+5. Check the system
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the high voltage interlock jumper is removed from the HVPS
+2. Verify the system is started
+3. Verify the running is started
+4. Verify the 90 +/- 5 seconds passed after HVPS check
+5. Verify system enters a fault state due to kV not reaching the target setpoint
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-14
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-101
+TITLE: Operation 10 – Emission 3
+STATEMENT: >>>
+When user loads a firmware that reports a fault if the HVPS interface clamps the kV on emission.
+<<<
+PREREQUISITES: >>>
+1. HVPS interface firmware which clamps the kV on emission
+2. System is ready to run a treatment plan
+<<<
+STEPS: >>>
+1. Load specialized HVPS interface firmware
+2. Start up the system
+3. Start running the treatment plan and emission
+4. Check the emission
+5. Check the fault
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the firmware is loaded
+2. Verify the system is started
+3. Verify the emission is started
+4. Verify the emission did not complete successfully
+5. Verify a fault is triggered for incomplete emission due to high voltage feedback
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-15
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-102
+TITLE: Discharge 3
+STATEMENT: >>>
+Warm the system into "Ready" status and leave the system running without intervention for 2 minutes. Ensure that the system returns to cold state.
+<<<
+PREREQUISITES: >>>
+1. System is ready to use
+2. The treatment plan is already loaded
+3. Launch a timer to set the time
+<<<
+STEPS: >>>
+1. Click the Prepare button
+2. Check the status of the system
+3. Start the timer
+4. Wait for 2 minutes
+5. Check the status of the system
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the prepare button is clicked and the proper message is displaying in the GUI
+2. Verify system switches to "Ready" status (check the top section of the monitor to find the status)
+3. Verify the timer started
+4. Verify 2 minutes passed
+5. Verify system goes to COLD status
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-86
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-103
+TITLE: Operation 09: Initiation
+STATEMENT: >>>
+When user runs a treatment plan and clicks the Beam-On button, the system enters Launching state first and then starts emission.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run
+2. A treatment plan is loaded and ready to run an emission
+<<<
+STEPS: >>>
+1. Start the system
+2. Load a treatment plan
+3. Click the "Beam On" button
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is started
+2. Verify a treatment plan is loaded successfully
+3. Verify the system switches to Launching status and that the emission has not started yet
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-16
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-104
+TITLE: Operation 08: Ready 1
+STATEMENT: >>>
+When user loads a plan with at least 6 operational points with alternating non-auto-execute and auto-execute points, verify user's intervention requirements.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run a treatment
+2. A treatment plan is loaded into the system with at least 6 operational points with alternating non-auto-execute and auto-execute points
+<<<
+STEPS: >>>
+1. Run the loaded treatment plan with at least 6 operational points with alternating non-auto-execute and auto-execute points
+2. Check the flags of the auto-execute points
+3. Check the flags of the non-auto-execute points
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system started to run
+2. Verify that the points which are flagged for auto-execute do not need user intervention to execute
+3. Verify that the points which are flagged for non-auto-execute do need user intervention to execute
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-17
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-105
+TITLE: Operation 08: Ready 2
+STATEMENT: >>>
+When user loads a plan with 1 operational point where the flag for auto-execute is set, verify user's intervention is required for running them.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run a treatment
+2. A treatment plan is loaded into the system with 1 operational point with the flag for non-auto-execute
+<<<
+STEPS: >>>
+1. Run the loaded treatment plan with 1 operational point with the alternating non-auto-execute point
+2. Check the flags of the loaded plan
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system started to run
+2. Verify that despite being set to auto-execute, the point still requires user intervention to initiate emission (press "Beam On" button)
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-18
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-106
+TITLE: Operation 07: Operational Point Setup 1
+STATEMENT: >>>
+When the user runs an emission with at least 2 points, verify that prior to emission of each point, the kV reading is within 5% of the target kV.
+<<<
+PREREQUISITES: >>>
+1. The system is up and ready to run an emission
+2. A treatment plan is loaded and ready to run for at least 2 emissions
+<<<
+STEPS: >>>
+1. Start the system
+2. Load the normal treatment plan with at least 2 points
+3. Check the kV reading
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is started properly
+2. Verify the plan is loaded
+3. Verify that prior to emission of each point, the kV reading is within 5% of the target kV
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-19
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-107
+TITLE: Operation 07: Operational Point Setup 2
+STATEMENT: >>>
+When the user runs an emission with at least 2 points, verify that prior to emission of each point, the kV reading is within 5% of the target kV.
+<<<
+PREREQUISITES: >>>
+1. The system is up and ready to run an emission
+2. A treatment plan is loaded and ready to run for at least 2 emissions
+<<<
+STEPS: >>>
+1. Start the system
+2. Load the normal treatment plan with at least 2 points
+3. Check the kV reading
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is started properly
+2. Verify the plan is loaded
+3. Verify that prior to emission of each point, the kV reading is within 5% of the target kV
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-20
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-108
+TITLE: Termination
+STATEMENT: >>>
+After finishing a treatment, the system needs to switch to STAGED status.
+<<<
+PREREQUISITES: >>>
+1. The treatment plan is loaded and the system is ready to run an emission
+<<<
+STEPS: >>>
+1. Click the "Beam on" button
+2. After the treatment is finished, check the status of the system
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the emission starts to run and the system switches to Emission status
+2. Verify the status of the system is STAGED
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-85
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-109
+TITLE: Operation 06 – HVPS Check
+STATEMENT: >>>
+When the user opens and closes the interlock door, verify FW can cycle HVPS interlocks successfully.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run
+2. The interlock door is open
+3. A treatment plan is ready to load into the system
+<<<
+STEPS: >>>
+1. Check the interlock door
+2. Close the interlock door
+3. Load and start to execute the treatment plan
+4. Check the system status
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the door is open for a minimum of 1 second to force latched hardware interlock trigger without fault
+2. Verify the interlock door is closed
+3. Verify the treatment plan is loaded and running successfully
+4. Verify that the system performs an HVPS check prior to ramping up high voltage and that the system is able to ramp up high voltage indicating that the interlocks have been cycled appropriately
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-21
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-110
+TITLE: Operation 02: Warmup Procedure 1
+STATEMENT: >>>
+When user runs a specific invalid parameter warm up attempt, make sure it won't run and the system stays in COLD state and it will error in the logs.
+<<<
+PREREQUISITES: >>>
+1. System is in COLD state
+2. A treatment plan is loaded and ready to run
+3. A specific version of invalid parameter warmup attempt is loaded in the system
+<<<
+STEPS: >>>
+1. Load the invalid parameter warmup build in the system
+2. Upload the treatment plan and check the system's state
+3. Run Warm up
+4. Click the Logs symbol
+5. Check the logs
+6. Check the system's state
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the build is loaded with invalid parameter warmup attempt
+2. Verify it's in COLD state
+3. Verify the warmup is started
+4. Verify the logs are displayed in the screen
+5. Verify the warmup was not successful
+6. Verify the state of the system is COLD
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-22
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-111
+TITLE: Treatment Plan Reporting 1
+STATEMENT: >>>
+When user sets invalid parameters, GUI and logs should report it.
+<<<
+PREREQUISITES: >>>
+1. System is ready to use
+<<<
+STEPS: >>>
+1. Load invalid parameters to the system
+2. Check the GUI
+3. Click the Logs symbol in the left panel
+4. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the invalid parameters are loaded in the system
+2. Verify errors are displayed in the GUI for invalid parameters
+3. Verify logs are displayed in the GUI
+4. Verify logs for the invalid parameters are present
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-23
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-112
+TITLE: PC Ethernet Commands 2
+STATEMENT: >>>
+When the Ethernet cable is disconnected from the system, user can see the logs and check the lost of communication log.
+<<<
+PREREQUISITES: >>>
+1. System is ready and up to run
+<<<
+STEPS: >>>
+1. Start the system
+2. Wait at least 2 minutes
+3. Unplug the Ethernet cable of the main control board from the system
+4. Wait for 1 minute
+5. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is up and ready for run
+2. Verify at least 2 minutes passed
+3. Verify physically that the cable is disconnected
+4. Verify 1 minute passed
+5. Verify communication error message in the logs
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-84
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-113
+TITLE: Operation 4: Treatment Plan Confirmation 1
+STATEMENT: >>>
+When a special test is running for some of the points belonging to the treatment plan, then treatment of the loaded plan's execution never completes.
+<<<
+PREREQUISITES: >>>
+1. A special test is ready for run which does not confirm all of the treatment plan's points
+2. The treatment plan is loaded
+3. System is ready to run a treatment plan
+<<<
+STEPS: >>>
+1. Run GUI with special test functionality to not confirm all points
+2. Check running of the treatment plan
+3. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the test is started to run
+2. Verify running of treatment with multiple points won't complete
+3. Verify logs indicate that treatment cannot be executed
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-24
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-114
+TITLE: Operation 05: Treatment Plan Release 1
+STATEMENT: >>>
+When the user wants to run an emission with the interlock door is open, make sure FW can't run it.
+<<<
+PREREQUISITES: >>>
+1. The system is up and ready to run an emission
+2. A treatment plan is loaded and ready to run an emission
+3. Interlock door is open
+<<<
+STEPS: >>>
+1. Check the interlock door
+2. Try to run an emission for the loaded treatment plan by clicking the Beam on button
+3. Click the Logs symbol in the left panel of the GUI
+4. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the door is open
+2. Verify the emission cannot be started because of the open door of interlock
+3. Verify the logs are displayed in the middle of the screen
+4. Verify the message for unsuccessful emission is displayed in the logs
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-25
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-115
+TITLE: Operation 05: Treatment Plan Release 2
+STATEMENT: >>>
+When the user sends a request to attempt an invalid treatment plan, make sure the system can't progress to ramp high voltage and run an emission. A treatment plan request will be considered invalid if the system is not in the staged state with a confirmed treatment plan.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run
+2. A treatment plan is ready for load in the system
+<<<
+STEPS: >>>
+1. Load a GUI build which has functionality to attempt to release an invalid treatment plan which cannot be loaded and confirmed
+2. Click the Logs symbol
+3. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the build is loaded successfully
+2. Verify the logs are displayed in the screen
+3. Verify the unsuccessful attempt is displayed in the logs and the system cannot progress to ramp high voltage
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-26
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-116
+TITLE: Operation 04: Treatment Plan Confirmation 3
+STATEMENT: >>>
+When user loads a plan with invalid treatment plan operational point confirmation parameters from the PC, the system should display an error. Incorrect parameters are values which do not match staged parameters.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run a treatment
+2. A treatment plan is loaded into the system with incorrect parameters
+<<<
+STEPS: >>>
+1. Run the loaded treatment plan with invalid parameters
+2. Click the Logs symbol in the left panel of the screen
+3. In the logs, look for error messages
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system displays error messages for the invalid parameters and cannot pass the staged state
+2. Verify logs are displayed in the middle of the screen
+3. Verify the errors are related to invalid parameters of the loaded treatment plan
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-27
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-117
+TITLE: Operation 04: Treatment Plan Confirmation 4
+STATEMENT: >>>
+When user loads a plan with invalid treatment plan operational point confirmation parameters from the PC, the system should display an error. Invalid parameters are those which cannot be processed or are formatted improperly.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run a treatment
+2. A treatment plan is loaded into the system with invalid parameters
+<<<
+STEPS: >>>
+1. Run the loaded treatment plan with invalid parameters
+2. Click the Logs symbol in the left panel of the screen
+3. In the logs, look for error messages
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system displays error messages for the invalid parameters and cannot pass the staged state
+2. Verify logs are displayed in the middle of the screen
+3. Verify the errors are related to invalid parameters of the loaded treatment plan
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-28
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-118
+TITLE: Operation 4: Treatment Plan Confirmation 2
+STATEMENT: >>>
+When user loads a plan with out of bound values, the system should display an error and record it in the logs. Acceptable values are: Acceleration potential (kV): 0–100 kV; Emission current (mA): 0–1 mA; Total delivery time: 0–300 seconds; Remaining delivery time: 0 to total delivery time; Beam optic focus adjustment values: 0–3 A.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run a treatment
+2. A treatment plan is loaded into the system with invalid parameters
+<<<
+STEPS: >>>
+1. Run the loaded treatment plan with invalid parameters
+2. Click the Logs symbol in the left panel of the screen
+3. In the logs, look for error messages
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system displays error messages for the invalid parameters
+2. Verify logs are displayed in the middle of the screen
+3. Verify the errors are related to invalid parameters of the loaded treatment plan
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-29
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-119
+TITLE: Operation 04: Treatment Plan Confirmation 6
+STATEMENT: >>>
+When user loads and runs a normal plan, make sure the parameters match with defined acceptable ranges: Acceleration potential (kV): 0–100 kV; Emission current (mA): 0–1 mA; Total delivery time: 0–300 seconds; Remaining delivery time: 0 to total delivery time; Beam optic focus adjustment values: 0–3 A; Beam optic deflection adjustment values: -1.5 A to +1.5 A; Filament current (mA): 0–3999 mA.
+<<<
+PREREQUISITES: >>>
+1. System is ready to use
+<<<
+STEPS: >>>
+1. Start the system
+2. Load the normal treatment plan
+3. Start running the loaded plan
+4. Click Services in the left panel of the screen
+5. Check the services
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is started properly
+2. Verify the plan is loaded
+3. Verify the running of the plan is started properly
+4. Verify Services can be displayed in the GUI
+5. Verify all of the parameters of the treatment plan can be found in the services matching the defined acceptable ranges
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-30
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-120
+TITLE: Report Telemetry to PC
+STATEMENT: >>>
+When the user runs a normal treatment plan and emission, verify all of the values can be found in the services screen.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run a normal emission
+2. A treatment plan is loaded and ready to run emission(s)
+<<<
+STEPS: >>>
+1. Start the system
+2. Load the normal treatment plan
+3. Start the emission
+4. Click Services in the left panel of the screen
+5. Check the services
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is started properly
+2. Verify the plan is loaded
+3. Verify the emission is started properly
+4. Verify Services can be displayed in the GUI
+5. Verify all of the parameters of the treatment plan can be found in the services: Control board state; Current system operational point in treatment plan; Total operational points in treatment plan; Internal timer value; Backup timer values
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-83
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-121
+TITLE: Operation 3.2: Treatment Staging 1
+STATEMENT: >>>
+When user loads a treatment plan with valid parameters and beam optics feature, verify the configuration is logged and can be confirmed.
+<<<
+PREREQUISITES: >>>
+1. A treatment plan is loaded with valid parameters
+2. The treatment plan includes beam optics
+<<<
+STEPS: >>>
+1. Start running the loaded treatment plan
+2. Check the parameters of the loaded plan in the system
+3. Click the Logs symbol in the left panel of the screen
+4. Check and find the parameters of the loaded plan in the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the run is started
+2. Verify the following parameters match the loaded plan: Acceleration potential (kV): 0–100 kV; Emission current (mA): 0–1 mA; Total delivery time: 0–TBD; Remaining delivery time: 0 to total delivery time; Beam optic focus adjustment values: 0–3 A; Beam optic deflection adjustment values: -1.5 A to +1.5 A; Filament current (mA): 0–3999 mA
+3. Verify logs are displayed in the middle of the screen
+4. Verify the listed parameters can be found in the logs
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-82
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-122
+TITLE: Treatment Plan Reporting 2
+STATEMENT: >>>
+Users should be able to request GUI about parameters in the treatment plan. Also, these parameters can be found in the logs as well.
+<<<
+PREREQUISITES: >>>
+1. System is ready to use
+<<<
+STEPS: >>>
+1. Run specialized GUI functionality to request operational point parameters
+2. Click the Logs symbol in the left panel of the screen
+3. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify GUI can provide the parameters of the plan
+2. Verify logs are displayed in the middle of the GUI
+3. Verify the plan's parameters are displayed in the logs
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-81
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-123
+TITLE: Fault Mode 2
+STATEMENT: >>>
+Firmware shall enter fault mode when a fault is detected.
+<<<
+PREREQUISITES: >>>
+1. The system is ready for use
+2. A treatment plan is loaded and ready to run
+<<<
+STEPS: >>>
+1. Start the system
+2. Wait till the state of the system changes to COLD
+3. Push the e-stop button
+4. Release the e-stop button
+5. Reset the fault
+6. Load a treatment plan
+7. When the plan is in staged state, press the e-stop button
+8. Check for system's mode
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is started
+2. Verify the state of the system is COLD
+3. Verify system induces a fault and the status displays a fault status in the GUI
+4. Verify physically that the e-stop button is released
+5. Verify the fault is reset
+6. Verify the plan is loaded
+7. Verify the state of the system as well as the pressing of the e-stop button
+8. Verify fault is created and system enters fault mode
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-80
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-124
+TITLE: Fault Information 3
+STATEMENT: >>>
+When the system enters fault mode after an e-stop event, it does not automatically exit fault mode when the e-stop is released.
+<<<
+PREREQUISITES: >>>
+1. System is on and running
+<<<
+STEPS: >>>
+1. When the system is running, push the e-stop button
+2. Click the Logs symbol in the left panel of the screen
+3. Release the e-stop button
+4. Monitor the system for 1 minute
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system induces a fault and the status displays a fault status in the GUI
+2. Verify logs can be seen in the middle of the screen and the created fault is visible in the logs
+3. Verify physically that the e-stop button is released
+4. Verify the system does not exit from fault mode
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-79
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-125
+TITLE: Fault Information 2
+STATEMENT: >>>
+Firmware can clear the fault flags through the PC.
+<<<
+PREREQUISITES: >>>
+1. System is up and running without any issues
+<<<
+STEPS: >>>
+1. When the system is running, push the e-stop button
+2. Click the Logs symbol in the left panel of the screen
+3. Release the e-stop button
+4. Click the "Clear Errors" button on the screen
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system induces a fault and the status displays a fault status in the GUI
+2. Verify logs can be seen in the middle of the screen and the created fault is visible in the logs
+3. Verify physically that the e-stop button is released
+4. Verify the system is not displaying fault mode in the GUI
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-78
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-126
+TITLE: Fault Mode 1
+STATEMENT: >>>
+When a system enters fault mode, firmware shall terminate any ongoing emission.
+<<<
+PREREQUISITES: >>>
+1. The system should be ready for running an emission
+2. A treatment plan is loaded and ready for emission
+<<<
+STEPS: >>>
+1. Start the emission for the uploaded treatment plan
+2. Wait a few seconds
+3. Push the e-stop button
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the emission is started
+2. Verify a few seconds passed after the emission started
+3. Verify the emission is terminated after pushing the e-stop button
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-77
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-127
+TITLE: Warmup Procedure
+STATEMENT: >>>
+When user clicks the Prepare button, the system enters the WARMUP state.
+<<<
+PREREQUISITES: >>>
+1. The system is in COLD state
+<<<
+STEPS: >>>
+1. Click the Prepare button
+2. System starts the Warmup procedure and goes to "Warmup" status (check the top section of the monitor to find the status)
+3. Check the target filament current value
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The button changes to Warmup with the percentage
+2. The status changes to "Warmup"
+3. Verify the value is between 2000 mA and 3500 mA
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-76
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TCH1FWMC-128
+TITLE: Operation 10 – Emission 4
+STATEMENT: >>>
+If a special version of HVPS interface FW is loaded which always reports 0.1 mA current, then an emission never completes.
+<<<
+PREREQUISITES: >>>
+1. The system is up and ready to run a treatment plan without any issues
+2. A special version of HVPS interface firmware is ready and loaded without any issues
+3. A treatment plan is ready to load and run
+<<<
+STEPS: >>>
+1. Start the treatment plan and begin the emission
+2. Check the emission’s completion
+3. Click Logs in the left panel of the screen
+4. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the emission started
+2. Verify the emission is never completed because of the special version of the HVPS interface firmware
+3. Verify the logs are displayed in the GUI
+4. Verify the log of the incomplete emission is present in the logs
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-75
+  ROLE: Verifies
+
+[TEST_CASE]
 UID: TC-H1FWMC-129
-TITLE: Operation 05: Treatment plan release - Test Case
+TITLE: Operation 05: Treatment plan release
 STATEMENT: >>>
 If the user runs a treatment plan, its status changes from STAGED to HVPS check / HV setup.
 <<<
 PREREQUISITES: >>>
-* System is ready to run a treatment plan.
-* A treatment plan is not loaded into the system.
+1. System is ready to run a treatment plan
+2. A treatment plan is not loaded into the system.
 <<<
 STEPS: >>>
 1. Start the system
-2. Enter the STAGED state by loading a treatment plan
-3. Toggle the door interlock, remote key interlock, and collimator interlock
-4. Run the treatment plan and move ahead to the next operational state
+2. If no plan is already loaded, check the status of the system
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is started and there isn’t any plan loaded into system
-2. Verify the status of the system says “STAGED” in the GUI
-3. Ensure the door interlock, remote key, or collimator interlock do not trigger an interlock fault
-4. Verify the states will be HV CHECK+HV SETUP after STAGED status
+1. Verify the system is started and there isn’t any plan loaded into the system
+2. Verify the states will be HV CHECK + HV SETUP after STAGED status
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -246,22 +1223,70 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FWMC-132
-TITLE: Undesired emission monitoring - Test Case
+UID: TC-H1FWMC-130
+TITLE: Operation 10 – Emission 1
 STATEMENT: >>>
-The firmware will report a fault if the emission current is higher than the max threshold of 0.2mA when not in emission.
+When an emission starts to run, backup timers will change accordingly.
 <<<
 PREREQUISITES: >>>
-* The system is powered on, no faults present, and ready to run emission.
-* A variant that is reporting x10 emission current feedback is loaded on the HVPS interface board.
+1. A treatment plan is loaded
+2. The system is ready to start and run an emission
 <<<
 STEPS: >>>
-1. Power on the system
-2. Check the system status
+1. Click the "Beam On" button
+2. Check the timers at the top of the screen during running an emission
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system is on
-2. The system transitions to “Fault” state with an error message about unwanted emission
+1. Verify the system switches to Emission status
+2. Verify the timers begin to change
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-72
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-131
+TITLE: Operation 10 – Emission 2
+STATEMENT: >>>
+When an emission starts to run, main / primary timers will change accordingly on GUI.
+<<<
+PREREQUISITES: >>>
+1. A treatment plan is loaded
+2. The system is ready to start and run an emission
+<<<
+STEPS: >>>
+1. Click the "Beam On" button
+2. Check the timers at the top of the screen during running an emission
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system switches to Emission status
+2. Verify the main / primary timers begin to change in the GUI
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-73
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-132
+TITLE: Undesired Emission Monitoring
+STATEMENT: >>>
+If a special version of HVPS interface FW is loaded which always reports x10 mA current, then the system will trigger the associated fault after rebooting.
+<<<
+PREREQUISITES: >>>
+1. The system is up and ready to run a treatment plan without any issues
+2. A special version of HVPS interface FW is ready and loaded without any issues
+<<<
+STEPS: >>>
+1. Load a special version of HVPS interface FW which always reports x10 mA current
+2. Restart and reboot the system
+3. Check the faults
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the special version of HVPS interface is loaded
+2. Verify the system is restarted properly
+3. Verify the system triggers the proper associated fault
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -269,29 +1294,745 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FWMC-162
-TITLE: Operation 03.1: Treatment staging - new session commencement - Test Case
+UID: TC-H1FWMC-133
+TITLE: Operation 09: Initiation
 STATEMENT: >>>
-The firmware will not accept a plan with more than 5 operational points and will trigger a fault.
+When user runs a normal treatment plan with coils plugged in, check the deflection and focus coil values in the services screen.
 <<<
 PREREQUISITES: >>>
-* The system is powered on, no faults present, and ready to run emission.
-* The QC collimator is connected to the x-ray source.
-* The variant of the main control FW which attempts to load a plan with more than 5 points is loaded on the main control board.
+1. System is ready to run a treatment plan
+2. Coils are plugged in
+3. A treatment plan is loaded and ready to run
 <<<
 STEPS: >>>
-1. Close all interlocks and open the quality assurance tab on the external console (wait for system to be “Cold” if it is in “Primed” state otherwise warmup will not run)
-2. Use the external console to open the quality assurance tab
-3. Open “Beam QA” and select any available energy 50/70/100kV
-4. Press on “Prepare” and wait until warmup completes
-5. The firmware variant will try to load a plan with more than 5 operational points
+1. Start the system
+2. Check the coils
+3. Load the normal treatment plan
+4. Do not run any emission
+5. Click the Services button in the left panel of the screen
+6. Check the services
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system is ready (green thumbs up icon present)
-2. Dropdown with energies is available (at least one from 50/70/100kV)
-3. All 5 collimators are present in the table (1.5, 2, 3, 4, 5) and “Prepare” button is enabled
-4. Warmup completes but high voltage is not ramping up
-5. Fault message appears on the user interface on the external console and the system transitions to “Fault” state
+1. Verify the system is started properly
+2. Verify coils are plugged in
+3. Verify the plan is loaded
+4. Verify the emission is not running yet
+5. Verify the services screen is displayed in the GUI
+6. Verify that the deflection and focus coil values are set and can be found in the services screen
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-70
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-134
+TITLE: Discharge 1
+STATEMENT: >>>
+Warm the system into "Primed" status and leave the system running without intervention for 5 minutes. Ensure that the system returns to cold state.
+<<<
+PREREQUISITES: >>>
+1. System is ready to use
+2. The treatment plan is already loaded
+3. Launch a timer to set the time
+<<<
+STEPS: >>>
+1. Click the Prepare button
+2. System switches to "Primed" status (check the top section of the monitor to find the status)
+3. Start the timer
+4. Wait for 5 minutes
+5. Verify system goes to COLD status
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the prepare button is clicked and the system enters Primed status
+2. Verify system has switched to "Primed" status
+3. Verify the timer started
+4. Verify 5 minutes passed
+5. Verify system goes to COLD status
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-69
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-135
+TITLE: HVPS Interface Communication
+STATEMENT: >>>
+The firmware shall monitor communication with the HVPS interface board.
+<<<
+PREREQUISITES: >>>
+1. The system should be ready to use
+2. HVPS interface is connected and firmware can confirm it
+<<<
+STEPS: >>>
+1. Unplug the HVPS interface board from main control board
+2. Check the logs after 1 second
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify HVPS interface board is unplugged from main control
+2. Verify system has a fault that indicates no communication is received from HVPS interface board because it's unplugged
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-68
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-136
+TITLE: Temperature Monitoring 2
+STATEMENT: >>>
+When the cabinet temperature sensor is unplugged, the system should create a fault on GUI if the temperature is above TBD. It should also be reported in the logs.
+<<<
+PREREQUISITES: >>>
+1. The system is working properly
+2. The cabinet temperature sensor is plugged in
+<<<
+STEPS: >>>
+1. Unplug the cabinet temperature sensor
+2. Check the GUI for the temperature
+3. Click the Logs symbol in the left panel of the screen
+4. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify physically that the cabinet temperature sensor is unplugged
+2. Verify if the temperature is above TBD, the GUI displays a fault for high temperature
+3. Verify logs are displayed in the middle of the GUI
+4. Verify the related log for the high temperature of the cabinet temperature sensor is present
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-66
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-137
+TITLE: Temperature Monitoring 1
+STATEMENT: >>>
+Run the system in a room temperature environment and ensure the fans are running. Unplug the cabinet temperature sensor to simulate high temperature and ensure the fans continue running.
+<<<
+PREREQUISITES: >>>
+1. The system is in room temperature
+2. The system is running
+3. The cooling fans are working and plugged in
+<<<
+STEPS: >>>
+1. Run the system in a room temperature environment
+2. Unplug the cabinet temperature sensor to simulate high temperature
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the cooling fans are running
+2. Verify the cooling fans did not stop and are still running
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-65
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-138
+TITLE: Temperature Monitoring
+STATEMENT: >>>
+When the user runs an emission from COLD state of the system, check the heatsink fan and make sure it's off during COLD status and on during emission.
+<<<
+PREREQUISITES: >>>
+1. System is ready for running an emission
+2. A treatment plan is loaded and ready to run an emission
+<<<
+STEPS: >>>
+1. Start the system
+2. Load a treatment plan
+3. Check the state of the system
+4. Check the heatsink fan
+5. Run the treatment plan and an emission
+6. Check the heatsink fan
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is started successfully
+2. Verify the plan is loaded
+3. Verify the state is COLD
+4. Verify the fan is off
+5. Verify the emission and the plan started to run
+6. Verify the heatsink fan is on
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-63
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-139
+TITLE: Head Interface 4
+STATEMENT: >>>
+Firmware should provide coolant flow, temperature, and pressure in the service screen.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run
+2. Coolant is working properly
+<<<
+STEPS: >>>
+1. Click the Services button
+2. Check the messages in the services
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify Services is displayed in the middle of the screen
+2. Verify firmware displays values of flow, temperature, and pressure of the cooling system
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-62
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-140
+TITLE: Coolant Monitoring 2
+STATEMENT: >>>
+The user can check the coolant flow rate on GUI which is provided by firmware. If the user unplugs the coolant, they can see the fault for invalid values of the coolant flow rate.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run
+2. Coolant is plugged in
+<<<
+STEPS: >>>
+1. Check the coolant value rate on GUI
+2. Unplug the coolant
+3. View the values on GUI
+4. Click the Log symbol
+5. Check the fault for the coolant
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the value is displaying in the GUI
+2. Physically verify that the cooler is unplugged
+3. Verify it changed and the value is below 0.6 LPM
+4. Verify logs are displayed in the middle of the screen
+5. Verify there are logs for invalid coolant value
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-61
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-141
+TITLE: Coolant Monitoring 1
+STATEMENT: >>>
+When the temperature sensor is unplugged, the user can check the logs and verify the high temperature which is provided by firmware.
+<<<
+PREREQUISITES: >>>
+1. System is running without any issues
+2. Temperature sensor is plugged in
+<<<
+STEPS: >>>
+1. Check the coolant temperature on GUI as provided by firmware
+2. Unplug the temperature sensor
+3. Click the Log symbol in the left panel of the screen
+4. Check the fault for the temperature
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify coolant temperature is displayed in the GUI
+2. Physically verify the sensor is unplugged
+3. Verify logs can be seen in the middle of the screen
+4. Verify its values are above 45°C or below TBD
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-60
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-142
+TITLE: Cooling System 2
+STATEMENT: >>>
+When the state of the system is Cold / Warm, the Peltier Temperature can be set by the firmware.
+<<<
+PREREQUISITES: >>>
+1. The system should be in Cold state
+<<<
+STEPS: >>>
+1. When the system is in Cold state, check the Peltier temperature
+2. Monitor the temperature for 5 minutes and record the change
+3. Change the system's state to Warm
+4. Monitor the temperature of the Peltier cooler for 2 minutes
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system's state is Cold and the temperature is above 15°C
+2. Verify the changes are monitored and recorded for 5 minutes
+3. Verify the state of the system is Warm
+4. Verify the temperature decreases
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-59
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-143
+TITLE: Cooling System 3
+STATEMENT: >>>
+When the state of the system is Cold / Warm, the Peltier Temperature can be set by the firmware.
+<<<
+PREREQUISITES: >>>
+1. The system should be in Cold state
+<<<
+STEPS: >>>
+1. When the system is in Cold state, check the Peltier temperature
+2. Monitor the temperature for 5 minutes and record the change
+3. Change the system's state to Warm
+4. Monitor the temperature of the Peltier cooler for 2 minutes
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system's state is Cold and the temperature is above 15°C
+2. Verify the changes are monitored and recorded for 5 minutes
+3. Verify the state of the system is Warm
+4. Verify the temperature decreases
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-58
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-144
+TITLE: Cooling System 1
+STATEMENT: >>>
+The user can find the Peltier element temperature on GUI which is provided by firmware.
+<<<
+PREREQUISITES: >>>
+1. System is ready for running
+<<<
+STEPS: >>>
+1. Check the Peltier element temperature value on GUI which is provided by firmware
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the value is displaying in the GUI
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-57
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-145
+TITLE: Cooling System 4
+STATEMENT: >>>
+The firmware shall monitor the Peltier element temperature and report a fault if no response is received from the requested temperature read.
+<<<
+PREREQUISITES: >>>
+1. The system is up and ready to use
+2. Peltier element is plugged in and connected to the Main Control board
+<<<
+STEPS: >>>
+1. Unplug the Peltier controller from the main control board
+2. Send a request to read the temperature
+3. Check for a fault
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the Peltier controller is unplugged from the main control board
+2. Verify the request is sent
+3. Verify the system reports a fault because no response is received for the requested temperature
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-56
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-146
+TITLE: Coils 3
+STATEMENT: >>>
+When the system is up and running, the user can see the values of the Deflection Coil and Focus Coil on GUI, and can also change the values.
+<<<
+PREREQUISITES: >>>
+1. System is running normally without any issues
+2. Deflection Coil is plugged in
+3. Focus Coil is plugged in
+<<<
+STEPS: >>>
+1. Check the Deflection Coil's value as provided by firmware on GUI
+2. Check the Focus Coil's value as provided by firmware on GUI
+3. Try to change the Focus Coil's value on GUI
+4. Try to change the Deflection Coil's value on GUI
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the Deflection Coil's value is displayed on GUI
+2. Verify the Focus Coil's value is displayed on GUI
+3. Verify the user can change the values on GUI
+4. Verify the user can change the values on GUI
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-55
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-147
+TITLE: Coils 2
+STATEMENT: >>>
+When an emission starts to run after the Deflection Coil is unplugged, a fault can be found in the logs.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run an emission
+<<<
+STEPS: >>>
+1. Unplug the Deflection Coil
+2. Run an emission
+3. Click the Log symbol in the left panel of the screen
+4. Check the log
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify physically that the Deflection Coil is unplugged
+2. Verify the emission started
+3. Verify logs are displayed in the middle of the screen
+4. Verify there are faults displayed in the log for values that are more than 50 mA out of tolerance
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-54
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-148
+TITLE: Backup Timer 4
+STATEMENT: >>>
+Run system as normal and view value of backup timers during emission
+<<<
+PREREQUISITES: >>>
+1. System is ready to run a treatment plan
+2. A treatment plan is not loaded into the system.
+<<<
+STEPS: >>>
+1. System is ready for emission process
+2. Check backup timers
+3. Start the Emission process
+4. Check the timer’s value during the emission which is reported by firmware
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is ready for emission
+2. Verify backup timers are displayed on GUI
+3. Verify emission started
+4. Verify firmware can set and initialize the backup timer ICs
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-53
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-149
+TITLE: Backup Timer 3
+STATEMENT: >>>
+Run system as normal and view the value of backup timers during emission.
+<<<
+PREREQUISITES: >>>
+1. System is running without any issues and the status is Ready
+2. System is ready to run treatment plan and perform emission
+<<<
+STEPS: >>>
+1. Verify the system is ready for emission process
+2. Check backup timers
+3. Start the emission process
+4. Check the timer's value during the emission as reported by firmware
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is ready for emission
+2. Verify backup timers are displayed on GUI
+3. Verify emission started
+4. Verify firmware can read and report the backup timer countdown value
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-52
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-151
+TITLE: Head Interface 3
+STATEMENT: >>>
+The firmware should configure and change the LED color of the head ring during the workflow which is provided by communication of the Head Interface board and firmware.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run without any issues
+2. The treatment plan is uploaded and ready to run / emission
+<<<
+STEPS: >>>
+1. Start running the emission for the uploaded plan
+2. Check the LED color of the head ring
+3. After the emission is finished, check the LED color of the Head interface
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the emission started
+2. Verify the color of the LED of the head ring is changing accordingly via communication of firmware and head interface board
+3. Verify the color of the LED of the head ring is changing accordingly via communication of firmware and head interface board after emission ends
+<<<
+
+[TEST_CASE]
+UID: TC-H1FWMC-153
+TITLE: USB 3
+STATEMENT: >>>
+The user can run the boot loading process via GUI and erase the flash memory's space of the firmware application.
+<<<
+PREREQUISITES: >>>
+1. A new version of the firmware application is provided in the USB
+2. System is not running anything
+<<<
+STEPS: >>>
+1. Run the boot loading process via the GUI
+2. Click the Logs symbol in the left-hand side of screen
+3. Check for the new version of the firmware application in the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the process is working properly to load a new version of the firmware application
+2. Verify logs are loaded in the middle of the screen
+3. Verify the version is matching with the newly loaded firmware application
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-49
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-154
+TITLE: USB 2
+STATEMENT: >>>
+The user can run the boot loading process via GUI and erase the flash memory's space of the firmware application.
+<<<
+PREREQUISITES: >>>
+1. A new version of the firmware application is provided in the USB
+2. System is not running anything
+<<<
+STEPS: >>>
+1. Run the boot loading process via the GUI
+2. Click the Logs symbol in the left-hand side of screen
+3. Check for the new version of the firmware application in the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the process is working properly to load a new version of the firmware application
+2. Verify logs are loaded in the middle of the screen
+3. Verify the version is matching with the newly loaded firmware application
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-48
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-155
+TITLE: USB 1
+STATEMENT: >>>
+The user can run the boot loading process via GUI and erase the flash memory's space of the firmware application.
+<<<
+PREREQUISITES: >>>
+1. A new version of the firmware application is provided in the USB
+2. System is not running anything
+<<<
+STEPS: >>>
+1. Run the boot loading process via the GUI
+2. Click the Logs symbol in the left-hand side of screen
+3. Check for the erasing activity of the application in the USB
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the process is working properly to erase the area corresponding to application CRC verification in the USB
+2. Verify logs are loaded in the middle of the screen
+3. Verify the logs display the activity of the erasing area of the USB
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-47
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-156
+TITLE: PC Ethernet Commands 1
+STATEMENT: >>>
+When GUI build sends a command to FW which is not formatted properly, FW should provide a proper response.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run
+2. A special GUI build is loaded which sends commands to FW that are not formatted properly
+<<<
+STEPS: >>>
+1. Start the system with a special GUI run
+2. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the run will send a message to FW which is not properly formatted
+2. Verify "unrecognized message" can be found in the logs which is a reply from FW
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-46
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-157
+TITLE: Operation 03.2: Treatment Staging 3
+STATEMENT: >>>
+When user runs a specific out of bound staging parameters attempt, make sure it won't run, and it will error in the logs.
+<<<
+PREREQUISITES: >>>
+1. A treatment plan is loaded and ready to run
+2. A specific version of out of bound staging parameters attempt is loaded in the system
+<<<
+STEPS: >>>
+1. Load the out of bound staging parameters build in the system
+2. Run the treatment plan
+3. Click the Logs symbol
+4. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the build is loaded with out of bound staging parameters attempt
+2. Verify the staged attempt was not successful
+3. Verify the logs are displayed in the screen
+4. Verify the unsuccessful staged attempt is recorded in the logs
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-45
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-158
+TITLE: Operation 03.2: Treatment Staging 2
+STATEMENT: >>>
+When user runs a specific out of bound staging parameters attempt, make sure it won't run, and it will error in the logs.
+<<<
+PREREQUISITES: >>>
+1. A treatment plan is loaded and ready to run
+2. A specific version of out of bound staging parameters attempt is loaded in the system
+<<<
+STEPS: >>>
+1. Load the out of bound staging parameters build in the system
+2. Run the treatment plan
+3. Click the Logs symbol
+4. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the build is loaded with out of bound staging parameters attempt
+2. Verify the staged attempt was not successful
+3. Verify the logs are displayed in the screen
+4. Verify the unsuccessful staged attempt is recorded in the logs
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-44
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-159
+TITLE: Operation 03.2: Treatment Staging 1
+STATEMENT: >>>
+When the system is in primed state, run a specific build to attempt to stage treatment plan values without loading a new plan and verify it won't run the treatment plan, and it stays in primed state.
+<<<
+PREREQUISITES: >>>
+1. System is up and ready to run
+2. A treatment plan is loaded and the system is in Primed state
+3. A special build is ready to load which has functionality to attempt to stage treatment plan from primed state without loading a new plan
+<<<
+STEPS: >>>
+1. Load a build which has functionality to attempt to stage treatment plan from primed state
+2. Run the treatment plan
+3. Check the state of the system
+4. Check the GUI for staged state of the system
+5. Click the Logs symbol
+6. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the build is loaded
+2. Verify the plan started to run
+3. Verify it's in Primed state
+4. Verify the state did not change to "staged" without loading a new plan and is still Primed
+5. Verify the logs are displayed in the screen
+6. Verify the unsuccessful staged attempt is recorded in the logs
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-43
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-160
+TITLE: Operation 3.1: Treatment Staging – Session Initiation 1
+STATEMENT: >>>
+When the system is initiated and it is in Primed status, the user can load a new plan. After a plan is already loaded, the user cannot load another plan.
+<<<
+PREREQUISITES: >>>
+1. The system is in PRIMED status
+2. A treatment plan is ready for load in the system
+<<<
+STEPS: >>>
+1. Check the status of the system
+2. Click the Load button on the GUI
+3. Once a plan is loaded, click the Load button again
+4. Click the Logs symbol in the left panel of the screen
+5. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the status of the system is PRIMED
+2. Verify loading process is started
+3. Verify a warning displays which says loading of a new plan cannot be done
+4. Verify logs are displayed in the middle of the screen
+5. Verify the message in the log which says the new plan is not loaded
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-42
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-161
+TITLE: Operation 02: Warmup Procedure 2
+STATEMENT: >>>
+When user runs a specific out of bound warm up attempt, make sure it won't run and the system stays in COLD state and it will error in the logs.
+<<<
+PREREQUISITES: >>>
+1. System is in COLD state
+2. A treatment plan is loaded and ready to run
+3. A specific version of out of bound warm up attempt is loaded in the system
+<<<
+STEPS: >>>
+1. Load the out of bound warmup build in the system
+2. Upload the treatment plan and check the system's state
+3. Run Warm up
+4. Click the Logs symbol
+5. Check the logs
+6. Check the system's state
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the build is loaded with the filament current within the range of 2000 mA and 3500 mA
+2. Verify it's in COLD state
+3. Verify the warmup is started
+4. Verify the logs are displayed in the screen
+5. Verify the warmup was not successful
+6. Verify the state of the system is COLD
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-41
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-162
+TITLE: Operation 03.1: Treatment Staging – New Session Commencement
+STATEMENT: >>>
+When user runs a specific out of bound staged attempt, make sure it won't run, and it will error in the logs.
+<<<
+PREREQUISITES: >>>
+1. A treatment plan is loaded and ready to run
+2. A specific version of out of bound staged attempt is loaded in the system
+<<<
+STEPS: >>>
+1. Load the out of bound staged build in the system
+2. Upload the treatment plan and check the system's state
+3. Run the treatment plan
+4. Click the Logs symbol
+5. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the build is loaded with out of bound staged attempt (valid range is 1–63 points)
+2. Verify it's in COLD state
+3. Verify the staged attempt was not successful
+4. Verify the logs are displayed in the screen
+5. Verify the unsuccessful staged attempt is recorded in the logs
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -299,31 +2040,214 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FWMC-170
-TITLE: Operation 03.1: Treatment staging - new session commencement - Test Case
+UID: TC-H1FWMC-163
+TITLE: Operation 0: Startup 2
 STATEMENT: >>>
-The firmware will accept a plan with 1-5 operational points and will transition to a ready for emission state.
+The system begins on the STARTUP state after the initial device power on.
 <<<
 PREREQUISITES: >>>
-* The system is powered on, no faults present, and ready to run emission
-* The QC collimator is connected to the x-ray source
-* At least one energy (50/70/100) has approved physics data for all 5 collimators (1.5,2,3,4,5)
+1. The system is off
 <<<
 STEPS: >>>
-1. Close all interlocks and open the quality assurance tab on the external console (wait for system to be “Cold” if it is in “Primed” state otherwise warmup will not run)
-2. Use the external console to open the quality assurance tab
-3. Open “Beam QA” and select any available energy 50/70/100kV
-4. Press on “Prepare” and wait until warmup completes
-5. Wait until high voltage completes ramp up and the system is in “Ready” state
-6. Terminate the operation on the external application (no need to run emission)
+1. Turn on the whole system
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system is ready (green thumbs up icon present)
-2. Dropdown with energies is available (at least one from 50/70/100kV)
-3. All 5 collimators are present in the table (1.5, 2, 3, 4, 5) and “Prepare” button is enabled
-4. Warmup completes and high voltage is ramping up
-5. The “Ready” button is available (which means the plan was loaded successfully)
-6. High voltage ramps down below 2kV and system transitions to “Primed” or “Fault” states
+1. Verify the system enters into STARTUP state
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-39
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-164
+TITLE: Operation 0: Startup 1
+STATEMENT: >>>
+The system enters COLD state after being in STARTUP state and getting an initialization command from PC.
+<<<
+PREREQUISITES: >>>
+1. The system is in STARTUP state
+<<<
+STEPS: >>>
+1. Initialize the system through PC
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify system switches to COLD state
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-38
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-165
+TITLE: Operation 01: Filament Conditioning 5
+STATEMENT: >>>
+When the system is in Cold status, start the process till it goes back to Cold again and notice the filament current increases.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run
+2. A treatment plan is uploaded and ready to run
+3. System is in COLD state
+<<<
+STEPS: >>>
+1. Check the system's state
+2. Start running the treatment plan
+3. Click the Services symbol in the left panel of the screen
+4. Check the services
+5. After the run, check the state of the system
+6. Check the services
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify it's in COLD state
+2. Verify the plan started to run and the state of the system changed accordingly
+3. Verify the services screen is displayed in the GUI
+4. Verify the filament's current is recorded in the services in different states of the system during the run
+5. Verify it's back to COLD state
+6. Verify the filament's current is not increasing anymore
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-37
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-166
+TITLE: Operation 01: Filament Conditioning 4
+STATEMENT: >>>
+When the system is in Cold status, start the process till it goes back to Cold again and notice the filament current increases.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run
+2. A treatment plan is uploaded and ready to run
+3. System is in COLD state
+<<<
+STEPS: >>>
+1. Check the system's state
+2. Start running the treatment plan
+3. Click the Services symbol in the left panel of the screen
+4. Check the services
+5. After the run, check the state of the system
+6. Check the services
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify it's in COLD state
+2. Verify the plan started to run and the state of the system changed accordingly
+3. Verify the services screen is displayed in the GUI
+4. Verify the filament's current is recorded in the services in different states of the system during the run
+5. Verify it's back to COLD state
+6. Verify the filament's current is not increasing anymore
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-36
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-167
+TITLE: Operation 01: Filament Conditioning 3
+STATEMENT: >>>
+When the filament current is out of bound, the conditioning won't happen and the system stays in COLD state.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run
+2. A treatment plan is uploaded and ready to run
+3. System is in COLD state
+<<<
+STEPS: >>>
+1. Check the system's state
+2. Create out of bound attempts for filament current
+3. Click the Services symbol in the left panel of the screen
+4. Check the services
+5. Check the state of the system
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify it's in COLD state
+2. Verify the filament's current is out of bound values which is not in the range of 2000 mA–4000 mA
+3. Verify the services screen is displayed in the GUI
+4. Verify the filament's current is recorded in the services and it's out of bound
+5. Verify it's still in COLD state
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-35
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-168
+TITLE: Operation 01: Filament Conditioning 2
+STATEMENT: >>>
+When the filament current is out of bound, the conditioning won't happen and the system stays in COLD state.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run and a specific GUI version to produce an invalid value for filament current is available
+2. A treatment plan is uploaded and ready to run
+3. System is in COLD state
+<<<
+STEPS: >>>
+1. Check the system's state
+2. Check filament current's value
+3. Click the Logs symbol in the left panel of the screen
+4. Check the logs
+5. Check the state of the system
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify it's in COLD state
+2. Verify the filament's current is NaN
+3. Verify the logs screen is displayed in the GUI
+4. Verify the conditioning attempt was not successful and is displaying in the logs
+5. Verify it's still in COLD state
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-34
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-169
+TITLE: Operation 01: Filament Conditioning 1
+STATEMENT: >>>
+When the system's state is not COLD, filament conditioning won't happen.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run
+2. A treatment plan is uploaded and ready to run
+3. System is in Primed state
+<<<
+STEPS: >>>
+1. Check the system's state
+2. Create filament conditioning
+3. Check the screen
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify it's in Primed state
+2. Verify the filament's conditioning is not happening because of the wrong state of the system
+3. Verify the error is reported
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-33
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-170
+TITLE: Operation 03.1: Treatment Staging – New Session Commencement
+STATEMENT: >>>
+When a normal plan is loading from startup, the system should transit from Primed to staging.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run
+2. A treatment plan is ready to load and run
+<<<
+STEPS: >>>
+1. Start the system
+2. Perform a normal plan
+3. Check the status of the system
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is started successfully
+2. Verify the plan is loaded successfully
+3. Verify that the system transitions from Primed to staging when the plan loading is initiated
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -331,15 +2255,70 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FWMC-306
-TITLE: QC Processing - Test Case
+UID: TC-H1FWMC-171
+TITLE: Operation 04: Treatment Plan Confirmation 5
 STATEMENT: >>>
-The firmware receives a command from the console application, runs emission and records the accumulated values from the QC diodes
-with support from the headboard
+When the system is in primed state, run a specific build to attempt to stage treatment plan values without loading a new plan and verify it won't run the treatment plan, and it stays in primed state.
 <<<
 PREREQUISITES: >>>
-* The system is powered on, no faults present, and ready to run emission.
-* The QC collimator is connected to the x-ray source.
+1. System is up and ready to run
+2. A treatment plan is loaded and the system is in Primed state
+3. A special build is ready to load which has functionality to attempt to stage treatment plan from primed state without loading a new plan
+<<<
+STEPS: >>>
+1. Load a build which has functionality to attempt to stage treatment plan from primed state
+2. Run the treatment plan
+3. Check the state of the system
+4. Check the GUI for staged state of the system
+5. Click the Logs symbol
+6. Check the logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the build is loaded
+2. Verify the plan started to run
+3. Verify it's in Primed state
+4. Verify the state did not change to "staged" without loading a new plan and is still Primed
+5. Verify the logs are displayed in the screen
+6. Verify the unsuccessful staged attempt is recorded in the logs
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-31
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-172
+TITLE: Temperature Monitoring 4
+STATEMENT: >>>
+The firmware shall monitor the Peltier heatsink temperature and report a fault when it is above 55°C.
+<<<
+PREREQUISITES: >>>
+1. The system is off
+<<<
+STEPS: >>>
+1. Power off the system
+2. Replace the Peltier controller temperature sensor with a 2 kΩ +/- 10% resistor
+3. Turn on the system
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is off
+2. Verify physically that the Peltier controller temperature sensor is replaced with a 2 kΩ +/- 10% resistor
+3. Verify the system is on and throws a temperature fault
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-64
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-306
+TITLE: QC Processing
+STATEMENT: >>>
+The firmware receives a command from the console application, runs emission and records the accumulated values from the QC diodes with support from the headboard
+<<<
+PREREQUISITES: >>>
+1. The system is powered on, no faults present, and ready to run emission
+2. The QC collimator is connected to the x-ray source
 <<<
 STEPS: >>>
 1. Power on the system / prepare system for operation (wait for system to be “Cold” if it is in “Primed” state otherwise warmup will not run)
@@ -360,8 +2339,7 @@ EXPECTED_BEHAVIOR: >>>
 5. The “Ready” button is available
 6. Emission is ongoing and completed successfully without any interruption
 7. The reports’ view appears and energy and collimator dropdowns are enabled
-8. The latest QA execution matched the current time (the one just tested); results are available
-9. Intensity 1 and Intensity 2 values are in the range between 26k and 806k
+8. The latest QA execution matched the current time (the one just tested) are results available
 <<<
 RELATIONS:
 - TYPE: Parent

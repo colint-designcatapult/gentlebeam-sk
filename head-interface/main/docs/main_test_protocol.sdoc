@@ -1,6 +1,6 @@
 [DOCUMENT]
 TITLE: Heracles Head Interface Application FW Verification Testing Protocol
-UID: DHF-HRC-0120
+UID: DHF-HRC-0119
 
 [GRAMMAR]
 IMPORT_FROM_FILE: @grammar
@@ -10,7 +10,8 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-This document provides the regression testing execution results of the Head Interface Firmware for the Heracles system.
+This document provides the full test protocol (a full collection of test cases) for the Head Interface
+Firmware for the Heracles 1.0 system.
 <<<
 
 [[/SECTION]]
@@ -20,7 +21,8 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This report contains detailed results of the regression testing activities of Heracles Head Interface Firmware.
+This report contains a detailed test description to conduct verification testing of Heracles 1.0 Head
+Interface Firmware that covers Heracles Head Interface FW SRS.
 <<<
 
 [[/SECTION]]
@@ -32,6 +34,9 @@ TITLE: Abbreviations and Definitions
 STATEMENT: >>>
 FW
   Firmware
+
+HVPS
+  High Voltage Power Supply
 
 SDP
   Software Development Plan
@@ -57,10 +62,6 @@ DHF-HRC-0003, Rev. 2: Heracles SVP
 [LINK: DHF-HRC-0023]
 
 DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
-
-DHF-HRC-0119 Rev. 2: Heracles Head Interface FW Verification Protocol
-
-DHF-HRC-0141 Rev.1: Heracles Regression1 Testing Configuration
 <<<
 
 [[/SECTION]]
@@ -97,78 +98,29 @@ PREFIX: TC-H1FHI-
 TITLE: Test Protocol
 
 [TEST_CASE]
-UID: TC-H1FHI-22
-TITLE: Collimator
-STATEMENT: >>>
-The service user should be able to check the reported ID of the attached collimator and if it’s disconnected the reported ID should be 0
-<<<
-PREREQUISITES: >>>
-1. The user should be service user
-
-2. The system should be powered on without any collimator connected to it.
-
-3. The system should be in service mode
-<<<
-STEPS: >>>
-1. the collimator should be disconnected by service user
-
-2. power on the system
-
-3. Check The head interface board
-
-4. Connect the collimator
-
-5. Check The head interface board
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Verify the collimator is disconnected
-
-2. Verify system is ready to use and there is no treatment plan is loaded to the system.
-
-3. Verify the reported ID is 0 for the collimator
-
-4. Verify collimator is connected
-
-5. Verify the reported ID is updated accordingly with the connected collimator
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-9
-  ROLE: Verifies
-
-[TEST_CASE]
 UID: TC-H1FHI-14
 TITLE: Collimator Interlock - Test Case
 STATEMENT: >>>
 When user applies fake emissions (e.g. fake HVPS) to the system and remove Collimator verify head interface interlock fault.
 <<<
 PREREQUISITES: >>>
-1.The system is ready to run.
-
-2.A fake emission should be simulated for the plan (e.g. fake HVPS)
-
-3.A 20 second treatment plan should be ready to load and run.
+1. The system is ready to run.
+2. A fake emission should be simulated for the plan (e.g. fake HVPS)
+3. A 20 second treatment plan should be ready to load and run.
 <<<
 STEPS: >>>
-1.Power on the system with modified no emission output (e.g. fake HVPS).
-
-2.Load a 20 second treatment plan.
-
-3.Start the emission for 5 seconds.
-
-4.Remove the collimator.
-5.Check the fault.
+1. Power on the system with modified no emission output (e.g. fake HVPS).
+2. Load a 20 second treatment plan.
+3. Start the emission for 5 seconds.
+4. Remove the collimator.
+5. Check the fault.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1.Verify the system is up and ready to run.
-
-2.Verify the plan is loaded successfully.
-
-3.Verify the emission is started.
-
-4.Verify physically that the collimator is removed.
-
-5.Verify head interface interlock fault displayed.
+1. Verify the system is up and ready to run.
+2. Verify the plan is loaded successfully.
+3. Verify the emission is started.
+4. Verify physically that the collimator is removed.
+5. Verify head interface interlock fault displayed.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -176,326 +128,68 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FHI-17
-TITLE: Illumination LEDs 1 - Test Case
+UID: TC-H1FHI-15
+TITLE: Indicator LEDs 1 - Test Case
 STATEMENT: >>>
-When user press and release the laser membrane key several times, verify the head interface firmware should enable / disable the head
-lasers.
+User can verify the color of the LED lights for different scenarios which can be listed as follows:
+
+1. Red blinking indicating a fault.
+2. Solid green indicating ready to emit.
+3. Pulsing yellow indicating emission.
 <<<
 PREREQUISITES: >>>
-1.System is ready to run.
-
-2.No treatment plan is running.
+1. System is up and ready to run a treatment plan
+2. A treatment plan is ready to run.
+3. Tester should view LEDs remotely from a safe location through webcam or camera as to not be exposed to radiation.
 <<<
 STEPS: >>>
-1.Check the system when is powered on.
+1. Load a treatment plan of 1 point of duration 10 seconds or more.
+2. Check the status of the system.
+3. Check the LED light.
+4. Start the emission.
+5. Check the LED light.
+6. After about 5 seconds, click the e-stop button on external monitor to trigger a fault.
 
-2.Press membrane key.
-
-3.Check the head lasers.
-
-4.Press membrane key again.
-
-5.Check the head lasers.
+7. Check the LED light.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify there is no treatment.
-
-2. Verify physically that the membrane key is pressed.
-
-3. Verify it’s disabled.
-
-4. Verify physically that the membrane key is pressed.
-
-5. Verify it’s enabled.
+1. Verify the plan is loaded successfully.
+2. Verify the state is Ready
+3. Verify it’s Solid Green and ready to emit.
+4. Verify the emission started.
+5. Verify it is pulsing Yellow.
+6. Verify the fault is created.
+7. Verify it is blinking Red.
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-5
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FHI-25
-TITLE: Cooling system flow
-STATEMENT: >>>
-The service user should be able to view system flow values in the services screen.
-<<<
-PREREQUISITES: >>>
-1. The user should be service user
-
-2. The system should be powered on without any treatment plan loaded.
-
-3. The system should be in service mode
-
-4. There should be a treatment plan ready to load into the system.
-<<<
-STEPS: >>>
-1. The head interface firmware shall be able to read and convert a PWM feedback signal for monitoring the cooling system’s flow sensor
-readings
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Verify firmware can read and convert a PWM feedback signal for monitoring the cooling system’s flow sensor readings
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-12
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FHI-24
-TITLE: Membrane key switches
-STATEMENT: >>>
-Service user should verify that he / she could view the membrane key state values in the service screen. Note that there are 5 individual
-switches.
-<<<
-PREREQUISITES: >>>
-1. The user should be service user
-
-2. The system should be powered on without any treatment plan loaded.
-
-3. The system should be in service mode
-<<<
-STEPS: >>>
-1. Check the system when is powered on
-
-2. Click Service symbol in the left panel of the screen
-
-3. Check the services screen
-
-4. One by one press and release the membrane key switches. Notice that there are 5 switches.
-
-5. Check the services screen
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Verify the system is ready to use and there is no treatment plan is loaded.
-
-2. Verify the services screen displayed
-
-3. Verify the membrane key state values. Make a note of the values
-
-4. Verify user can do it without any issues.
-
-5. Verify the membrane key state values. Make a note of the values
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-11
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FHI-54
-TITLE: Membrane key switches
-STATEMENT: >>>
-The service user should be able to check the reported ID of the attached QC collimator and report QC Diode data
-<<<
-PREREQUISITES: >>>
-1. The user should be service user
-
-2. The system should be powered on without any collimator connected to it.
-
-3. The system should be in service mode
-<<<
-STEPS: >>>
-1. The QC collimator should be connected by service user
-
-2. Check the head interface board
-
-3. Run a QC procedure
-
-4. Check the QC Diode readings
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Verify the collimator is connected
-
-2. Verify system is ready to use and there is QC data below the low threshold
-
-3. Verify the QC procedure begins
-
-4. Verify the QC reading increases significantly when the QC procedure is running
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-53
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FHI-19
-TITLE: Cooling System Temperature
-STATEMENT: >>>
-When a service user power on the system without loading any treatment plan, he/she be able to see the water temperature on GUI.
-<<<
-PREREQUISITES: >>>
-1. The system is stable and ready to run
-
-2. User has to be a service user.
-
-3. The system should be in service mode
-<<<
-STEPS: >>>
-1. Service user should Power on the system
-
-2. Click the Service symbol in the left panel of the screen
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Verify the system is powered on and is in a stable mode and ready to run. Also, verify there isn’t any treatment plan loaded in the system
-
-2. Verify the temperature of the water which should be between 10C and 40C.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-1
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FHI-23
-TITLE: Magnetometers readings
-STATEMENT: >>>
-The service user can view each magnetometer feedback reporting data in the service screen which has to be NON-zero ones.
-<<<
-PREREQUISITES: >>>
-1. The user should be service user
-
-2. The system should be powered on without any collimator connected to it.
-
-3. The system should be in service mode
-
-4. There is no treatment plan loaded into system
-<<<
-STEPS: >>>
-1. Power on the system
-
-2. Click services symbol in the left-hand side panel
-
-3. Check the service screen
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Verify the system powered on successfully without any treatment plan loaded on.
-
-2. Verify the service screen displayed in the GUI
-
-3. Verify each magnetometer feedback reporting data on screen is displayed which has to be non-zero.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-10
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FHI-21
-TITLE: Main Board Communication
-STATEMENT: >>>
-The user has to check the head interface board to verify its communication with Main Board and sending the values to Main board at a rate
-greater than 1Hz.
-<<<
-PREREQUISITES: >>>
-1. The system is ready to run.
-
-2. The user be able to check LED on the Main board
-
-3. The User be able to check the head interface for sending values to main board
-<<<
-STEPS: >>>
-1. Check the system when is powered on
-
-2. Check The head interface board
-
-3. Check the mainboard LED TBD
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Verify the system is ready to use.
-
-2. Verify it send values to Main board periodically
-
-3. Verify it’s pulsing at a rate much faster than 1 Hz
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-8
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FHI-20
-TITLE: Illumination LEDs 1
-STATEMENT: >>>
-When user press and release the laser membrane key several times, verify the head interface firmware should enable / disable the head
-lasers.
-<<<
-PREREQUISITES: >>>
-1. System is ready to run.
-
-2. No treatment plan is running
-<<<
-STEPS: >>>
-1. Check the system when is powered on
-
-2. Press membrane key
-
-3. Check the head lasers
-
-4. Press membrane key again
-
-5. Check the head lasers
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Check the system when is powered on
-
-2. Press membrane key
-
-3. Check the head lasers
-
-4. Press membrane key again
-
-5. Check the head lasers
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-6
-  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FHI-16
 TITLE: Cooling System Pressure - Test Case
 STATEMENT: >>>
-When a service user powers on the system and checks the service screen, he/she should view pressure values before and after the loading
-the treatment plan.
+When a service user powers on the system and checks the service screen, he/she should view pressure values before and after the loading the treatment plan.
 <<<
 PREREQUISITES: >>>
-1.The system should be powered on and ready to use.
-
-2.The user should be service user.
-
-3.A plan should be ready to load and run.
-
-4.The system should be in service mode.
+1. The system should be powered on and ready to use.
+2. The user should be service user.
+3. A plan should be ready to load and run.
+4. The system should be in service mode.
 <<<
 STEPS: >>>
 1. Start the system with power on.
-
 2. Click Service symbol in the left panel.
-
 3. Check system pressure values.
-
 4. Load a treatment plan.
-
 5. Start the treatment.
-
 6. Click Service symbol in the left panel.
-
 7. Check system pressure values.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. Verify the system is on and no treatment plan is loaded.
-
 2. Verify the services displayed in the GUI.
-
 3. Verify it’s below 1 psi.
-
 4. Verify the plan is loaded successfully.
-
 5. Verify the treatment started.
-
 6. Verify the services displayed in the GUI.
-
 7. Verify it’s above 1 psi.
 <<<
 RELATIONS:
@@ -504,47 +198,308 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FHI-56
-TITLE: Robot Hand Guidance Button Test
+UID: TC-H1FHI-17
+TITLE: Illumination LEDs 1 - Test Case
 STATEMENT: >>>
-Service user should verify that the robot arm moves in manually guided positions when the button is pressed down and holds its position
-upon release.
+When user press and release the laser membrane key several times, verify the head interface firmware should enable / disable the head lasers.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run.
+2. No treatment plan is running.
+<<<
+STEPS: >>>
+1. Check the system when is powered on.
+2. Press membrane key.
+3. Check the head lasers.
+4. Press membrane key again.
+5. Check the head lasers.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify there is no treatment.
+2. Verify physically that the membrane key is pressed.
+3. Verify it’s disabled.
+4. Verify physically that the membrane key is pressed.
+5. Verify it’s enabled.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-6
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FHI-18
+TITLE: Indicator LEDs 2 - Test Case
+STATEMENT: >>>
+The user should be able to see the changes in the indicator LEDs and make notes in whole process of the clinical workflow. All of these can be done by head interface firmware and then user can review the changes physically in the system.
+<<<
+PREREQUISITES: >>>
+1. The system is powered on and ready to use.
+2. A treatment plan is ready to load onto the system.
+3. The tester should view LEDs remotely from a safe location through webcam or camera as to not be exposed to radiation.
+<<<
+STEPS: >>>
+1. Check the system when it is powered on.
+2. Check the indicator LEDs.
+3. Load a treatment plan.
+4. Check the indicator LEDs.
+5. Run an emission.
+6. Check the indicator LEDs.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is ready to use and there is no treatment plan is loaded.
+2. Make a note of any changes in the LEDs.
+3. Verify the plan is loaded successfully.
+4. Make a note of any changes in the LEDs.
+5. Verify the emission started.
+6. Make a note of any changes in the LEDs.
+<<<
+
+[TEST_CASE]
+UID: TC-H1FHI-19
+TITLE: 8.1 Cooling System Temperature
+STATEMENT: >>>
+When a service user power on the system without loading any treatment plan, he/she be able to see the water temperature on GUI.
+<<<
+PREREQUISITES: >>>
+1. The system is stable and ready to run
+2. User has to be a service user.
+3. The system should be in service mode
+<<<
+STEPS: >>>
+1. Service user should Power on the system
+2. Click the Service symbol in the left panel of the screen
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is powered on and is in a stable mode and ready to run. Also, verify there isn’t any treatment plan loaded in the system
+2. Verify the temperature of the water which should be between 10C and 40C.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-1
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FHI-20
+TITLE: llumination LEDs 1
+STATEMENT: >>>
+When user press and release the laser membrane key several times, verify the head interface firmware should enable / disable the head lasers.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run.
+2. No treatment plan is running
+<<<
+STEPS: >>>
+1. Check the system when is powered on
+2. Press membrane key
+3. Check the head lasers
+4. Press membrane key again
+5. Check the head lasers
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify there is no treatment plan is loaded.
+2. Verify physically that the membrane key is pressed
+3. Verify it’s disabled
+4. Verify physically that the membrane key is pressed
+5. Verify it’s enabled
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-5
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FHI-21
+TITLE: Main Board Communication
+STATEMENT: >>>
+The user has to check the head interface board to verify its communication with Main Board and sending the values to Main board at a rate greater than 1Hz.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to run.
+2. The user be able to check LED on the Main board
+3. The User be able to check the head interface for sending values to main board
+<<<
+STEPS: >>>
+1. Check the system when is powered on
+2. Check The head interface board
+3. Check the mainboard LED TBD
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is ready to use.
+2. Verify it send values to Main board periodically
+3. Verify it’s pulsing at a rate much faster than 1 Hz
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-8
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FHI-22
+TITLE: Collimator
+STATEMENT: >>>
+The service user should be able to check the reported ID of the attached collimator and, if it’s disconnected, the reported ID should be 0.
 <<<
 PREREQUISITES: >>>
 1. The user should be service user
+2. The system should be powered on without any collimator connected to it.
+3. The system should be in service mode
+<<<
+STEPS: >>>
+1. the collimator should be disconnected by service user
+2. power on the system
+3. Check the head interface board
+4. Connect the collimator
+5. Check the head interface board
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the collimator is disconnected
+2. Verify system is ready to use and there is no treatment plan loaded to the system.
+3. Verify the reported ID is 0 for the collimator
+4. Verify the collimator is connected
+5. Verify the reported ID is updated accordingly with the connected collimator
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-9
+  ROLE: Verifies
 
+[TEST_CASE]
+UID: TC-H1FHI-23
+TITLE: Magnetometer s readings
+STATEMENT: >>>
+The service user can view each magnetometer feedback reporting data in the service screen, which has to be non-zero values.
+<<<
+PREREQUISITES: >>>
+1. The user should be service user
+2. The system should be powered on without any collimator connected to it.
+
+3. The system should be in service mode
+4. There is no treatment plan loaded into the system
+<<<
+STEPS: >>>
+1. Power on the system
+2. Click services symbol in the lefthand side panel
+3. Check the service screen
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system powered on successfully without any treatment plan loaded on it.
+2. Verify the service screen is displayed in the GUI
+3. Verify each magnetometer feedback displayed on screen is non-zero.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-10
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FHI-24
+TITLE: Membrane key switches
+STATEMENT: >>>
+Service user should verify that he/she can view the membrane key state values in the service screen, noting that there are 5 individual switches.
+<<<
+PREREQUISITES: >>>
+1. The user should be service user
+2. The system should be powered on without any treatment plan loaded.
+3. The system should be in service mode
+<<<
+STEPS: >>>
+1. Check the system when it is powered on
+2. Click the Service symbol in the left panel of the screen
+3. Check the services screen
+4. One by one, press and release the membrane key switches. Note that there are 5 switches.
+5. Check the services screen
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system is ready to use and there is no treatment plan loaded.
+2. Verify the services screen is displayed
+3. Verify the membrane key state values. Make a note of the values
+4. Verify the user can perform the task without any issues.
+5. Verify the membrane key state values. Make a note of the values
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-11
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FHI-25
+TITLE: Cooling system flow
+STATEMENT: >>>
+The service user should be able to view system flow values in the
+services screen.
+<<<
+PREREQUISITES: >>>
+1. The user should be service user
+2. The system should be powered on without any treatment plan loaded.
+3. The system should be in service mode
+4. There should be a treatment plan ready to load into the system.
+<<<
+STEPS: >>>
+1. The head interface firmware shall be able to read and convert a PWM feedback signal for monitoring the cooling system’s flow sensor readings
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the firmware can read and convert a PWM feedback signal for monitoring the cooling system’s flow sensor readings
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-12
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FHI-54
+TITLE: QC Read - Test Case
+STATEMENT: >>>
+The service user should be able to view system flow values in the
+services screen.
+<<<
+PREREQUISITES: >>>
+1. The user should be service user
+2. The system should be powered on without any collimator connected to it.
+3. The system should be in service mode
+<<<
+STEPS: >>>
+1. The QC collimator should be connected by service user
+2. Check the head interface board
+3. Run a QC procedure
+4. Check the QC Diode readings
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the collimator is connected
+2. Verify system is ready to use and there is QC data below the low threshold
+3. Verify the QC procedure begins
+4. Verify the QC reading increases significantly when the QC procedure is running
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-53
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FHI-56
+TITLE: Robot Hand Guidance Button Test
+STATEMENT: >>>
+Service user should verify that the robot arm moves in manually guided positions when the button is pressed down and holds its position upon release.
+<<<
+PREREQUISITES: >>>
+1. The user should be service user
 2. The system should be powered on
-
 3. The robot arm should be ready and in a safe, reachable position to move
 <<<
 STEPS: >>>
 1. Check the system is powered on
-
 2. Check the robot status LED and robot controller to ensure arm is ready for hand guidance
-
 3. If the button is not safely reachable, use the GUI to change the arm to the “Treatment” position
-
-4. With one hand holding the opposite side of the treatment hand, and the other holding the bar with the manual guidance button, press and
-hold the button down
-
+4. With one hand holding the opposite side of the treatment hand, and the other holding the bar with the manual guidance button, press and hold the button down
 5. Gently push the robot arm in all 6 directions: forward, backward, left, right, up, and down, within comfortable reach
-
 6. Release the robot hand guidance button
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The system should appear in normal operation with no interlocks or errors tripped.
-
 2. The system should be on, and the robot arm LED should be flashing blue
-
 3. The robot arm moves to the treatment position with no issues. The head can be reached.
-
-4. The robot arm should have a relay that has an audible click once the button is engaged. The LEDs on the robot arm should change color.
-The robot arm should respond to the button press in under 1 second.
-
+4. The robot arm should have a relay that produces an audible click once the button is engaged. The LEDs on the robot arm should change color. The robot arm should respond to the button press in under 1 second.
 5. The robot arm should move in all directions smoothly without interruption.
-
-6. The robot arm relay should have an audible click again. The LED’s on the robot arm return to the ready state color. The robot arm holds
-its position within 1 second of the button’s release. The robot arm is immovable with the same pressure applied in Step 5.
+6. The robot arm relay should produce an audible click again. The LEDs on the robot arm should return to the ready state color. The robot arm should hold its position within 1 second of the button’s release. The robot arm should be immovable with the same pressure applied in Step 5.
 <<<
 RELATIONS:
 - TYPE: Parent

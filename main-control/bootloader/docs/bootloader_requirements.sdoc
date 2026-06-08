@@ -1,5 +1,5 @@
 [DOCUMENT]
-TITLE: Heracles Software Requirements Specification for Main Control Bootloader FW
+TITLE: Heracles Main Control Bootloader FW Software Requirements Specification
 UID: DHF-HRC-0015
 METADATA:
   COMPONENT: main-control/bootloader
@@ -94,7 +94,7 @@ TITLE: Requirements
 [REQUIREMENT]
 UID: RQ-H1FWMCBOOT-1
 TYPE: Functional
-TITLE: Jump to Application on Valid CRC
+TITLE: Functional
 STATEMENT: >>>
 The main control bootloader firmware shall jump to execution of the main application if and only
 if the existing main application code at startup is valid. The main application code is valid if the
@@ -104,7 +104,7 @@ programmed CRC value matches the application firmware loaded in flash memory.
 [REQUIREMENT]
 UID: RQ-H1FWMCBOOT-3
 TYPE: Functional
-TITLE: Write Flash Memory Page
+TITLE: Functional
 STATEMENT: >>>
 The main control bootloader firmware shall be able to write a specified flash memory page with
 provided data from the PC
@@ -113,7 +113,7 @@ provided data from the PC
 [REQUIREMENT]
 UID: RQ-H1FWMCBOOT-4
 TYPE: Functional
-TITLE: Erase Flash Memory
+TITLE: Functional
 STATEMENT: >>>
 The main control bootloader firmware shall be able to erase a predetermined area of flash
 memory, corresponding to the application firmware programming area.

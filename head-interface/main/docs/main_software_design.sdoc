@@ -126,7 +126,6 @@ deflecting coils. This data is processed and then reported to the Main Control f
 can create responses such as coil level adjustments or possibly fault conditions.
 
 **EEPROM** – Nonvolatile data storage
-
 <<<
 
 [[/SECTION]]
@@ -373,6 +372,7 @@ and a two-dimension array indicating the colors of the frame.
 The color array of each frame is two dimensional since each frame not only has multiple sectors
 (corresponding to the physical quadrants of the indicator LED ring), but also each sector is
 represented by the values of three individual LEDs (red, green, and blue).
+
 When the indicator LED interface is outputting data to the LED controllers, it will cycle through the
 current animation pattern to output the current frame. It does so by setting the output of the LED
 controllers to the specified colors of the frame, for the given duration of the frame. Once the frame

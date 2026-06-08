@@ -1,6 +1,6 @@
 [DOCUMENT]
 TITLE: Heracles Main Control Bootloader FW Verification Testing Protocol
-UID: DHF-HRC-0084
+UID: DHF-HRC-0083
 METADATA:
   COMPONENT: main-control/bootloader
 
@@ -37,6 +37,9 @@ STATEMENT: >>>
 FW
   Firmware
 
+HVPS
+  High Voltage Power Supply
+
 SDP
   Software Development Plan
 
@@ -61,10 +64,6 @@ DHF-HRC-0003, Rev. 2: Heracles SVP
 [LINK: DHF-HRC-0015]
 
 DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
-
-DHF-HRC-0083 Rev. 1: Heracles Main Control Bootloader FW Verification Protocol
-
-EMS-QR-002-12-(16-JAN-2025) Rev.1: Heracles Pre Verification Execution 1 Summary
 <<<
 
 [[/SECTION]]
@@ -102,14 +101,14 @@ TITLE: Test Protocol
 
 [TEST_CASE]
 UID: TC-H1FWMCBOOT-6
-TITLE: Jump to Application on Valid CRC - Test Case
+TITLE: Functional1
 STATEMENT: >>>
-The main control Bootloader firmware shall jump to execution of the main application if and only if the existing main application code at startup 
+The main control Bootloader firmware shall jump to execution of the main application if and only if the existing main application code at startup
 is valid. The main application code is valid if the programmed CRC value matches the application firmware loaded in flash memory.
 <<<
 PREREQUISITES: >>>
-* The system is ready to start.
-* Flash memory is present which contains firmware application.
+1. The system is ready to start.
+2. Flash memory is present which contains firmware application.
 <<<
 STEPS: >>>
 1. Start the system from power
@@ -137,41 +136,14 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FWMCBOOT-7
-TITLE: Write Flash Memory Page - Test Case
-STATEMENT: >>>
-The main control Bootloader firmware shall be able to write a specified flash memory page with provided data from the PC
-<<<
-PREREQUISITES: >>>
-* The system is ready to start.
-* Flash memory is present which contains firmware application.
-<<<
-STEPS: >>>
-1. Start the system from power
-2. Don’t load any treatment plan.
-3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory but terminate the PC utility partway through.
-4. Record the utility log to ensure the application writes data to flash memory
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. The system is started up successfully
-2. The system doesn’t have any treatment plan loaded on it.
-3. The system is off
-4. The system is started up successfully
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWMCBOOT-3
-  ROLE: Verifies
-
-[TEST_CASE]
 UID: TC-H1FWMCBOOT-8
-TITLE: Functional 3 - Test Case
+TITLE: Functional 2
 STATEMENT: >>>
-The main control Bootloader firmware shall be able to write a specified flash memory page with provided data from the PC
+The main control bootloader firmware shall be able to write a specified flash memory page with provided data from the PC.
 <<<
 PREREQUISITES: >>>
-* The system is ready to start.
-* Flash memory is present which contains firmware application.
+1. The system is ready to start.
+2. Flash memory is present which contains firmware application.
 <<<
 STEPS: >>>
 1. Start the system from power
@@ -192,14 +164,13 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMCBOOT-9
-TITLE: Erase Flash Memory - Test Case
+TITLE: Functional 3
 STATEMENT: >>>
-The main control Bootloader firmware shall be able to erase a predetermined area of flash memory, corresponding 
-to the application firmware programming area.
+The main control bootloader firmware shall be able to erase a predetermined area of flash memory corresponding to the application firmware programming area.
 <<<
 PREREQUISITES: >>>
-* The system is ready to start.
-* Flash memory is present which contains firmware application.
+1. The system is ready to start.
+2. Flash memory is present which contains firmware application.
 <<<
 STEPS: >>>
 1. Start the system from power
@@ -220,24 +191,24 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMCBOOT-10
-TITLE: PC Communication - Test Case
+TITLE: PC Communication
 STATEMENT: >>>
 The main control Bootloader firmware shall be able to respond to a ping command from the PC, indicating that the system is in Bootloader mode.
 <<<
 PREREQUISITES: >>>
-* The system is ready to start.
-* Flash memory is present which contains firmware application.
+1. The system is ready to start.
+2. Flash memory is present which contains firmware application.
 <<<
 STEPS: >>>
-1. Start the system from power 
-2. Don’t load any treatment plan. 
-3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory. 
+1. Start the system from power
+2. Don’t load any treatment plan.
+3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory.
 4. Record the utility log to ensure application enters Bootloader mode
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify System is start up successfully 
-2. Verify System doesn’t have any treatment plan loaded on it. 
-3. Verify the new firmware application is loaded successfully 
+1. Verify System is start up successfully
+2. Verify System doesn’t have any treatment plan loaded on it.
+3. Verify the new firmware application is loaded successfully
 4. Verify application enters Bootloader mode
 <<<
 RELATIONS:

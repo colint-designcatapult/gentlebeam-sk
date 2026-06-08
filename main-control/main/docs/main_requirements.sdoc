@@ -1,5 +1,5 @@
 [DOCUMENT]
-TITLE: Heracles Software Requirements Specification for Main Control Board Application
+TITLE: Heracles Main Control Application FW Software Requirements Specification
 UID: DHF-HRC-0013
 METADATA:
   COMPONENT: main-control/main
@@ -769,7 +769,7 @@ the treatment plan.
 
 [REQUIREMENT]
 UID: RQ-H1FWMC-76
-TYPE: Safety
+TYPE: Functional
 TITLE: Operation 02: Warmup procedure
 STATEMENT: >>>
 The firmware shall be able to perform a warmup procedure from the cold state if a valid
