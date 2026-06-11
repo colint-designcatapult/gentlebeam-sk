@@ -1,0 +1,6745 @@
+[DOCUMENT]
+TITLE: Heracles Internal GUI SW Verification Test Protocol
+UID: DHF-HRC-0038-TP
+METADATA:
+  COMPONENT: heracles-internal-gui
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+This document provides the verification test protocol and execution results of the Internal GUI SW for the Heracles 1.0 system. It defines the test cases that are used to verify the compliance of the software with the Heracles Internal GUI SW Verification Plan and Software Requirements Specification.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document details all test cases for the Verification testing activities of Heracles 1.0 Internal GUI Software. Each test case is designed to verify specific functional, interface, and usability requirements of the system.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+Firmware
+
+HVPS
+High Voltage Power Supply
+
+SDP
+Software Development Plan
+
+SVP
+Software Verification Plan
+
+SW
+Software
+
+GUI
+Graphical User Interface
+
+EMR
+Electronic Medical Records
+
+DB
+Database
+
+QC
+Quality Control
+
+MRN
+Medical Record Number
+
+PID
+Proportional Integral Derivative
+
+MCU
+Microcontroller Unit
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+Heracles SDP - DHF-HRC-0001 Rev. 2
+
+Heracles SVP - DHF-HRC-0003 Rev. 2
+
+Heracles Internal GUI SW SRS - DHF-HRC-0005 Rev. 3
+
+Heracles Software Architecture Description - DHF-HRC-0004 Rev. 2
+
+Heracles Internal GUI SW Verification Execution Report - DHF-HRC-0039 Rev. 2
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: TC-H10SG-
+TITLE: Test Cases
+
+[TEST_CASE]
+UID: TC-H10SG-329
+TITLE: EMR: Clinical view - Disable treatment when patient’s plan is Inconsistent - Test Case
+STATEMENT: >>>
+This test case is designed to verify that the application displays an error message when the user attempts to load the plan into the external application.
+<<<
+PREREQUISITES: >>>
+Create a patient and create a treatment plan for this patient with an Applicator size 1.5 cm. 
+
+Ability to physically change target type. 
+
+Description: 
+
+This test case is designed to verify that the application displays an error message when the user attempts to load the plan into the external 
+application.
+<<<
+STEPS: >>>
+1.Launch and login Heracles Internal 
+
+2.Change Applicator to QC applicator. 
+
+2.It the Patients tab, click the pre-created patient with the pre-created plan. 
+
+3.Click the Approve button. 
+
+1. open treatment tab 
+
+4.Click the Load For Treatment button
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application shall not enable treatment delivery if the plan’s Applicator size differs from the actual Applicator type. 
+
+The application shall present an error message when the user attempts to load the plan into the external application.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-325
+TITLE: EMR: Clinical view - Plan's Treatment Fields alert for inconsistency - (Alert -UI) - Test Case
+STATEMENT: >>>
+This test case verifies that appropriate alerts are displayed to the user when system conditions warrant notification. It validates the alert presentation and timing.
+<<<
+STEPS: >>>
+1. Launch and login Heracles internal 
+
+2. Click the Physics tab 
+
+3. Click the Applicator size Type and select Energy. 
+
+4. Edit the dose rate 
+
+5. Click Save 
+
+6. Click Approve to approve the data. 
+
+7. Return to patient record view. 
+
+8. Select a field.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application should validate the treatment field parameters fetched from the DB, including duration and dose, and alert the user that the 
+values in the prescription are inconsistent with the calculated parameters.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-181
+TITLE: EMR: Patient's Registration form - Layout - Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the EMR: Patient's Registration form. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the "Patients" tab. 
+
+3.Click the "New patient" button at the bottom of the screen.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3.The new patient registration form should open on the left side of the screen, providing the option to input the patient's demographic data, 
+the form should include the following fields: 
+
+• First Name 
+
+• Middle Name 
+
+• Last name 
+
+• Date of birth 
+
+• MRN\ID (SSN or other) 
+
+• Sex 
+
+• Zip Code 
+
+• Patient’s Demographic Notes
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-163
+TITLE: EMR: Patient's Registration form - Save button - (without all mandatory fields) - Test case
+STATEMENT: >>>
+This test case verifies the save functionality. It validates that data is properly persisted when save operations are executed.
+<<<
+STEPS: >>>
+1. Launch Heracles internal SW 
+
+2. Navigate to the patients’ tab 
+
+3. Click on the "New patient" button on the bottom of the screen. 
+
+4. Verify all fields (except DOB) in the patient registration form are empty. 
+
+5. Try to press on the "Save patient" at the bottom of the registration form.
+<<<
+EXPECTED_BEHAVIOR: >>>
+5.The "Save Patient" button should be disabled and grayed out, preventing the addition of a new patient.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-133
+TITLE: EMR: Patient Search - (search by Date of birth) - Test case
+STATEMENT: >>>
+This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
+<<<
+STEPS: >>>
+1. Launch Heracles internal SW 
+
+2. Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient with the following details : 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Navigate to the search bar inside the patients tab. 
+
+5. Start typing "01/01/1980"
+<<<
+EXPECTED_BEHAVIOR: >>>
+The patients with DOB: 01/01/1980 should appear in the box and be highlighted.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-323
+TITLE: Quality Assurance Report - DB Connection Error - Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message when the retrieval of quality checks history report fails due to a communication error with the database. The message should ask the user to retry after a few seconds.
+<<<
+PREREQUISITES: >>>
+1. This test case requires the ability to intentionally create a communication error with the database. 
+
+2. Create quality assurance tests in the application prior to this test.
+<<<
+STEPS: >>>
+Test steps: 
+
+1. Launch and login Heracles internal application 
+
+2. Create an intended communication error with the database to prevent it from quality assurance history data. 
+
+3. Click the Quality Assurance menu item.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application shall present the user with a warning message when the retrieval of Quality assurance history fails due to a communication 
+error with the database. The message should ask the user to retry after a few seconds.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-409
+TITLE: Patient - Visits ManagementsPatient - Visits Management - 3
+STATEMENT: >>>
+This test case verifies the functionality and operation of Patient. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Log in to the internal application. 
+
+2. Navigate to the Image Acquisition view from the Patient view. 
+
+3. Press the Acquire button 
+
+4. Exit Image acquisition view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - Open pgAdmin. Query for Visit data. Verify that a visit was created and there is only one visit for the current date. 
+
+Query for Series table and verify the created series references to this visit.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-158
+TITLE: EMR: Patient's Registration form - Save button - (with filled-in mandatory fields) - Test case
+STATEMENT: >>>
+This test case verifies the save functionality. It validates that data is properly persisted when save operations are executed.
+<<<
+STEPS: >>>
+1. Launch Heracles internal SW 
+
+2. Navigate to the patients’ tab 
+
+Create a new patient by pressing "New patient" and filing the following details on the registration form: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+3. Click on the "Save patient" button at the button of the registration form.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3.The new patient registration form should close. The new patient with the filled-in data should appear in the patients list view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-299
+TITLE: System Setting View - User Managements - (add user) Test Case
+STATEMENT: >>>
+Verify that the application have a user interface that allows admin users to manage the system users. Admin should be able to add user.
+<<<
+PREREQUISITES: >>>
+An Admin user account is required 
+
+Description: Verify that the application have a user interface that allows admin users to manage the system users. Admin should be able to 
+add user.
+<<<
+STEPS: >>>
+Test Steps: 
+
+1.Launch and login Heracles internal with Admin user 
+
+2.Click the Setting tab 
+
+3.Click the User Management tab. 
+
+4.Click the New button. 
+
+5.Add the following data in the New user tab: 
+
+First Name: FNameTest 
+
+Last Name: LNameTest 
+
+Password:1234 
+
+Confirm password:1234 
+
+Email address:test@email.com 
+
+6.Click the Save button 
+
+Expected behavior 
+
+The newly created user should appear in the user management list view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The newly created user should appear in the user management list view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-750
+TITLE: System logs’ view - Layout - Search Functionality Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the System logs’ view. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1. Click the Log tab in the application navigation menu 
+
+2. Click on the Search edit control at the top of the interface 
+
+3. Enter a specific search term (e.g., "user") 
+
+4. Observe the log list view results 
+
+5. Verify that only log entries containing the search term are displayed 
+
+6. Clear the search box and enter a different search term (e.g., "Admin") 
+
+7. Click the Search button 
+
+8. Verify that the results update to show only entries matching the new search term 
+
+9. Clear the search box completely 
+
+10. Verify that all log entries are displayed (no filter applied) 
+
+11. Enter a search term that has no matches (e.g., "xyz123nonexistent") 
+
+12. Verify appropriate handling (empty list or "no results" message)
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The search box accepts text input 
+
+• Search results display only log entries matching the search term) 
+
+• Search looks through all relevant fields (Time, Status, Type, Record) 
+
+• Clearing the search term and searching displays all log entries 
+
+• Search with no matches displays an empty list or appropriate message 
+
+• Search results update dynamically based on the search term 
+
+• The list view refreshes correctly after each search operation
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-303
+TITLE: System Setting View - Targets (Collimators) Management - Layout - (Edit Target) Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the System Setting View. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1Launch and login Heracles internal 
+
+2.Click the Setting tab 
+
+3.Click the Target Management tab 
+
+4.Click new Target. 
+
+5.Inside the opened window fill in the following: 
+
+Type: 50MM_SSD_13_FIELDS (choose from the drop-down menu) 
+
+Active: mark as active 
+
+1. Click the save button. 
+
+7.Click the new created target in the Targets Management list view 
+
+8.Click the Edit Target button 
+
+9.Update the type to 30MM_SSD_7_FIELDS
+<<<
+EXPECTED_BEHAVIOR: >>>
+The updated target should appear with Type 30MM_SSD_7_FIELDS cells in the Targets Management list view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-401
+TITLE: Patients - Image Acquisition - Measure Lesion Depth
+STATEMENT: >>>
+This test case verifies the functionality and operation of Patients. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Log in to the application. 
+
+2. Navigate to the Image Acquisition view from the Patient view. 
+
+3. Press the Acquire button 
+
+4. Select the part to measure using the measurement line in the axis view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4. The depth should be shown on the view. (It should be compared to other DICOM viewer)
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-263
+TITLE: EMR: Patient's Clinical Data View - Save Patient Prescription - DB Communication Error - Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message when saving patient's prescription fails due to a communication error with the database.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database, to prevent it from 
+saving prescription data to the database.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the new created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*Lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Sheild Size [cm]: 1.00 
+
+\*Lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.In the same plan tab, click the "Add" button under "Prescription". 
+
+13. File in the following details: 
+
+Does Pre Fx [cGy]: 1 
+
+TDF: 92(select from the drop-down menu) 
+
+Fx per week: Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 10 (Select from the drop-down menu) 
+
+14. Click the "Add" prescription button. 
+
+15.Create an intended communication error with the database to prevent it from 
+
+16.Click the save button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+16.The application shall present the user with a warning message when saving a patient’s prescription fails due to a communication error 
+with the database. The message should ask the user to retry after a few seconds.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-395
+TITLE: System Setting View - Collimators Management - Register QC Collimator
+STATEMENT: >>>
+This test case verifies the functionality and operation of System Setting View. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Navigate to the Collimator Management tab in the Settings view. 
+
+2. Connect the QC collimator treatment head. 
+
+3. Press New Target. 
+
+4. Click on the Pathology dropdown to expand it and view the options. 
+
+5. Select QC Collimator in the Type dropdown. 
+
+6. Press the save button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - The collimator registration form should be opened, and the serial of the QC collimator should be populated. 
+
+5 - Energy and SSD should be hidden. 
+
+6 - Active should be selected. 
+
+7 - QC collimator should be added to the list 
+
+Observed behavior 
+
+As expected.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-778
+TITLE: Load For Treatment - Resume Uncompleted Treatment - UI Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of Load For Treatment. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Click the Patients tab in the application navigation menu 
+
+2. Double-click on the patient with uncompleted treatment 
+
+3. Click the Treatments tab 
+
+4. Select the field/site with the uncompleted treatment (e.g., "Field 0 - BCC") 
+
+5. Verify that the treatment history shows at least one treatment marked as "Partial" or incomplete 
+
+6. Click the Load For Treatment button at the bottom right of the interface 
+
+7. Verify that an alert dialog appears with the title "Uncompleted Treatment Plan" 
+
+8. Verify that the alert message states: 
+
+o 
+
+"The latest treatment plan delivery was not completed. You can load the remaining treatment or a whole treatment." 
+
+9. Verify that the alert provides options (buttons) such as: 
+
+o Load remaining treatment 
+
+o Load complete treatment 
+
+o Close/Cancel 
+
+10. Click Load remaining treatment (or equivalent option) 
+
+11. Verify that the system sends the remaining uncompleted plan to the external application 
+
+12. Verify that the external application is triggered/notified that a plan is pending for load 
+
+13. Verify that the external application recalculates the treatment time according to the latest treatment completion status 
+
+14. Alternatively, go back to step 6 and click Load complete treatment option 
+
+15. Verify that the system sends the complete treatment plan to the external application 
+
+16. Verify proper notification/confirmation of successful plan loading
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The Load For Treatment button is visible and accessible in the Treatments view 
+
+2. Clicking Load For Treatment triggers validation of the treatment completion status 
+
+3. An alert dialog appears when an uncompleted treatment plan is detected 
+
+4. The alert clearly informs the user that the latest treatment was not completed 
+
+5. The alert provides clear options to load either the remaining treatment or the whole treatment 
+
+6. Clicking "Load remaining treatment" sends only the uncompleted portions to the external app 
+
+7. Clicking "Load complete treatment" sends the entire treatment plan to the external app 
+
+8. The external application is properly triggered and receives the plan data 
+
+9. The external application recalculates treatment time based on the completion status 
+
+10. Remaining treatment time reflects only undelivered portions 
+
+11. Complete treatment time reflects the full prescribed plan 
+
+12. The user receives confirmation when the plan is successfully loaded 
+
+13. Clicking Close/Cancel dismisses the alert without loading the plan
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-327
+TITLE: EMR: Document storage - Test Case
+STATEMENT: >>>
+This test case is designed to verify that the application provides a user interface that enables the user to view images captured by the device camara, filtered by the visit during which they were captured.
+<<<
+PREREQUISITES: >>>
+This test case requires the pre-creation of a patient and the generation of images captured by the device camara, 
+filtered by the visit during which they were captured.
+<<<
+STEPS: >>>
+Test Steps: 
+
+1.Launch and login Heracles Internal 
+
+2.In the patients’ tab click the pre-created patient with the pre-captured images. 
+
+3.Click the Images tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+The user interface should enable the user to view the images captured by the device camara, filtered by the visit during which they were 
+captured.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-202
+TITLE: EMR: Patient's clinical data - Prevent editing of approved patient’s prescription - Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients tab 
+
+3.Click on the patient. 
+
+4.Click on the plan site on the left side of the screen 
+
+5.The Status should appear as "Approved" in green color. 
+
+6.Try to edit the prescription in the same plan by changing the values or alternatively clicking the "Edit" button (if present).
+<<<
+EXPECTED_BEHAVIOR: >>>
+The prescription edit box should be disabled, preventing the user from editing the values of a prescription in an approved plan.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-390
+TITLE: Patients - Plan view - Create Site (Field) - Pathology Description - 1
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Navigate to the patient Simulation tab. 
+
+2. Create a new Field (site). 
+
+3. Locate the Description dropdown control on the new site creation form. 
+
+4. Click on the Description dropdown to expand it and view the options.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The dropdown should display all the following options: 
+
+Infundibulo-cytic 
+
+Ulcerated long-standing 
+
+Adenosquamous 
+
+Desmoplastic/Metaplastic 
+
+Recurrent Lesion post-surgery 
+
+Large Lesion 
+
+Deep Lesion 
+
+Rapid growth 
+
+Extension into hair follicle
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-257
+TITLE: Device Serial ID - (pop-up) - Test Case
+STATEMENT: >>>
+Verify that the application has an interface (pop-up) allowing the user to enter the device serial ID when no device ID is defined.
+<<<
+PREREQUISITES: >>>
+No device ID should be defined in the application prior to this test case.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal unit
+<<<
+EXPECTED_BEHAVIOR: >>>
+1.The application shall have an interface (pop-up) allowing the user to enter the device serial ID.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-135
+TITLE: EMR: Edit patient demographic data - (Edit First Name) - Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient by pressing "New patient" and filling the following 
+details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Press on the patient created in the list, it should be highlighted. 
+
+5. Press "Edit patient" button at the bottom. 
+
+5. On the edit box on the right, update the First Name to "UpdatedFirstName" 
+
+6. Press "Save Patient" at the bottom of the edit box. 
+
+Expected behavior 
+
+The updated patient’s First name should appear as "UpdatedFirstName" in the patient’s list.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The updated patient’s First name should appear as "UpdatedFirstName" in the patient’s list.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-749
+TITLE: Service - System's Signals - UI Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of Service. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Click the Service tab in the application navigation menu 
+
+2. Verify that the Service interface loads and displays the system signals dashboard 
+
+3. Locate and verify the System section displays the following parameters: 
+
+o System State 
+
+o System Runtime [ms] 
+
+o System Fault Flags [raw] 
+
+o 
+
+Interlock Flags [raw] 
+
+4. Locate and verify the General section displays the following parameters: 
+
+o Ring LED State 
+
+o Base LED State 
+
+o Applicator ID (1) [Raw] 
+
+o Applicator ID (2) [Raw] 
+
+o Buttons [Raw] 
+
+5. Locate and verify the Operational points section displays: 
+
+o Current Point 
+
+o Total Points 
+
+6. Locate and verify the Timers section displays the following parameters: 
+
+o 
+
+o 
+
+Internal Timer State 
+
+Internal Timer Value [sec] 
+
+o Timer 1 State 
+
+o Timer 1 Value [sec] 
+
+o Timer 2 State 
+
+o Timer 2 Value [sec] 
+
+7. Locate and verify the Coils section displays the following parameters: 
+
+o X coil current [mA] 
+
+o Y coil current [mA] 
+
+o Focus current [mA] 
+
+8. Locate and verify the HVPS (High Voltage Power Supply) section displays: 
+
+o HVPS Runtime [ms] 
+
+o HVPS IO [Raw] 
+
+o HVPS Status Flags [Raw] 
+
+o kV Feedback [kV] 
+
+o mA Feedback [mA] 
+
+o Filament setpoint [mA] 
+
+o Filament feedback [mA] 
+
+o Grid setpoint [V] 
+
+o Grid feedback [V] 
+
+9. Locate and verify the Ion pump section displays: 
+
+o 
+
+Ion pump voltage [V] 
+
+10. Locate and verify the Cooling system section displays: 
+
+o Water pressure [PSI] 
+
+o Water Flow [LPM] 
+
+o Water temperature [°C] 
+
+o HeatSink temperature [°C] 
+
+o Peltier temperature [°C] 
+
+o Cabinet temperature [°C] 
+
+11. Locate and verify the Magnetometers section displays: 
+
+o Mag 1 X [μT] 
+
+o Mag 1 Y [μT] 
+
+o Mag 1 Z [μT] 
+
+o Mag 2 X [μT] 
+
+o Mag 2 Y [μT] 
+
+o Mag 2 Z [μT] 
+
+12. Observe the displayed values for 30-60 seconds to verify that the signals update in real-time 
+
+13. Trigger a system state change (if possible) and verify that the displayed values reflect the change
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Service tab is accessible and loads without errors 
+
+• All system signal sections are visible and properly labeled 
+
+• All signal parameters are displayed with their correct units of measurement 
+
+• Values are displayed in the appropriate format (numeric values, states, flags, etc.) 
+
+• Signal values update in real-time, reflecting the current board telemetry
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-758
+TITLE: Patients - Patient List View – Layout – Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the Patients. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1. Navigate to the Patients tab. 
+
+1. Observe the patient list layout displayed on the screen. 
+
+1. Verify that each patient is shown as a row in the list. 
+
+1. Check the column headers to confirm the presence of the following fields: 
+
+1. MRN (Medical Record Number) 
+
+1. First Name 
+
+1. Middle Name 
+
+1. Last Name 
+
+1. Sex 
+
+1. DOB (Date of Birth) 
+
+1. Last Visit 
+
+1. Scroll (if applicable) to ensure the columns are clearly visible and properly aligned. 
+
+1. Verify that patient information is correctly displayed under the corresponding column headers for each patient row.
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The patient list layout displays all registered patients in a structured table format. 
+
+• Each patient row contains the following information: 
+
+• MRN 
+
+• First Name 
+
+• Middle Name 
+
+• Last Name 
+
+• Sex 
+
+• DOB 
+
+• Last Visit 
+
+• All columns are clearly labeled and aligned with their respective data. 
+
+• No columns are missing or mislabeled. 
+
+• Data is readable and formatted correctly (e.g., DOB in expected date format). 
+
+• The list should load without errors or missing information.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-312
+TITLE: Calibration - Magnetometer correction parameters - Test Case
+STATEMENT: >>>
+This test case verifies system calibration procedures and parameters. It validates that calibration values are correctly stored and applied.
+<<<
+STEPS: >>>
+1. Launch and login Heracles internal 
+
+2.Click the Setting tab 
+
+3.Click the Target Management tab 
+
+4.Click new Target. 
+
+5.Inside the opened window fill in the following: 
+
+Serial:1111 
+
+Type: 13 Cells (choose form the drop-down menu) 
+
+Does Rate: 200 
+
+Energy: 50 (choose from the drop-down menu) 
+
+Active : mark as active 
+
+6. Click the save button. 
+
+7.Click the Calibration tab (on the left panel) 
+
+8.Click the Serial field and select 1111 from the drop-down menu. 
+
+9.Click the Magnetometer Configuration
+<<<
+EXPECTED_BEHAVIOR: >>>
+The user interface shall allow users to configure the magnetometer parameters before installation for each energy level. 
+
+The parameters include the Correction Matrix and the Reference Fields for the back and front magnetometer.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-762
+TITLE: Patients - Simulation View - Add Patient’s Prescription - UI Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Click the Patients tab in the application navigation menu 
+
+2. Locate the pre-defined patient in the patient list 
+
+3. Double-click on the patient entry to open the patient's Simulation View 
+
+4. 
+
+In the left panel, click on the pre-defined simulation entry (e.g., "Field 1 BCC" or the relevant simulation field) 
+
+5. Verify that the simulation details are displayed in the center panel 
+
+6. Locate the Prescription section in the right panel of the interface 
+
+7. Verify that the Prescription section contains the following fields: 
+
+o Energy [kV] (dropdown) 
+
+o Dose Per Fx [cGy] (editable field) 
+
+o Fx per week (dropdown) 
+
+o TDF (dropdown) 
+
+o Number of Fx (editable field) 
+
+o Total Dose [cGy] (non-editable/calculated field) 
+
+o Duration [s] (field) 
+
+8. Click the Add button in the Prescription section (bottom right area with Reload, Add, and Save buttons) 
+
+9. Verify that all prescription fields are cleared and ready for new data entry 
+
+10. Click on the Energy [kV] dropdown and select an energy value (e.g., "50" or available option) 
+
+11. In the Dose Per Fx [cGy] field, enter a decimal value (e.g., "200.0") 
+
+12. Click on the Fx per week dropdown and select a frequency value (e.g., "2") 
+
+13. Click on the TDF dropdown and select a TDF value from the available options (e.g. 95) 
+
+14. In the Number of Fx field, enter an integer value (e.g., "25") 
+
+15. Verify that the Total Dose [cGy] field automatically calculates and displays the result of [Dose Per Fx] × [Number of Fx] 
+
+16. Verify that the Total Dose field is non-editable (read-only) 
+
+17. In the Duration [s] field, enter the treatment duration value (if required) 
+
+18. Click the Save button to save the new prescription 
+
+19. Verify that the prescription is saved and associated with the selected simulation 
+
+20. Verify that the prescription data persists when navigating away and returning to the simulation 
+
+Expected behavior 
+
+• Energy dropdown displays available energy options and allows selection 
+
+• Dose Per Fx field accepts decimal numbers 
+
+• Fx per week dropdown displays options 1-7 and allows selection 
+
+• TDF dropdown displays available TDF options and allows selection 
+
+• Number of Fx field accepts integer numbers only 
+
+• Total Dose [cGy] automatically calculates as [Dose Per Fx] × [Number of Fx] 
+
+• Calculation updates immediately when either Dose Per Fx or Number of Fx changes 
+
+• Total Dose field is non-editable (read-only/disabled) 
+
+• Calculated value is accurate 
+
+• The Save button successfully saves the new prescription 
+
+• The prescription is associated with the correct patient and simulation 
+
+• All entered data is saved accurately 
+
+• The prescription persists after navigating away and returning
+<<<
+EXPECTED_BEHAVIOR: >>>
+• Energy dropdown displays available energy options and allows selection 
+
+• Dose Per Fx field accepts decimal numbers 
+
+• Fx per week dropdown displays options 1-7 and allows selection 
+
+• TDF dropdown displays available TDF options and allows selection 
+
+• Number of Fx field accepts integer numbers only 
+
+• Total Dose [cGy] automatically calculates as [Dose Per Fx] × [Number of Fx] 
+
+• Calculation updates immediately when either Dose Per Fx or Number of Fx changes 
+
+• Total Dose field is non-editable (read-only/disabled) 
+
+• Calculated value is accurate 
+
+• The Save button successfully saves the new prescription 
+
+• The prescription is associated with the correct patient and simulation 
+
+• All entered data is saved accurately 
+
+• The prescription persists after navigating away and returning
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-765
+TITLE: Patients - Simulation View - Layout - UI Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the Patients. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1. Click the Patients tab in the application navigation menu 
+
+2. Double-click on the patient with a defined simulation to open the Simulation View 
+
+3. Verify the patient demographic data section is displayed at the top. 
+
+4. Verify the multi-tab control displays three tabs: Simulation, Treatments, Images 
+
+5. Verify the master view (left panel) displays a list of sites/simulations with entries showing: 
+
+o Site number 
+
+o Site name (e.g., "lt temple") 
+
+o Pathology type (e.g., "SCC") 
+
+6. Click on a simulation entry in the master list 
+
+7. Verify the detail view (center and right panels) displays the following sections: 
+
+Simulation Details Section (center panel): 
+
+• Lesion Size [cm]: Two edit boxes (e.g., "0.0 x 0.0") 
+
+• Margin Size [cm]: Two edit boxes (e.g., "0.0 x 0.0") 
+
+• Field Size [cm]: Two boxes showing calculated values (e.g., "0.0 x 0.0") 
+
+• Applicator size: Dropdown control 
+
+• Lesion Depth [mm]: Number edit box (e.g., "0.0") 
+
+• Devices: Dropdown/multi-select control showing selected devices (e.g., "Thyroid Shield", "Lead Apron") 
+
+• Positions: Dropdown control 
+
+• Notes: Text edit box 
+
+1. Verify the Prescription section (right panel) displays: 
+
+o Fx per week: Dropdown control 
+
+o Number of Fx: Number edit box 
+
+o Energy [kV]: Dropdown control 
+
+o TDF: Dropdown control 
+
+o Dose Per Fx [cGy]: Decimal edit box 
+
+o Total Dose [cGy]: Calculated field (non-editable) 
+
+o Duration [s] 
+
+o Actual Dose [cGy] 
+
+2. Verify action buttons are present: 
+
+o Reload, Add, Save buttons for Simulation section 
+
+o Reload, Add, Save buttons for Prescription section 
+
+3. Verify the Photos/ section is displayed below the Simulation section with navigation controls (left/right arrows) 
+
+4. Verify the Images section is displayed below the Prescription section with navigation controls 
+
+5. Verify the Treatment history is displayed (click the Treatments sub-tab) 
+
+6. Verify bottom action buttons are present: Back, Scan, Camera, Verify 
+
+7. Click on different simulations in the master list and verify the detail view updates accordingly
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Simulation View opens successfully 
+
+• Patient demographic information is clearly displayed at the top 
+
+• The multi-tab control shows Simulation, Treatments, and Images tabs 
+
+• Master-detail layout is properly implemented with the sites list on the left 
+
+• Simulation Details section displays all required fields with correct labels and units 
+
+• Field Size is shown as a calculated/non-editable field 
+
+• Devices and Positions display as dropdown/multi-select controls 
+
+• Prescription section displays all required fields in the right panel 
+
+• Total Dose displays as a calculated field 
+
+• Photos and Images gallery sections are present with navigation controls 
+
+• All action buttons (Reload, Add, Save, Update, Back, Scan, Camera, Verify) are visible and accessible 
+
+• Clicking different simulations in the master list updates the detail view correctly
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-251
+TITLE: EMR: Clinical view - Load For Treatment - Disallow Plan Editing - Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the newly created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Field Name: testField 
+
+Site Location: Back (choose from the drop-down menu) 
+
+Pathology: BCC (choose from the drop-down menu 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*Lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Shield Size [cm]: 1.00 
+
+\*Lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.In the same plan tab, click the "Add" button under "Prescription". 
+
+13. File in the the following details: 
+
+Does Pre Fx [cGy]: 1 
+
+TDF: 94(select from the drop-down menu) 
+
+Fx per week: Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 50(Select from the drop-down menu) 
+
+14.Click the "Save" button under "Prescription". 
+
+15.In the collimator view click on 1 
+
+16.Add duration 1 ( next to the collimator view) 
+
+17.Click add under the collimator view. 
+
+18.Click save to save the treatment field. 
+
+19.Click Approve to approve plan. 
+
+20.In the Confirmation pop-up menu click OK 
+
+21.Click the Load For Treatment button. 
+
+22.Try to update the plan by changing the treatment field, changing the duration to 3 and changing the Energy to 100.
+<<<
+EXPECTED_BEHAVIOR: >>>
+20.The "Load for Treatment" button should become clickable, allowing the user to load the plan for treatment 
+
+22.The application shall disallow any change in the plan when the plan is sent to the external application. 
+
+When the user triggers the Load for Treatment action, a modal pop-up will be displayed, disabling the user from editing the plan. The Plan 
+status will be changed to Pending.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-142
+TITLE: EMR: Edit patient demographic data - (Edit Email) - Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the following 
+details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+• Email:firstName@test.com 
+
+4. Press on the patient created in the list, it should be highlighted. 
+
+5. Press "Edit patient" button at the bottom. 
+
+5. On the edit box on the right, update the Email address to "patient@test.com" 
+
+6. Press "Save Patient" at the bottom of the edit box.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The updated patient's Email address should be and appear as "patient@test.com" in the Patients list.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-767
+TITLE: Patients - Simulation View - View Patient’s Treatment Simulation - UI Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of Patients. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Click the Patients tab in the application navigation menu 
+
+2. Double-click on the patient with a defined simulation to open the Simulation View 
+
+3. Click the Simulation tab if not already active 
+
+4. 
+
+In the left panel, click on a simulation entry from the sites list 
+
+5. Verify the Simulation Details section is displayed in the center panel 
+
+6. Locate and verify the Lesion Size [cm] field displays: 
+
+o Two edit boxes (e.g., "2.5 x 3.0") 
+
+o Values are displayed in centimeters 
+
+o Both dimension values are visible and readable 
+
+7. Locate and verify the Margin Size [cm] field displays: 
+
+o Two edit boxes showing the margin dimensions (e.g., "1.0 x 1.0") 
+
+o Values are displayed in centimeters 
+
+o Both margin values are visible and readable 
+
+8. Locate and verify the Field Size [cm] field displays: 
+
+o Two boxes showing the calculated field size 
+
+o Values are automatically calculated based on Lesion Size + Margin Size 
+
+o Field appears as non-editable/read-only (calculated field) 
+
+9. Locate and verify the Lesion Depth [mm] field displays: 
+
+o A number edit box showing the depth value (e.g., "5.0") 
+
+o Value is displayed in millimeters 
+
+10. Locate and verify the Applicator size dropdown control is displayed 
+
+11. Locate and verify the Devices field displays: 
+
+o A dropdown or multi-select control 
+
+o Selected devices are shown (e.g., "Thyroid Shield", "Lead Apron") 
+
+12. Locate and verify the Positions dropdown control displays the selected position(s) 
+
+13. Locate and verify the Notes edit box displays any existing notes text 
+
+14. Verify all measurement values are displayed with correct units of measurement
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Simulation View opens successfully 
+
+• The Simulation tab displays the simulation details 
+
+• Lesion Size [cm] field displays two-dimension values correctly 
+
+• Margin Size [cm] field displays two margin dimension values correctly 
+
+• Field Size [cm] displays calculated values (Lesion Size + Margin Size for each dimension) 
+
+• Field Size appears as non-editable/calculated field 
+
+• Lesion Depth [mm] displays the depth value with correct unit 
+
+• Applicator size dropdown shows the selected applicator 
+
+• Devices control displays all selected devices (e.g., Thyroid Shield, Lead Apron) 
+
+• Positions dropdown displays the selected position 
+
+• Notes field displays any existing notes text 
+
+• All fields are properly labeled with units of measurement 
+
+• Values are displayed accurately and match the stored simulation data 
+
+• The layout is clear and readable
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-783
+TITLE: Patients - Simulation View - Auto-Calculation Field Size - UI Test Case
+STATEMENT: >>>
+This test case verifies automatic calculations and computations. It validates that calculated values are accurate and match expected results based on input parameters.
+<<<
+STEPS: >>>
+1. Click the Patients tab in the application navigation menu 
+
+2. Double-click on a patient to open the Simulation View 
+
+3. Click the Simulation tab 
+
+4. Select a field/simulation from the sites list (e.g., "Field 3 - BCC") 
+
+5. Locate the Simulation section with Lesion Size, Margin Size, and Field Size fields 
+
+6. Enter values in the Lesion Size [cm] fields: 
+
+o First box (X dimension): Enter "5.1" 
+
+o Second box (Y dimension): Enter "5.9" 
+
+7. Enter values in the Margin Size [cm] fields: 
+
+o First box (X dimension): Enter "0.1" 
+
+o Second box (Y dimension): Enter "0.1" 
+
+8. Verify that the Field Size [cm] automatically calculates using the formula: 
+
+o Field Size X = Lesion Size X + (2 × Margin Size X) 
+
+o Field Size Y = Lesion Size Y + (2 × Margin Size Y) 
+
+o Expected X: 5.1 + (2 × 0.1) = 5.3 cm 
+
+o Expected Y: 5.9 + (2 × 0.1) = 6.1 cm 
+
+9. Verify that the calculated Field Size displays: "5.3 x 6.1" (or as per actual calculation) 
+
+10. Modify the Lesion Size X to "1.0" and Lesion Size Y to "1.0" 
+
+11. Modify the Margin Size X to "0.5" and Margin Size Y to "0.5" 
+
+12. Verify that Field Size recalculates: 
+
+o Expected X: 1.0 + (2 × 0.5) = 2.0 cm 
+
+o Expected Y: 1.0 + (2 × 0.5) = 2.0 cm 
+
+o Field Size should display: "2.0 x 2.0" 
+
+13. Test with different values - Lesion: "3.0 x 4.0", Margin: "1.0 x 0.5" 
+
+14. Verify Field Size calculates correctly: 
+
+o Expected X: 3.0 + (2 × 1.0) = 5.0 cm 
+
+o Expected Y: 4.0 + (2 × 0.5) = 5.0 cm 
+
+15. Verify that the Field Size fields are non-editable (read-only/calculated fields) 
+
+16. Click the Save button to save the simulation data 
+
+17. Navigate away and return to verify that Field Size persists correctly
+<<<
+EXPECTED_BEHAVIOR: >>>
+• Lesion Size fields accept numeric decimal input (two fields for X and Y dimensions) 
+
+• Margin Size fields accept numeric decimal input (two fields for X and Y dimensions) 
+
+• Field Size automatically calculates when Lesion Size or Margin Size values are entered or modified 
+
+• Field Size calculation uses the correct formula: Field Size = Lesion Size + (2 × Margin Size) 
+
+• Field Size X calculation: Lesion Size X + (2 × Margin Size X) 
+
+• Field Size Y calculation: Lesion Size Y + (2 × Margin Size Y) 
+
+• Calculated Field Size displays with appropriate decimal precision 
+
+• Field Size fields are non-editable (read-only/calculated) 
+
+• Field Size updates immediately when Lesion Size or Margin Size changes 
+
+• Saved Field Size values persist after navigation
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-262
+TITLE: EMR: Patient's Clinical Data View - View Patient Plan - DB Communication Error - Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message when the retrieval of a patient's plan fails due to a communication error with the database.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database. 
+
+Description: Verify that the application presents the user with a warning message when the retrieval of a patient's plan fails due to a 
+communication error with the database.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the newly created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*Lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Sheild Size [cm]: 1.00 
+
+\*Lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.In the same plan tab, click the "Add" button under "Prescription". 
+
+13. File in the following details: 
+
+Does Pre Fx [cGy]: 1 
+
+TDF: 92(select from the drop-down menu) 
+
+Fx per week: Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 10 (Select from the drop-down menu) 
+
+14. At the bottom of the same screen, select treatment field 31 in the visual control representing the connect collimator and select Duration 
+1. 
+
+15. Click add, to add treatment fields. 
+
+16.Exit the application by navigating the Exit tab and clicking exit. 
+
+14. Re-Launch and login the application. 
+
+15.Click the patients tab. 
+
+16.Create an intended communication error with the database to prevent it from loading the patient's plan. 
+
+17.Click twice the patients you have created earlier. 
+
+18.Click the plan tab.
+<<<
+EXPECTED_BEHAVIOR: >>>
+18.The application shall present the user with a warning message when retrieving a patient’s plan fails due to a communication error with 
+the database. The message should ask the user to retry after a few seconds.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-781
+TITLE: Settings - Users Authorization Management - Set/Unset Permissions - UI Test Case
+STATEMENT: >>>
+This test case verifies user authorization and access control. It validates that users can only access features they have permission to use.
+<<<
+STEPS: >>>
+1. Launch the application and log in with administrator credentials 
+
+2. Click the Settings tab in the application navigation menu 
+
+3. Click the User Permissions sub-tab 
+
+4. Verify that the permissions management interface is displayed 
+
+5. Verify that the interface shows a permissions matrix with: 
+
+o Rows: Roles (RTT, Physicist, Service, Administrator) 
+
+o Columns: Permission categories (Patient's Clinical Data, Patient's Treatment, System Calibration, Quality Assurance, System 
+
+Settings, User Management, Services) 
+
+6. Verify that each intersection contains a checkbox to set/unset permissions 
+
+7. Verify the current permission states (checked/unchecked) 
+
+o e.g. Administrator: All permissions checked 
+
+8. Click on an unchecked checkbox to set permission (e.g., enable "System Settings" for RTT role) 
+
+9. Verify that the checkbox becomes checked 
+
+10. Click on a checked checkbox to unset a permission (e.g., disable "Patient's Treatment" for RTT role) 
+
+11. Verify that the checkbox becomes unchecked 
+
+12. Modify multiple permissions across different roles 
+
+13. Click the Save button at the bottom of the interface 
+
+14. Verify that a success confirmation appears (if applicable) 
+
+15. Navigate away from the User Permissions tab and return 
+
+16. Verify that all permission changes are saved and persist 
+
+17. Log out and log in with a user account from a modified role 
+
+18. Verify that the user's access reflects the updated permissions (e.g., tabs/features are enabled or disabled based on permissions)
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The permissions matrix displays all roles and permission categories 
+
+• Current permission states displayed 
+
+• Clicking an unchecked checkbox sets the permission (checkbox becomes checked) 
+
+• Clicking a checked checkbox unsets the permission (checkbox becomes unchecked) 
+
+• Multiple permissions can be modified before saving 
+
+• The Save button successfully saves all permission changes 
+
+• Permission changes persist after navigation and application restart 
+
+• Users with modified roles experience appropriate access control (enabled/disabled features match permissions)
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-309
+TITLE: Calibration - DB communication error - (retrieving data) Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message indicating that retrieving calibration data has failed due to a communication error with the database. The pop-up message should enable the user to either retry or ignore.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database, to prevent in retrieving 
+Calibration data.
+<<<
+STEPS: >>>
+Test Steps: 
+
+1. Launch and login Heracles internal 
+
+2.Click the Setting tab 
+
+3.Click the Target Management tab 
+
+4.Click new Target. 
+
+5.Inside the opened window fill in the following: 
+
+Serial:1111 
+
+Type: 13 Cells (choose form the drop-down menu) 
+
+Does Rate: 200 
+
+Energy: 50 (choose from the drop-down menu) 
+
+Active : mark as active 
+
+6. Click the save button. 
+
+7.Click the Calibration tab (on the left panel) 
+
+8.Create an intended communication error with the database to prevent it from retrieving 
+
+9.Click the Serial field and select 1111 from the drop-down menu.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application shall present the user with a warning message that retrieving calibration data has failed due to a communication error with 
+the database. The pop-up message should enable the user to retry or ignore.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-785
+TITLE: Quality Assurance - Quality Checks Reports - Deviation - UI Test Case
+STATEMENT: >>>
+This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+<<<
+STEPS: >>>
+1. Click the Quality Assurance tab in the application navigation menu 
+
+2. Verify that the Quality Assurance interface loads successfully 
+
+3. Verify that filter controls are displayed at the top: 
+
+o Applicator size dropdown 
+
+o Energy Level [kV] dropdown 
+
+o Performed date/time selector 
+
+o Reload button 
+
+4. Verify that display mode options are available: 
+
+o Raw data view 
+
+o Deviation [%] view (radio buttons or toggle) 
+
+5. Select an Applicator size from the dropdown (e.g., "1.5 cm") 
+
+6. Select an Energy Level [kV] from the dropdown (e.g., "70") 
+
+7. Select a Performed date/time from the dropdown (e.g., "10/19/2025 10:26:13 PM") 
+
+8. Verify that the quality test results table is displayed 
+
+9. Verify that test data is displayed on the table (e.g., Field 1: Current 2.86, Intensity 1: 1.25, Intensity 2: -0.96) 
+
+10. Click the Deviation [%] option to switch to deviation view 
+
+11. Verify that the table displays percentage deviation from the reference test for each field and measurement 
+
+12. Click the Raw option to switch back to raw data view 
+
+13. Verify that the table displays the original measured values 
+
+14. Click the Reload button 
+
+15. Verify that the data refreshes and displays the latest quality test results for the selected filters 
+
+16. Change the Performed date to a different test session 
+
+17. Verify that the table updates to show the selected test session's data
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Quality Assurance tab is accessible and loads without errors 
+
+• Filter controls for Applicator size, Energy Level, and Performed date are visible and functional 
+
+• All filter dropdowns display available options based on existing test data 
+
+• Display mode options (Raw and Deviation [%]) are available and toggleable 
+
+• Test data populates the table accurately for the selected filters 
+
+• Switching between Raw and Deviation views updates the table data correctly 
+
+• Changing filter selections updates the table to show relevant test results 
+
+• Multiple test sessions can be selected and viewed via the Performed date filter
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-751
+TITLE: System logs’ view - Layout - Date Range Filtering UI Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the System logs’ view. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1. Click the Log tab in the application navigation menu 
+
+2. Observe the default date range displayed in the calendar control 
+
+3. Click on the Calendar control 
+
+4. Select a specific start date (e.g., Oct 22, 2025) 
+
+5. Select a specific end date (e.g., Oct 24, 2025) 
+
+6. Click the Apply button 
+
+7. Verify that the selected date range is displayed in the calendar control 
+
+8. Observe the log entries in the list view 
+
+9. Verify that only log entries within the selected date range are displayed 
+
+10. Change the date range to a single day 
+
+11. Verify that only entries from that specific day are displayed 
+
+12. Change the date range to include future dates 
+
+13. Reset the date range to include all available log entries 
+
+14. Verify that all log entries are displayed again
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The calendar control is interactive and allows date selection 
+
+• Users can select both start and end dates 
+
+• The selected date range is clearly displayed 
+
+• Log entries are filtered to show only those within the selected time frame 
+
+• Entries outside the selected date range are not displayed 
+
+• The list view updates automatically when the date range changes 
+
+• Date range selection persists until changed by the user 
+
+• Single-day selection displays only entries from that day
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-311
+TITLE: Settings - DB communication Error -(save data) Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message that it has failed to save any setting data due to a communication error with the database.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database, to prevent it from 
+saving Settings data.
+<<<
+STEPS: >>>
+Test Steps: 
+
+1.Launch and login Heracles internal SW 
+
+3.Click the Service tab. 
+
+3.Edit the Database IP Address to :1.1.1.1 
+
+4.Create an intended communication error with the database to prevent it from 
+
+5.Click the Save button
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application shall present the user with a warning message that it has failed to save any settings data due to a communication error with 
+the database. The pop-up message should enable the user to retry or ignore.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-166
+TITLE: EMR: Patients Registration Form - Mandatory fields - Test Case
+STATEMENT: >>>
+This test case verifies that mandatory fields are properly enforced. It validates that the system prevents submission when required fields are not populated.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3.Click on the "New Patient" button
+<<<
+EXPECTED_BEHAVIOR: >>>
+3.The new patient registration form should open on the right; the mandatory fields should appear as follow (marked with an asterisk): 
+
+• 
+
+• 
+
+• 
+
+• 
+
+• 
+
+" First Name \* " 
+
+" Last Name \* " 
+
+“Sex \* “ 
+
+" Date of Birth \* “ 
+
+" MRN/ID \* "
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-306
+TITLE: System Setting View - Targets (Collimators) Management - Deactivate Collimator - Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of System Setting View. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal 
+
+2.Click the Setting tab 
+
+3.Click the Target Management tab 
+
+4.Click new Target. 
+
+5.Inside the opened window fill in the following: 
+
+Type: 50MM_SSD_13_FIELDS(choose from the drop-down menu) 
+
+Active : mark as active 
+
+1. Click the save button. 
+
+7.In the Targets Management tab click the newly create Target. 
+
+8.Click that Edit Target button. 
+
+9.Click the "v" check in the Active checkbox to remove the "v"(uncheck) 
+
+10.Click the Save button
+<<<
+EXPECTED_BEHAVIOR: >>>
+The target should appear with an empty checkbox under the Active column in the Targets list view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-770
+TITLE: Patients - Treatment View - View Treatment Details - UI Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of Patients. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Click the Patients tab in the application navigation menu 
+
+2. Double-click on the patient with treatment history 
+
+3. 
+
+In the left panel, click on a field entry from the simulation sites list (e.g., "Field 4 - BCC") 
+
+4. Click the Treatments sub-tab at the top of the view 
+
+5. Verify that the treatment history table is displayed with multiple treatment records 
+
+6. Locate a treatment entry in the history table (e.g., Fx: 1, Date: 10/19/2025 10:26:16 PM) 
+
+7. Click the Details button (e.g. play icon) for the selected treatment in the rightmost column 
+
+8. Verify that a treatment details panel expands or opens displaying additional information 
+
+9. Verify the treatment details section displays the following fields with their values: 
+
+o Actual Duration [sec]: e.g., "0" 
+
+o Actual Dose [cGy]: e.g., "50" 
+
+o Current [mA]: e.g., "4" 
+
+10. Click the Details button for a different treatment record (e.g., Fx: 2) 
+
+11. Verify that the details panel updates to show information for the newly selected treatment
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Details button (e.g. play icon) is visible and clickable for each treatment record 
+
+• Clicking the Details button opens/expands a treatment details panel 
+
+• The details panel header displays the Fx number and Date of the selected treatment 
+
+• The treatment details section displays three fields: Actual Duration [sec], Actual Dose [cGy], and Current [mA] 
+
+• All values are displayed accurately and match the stored treatment data 
+
+• Clicking Details for different treatments updates the panel with the correct corresponding data
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-250
+TITLE: EMR: Clinical view - Load For Treatment - Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of EMR: Clinical view. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the new created patient. 
+
+6.Navigate to "Simulation" tab and click the "Add" button at the bottom of the Simulation tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Field Name: testField 
+
+Site Location: Back (choose from the drop-down menu) 
+
+Pathology: BCC (choose from the drop-down menu 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*Lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Sheild Size [cm]: 1.00 
+
+\*Lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.In the same plan tab, click the "Add" button under "Prescription". 
+
+13. File in the the following details: 
+
+Does Pre Fx [cGy]: 1 
+
+TDF: 94(select from the drop-down menu) 
+
+Fx per week: Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 50(Select from the drop-down menu) 
+
+14.Click the "Save" button under "Prescription". 
+
+15.Click Verify to verify plan. 
+
+16.Navigate to Treatment tab 
+
+17.Click the Load For Treatment button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+20.The "Load for Treatment" button should become clickable, allowing the user to load the plan for treatment 
+
+21.The plan should be sent to the Heracles External unit. Additionally, the plan should be visible in the external application.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-763
+TITLE: Patients - Simulation View - Add Patient’s Prescription - UI Field Validation Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Click the Patients tab in the application navigation menu 
+
+2. Double-click on the patient to open the Simulation View 
+
+3. 
+
+In the left panel, click on a simulation entry 
+
+4. Click the Add button in the Prescription section to add a new prescription 
+
+5. Attempt to enter non-numeric text (e.g., "abc") in the Dose Per Fx [cGy] field 
+
+6. Verify the system's response (should reject or clear invalid input) 
+
+7. Attempt to enter non-numeric text in the Number of Fx field 
+
+8. Verify the system's response (should reject or clear invalid input) 
+
+9. Attempt to enter a decimal number (e.g., "25.5") in the Number of Fx field 
+
+10. Verify that the system either rejects the decimal or rounds to an integer 
+
+11. Enter a negative number (e.g., "-10") in the Dose Per Fx [cGy] field 
+
+12. Verify that the system rejects negative values 
+
+13. Enter a negative number in the Number of Fx field 
+
+14. Verify that the system rejects negative values 
+
+15. Enter "0" in the Dose Per Fx [cGy] field 
+
+16. Enter "10" in the Number of Fx field 
+
+17. Verify that Total Dose calculates as "0.0" cGy 
+
+18. Attempt to manually edit the Total Dose [cGy] field 
+
+19. Verify that the field is non-editable (read-only/disabled) 
+
+20. Fill in only some fields (e.g., only Energy and Dose Per Fx) and click Save 
+
+21. Verify that the system indicates which required fields are missing 
+
+22. Verify that the Fx per week dropdown only displays values 1-7 
+
+23. Enter valid data in all fields and click Save 
+
+24. Verify that the prescription is saved successfully
+<<<
+EXPECTED_BEHAVIOR: >>>
+• Dose Per Fx field accepts only numeric values (integers and decimals) 
+
+• Number of Fx field accepts only integer values (whole numbers) 
+
+• Non-numeric input is rejected or prevented in numeric fields 
+
+• Decimal values are rejected or rounded in the Number of Fx field 
+
+• Negative values are rejected in Dose Per Fx and Number of Fx fields 
+
+• Fx per week dropdown displays only values 1-7 
+
+• Values outside acceptable ranges are rejected 
+
+• Save button is disabled or validation prevents saving incomplete data 
+
+Observed behavior 
+
+As expected. 
+
+Need a better message when entering a non-numeric number. (instead of e could not converted)
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-137
+TITLE: EMR: Edit patient demographic data - (Edit MRN) - Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the following 
+details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Press on the patient created in the list, it should be highlighted. 
+
+5. Press "Edit patient" button at the bottom. 
+
+5. On the edit box on the right, update MRN to "654321" 
+
+6. Press "Save Patient" at the bottom of the edit box.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The updated patient's MRN should be 654321 in the patients list.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-308
+TITLE: Calibration - DB communication error - (saving) Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message indicating that saving calibration data has failed due to a communication error with the database. The pop-up message should enable the user to either retry or ignore.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database, to prevent in from 
+saving Calibration data.
+<<<
+STEPS: >>>
+Test Steps: 
+
+1. Click the Calibration tab (on the left panel) 
+
+2. Select collimator type, energy, and SSD. 
+
+3. Click on the Output Factor Configuration 
+
+4. In the collimator UI representation (control) select field 1
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application shall present the user with a warning message that saving calibration data has failed due to a communication error with the 
+database. The pop-up message should enable the user to retry or ignore.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-768
+TITLE: Patients - Simulation View - Create Patient’s Treatment Simulation - UI Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Click the Patients tab in the application navigation menu 
+
+2. Double-click on the patient to open the Simulation View 
+
+3. Click the Simulation tab if not already active 
+
+4. Click the Add button at the bottom of the interface to create a new simulation field 
+
+5. Fill in the required field: 
+
+• Field Name 
+
+• Field Location 
+
+• Pathology 
+
+• Referring provider 
+
+1. Click Save 
+
+2. Under the Simulation section click the Add button 
+
+3. Verify that the simulation form opens with empty fields ready for data entry 
+
+4. 
+
+In the Lesion Size [cm] field, enter the two-dimension values: 
+
+o First box: Enter "2.5" 
+
+o Second box: Enter "3.0" 
+
+5. 
+
+In the Margin Size [cm] field, enter the two margin dimension values: 
+
+o First box: Enter "1.0" 
+
+o Second box: Enter "1.0" 
+
+6. 
+
+In the Shield Size [cm] field, enter "5.0" 
+
+7. 
+
+In the Lesion Depth [mm] field, enter "5.0" 
+
+8. Click on the Applicator size dropdown and select an applicator 
+
+9. Click on the Devices dropdown and select devices: 
+
+o Select "Thyroid Shield" 
+
+o Select "Lead Apron" (if multi-select is supported) 
+
+10. Click on the Positions dropdown and select a position from the available options 
+
+11. In the Notes edit box, enter text: "Test simulation" 
+
+12. Verify that all required fields are filled 
+
+13. Click the Save button to save the new simulation 
+
+14. Click on the newly created simulation in the sites list 
+
+15. Verify that all entered simulation data is displayed correctly: 
+
+o Lesion Size: 2.5 x 3.0 
+
+o Margin Size: 1.0 x 1.0 
+
+o Shield Size: 5.0 
+
+o Lesion Depth: 5.0 
+
+o Selected Applicator 
+
+o Selected Devices (Thyroid Shield, Lead Apron) 
+
+o Selected Position 
+
+o Notes text 
+
+16. Navigate away from the patient and return to verify data persistence
+<<<
+EXPECTED_BEHAVIOR: >>>
+• Add button opens a new simulation form with empty fields 
+
+• Save button successfully creates the new simulation 
+
+• All entered data displays correctly when viewing the simulation
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-416
+TITLE: Patients - Images - Display Acquired Images
+STATEMENT: >>>
+This test case verifies the display and retrieval of system data. It validates that all relevant information is correctly presented to the user.
+<<<
+STEPS: >>>
+1. Log in to the application. 
+
+2. Navigate to the patient Simulation tab. 
+
+2. Create a field. 
+
+3. Navigate to the Image Acquisition view from the Patient view. 
+
+4. Press the Acquire button 
+
+5. Navigate to the Image tab. 
+
+6. Select the created field.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The table should include a record of the acquired image, including the date it was created.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-748
+TITLE: Patients - Simulation View - Verify Patient’s Treatment Plan – Mark as Verified Test case
+STATEMENT: >>>
+This test case verifies treatment plan operations and management. It ensures that treatment plans are properly created, modified, and applied.
+<<<
+STEPS: >>>
+1. Navigate to the Patients tab. 
+
+1. Double-click the patient whose treatment plan is ready for verification to open the plan view. 
+
+1. Go to the Simulation sub-tab. 
+
+1. Select the treatment plan that is ready to verify/approve. 
+
+1. Click the Verify button. 
+
+1. 
+
+In the pop-up window, enter a valid Username and Password. 
+
+1. 
+
+In the Status drop-down menu, choose Verified. 
+
+1. Click Save.
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The treatment plan status is updated to “Verified.” 
+
+• The updated status appears in the plan view (e.g., displayed in the top-right corner or designated status field).
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-252
+TITLE: EMR: Clinical view - Load For Treatment - Cancelation
+STATEMENT: >>>
+This test case verifies the cancellation functionality. It validates that operations can be properly cancelled and system state is correctly reverted.
+<<<
+STEPS: >>>
+1. Launch and login Heracles internal SW 
+
+2. Navigate to the Treatment tab 
+
+3. 
+
+Click the Load For Treatment button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application UI should be blocked, and the only thing the user can press is a Cancel button.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-131
+TITLE: EMR: Patient Search - (search by Middle Name) - Test case
+STATEMENT: >>>
+This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
+<<<
+STEPS: >>>
+1. Launch Heracles internal SW 
+
+2. Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient with the following details : 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Navigate to the search bar inside the patients tab. 
+
+5. Start typing "MiddleNameTest"
+<<<
+EXPECTED_BEHAVIOR: >>>
+The searched patient should appear in the box and be highlighted.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-307
+TITLE: EMR: Patient's Clinical Data View - Patient Demographic Data - DB Communication Error
+STATEMENT: >>>
+Verify that the application presents the user with a warning message when loading the patient demographic data fails due to a communication error with the database
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database, to prevent it from 
+loading patient's Demographic Data
+<<<
+STEPS: >>>
+Test Steps: 
+
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. Create an intended communication error with the database to prevent it from loading Demographic Data. 
+
+6.In the patient tab click the patient you have created earlier.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application shall present the user with a warning message that loading the patient demographic data fails due to a communication error 
+with the database
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-411
+TITLE: Patients - Plan View - Automatically Identify Connected Collimator
+STATEMENT: >>>
+This test case verifies the functionality and operation of Patients. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Navigate to the patient Simulation tab. 
+
+2. Create a new Field (site). 
+
+3. Create a new simulation. 
+
+4. Select Collimator type: 30MM_SSD_7_CELLS 
+
+5 . Create a Prescription and a Plan. 
+
+6. Switch the connected collimator to 30MM_SSD_7_CELLS. 
+
+Expected behavior 
+
+5 - An alert message should be displayed about the mismatch between the connected collimator and the plan collimator. 
+
+6 - The alert message should disappear.
+<<<
+EXPECTED_BEHAVIOR: >>>
+5 - An alert message should be displayed about the mismatch between the connected collimator and the plan collimator. 
+
+6 - The alert message should disappear.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-391
+TITLE: Patients - Plan view - Create Site (Field) - 1
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Navigate to the patient Simulation tab. 
+
+2. Create a new Field (site).
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the presence of an edit box labeled "Field Name" and input a sample field name. 
+
+2. Verify the presence of a dropdown control for "Site Location" and select a location from the list. 
+
+3. Verify the presence of a dropdown control for "Pathology" and select a pathology from the list. 
+
+4. Verify the presence of a dropdown control for "Subcell" and check that it is initially empty or disabled until a pathology is selected. 
+
+5. Verify the presence of a dropdown control for "Description" and select a description. 
+
+6. Verify the presence of an edit box labeled "Referring Provider”.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-754
+TITLE: Edit Patient’s Prescription – Editable in Unverified State, Locked in Verified State Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1. Navigate to the Patients tab. 
+
+1. Double-click the patient with the predefined prescription to open the Simulation view. 
+
+1. Click the pre-defined simulation in the simulation sub-tab 
+
+1. Locate and confirm that the prescription status is “Unverified.” 
+
+1. Locate the Prescription section (e.g., right side). 
+
+1. Attempt to modify a prescription value (e.g., change Energy from 70 to 50 in the drop-down menu) and click save. 
+
+1. Locate and click the Verify button. 
+
+1. 
+
+In the pop-up window, enter a valid Username and Password. 
+
+1. 
+
+In the Status drop-down menu, select Verified. 
+
+1. Click Save. 
+
+1. Confirm that the prescription status changes from “Unverified” to “Verified.” 
+
+1. Attempt to modify a prescription value again (e.g., change Energy from 70 to 50 in the drop-down menu) and click save.
+<<<
+EXPECTED_BEHAVIOR: >>>
+• While the prescription is in Unverified state, all prescription fields are editable. 
+
+• After the prescription is changed to Verified state, the prescription fields become non-editable (e.g., greyed out, disabled input, or 
+
+locked).
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-134
+TITLE: To Delete - EMR: Patient Search - (search by First Name & Middle Name & LastName combined) - Test case
+STATEMENT: >>>
+This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
+<<<
+STEPS: >>>
+1. Launch Heracles internal SW 
+
+2. Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient with the following details : 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Navigate to the search bar inside the patients tab. 
+
+5. Type "FirstNameTest MiddleNameTest LastNameTest"
+<<<
+EXPECTED_BEHAVIOR: >>>
+The patients with full name: "FirstNameTest MiddleNameTest LastNameTest" should appear in the box and be highlighted.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-304
+TITLE: System Setting View - Targets (Collimators) Management - Layout - (Deactivate Target) Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the System Setting View. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1. Click the Setting tab 
+
+3. Click the Target Management tab 
+
+4. Click new Target. 
+
+5. Inside the opened window fill in the following: 
+
+Type: 50MM_SSD_13_FIELDS(choose form the drop-down menu) 
+
+Active : mark as active 
+
+2. Click the save button. 
+
+7.Click the new created target in the Targets Management list view 
+
+8.Click the checkbox in the same row in the Active column to deactivate the Tagert
+<<<
+EXPECTED_BEHAVIOR: >>>
+The target should have a checkmark in the "Active" checkbox within the Targets Management list view, and it should not be displayed in the 
+collimator list in the Calibration tab
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-396
+TITLE: Patients - Plan View - Alert for unsaved data
+STATEMENT: >>>
+This test case verifies that appropriate alerts are displayed to the user when system conditions warrant notification. It validates the alert presentation and timing.
+<<<
+STEPS: >>>
+1. Navigate to the patient Simulation tab. 
+
+2. Create a new Field (site). 
+
+3. Create a new simulation without saving the data. 
+
+4. Pless the Scan button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4—An alert message should be displayed informing the user that unsaved data will be lost if he opens a view without saving data first.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-227
+TITLE: EMR: User Login - (using authorized user) - Test Case
+STATEMENT: >>>
+Verifying the ability to log in the application using username and credentials via the login menu.
+<<<
+PREREQUISITES: >>>
+Tester should have authorized user information and credentials. 
+
+Description: 
+
+Verifying the ability to log in the application using username and credentials via the login menu.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Ensure the login menu pops up. If the application already logged in, log out by navigating to the exit tab and then clicking logout. 
+
+3.Enter the username and user credentials and click the sign-in button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3.The sign in shall succeed, the login menu shall close, and the application's main window shall open.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-130
+TITLE: EMR: Patient Search - (search by Last Name) - Test case
+STATEMENT: >>>
+This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
+<<<
+STEPS: >>>
+1. Launch Heracles internal SW 
+
+2. Navigate to the patient’s tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient with the following details : 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Navigate to the search bar inside the patients tab. 
+
+5. Start typing "LastNameTest"
+<<<
+EXPECTED_BEHAVIOR: >>>
+The searched patient should appear in the box and be highlighted.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-322
+TITLE: EMR: Clinical view - Add Treatment Fields to a plan - Calculate the Actual Dose - Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal 
+
+2.Click the Setting tab 
+
+3.Click the Target Management tab 
+
+4.Click new Target. 
+
+5.Inside the opened window fill in the following: 
+
+Type: 50MM_SSD_13_FIELDS(choose from the drop-down menu) 
+
+Active: mark as active 
+
+1. Click the save button. 
+
+7.Click the Calibration tab (on the left panel) 
+
+8.Click the Collimator Type and select 50MM_SSD_13_FIELDSfrom the drop-down menu. 
+
+9.Click the Output Factor Configuration 
+
+10.In the collimator view click 13 
+
+11.In the highlighted 13 row click the row under Factor column 
+
+12.Enter 1.05 to set output Factor 
+
+13.Navigate to the patients tab 
+
+14. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing 
+the following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+15. Click the "Save Patient" button at the bottom of the registration form. 
+
+16. In the patients list view, click twice on the newly created patient. 
+
+17.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+18. Fill in the following details: 
+
+• Site Name: testSite 
+
+• Pathology: testPathology 
+
+19. Click the "Save" button. 
+
+20. In the same plan tab under "Simulation" click the "Add" button. 
+
+21.Fill in the following details for "Simulation": 
+
+\*Lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Shield Size [cm]: 1.00 
+
+\*Lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+22.Click the "Save" button under "Simulation". 
+
+23.In the same plan tab, click the "Add" button under "Prescription". 
+
+24. File in the following details: 
+
+Dose Pre Fx [cGy]: 200 
+
+TDF: 100(select from the drop-down menu) 
+
+Fx per week: Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 50 (Select from the drop-down menu) 
+
+25. At the bottom of the same screen, select treatment field 13 in the visual control representing the connected collimator and select 
+Duration 60. 
+
+26. Click add, to add treatment fields.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The Actual Dose should be auto-calculate from the duration using the following function: 
+
+[Field Output factor] * [Dose Rate cGy/min] * Duration / 60 
+
+i.e. 1.05 * 200* 60/ 60 = 210 
+
+The Actual dose should appear under Actual Dose column for the relevant treatment field.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-266
+TITLE: EMR: Patient's Clinical Data View - Save Site - DB Communication Error - Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message when the saving of a Site fails due to a communication error with the database.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database, to prevent it from 
+saving new Site data.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the newly created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8.Create an intended communication error with the database to prevent it from saving new site data. 
+
+9. Click the "Save" button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. 
+
+The application shall present the user with a warning message when saving a patient’s site(field) list fails due to a communication 
+error with the database. The message should ask the user to retry after a few seconds.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-165
+TITLE: EMR: Patients Registration Feedback - Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of EMR: Patients Registration Feedback. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details is present in the patient list view or Create a new patient by clicking "New patient" and filing 
+the following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Click "Save Patient "
+<<<
+EXPECTED_BEHAVIOR: >>>
+4.The registration form should close; the newly created patient should appear highlighted in the patients list view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-320
+TITLE: EMR: Patient's clinical data - Alert for invalid plan when editing the energy in a prescription - Test Case
+STATEMENT: >>>
+This test case verifies that appropriate alerts are displayed to the user when system conditions warrant notification. It validates the alert presentation and timing.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the newly created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*Lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Sheild Size [cm]: 1.00 
+
+\*Lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.In the same plan tab, click the "Add" button under "Prescription". 
+
+13. File in the following details: 
+
+Does Pre Fx [cGy]: 1 
+
+TDF: 92(select from the drop-down menu) 
+
+Fx per week:Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 70(Select from the drop-down menu) 
+
+14. At the bottom of the same screen, select treatment field 31 in the visual control representing the connected collimator and select 
+Duration 1. 
+
+15. Click add, to add treatment fields. 
+
+16.Try to edit and change the Energy to100 kV in the prescription
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application shall alert the user of an invalid plan; Energy level of a prescription is edited.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-261
+TITLE: EMR: Patient's Clinical Data View - View Patient Prescription - DB Communication Error - Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message when the retrieval of a patient's prescription fails due to a communication error with the database.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database. 
+
+The test uses a special version of the application that artificially receives communication errors from the DB when fetching 
+prescriptions.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the newly created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*Lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Sheild Size [cm]: 1.00 
+
+\*Lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.In the same plan tab, click the "Add" button under "Prescription". 
+
+13. Fill in the following details: 
+
+Does Pre Fx [cGy]: 1 
+
+TDF: 92(select from the drop-down menu) 
+
+Fx per week: Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 10 (Select from the drop-down menu) 
+
+14. Click the "Add" prescription button and save. 
+
+12.Exit the application by navigating the Exit tab and clicking exit. 
+
+Exit the application and run the testing version of Heracles internal SW, which artificially returns a DB connection error when 
+fetching the prescription. 
+
+13. Re-Launch and login the application. 
+
+14. In the patient tab click the patient you have created earlier. 
+
+15.Click the Site Name: testSite in the plan tab on the right side.
+<<<
+EXPECTED_BEHAVIOR: >>>
+16.The application shall present the user with a warning message when retrieving a patient’s prescription fails due to a communication error 
+with the database. The message should ask the user to retry after a few seconds.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-755
+TITLE: View Patient’s Prescription – Create and Display Prescription for a Simulation Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Navigate to the Patients tab. 
+
+1. Double-click the predefined patient to open its Simulation View. 
+
+1. 
+
+In the Simulation sub-tab, select the predefined simulation. 
+
+1. Locate the Prescription section (e.g., right side) and click the Add button to add a new prescription. 
+
+1. Click the Fx per week drop-down and select a value (e.g., 4). 
+
+1. Enter a value in the Number of Fx input (e.g., 1). 
+
+1. Click the Energy drop-down and select a value (e.g., 50). 
+
+1. Click the TDF drop-down and select a value (e.g., 94). 
+
+1. Enter a value in the Dose Per Fx [cGy] input (e.g., 100). 
+
+1. Verify that the auto-complete fields for the following appear and populate automatically: 
+
+1. Total Dose [cGy] 
+
+1. Duration [s] 
+
+1. Actual Dose [cGy] 
+
+1. Click the Save button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+• A new prescription is created and displayed in the Prescription section. 
+
+• All selected and entered values are saved and correctly displayed. 
+
+• The auto-complete fields are automatically calculated and populated based on the entered values. 
+
+• The prescription remains linked to the selected simulation.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-129
+TITLE: EMR: Patient Search - (search by First Name) - Test case
+STATEMENT: >>>
+This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
+<<<
+STEPS: >>>
+1. Launch Heracles internal SW 
+
+2. Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient with the following details : 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Navigate to the search bar inside the patients tab. 
+
+5. Start typing "FirstNameTest"
+<<<
+EXPECTED_BEHAVIOR: >>>
+The searched patient should appear in the box and be highlighted.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-302
+TITLE: System Setting View - Targets (Collimators) Management - Layout - (New Target) - Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the System Setting View. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal 
+
+2.Click the Setting tab 
+
+3.Click the Target Management tab 
+
+4.Click new Target. 
+
+5.Inside the opened window fill in the following: 
+
+Type: 50MM_SSD_13_FIELDS (choose from the drop-down menu) 
+
+Active: mark as active 
+
+1. Click the save button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The newly created target should appear int the Targets Management list view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-259
+TITLE: EMR: Patient list view - DB communication error - Test Case
+STATEMENT: >>>
+Verify the presence of a warning message when loading the patient list fails due to a communication error with the database. The message should ask the user to retry after few seconds.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database. 
+
+The test uses a special version of the application that artificially receives communication errors from the DB.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW (Not the testing version) 
+
+2.Navigate to the patients tab 
+
+3.Create a new patient by pressing "New patient" and filing the following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:77771 
+
+Exit the application and run the testing version of Heracles internal SW, which artificially returns a DB connection error when 
+fetching the patient list. 
+
+1. Launch Heracles internal SW 
+
+2. Log-in with User/password 
+
+3. Go to Patients tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The application shall present the user with a warning message when loading the patient list fails due to a communication error with 
+
+the database. The message should ask the user to retry after a few seconds.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-348
+TITLE: System Setting View - Collimators Management - New Collimator Mandatory Fields - (UI) Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Launch and login Heracles internal 
+
+2.Click the Setting tab 
+
+3.Click the Collimator Management tab 
+
+4.Click new Target. 
+
+5.In the opened window, leave the following fields empty: 
+
+• Serial 
+
+• Type 
+
+• Energy 
+
+• SSD 
+
+6.Click the Save button
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application should alert the user if not all mandatory fields are field in, and mandatory fields should be marked with an asterisk. 
+
+Mandatory fields are: 
+
+• Serial 
+
+• Type 
+
+• Energy 
+
+• SSD 
+
+The user should not be able to save the new Collimator data if even one mandatory filed is not filled in.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-228
+TITLE: EMR: User Login - (using non-authorized user) - Test Case
+STATEMENT: >>>
+This test case verifies the user login and authentication process. It validates the proper handling of valid and invalid credentials.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Ensure the login menu pops up. If the application already logged in, log out by navigating to the exit tab and then clicking logout. 
+
+4.Enter an unauthorized username and user credentials and click the sign-in button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The sign-in shall fail, alerting the user and offering the option to re-enter username and credentials. 
+
+All application functionalities expect exit, or login shall be disabled.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-140
+TITLE: EMR: Edit patient demographic data - (Edit Middle Name) - Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the following 
+details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Press on the patient created in the list, it should be highlighted. 
+
+5. Press "Edit patient" button at the bottom. 
+
+5. On the edit box on the right, update Middle Name to "UpdatedMiddleName". 
+
+6. Press "Save Patient" at the bottom of the edit box.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The updated patient's Middle Name should appear as "UpdatedMiddleName" Patients list.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-138
+TITLE: EMR: Edit patient demographic data - (Edit Sex) - Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the following 
+details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Press on the patient created in the list, it should be highlighted. 
+
+5. Press "Edit patient" button at the bottom. 
+
+5. On the edit box on the right, update Sex to Female by pressing the Sex and choosing Female from the drop-down list. 
+
+6. Press "Save Patient" at the bottom of the edit box.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The updated patient's Sex should appear as "Female" in the Patients list. 
+
+Observed behavior 
+
+As expected.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-394
+TITLE: Patients - Plan view - Create Site (Field) - Subcell
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Navigate to the patient Simulation tab. 
+
+2. Create a new Field (site). 
+
+3. Locate the Subcell dropdown control on the new site creation form. 
+
+4. Click on the Subcell dropdown to expand it and view the options. 
+
+5. Click on the Pathology dropdown and select BCC. 
+
+6. Click on the Pathology dropdown and select SCC. 
+
+7. Click on the Pathology dropdown and select SCC-IS. 
+
+8. Click on the Pathology dropdown and select Keloid 
+
+9. Click on the Pathology dropdown and select Basosquamous
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - "Subcell" is initially empty or disabled until a Pathology is selected. 
+
+5 - When BCC is selected in Pathology, the Subcell dropdown will show: 
+
+Aberrant 
+
+Adenoid 
+
+Atypical Basaloid Proliferation 
+
+Basosquamous (Metatypical) 
+
+Adnexal Differentiation 
+
+Squamous Differentiation 
+
+Clear Ring 
+
+Cystic Cell Carcinoma 
+
+Fibroepithelioma of Pinkus 
+
+Infiltrative 
+
+Keratotic 
+
+Micro Nodular 
+
+Mixed Pattern 
+
+Morphoeic/Sclerosing/Fibrosing 
+
+Nodular(Classic Basal-Cell) 
+
+Nodulocystic 
+
+Pigmented 
+
+Pleomorphic 
+
+Polypoid 
+
+Pore-like 
+
+Rodent Ulcer (Jacobi Ulcer) 
+
+Superficial (Multicentric) 
+
+Other 
+
+6 - When SCC is selected in Pathology, the Subcell dropdown will show: 
+
+Acantholytic 
+
+Adenoid/Pseudoglandular 
+
+Atypical Squamous Proliferation 
+
+Basaloid 
+
+Clear-cell 
+
+Erythroplasia 
+
+Intraepidermal 
+
+Invasive 
+
+Keratoacanthoma 
+
+Large Cell Keratinizing 
+
+Large Cell Non-Keratinizing 
+
+Metaplasia 
+
+Moderately Differentiated 
+
+Poorly differentiated 
+
+Papillary Carcinoma 
+
+Signet-ring cell 
+
+Small Cell Keratinizing 
+
+Superficial 
+
+Spindle Cell 
+
+Verrucous 
+
+Well-Differentiated 
+
+Superficially Invasive 
+
+Other 
+
+7 - When SCC-IS is selected in Pathology, the Subcell dropdown should be disabled 
+
+8 - When Keloid is selected in Pathology, the Subcell dropdown should be disabled. 
+
+8 - When Basosquamous is selected in Pathology, the Subcell dropdown should be disabled.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-222
+TITLE: EMR: Patient list view - Customizable Columns - (all columns checked) - Test Case
+STATEMENT: >>>
+This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5.Click the empty box in the header of the patients list view (on the right side, next to "Last Visit”) 
+
+6. In the opened check box, uncheck all options (MRN,First Name, Last Name, Sex, Date of Birth, Last Visit). 
+
+7.Re-Check all options (MRN,First Name, Last Name, Sex, Date of Birth, Last Visit).
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. 
+
+All columns should appear in the patients list view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-780
+TITLE: Settings - Users Authorization Management - Create New Role - UI Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Log in to the application with administrator credentials 
+
+2. Click the Settings tab in the application navigation menu 
+
+3. Click the User Permissions sub-tab 
+
+4. Verify that the permissions matrix displays existing roles (Administrator, RTT, Physicist, Service) 
+
+5. Click the New Role button at the bottom left 
+
+6. Verify that a role creation panel opens on the right side 
+
+7. 
+
+In the Role field, enter a custom role name (e.g., "test" or "Custom_Role") 
+
+8. 
+
+In the Permissions section, select specific permissions by checking the appropriate checkboxes: 
+
+o Check "Services" 
+
+o Optionally check other permissions (e.g., "Quality Assurance") 
+
+9. Leave other permissions unchecked to create a role with limited access 
+
+10. Click the Save button at the bottom right of the panel 
+
+11. Verify that a success confirmation appears (if applicable) 
+
+12. Verify that the new role appears in the permissions matrix table with the assigned permissions 
+
+13. Verify that the new role row displays: 
+
+o Role name: "test" 
+
+o Services: ✓ (checked) 
+
+o All other permissions: unchecked 
+
+14. Click the X button to close the role creation panel 
+
+15. Navigate away from the User Permissions tab and return 
+
+16. Verify that the newly created role persists in the permissions matrix
+<<<
+EXPECTED_BEHAVIOR: >>>
+• Clicking New Role opens a role creation panel 
+
+• The panel contains a Role name field and a Permissions checklist 
+
+• The Role field accepts text input for custom role names 
+
+• All available permissions are listed as checkboxes 
+
+• Multiple permissions can be selected by checking the appropriate boxes 
+
+• The Save button successfully creates a new role 
+
+• The new role appears in the permissions matrix immediately after creation 
+
+• The role displays with the correct name and assigned permissions 
+
+• Only the selected permissions are checked for the new role 
+
+• The new role persists after navigating away and returning 
+
+• The new role becomes available in the User Management role dropdown 
+
+• Users can be assigned to the newly created custom role
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-756
+TITLE: Patients - Patient List View - Open Patient's Clinical view – Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of Patients. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Navigate to the Patients tab. 
+
+1. 
+
+In the patient list, locate the patient for whom the clinical view will be opened. 
+
+1. Locate the control (e.g., play icon on the right side of the row) that enables opening the patient’s clinical data. 
+
+1. Click the control button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The patient’s Clinical View opens successfully. 
+
+• The view displays relevant sections such as prescriptions, treatment plans, images, and other clinical data associated with the 
+
+selected patient.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-324
+TITLE: EMR: Imaging View - Photoacoustics Imaging for treatment image-guidance - Layout - Tests Case
+STATEMENT: >>>
+This test case is to verify that the application has a user interface that enables the user to acquire Photo-Acoustics Imaging. The Layout should include the following parts: 1. Identification of the patient. 2. DICOM viewer - 3 frames of image visualization for the three orthogonal directions XY, XZ, YZ Action buttons: 1. Pick/Place Imaging Head— to lock/unlock the imaging source head. 2. Prepare Laser 3. Acquire - The image acquisitions shall run according to the configured parameters. 4. Stop - An acquisition shall be forced to terminate. 5. Back - The view shall be closed and returned to the Plan view. Setting - Shall open a collapse/expand view to enable the user to configure the photoacoustic imaging settings.
+<<<
+PREREQUISITES: >>>
+Create a patient and load images (for testing DICOM viewer)
+<<<
+STEPS: >>>
+Test Steps: 
+
+1. Launch and login Heracles internal SW 
+
+2. Navigate to the patient's tab 
+
+3. Click twice on the pre-created patient 
+
+4. Click the Scan button to open the Image Acquisition View
+<<<
+EXPECTED_BEHAVIOR: >>>
+The Layout should include the following parts: 
+
+1. Identification of the patient. 
+
+2. DICOM viewer - 3 frames of image visualization for the three orthogonal directions XY, XZ, YZ 
+
+Action buttons: 
+
+1. Pick/Place Imaging Head—Based on a preset configuration, the robot shall move into position to pick up/release and lock/unlock the 
+imaging source head. 
+
+2. Prepare Laser 
+
+3. Acquire - The image acquisitions shall run according to the configured parameters. 
+
+4. Stop - An acquisition shall be forced to terminate. 
+
+5. Back - The view shall be closed and returned to the Plan view. 
+
+Setting - Shall open a collapse/expand view to enable the user to configure the photoacoustic imaging settings. 
+
+Observed behavior 
+
+As expected.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-760
+TITLE: User Profile Management - Create New User and Verify Login UI Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Log in to the application as the administrator user 
+
+2. Click the Settings tab in the application navigation menu 
+
+3. Click the User Management tab 
+
+4. Click the New User button 
+
+5. Verify that the user details panel opens with empty fields 
+
+6. Fill in the required fields: 
+
+o Username: newuser01 
+
+o Role: Select "RTT" from the dropdown 
+
+o First Name: Test 
+
+o Last Name: User 
+
+o Password: SecurePass123! 
+
+o Confirm Password: SecurePass123! 
+
+o Email: newuser01@example.com 
+
+7. Click the Save button 
+
+8. Verify that a success message appears (if applicable) 
+
+9. Verify that the new user "newuser01" appears in the user list with the correct information (Username: newuser01, Role: RTT, First 
+
+Name: Test, Last Name: User) 
+
+10. Log out from the administrator session 
+
+11. Log in to the application using the newly created user credentials: 
+
+o Username: newuser01 
+
+o Password: SecurePass123! 
+
+12. Verify that the login is successful
+<<<
+EXPECTED_BEHAVIOR: >>>
+• Administrator can access the User Management interface 
+
+• The New User button opens an empty user details form 
+
+• All required fields accept valid input 
+
+• The Role dropdown displays available role options 
+
+• The Save button creates the new user account successfully 
+
+• The new user appears in the user list immediately after creation with accurate details 
+
+• The administrator can log out successfully 
+
+• The newly created user can log in using the assigned credentials 
+
+• Login is successful without errors 
+
+• The new user has appropriate access based on the assigned role
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-220
+TITLE: EMR: Patient list view - Customizable Columns -(DOB) - Test Case
+STATEMENT: >>>
+This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5.Click the empty box in the header of the patients list view (on the right side, next to "Last Visit”) 
+
+6. In the open check box, uncheck "DOB".
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The DOB Column should not appear in the patients list view, all other check columns should appear in the patients list view
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-132
+TITLE: EMR: Patient Search - (search by MRN) - Test case
+STATEMENT: >>>
+This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
+<<<
+STEPS: >>>
+1. Launch Heracles internal SW 
+
+2. Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient with the following details : 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Navigate to the search bar inside the patients tab. 
+
+5. Start typing "12345"
+<<<
+EXPECTED_BEHAVIOR: >>>
+The patient with MRN:12345 should appear in the box and be highlighted.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-170
+TITLE: EMR: Patients Registration Form - Input Data Integrity - (Sex - drop-down list) - Test Case
+STATEMENT: >>>
+This test case verifies input validation and data integrity checks. It ensures that only valid data is accepted by the system.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3.Click the "New Patient" button at the bottom. 
+
+4. On the patient registration form on the right, click on the Sex field.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4.There shall be a drop-down list with options (Male/Female/Intersex) for choosing the new patient Sex .
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-139
+TITLE: EMR: Edit patient demographic data - (Edit DOB) - Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the following 
+details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Press on the patient created in the list, it should be highlighted. 
+
+5. Press "Edit patient" button at the bottom. 
+
+5. On the edit box on the right, update Date of birth to 02/02/2002. 
+
+6. Press "Save Patient" at the bottom of the edit box.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The updated patient's DOB should be and appear as 02/02/2002 Patients list.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-328
+TITLE: EMR: Actual Treatment delivered - Test Case
+STATEMENT: >>>
+This test case aims to verify that the application provides a user interface displaying a view of the actual treatment fields delivered by the device.
+<<<
+PREREQUISITES: >>>
+1. Create a patient and a plan in Heracles Internal 
+
+2. Execute the plan in Heracles External unit
+<<<
+STEPS: >>>
+. 
+
+. 
+
+Test steps: 
+
+1.Click the Patients tab in Heracles internal 
+
+2.Click the pre-created patient, whose plan has been executed on the external unit 
+
+3.Click the treatments tab 
+
+4.In the treatments list, click the relevant treatment in the Actual Fields column
+<<<
+EXPECTED_BEHAVIOR: >>>
+For each treatment record, the application should provide a view of the actual treatment fields delivered by the device. Each treatment field 
+record will include the actual energy.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-149
+TITLE: EMR: Patient Search - Results Display - Test Case
+STATEMENT: >>>
+This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Create a new patient by pressing "New patient" and filling the following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. press the "Save Patient" button 
+
+5. At the top of the patients’ tab, type the patient’s name "FirstNameTest"
+<<<
+EXPECTED_BEHAVIOR: >>>
+5.The patient with First "FirstNameTest " should appear in the patient's list view, 
+
+including its MRN, first, middle, and last name, Gender, DOB, and Last visit.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-769
+TITLE: Patients - Treatments view - Layout - UI Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the Patients. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1. Click the Patients tab in the application navigation menu 
+
+2. Locate and click twice on the patient with treatment history to pen its simulation view. 
+
+3. Click the Treatments sub-tab to view the treatment history 
+
+4. Verify the patient demographic data is displayed at the top of the view. 
+
+5. Verify the master-details layout is displayed with: 
+
+o Master view: Sites/fields list on the left panel 
+
+o Details view: Treatment information on the right panel 
+
+6. Verify the sites list (master view) displays all available fields with: 
+
+o Field number and name (e.g., "Field 5") 
+
+o Pathology type (e.g., "BCC") 
+
+7. Click on a field entry (e.g., "Field 5") in the sites list 
+
+8. Verify the details’ view displays the following sections: 
+
+Simulation Data Section: 
+
+• Lesion Size [cm]: Two values (e.g., "9.8 x 5.9") 
+
+• Margin Size [cm]: Two values (e.g., "0.1 x 0.1") 
+
+• Field Size [cm]: Two calculated values (e.g., "0.2 x 0.2") 
+
+• Applicator size: Dropdown showing selected value (e.g., "1.5 cm") 
+
+• Lesion Depth [mm]: Value (e.g., "12.5") 
+
+• Devices: List of devices (e.g., "Head Holder") 
+
+• Positions: Selected position (e.g., "Laying on LEFT Side") 
+
+• Notes: Text field (e.g., "Allergy to metals") 
+
+Prescription Data Section: 
+
+• Fx per week: Value (e.g., "2") 
+
+• Number of Fx: Value (e.g., "6") 
+
+• Energy [kV]: Value (e.g., "50") 
+
+• TDF: Value (e.g., "100") 
+
+• Dose Per Fx [cGy]: Value (e.g., "600.00") 
+
+• Total Dose [cGy]: Calculated value (e.g., "3600") 
+
+• Duration [s]: Value (e.g., "60") 
+
+• Actual Dose [cGy]: Value (e.g., "600") 
+
+1. Verify the Treatments section displays treatment summary: 
+
+o Total Fraction: e.g., "1 / 6" 
+
+o Total Dose Delivered [cGy]: e.g., "600 / 3600" 
+
+2. Verify the treatments table displays with the following column headers: 
+
+o Fx 
+
+o Date 
+
+o Lesion Depth 
+
+o Energy [kV] 
+
+o Daily Dose [cGy] 
+
+o Cumulative Dose [cGy] 
+
+o Details 
+
+3. Verify the treatment record(s) in the table display correct information: 
+
+o Fx: Fraction number (e.g., "1") 
+
+o Date: Treatment date and time (e.g., "10/19/2025 10:26:16 PM") 
+
+o Lesion Depth: Measured depth (e.g., "12.5") 
+
+o Energy [kV]: Delivered energy (e.g., "50") 
+
+o Daily Dose [cGy]: Delivered dose (e.g., "600") 
+
+o Cumulative Dose [cGy]: Running total (e.g., "600") 
+
+o Details: Play button/link to view details 
+
+4. Verify clicking on different fields in the sites list updates the details view accordingly
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Treatments tab opens successfully and displays the treatment history view 
+
+• Patient demographic data is clearly visible at the top 
+
+• Master-details layout is properly implemented with sites list on the left 
+
+• All fields in the sites list are displayed and selectable 
+
+• Prescription data section displays all prescription fields with accurate values 
+
+• Treatment summary shows total fractions and total dose delivered 
+
+• Treatments table displays all column headers correctly 
+
+• Each treatment record shows complete information including Fx number, Date, Lesion Depth, Energy, Daily Dose, Cumulative 
+
+Dose, and Details link 
+
+• All data is accurate and matches the stored treatment records 
+
+• Clicking different sites/fields updates the details view appropriately 
+
+• Details button/link is functional for viewing individual treatment details
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-316
+TITLE: EMR: Clinical view - Add Treatment Fields to a plan - Calculate the Emission Current - (100kV) Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the new created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*Lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Sheild Size [cm]: 1.00 
+
+\*lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.In the same plan tab, click the "Add" button under "Prescription". 
+
+13. File in the following details: 
+
+Does Pre Fx [cGy]: 1 
+
+TDF: 92(select from the drop-down menu) 
+
+Fx per week: Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 100 (Select from the drop-down menu) 
+
+14. At the bottom of the same screen, select treatment field 31 in the visual control representing the connect collimator and select Duration 
+1. 
+
+15. Click add, to add treatment fields.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The Current should be auto-calculate as the quotient of Power[W] divided by Energy Level[kV] : 
+
+Emission Current[mA] = Power[W] / Voltage[kV] 
+
+Current should appear as 0.5 in the treatment filed list view. 
+
+(The device shall operate at a constant power of 50W)
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-141
+TITLE: EMR: Edit patient demographic data - (Edit All patient fields) - Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the following 
+details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Press on the patient created in the list, it should be highlighted. 
+
+5. Press "Edit patient" button at the bottom. 
+
+5. On the edit box on the right, update as follows: 
+
+• First Name: UpdatedFirstName 
+
+• Middle Name: UpdatedMiddleName 
+
+• Last Name: UpdatedLastName 
+
+• Sex: Female 
+
+• DOB: 03/03/2003 
+
+• MRN: 2003 
+
+• Zip Code 
+
+6. Press "Save Patient" at the bottom of the edit box. 
+
+1. Press Edit to view the latest data saved
+<<<
+EXPECTED_BEHAVIOR: >>>
+The updated patient's details should appear in the form
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-404
+TITLE: Patient - Plan View - Auto-calculate the ICDCode
+STATEMENT: >>>
+This test case verifies automatic calculations and computations. It validates that calculated values are accurate and match expected results based on input parameters.
+<<<
+STEPS: >>>
+1. Navigate to the patient Simulation tab. 
+
+2. Create a new Field (site). 
+
+3. Select Location (e.g. Breast) 
+
+4. Select Pathology (e.g. BCC) 
+
+5. Save 
+
+Expected behavior 
+
+The ICD code should be shown at the top of the details’ view. For example, the code should be c44.511
+<<<
+EXPECTED_BEHAVIOR: >>>
+The ICD code should be shown at the top of the details’ view. For example, the code should be c44.511
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-772
+TITLE: Physics - Layout - UI Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the Physics. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1. Click the Physics tab in the application navigation menu 
+
+2. Verify that the Physics configuration interface loads successfully 
+
+3. Locate and verify the Import from CSV section at the top of the interface displays: 
+
+o A text field/box for file path or file name 
+
+o An upload/import button icon 
+
+4. Verify the Applicator Type dropdown control is displayed and functional 
+
+5. Verify the Energy Level [kV] dropdown control is displayed and functional 
+
+6. Verify the interface displays a multi-panel view with the following sections: 
+
+Left Panel - Magnetometer Corrections: 
+
+• Correction Matrix subsection with: 
+
+o Back [mA/μT] fields: CMB 1,1 | CMB 1,2 | CMB 1,3 | CMB 2,1 | CMB 2,2 | CMB 2,3 
+
+o Front [mA/μT] fields: CMF 1,1 | CMF 1,2 | CMF 1,3 | CMF 2,1 | CMF 2,2 | CMF 2,3 
+
+• Reference Field subsection with: 
+
+o Back [mA/μT] fields: RFB 1,1 | RFB 2,1 | RFB 3,1 
+
+o Front [mA/μT] fields: RFF 1,1 | RFF 2,1 | RFF 3,1 
+
+Right Panel - Upper Section - Coils: 
+
+• X Coil [mA] field 
+
+• Y Coil [mA] field 
+
+• Focus [mA] field 
+
+Right Panel - Middle Section - Heater current: 
+
+• Heater Current [mA] field 
+
+Right Panel - Lower Section - Dose Rate: 
+
+• Dose Rate [cGy/Min] field 
+
+1. Verify that all input fields are editable and accept numeric values 
+
+2. Verify that action buttons are present at the bottom right: 
+
+o Approve button 
+
+o Save button 
+
+3. Verify all field labels display correct units of measurement (mA, μT, mA/μT, cGy/Min)
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Physics tab is accessible and loads without errors 
+
+• 
+
+Import from CSV control is visible with text field and upload button 
+
+• Applicator Type dropdown is functional and displays available applicator options 
+
+• Energy Level [kV] dropdown is functional and displays available energy levels 
+
+• Multi-panel layout displays all four configuration sections: Magnetometer Corrections, Coils, Heater current, and Dose Rate 
+
+• Magnetometer Corrections panel includes both Correction Matrix (12 fields) and Reference Field (6 fields) subsections 
+
+• Coils section displays three input fields (X Coil, Y Coil, Focus) 
+
+• Heater current section displays one input field 
+
+• Dose Rate section displays one input field 
+
+• All fields are clearly labeled with appropriate units of measurement 
+
+• All numeric input fields are editable 
+
+• Approve and Save buttons are visible and accessible at the bottom
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-330
+TITLE: EMR: Clinical view - Patient’s treatment fields Inconsistency alert - (Alert UI) - Test Case
+STATEMENT: >>>
+This test case is designed to verify that the application alerts the user that an inconsistency exists between the planned Applicator Type and the actual connected Applicator.
+<<<
+PREREQUISITES: >>>
+Create a patient and create a treatment plan for this patient with the Applicator size. 
+
+Ability to physically change the Applicator type
+<<<
+STEPS: >>>
+1.Launch and login Heracles Internal 
+
+2.Change collimator Applicator from 1.5 cm to QC 
+
+3.In the Patients tab, click the pre-created patient with the pre-created plan.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application shall alert the user that an inconsistency exists between the planned Target Type and the actual connected Target.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-265
+TITLE: EMR: Patient's Clinical Data View - Save Patient Simulation - DB Communication Error - Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message when the saving of a patient's simulation fails due to a communication error with the database.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database, to prevent it from 
+saving new simulation data.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the newly created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8. Click the "Save" button. 
+
+9. In the same "plan" tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*lesion Size[cm]:1.00 x 1.00 (Two edit boxes ( numbers) for the the two dimensions value.) 
+
+\*Margin Size[cm]:1.00 
+
+\*Sheild Size [cm]: 1.00 
+
+\*lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+\*Notes: TestNote 
+
+11.Create an intended communication error with the database to prevent it from 
+
+12.Click the "Save" button under "Simulation".
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. 
+
+The application shall present the user with a warning message when saving a patient’s simulation fails due to a communication 
+error with the database. The message should ask the user to retry after a few seconds.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-753
+TITLE: Patients - Simulation View - Verify Patient’s Treatment Plan – Mark as Rejected Test case
+STATEMENT: >>>
+This test case verifies treatment plan operations and management. It ensures that treatment plans are properly created, modified, and applied.
+<<<
+STEPS: >>>
+1. Navigate to the Patients tab. 
+
+1. Double-click the patient whose treatment plan is ready for verification to open the plan view. 
+
+1. Go to the Simulation sub-tab. 
+
+1. Select the treatment plan that is ready to verify/approve. 
+
+1. Click the Verify button. 
+
+1. 
+
+In the pop-up window, enter a valid Username and Password. 
+
+1. 
+
+In the Status drop-down menu, choose Rejected. 
+
+1. Click Save. 
+
+Expected behavior 
+
+• The treatment plan status is updated to “Rejected.” 
+
+• The updated status appears in the plan view (e.g., displayed in the top-right corner or a status field).
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The treatment plan status is updated to “Rejected.” 
+
+• The updated status appears in the plan view (e.g., displayed in the top-right corner or a status field).
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-776
+TITLE: Physics - Set Applicator Dose-Rate - UI Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of Physics. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Click the Physics tab in the application navigation menu 
+
+2. Click the Applicator Type dropdown and select an applicator (e.g., "1.5 cm") 
+
+3. Click the Energy Level [kV] dropdown and select an energy level (e.g., "50") 
+
+4. Locate the Dose Rate section in the right panel 
+
+5. Click on the Dose Rate [cGy/Min] field 
+
+6. Enter a new dose rate value (e.g., "600.00") 
+
+7. Verify that the field accepts the numeric input 
+
+8. Verify that the Save button becomes enabled 
+
+9. Click the Save button 
+
+10. Verify that a success confirmation appears 
+
+11. Navigate away from the Physics tab and return 
+
+12. Select the same Applicator Type and Energy Level 
+
+13. Verify that the Dose Rate field displays the saved value
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Physics tab is accessible and loads successfully 
+
+• Applicator Type dropdown displays available applicator options 
+
+• Energy Level dropdown displays available energy levels 
+
+• The Dose Rate section is visible in the right panel 
+
+• The Dose Rate [cGy/Min] field is editable and accepts numeric decimal values 
+
+• The Save button becomes enabled after modifying the dose rate 
+
+• The dose rate value is saved successfully 
+
+• The saved dose rate persists and displays correctly after navigation 
+
+• The dose rate configuration is associated with the correct applicator type and energy level
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-774
+TITLE: Physics - Alert for unsaved data - UI Test Case
+STATEMENT: >>>
+This test case verifies that appropriate alerts are displayed to the user when system conditions warrant notification. It validates the alert presentation and timing.
+<<<
+STEPS: >>>
+1. Click the Physics tab in the application navigation menu 
+
+2. Select an Applicator Type (e.g., "1.5 cm") and Energy Level [kV] (e.g., "50") 
+
+3. Modify a value in any field (e.g., change CMF 2,3 from "1" to "5") 
+
+4. Verify that the Save button becomes enabled (indicating unsaved changes) 
+
+5. Without clicking Save, attempt to navigate away by clicking on another tab (e.g., Patients, Log, Settings, or Service) 
+
+6. Verify that an alert or confirmation dialog appears warning about unsaved data 
+
+7. Click Cancel or No in the alert dialog 
+
+8. Verify that navigation is prevented and the user remains on the Physics view 
+
+9. Verify that the modified data is still present in the fields 
+
+10. Attempt to navigate away and click Discard (or similar) 
+
+11. Verify that navigation proceeds without saving and changes are discarded
+<<<
+EXPECTED_BEHAVIOR: >>>
+• An alert or confirmation dialog appears when attempting to navigate away with unsaved changes 
+
+• The alert message clearly indicates that there are unsaved changes 
+
+• The alert provides options such as: Cancel/No 
+
+• Clicking Cancel/No prevents navigation and keeps the user on the Physics view 
+
+• Unsaved data remains in the fields after canceling navigation 
+
+• No data loss occurs when the user chooses to save 
+
+• The alert appears consistently for all navigation attempts (clicking different tabs)
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-761
+TITLE: User Profile Management - Edit Non-Administrator User UI Test Case
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1. Log in to the application as the administrator user 
+
+2. Click the Settings tab in the application navigation menu 
+
+3. Click the User Management tab 
+
+4. Verify that the user list displays both administrator and non-administrator users 
+
+5. Click on the non-administrator user (e.g., "existing user") in the user list 
+
+6. Verify that the user details panel opens on the right side with the current user information populated 
+
+7. Attempt to edit the following fields: 
+
+o Role: e.g. Change from "RTT" to "Physicist" using the dropdown 
+
+o First Name: e.g. Change from "John" to "Jonathan" 
+
+o Email: e.g. Change from "john.doe@example.com" to "jonathan.doe@example.com" 
+
+8. Verify that all edited fields accept the new values 
+
+9. Click the Save button 
+
+10. Verify that a success message appears (if applicable) 
+
+11. Close the user details panel 
+
+12. Verify that the user list updates to reflect the changes (Role: Physicist, First Name: Jonathan) 
+
+13. Click on the same user again to reopen the user details panel 
+
+14. Verify that all edited information is saved and displayed correctly, for example: 
+
+o Role: Physicist 
+
+o First Name: Jonathan 
+
+o Email: jonathan.doe@example.com
+<<<
+EXPECTED_BEHAVIOR: >>>
+• Administrator can successfully log in and access User Management 
+
+• The non-administrator user is visible and selectable in the user list 
+
+• Clicking on the user opens the user details panel with current information 
+
+• The Role dropdown allows selection of different roles 
+
+• First Name, Last Name, and Email fields accept modified input 
+
+• The Save button successfully updates the user’s information 
+
+• The user list reflects the updated information immediately 
+
+• Changes persist after closing and reopening the user details panel 
+
+• All edited information is correctly saved in the system
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-198
+TITLE: EMR: Patient list view - Sorting - (Middle Name) Test Case
+STATEMENT: >>>
+This test case verifies the sorting functionality. It validates that records are properly sorted according to the selected criteria.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Create a new patient by pressing "New patient" and filing the following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: Aaaa 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:2222 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. Repeat steps 3 - 4 and create another patient with different Middle Name and MRN, Middle Name: Bbbb, MRN:3333 
+
+6. Repeat steps 3 - 4 and create another patient with different Middle Name and MRN, Middle Name: Cccc, MRN:4444 
+
+7. Click the Middle Name column at the top of the patients list view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+7.The patients shall be ordered in ascending or descending order in the list view by Middle Name. By clicking again, it shall update 
+respectively. 
+
+Example: 
+
+\*Aaaa 
+
+\*Bbbb 
+
+\*Cccc 
+
+And by clicking again: 
+
+\*Cccc 
+
+\*Bbbb 
+
+\*Aaaa
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-151
+TITLE: EMR - Patient's Data Manipulation Audit Trails - (updating Last Name) Test Case
+STATEMENT: >>>
+This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details is present in the patient list view or Create a new patient by pressing "New patient" and filing 
+the following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. press the "Save Patient" button 
+
+5. In the patient list view click on the created patient 
+
+6. Click button "Edit Patient" 
+
+7. Change the Last Name to "NewLastName" and click Save patient. 
+
+8. Navigate to "Log" tab by pressing "Log" on the left.
+<<<
+EXPECTED_BEHAVIOR: >>>
+8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its Last Name to 
+"NewLastName"), including the corresponding patient ID number, and the user who made the change, specifying the user ID number
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-777
+TITLE: Physics - Coil configuration - UI Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of Physics. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Click the Physics tab in the application navigation menu 
+
+2. Click the Applicator Type dropdown and select an applicator (e.g., "1.5 cm") 
+
+3. Click the Energy Level [kV] dropdown and select an energy level (e.g., "50") 
+
+4. Locate the Coils section in the right panel 
+
+5. Click on the X Coil [mA] field and enter a value (e.g., "1.50") 
+
+6. Click on the Y Coil [mA] field and enter a value (e.g., "2.00") 
+
+7. Click on the Focus [mA] field and enter a value (e.g., "1.00") 
+
+8. Verify that all three coil fields accept numeric decimal values 
+
+9. Verify that the Save button becomes enabled after modifying coil values 
+
+10. Click the Save button 
+
+11. Verify that a success confirmation appears 
+
+12. Navigate away from the Physics tab and return 
+
+13. Select the same Applicator Type and Energy Level 
+
+14. Verify that all three coil values are displayed correctly
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Coils section is visible in the right panel with three editable fields 
+
+• X Coil [mA] field accepts numeric decimal input 
+
+• Y Coil [mA] field accepts numeric decimal input 
+
+• Focus [mA] field accepts numeric decimal input 
+
+• The Save button becomes enabled after modifying any coil parameter 
+
+• All three coil parameters save successfully 
+
+• Saved coil values persist and display correctly after navigation 
+
+• Coil configuration is properly associated with the selected applicator type and energy level
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-406
+TITLE: Patients - Image Acquisition - Populate Lesion Depth into Simulation - 2
+STATEMENT: >>>
+This test case verifies the functionality and operation of Patients. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Log in to the application. 
+
+2. Navigate to the patient Simulation tab. 
+
+3. Navigate to the Image Acquisition view from the Patient view. 
+
+4. Press the Acquire button 
+
+5. Select the part to measure using the measurement line in the axis view. 
+
+6. Exit Image acquisition view. 
+
+7. Navigate to Image tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+6 - The lesion depth in the simulation remains the same as before the new measurement. 
+
+7. The Measured lesion depth is listed in the table of images for the corresponding acquired image.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-771
+TITLE: Physics - Save Data - UI Test Case
+STATEMENT: >>>
+This test case verifies the save functionality. It validates that data is properly persisted when save operations are executed.
+<<<
+STEPS: >>>
+1. Click the Physics tab in the application navigation menu 
+
+2. Select an Applicator Type (e.g., "1.5") and Energy Level [kV] (e.g., "50") 
+
+3. Verify that the Save button is disabled when no changes have been made 
+
+4. Modify a value in the Correction Matrix (e.g., change CMB 1,1 from "0" to "5") 
+
+5. Verify that the Save button becomes enabled 
+
+6. Click the Save button and verify successful save 
+
+7. Verify that the Save button becomes disabled after save 
+
+8. Modify a value in the Coils section (e.g., change X Coil to "1.50") 
+
+9. Enter an invalid value in another field (e.g., enter "abc" in Y Coil field) 
+
+10. Verify that the Save button is disabled due to validation error 
+
+11. Correct the invalid value with a valid number (e.g., "2.00") 
+
+12. Verify that the Save button becomes enabled again 
+
+13. Modify the Heater Current [mA] (e.g., change to "3500.00") 
+
+14. Click Save and verify all changes are saved 
+
+15. Navigate away and return to verify data persistence
+<<<
+EXPECTED_BEHAVIOR: >>>
+• Save button is disabled when no changes are made or when invalid data exists 
+
+• Save button becomes enabled immediately when valid data is modified 
+
+• 
+
+Invalid input (non-numeric values) disables the Save button and prevents saving 
+
+• Correcting invalid data re-enables the Save button 
+
+• All modified data saves successfully and persists after navigation 
+
+• Save button returns to disabled state after successful save
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-152
+TITLE: EMR - Patient's Data Manipulation Audit Trails -(updating MRN) Test Case
+STATEMENT: >>>
+This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details is present in the patient list view or Create a new patient by pressing "New patient" and filing 
+the following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. press the "Save Patient" button 
+
+5. In the patient list view click on the created patient 
+
+6. Click button "Edit Patient" 
+
+7. Change the MRN to "5050" and click Save patient. 
+
+8. Navigate to "Log" tab by pressing "Log" on the left.
+<<<
+EXPECTED_BEHAVIOR: >>>
+8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its MRN to "5050"), including 
+the corresponding patient ID number, and the user who made the change, specifying the user ID number
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-782
+TITLE: Patients - Simulation View - Auto-Calculation of Emission Duration - UI Test Case
+STATEMENT: >>>
+This test case verifies automatic calculations and computations. It validates that calculated values are accurate and match expected results based on input parameters.
+<<<
+STEPS: >>>
+1. Click the Physics tab in the application navigation menu 
+
+2. Select Applicator Type: "1.5 cm" from the dropdown 
+
+3. Select Energy Level [kV]: "70" from the dropdown 
+
+4. Locate the Dose Rate section and note the configured value (e.g., "600.00 cGy/Min") 
+
+5. Click the Patients tab to navigate to patient management 
+
+6. Double-click on a patient to open the Simulation View 
+
+7. Click the Simulation tab 
+
+8. Select a field/simulation from the sites list (e.g., "Field 2 - BCC") 
+
+9. Verify the Simulation section shows: 
+
+o Applicator size: "1.5 cm" (matching Physics configuration) 
+
+10. Verify the Prescription section shows: 
+
+o Energy [kV]: "70" (matching Physics configuration) 
+
+o Dose Per Fx [cGy]: "300.00" 
+
+11. Locate the Duration [s] field in the Prescription section 
+
+12. Verify that the Duration is automatically calculated using the formula: 
+
+o Duration [sec] = (Dose Per Fx [cGy] / Dose Rate [cGy/min]) × 60 
+
+o Expected: (300.00 / 600.00) × 60 = 30.0 seconds 
+
+13. Verify that the calculated Duration value is displayed: "30" or "30.0" 
+
+14. Modify the Dose Per Fx [cGy] to a different value (e.g., "450.00") 
+
+15. Verify that the Duration automatically recalculates: 
+
+o Expected: (450.00 / 600.00) × 60 = 45.0 sec 
+
+16. Test minimum resolution by entering a dose that results in a fractional duration (e.g., "325.00") 
+
+17. Verify that the Duration displays with at least 0.1 second resolution: 
+
+o Expected: (325.00 / 600.00) × 60 = 32.5 seconds
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Duration [s] field automatically calculates based on Dose Per Fx and Dose Rate 
+
+• The calculation uses the correct formula: Duration = (Dose Per Fx / Dose Rate) × 60 
+
+• The calculated duration is accurate for the given dose and dose rate 
+
+• Duration automatically recalculates when Dose Per Fx is modified 
+
+• The calculation displays with minimum resolution of 0.1 seconds 
+
+• Fractional durations (e.g., 32.5 seconds) are properly displayed 
+
+• The duration field updates immediately when dose values change 
+
+• The calculation is consistent and accurate across different dose values 
+
+• No rounding errors occur in the calculation
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-393
+TITLE: Patients - Plan view - Create Site (Field) - Site Location
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Navigate to the patient Simulation tab. 
+
+2. Create a new Field (site). 
+
+3. Locate the Location dropdown control on the new site creation form. 
+
+4. Click on the Location dropdown to expand it and view the options.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The dropdown should display all the following options : 
+
+Breast 
+
+Ear (Left) 
+
+Ear (Right) 
+
+Forehead 
+
+Temple 
+
+Zygoma 
+
+Pre-Auricular 
+
+Cheek 
+
+Chin 
+
+Jaw 
+
+Lip 
+
+Neck 
+
+Nose 
+
+Scalp 
+
+Post Auricular 
+
+Trunk 
+
+Chest 
+
+Abdomen 
+
+Back 
+
+Lower Limb (Left) 
+
+Lower Limb (Right) 
+
+Upper Limb (Left) 
+
+Upper Limb (Right) 
+
+Eyelid (Right Upper) 
+
+Eyelid (Right Lower) 
+
+Eyelid (Left Upper) 
+
+Eyelid (Left Lower)
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-171
+TITLE: EMR: Patients Registration Form - Input Data Integrity - (Sex - drop-down list - Choose Male) - Test Case
+STATEMENT: >>>
+This test case verifies input validation and data integrity checks. It ensures that only valid data is accepted by the system.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3.Click the "New Patient" button at the bottom. 
+
+4. On the patient registration form on the right, click on the Sex field. 
+
+5.On the Sex drop down list, click on Male.
+<<<
+EXPECTED_BEHAVIOR: >>>
+5.The 'Sex' drop-down should close, and the field should be updated to Male.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-410
+TITLE: Security - Data Encryption
+STATEMENT: >>>
+This test case verifies data encryption and security measures. It validates that sensitive data is properly protected.
+<<<
+STEPS: >>>
+1. Log in to the internal application. 
+
+2. Navigate to the Patient view. 
+
+3. Press the New button 
+
+4. Enter required data 
+
+5. Press save button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+Open pgAdmin. Query for Patients' data. Verify that data is encrypted
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-217
+TITLE: EMR: Patient list view - Customizable Columns -(MRN) - Test Case
+STATEMENT: >>>
+This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5.Click the empty box in the header of the patients list view (on the right side, next to "Last Visit”) 
+
+6. In the opened check box, uncheck "MRN".
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The MRN Column should not appear in the patients list view, all other check columns should appear in the patients list view 
+
+Observed behavior 
+
+As expected.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-786
+TITLE: Auto-Calculation of Energy level and TDF of New Prescription
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Click the Patients tab in the application navigation menu 
+
+2. Double-click on a patient to open the Simulation View 
+
+3. Click the Simulation tab 
+
+4. Create a field with Pathology: BCC or SCC (all other fields can be selected arbitrarily) 
+
+5. Press Add to Create a simulation with Lesion Depth 0.1-0.5 
+
+6. Press Add to create a prescription. 
+
+7. Repeat 4-6 with the following values: 
+
+0.0 - 0.5 
+
+0.6 - 1.0 
+
+1.1 - 1.5 
+
+1.6 - 2.0 
+
+2.1 - 2.5 
+
+2.6 - 3.0 
+
+> 3.0
+<<<
+EXPECTED_BEHAVIOR: >>>
+6 - A prescription with propagated data should be displayed with suggested Energy: 50 and TDF: 95 
+
+7 - TDF and Energy should be propagated as follows: 
+
+Lesion Depth (mm) 
+
+Minimum 
+
+Energy (kV) 
+
+0.0 - 0.5 
+
+0.6 - 1.0 
+
+1.1 - 1.5 
+
+1.6 - 2.0 
+
+2.1 - 2.5 
+
+2.6 - 3.0
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-779
+TITLE: User Login - Show/Hide Password - UI Test Case
+STATEMENT: >>>
+This test case verifies the user login and authentication process. It validates the proper handling of valid and invalid credentials.
+<<<
+STEPS: >>>
+1. Launch the application 
+
+2. Verify that the login page is displayed 
+
+3. Verify that the login form contains: 
+
+o Username field (with user icon) 
+
+o Password field (with lock icon) 
+
+o Password visibility toggle control (e.g. eye icon) 
+
+4. Click on the Username field and enter a username (e.g., "Admin") 
+
+5. Click on the Password field and enter a password (e.g., "password123") 
+
+6. Verify that the password is hidden by default (displayed as dots or asterisks) 
+
+7. Locate the password visibility toggle icon (eye icon) on the right side of the password field 
+
+8. Click the eye icon to show the password 
+
+9. Verify that the password becomes visible and displays the actual typed characters (e.g., "password123") 
+
+10. Verify that the eye icon changes appearance to indicate password is visible (e.g., eye with a slash or different styling) 
+
+11. Click the eye icon again to hide the password 
+
+12. Verify that the password is hidden again (displayed as dots or asterisks) 
+
+13. Verify that the eye icon returns to its original state
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The login page displays correctly with all required fields and controls 
+
+• The password field is present with a lock icon indicator 
+
+• The password visibility toggle control (eye icon) is visible and accessible 
+
+• Password is hidden by default when typed (displays as dots/asterisks) 
+
+• Clicking the eye icon toggles password visibility to show plain text 
+
+• The actual password characters are visible when the show option is active 
+
+• Clicking the eye icon again hides the password back to dots/asterisks 
+
+• The eye icon visual state changes to reflect current visibility status
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-408
+TITLE: Patient - Visits ManagementsPatient - Visits Management - 2
+STATEMENT: >>>
+This test case verifies the functionality and operation of Patient. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Log in to the internal application. 
+
+6. Navigate to the Image Acquisition view from the Patient view. 
+
+7. Press the Acquire button 
+
+8. Exit Image acquisition view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - Open pgAdmin. Query for Visit data. Verify that a visit was created and there is only one visit for the current date. 
+
+Query for Treatment table and verify the created treatment references to this visit. 
+
+8- Open pgAdmin and verify that no new visit was created and series references to the previously created visit.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-150
+TITLE: EMR - Patient's Data Manipulation Audit Trails - (updating First Name) Test Case
+STATEMENT: >>>
+This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details is present in the patient list view or Create a new patient by pressing "New patient" and filing 
+the following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. press the "Save Patient" button 
+
+5. In the patient list view click on the created patient 
+
+6. Click button "Edit Patient" 
+
+7. Change the First name to "NewFirstName" and click Save patient. 
+
+8. Navigate to "Log" tab by pressing "Log" on the left.
+<<<
+EXPECTED_BEHAVIOR: >>>
+8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its First name to 
+"NewFirstName"), including the corresponding patient ID number, and the user who made the change, specifying the user ID number
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-773
+TITLE: Physics - Import configuration from CSV file - Improper formatting in the CSV - UI Test Case
+STATEMENT: >>>
+This test case verifies data import/export functionality. It validates that data can be properly exchanged between the system and external formats.
+<<<
+STEPS: >>>
+1. Click the Physics tab in the application navigation menu 
+
+2. Verify that the Physics configuration interface is displayed 
+
+3. Click on the Import from CSV text field or upload button 
+
+4. Browse and select the CSV file with improper formatting from the filesystem 
+
+5. Attempt to import the file by clicking the upload/import button 
+
+6. Verify that the system validates the CSV file format 
+
+7. Verify that an error alert or message is displayed indicating improper formatting 
+
+8. Verify that the error message provides information about the formatting issue (e.g., "Invalid CSV format", "Missing required 
+
+columns") 
+
+9. Verify that the import process fails and no data is imported into the physics configuration 
+
+10. Verify that existing physics data remains unchanged 
+
+11. Click OK or dismiss the error message 
+
+12. Verify that the user can attempt to import another file
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The system validates CSV file format during the import process 
+
+• The error message clearly indicates that the CSV file has improper formatting 
+
+• The import process fails and does not proceed with improperly formatted data 
+
+• No invalid or partial data is imported into the system 
+
+• Existing physics configuration data remains unchanged and uncorrupted 
+
+• The user can dismiss the error and attempt to import a different file 
+
+• The system prevents data corruption by rejecting improperly formatted files
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-223
+TITLE: EMR: Patient list view - Customizable Columns - (Sex) - Test Case
+STATEMENT: >>>
+This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filling the 
+following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5.Click the empty box in the header of the patients list view (on the right side, next to "Last Visit”) 
+
+6. In the opened check box, uncheck Sex.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The Sex column should not appear in the patients list view; all other checked columns should appear in the patients list view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-347
+TITLE: Patients - Plan View - Add Treatment Fields to a Plan - Energy Level - (Energy in treatment) Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the newly created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+• Site Name: testSite 
+
+• Site Location: Scalp (choose from drop-down menu) 
+
+• Pathology: BCC (choose from drop-down menu) 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*Lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Shield Size [cm]: 1.00 
+
+\*Lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.In the same plan tab, click the "Add" button under "Prescription". 
+
+13. fill 1in the the following details: 
+
+Does Pre Fx [cGy]: 1 
+
+TDF: 94(select from the drop-down menu) 
+
+Fx per week: Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 50 (Select from the drop-down menu) 
+
+14.Click the Save button to save prescription.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The Energy of the added treatment field should match the prescribed energy (e.g., 50kV as specified in the prescription).
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-310
+TITLE: Settings - DB communication Error - (retrieving data) Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message that it has failed to retrieve any setting data due to a communication error with the database.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database, to prevent it from 
+retrieving Settings data. 
+
+Description: Verify that the application presents the user with a warning message that it has failed to retrieve any setting data due to a 
+communication error with the database.
+<<<
+STEPS: >>>
+Test Steps: 
+
+1.Launch and login Heracles internal SW 
+
+2.Create an intended communication error with the database to prevent it from loading Settings data. 
+
+3.Click the Service tab.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application shall present the user with a warning message that it has failed to retrieve any setting data due to a communication error 
+with the database. The pop-up message should enable the user to retry or ignore.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-260
+TITLE: EMR: Patient's Clinical Data View - View Patient Simulation - DB Communication Error - Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message when the retrieval of a patient's simulation fails due to a communication error with the database.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the new created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Sheild Size [cm]: 1.00 
+
+\*lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.Exit the application by navigating the Exit tab and clicking exit. 
+
+13. Re-Launch and login the application. 
+
+14.In the patient tab click the patient you have created earlier. 
+
+15.Create an intended communication error with the database to prevent it from loading simulation data. 
+
+16.Click the Site Name: testSite in the plan tab on the right side.
+<<<
+EXPECTED_BEHAVIOR: >>>
+16.The application shall present the user with a warning message when the retrieval of a patient’s simulation fails due to a communication 
+error with the database. The message should ask the user to retry after a few seconds.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-221
+TITLE: EMR: Patient list view - Customizable Columns - (Last Visit) - Test Case
+STATEMENT: >>>
+This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5.Click the empty box in the header of the patients list view (on the right side, next to "Last Visit”) 
+
+6. In the opened check box, uncheck "Visit".
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The Last Visit column should not appear in the patients list view, all other check columns should appear in the patients list view. 
+
+Observed behavior 
+
+As expected.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-267
+TITLE: EMR: Patient's Clinical Data View - Patient Sites list - DB Communication Error - Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message when the retrieval of a patient's simulation fails due to a communication error with the database.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database, to prevent it from 
+loading Site list data.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the newly created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8. Click the "Save" button. 
+
+9.Exit the application by navigating the Exit tab and clicking exit. 
+
+10. Re-Launch and login the application. 
+
+11.In the patient tab click the patient you have created earlier. 
+
+12.Create an intended communication error with the database to prevent it from
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The application shall present the user with a warning message when retrieving a patient’s site(field) list fails due to a communication 
+
+error with the database. The message should ask the user to retry after a few seconds.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-211
+TITLE: EMR: Clinical view - Patient’s treatment fields Audit Trial - (Add a treatment field) - Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the new created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*Lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Shield Size [cm]: 1.00 
+
+\*Lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.In the same plan tab, click the "Add" button under "Prescription". 
+
+13. File in the following details: 
+
+Does Pre Fx [cGy]: 1 
+
+TDF: 92(select from the drop-down menu) 
+
+Fx per week: Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 10 (Select from the drop-down menu) 
+
+14. At the bottom of the same screen, select treatment field 31 in the visual control representing the connected collimator and select 
+Duration 1. 
+
+15.Click add, to add treatment fields. 
+
+16.Click Save. 
+
+17.Click the "Log" tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The action of adding a new treatment shall appear in the log list view, including the user who executed the action and the time it 
+
+was performed.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-168
+TITLE: EMR: Patients Registration Form - Input Data Integrity - (Empty Date of birth) - Test Case
+STATEMENT: >>>
+This test case verifies input validation and data integrity checks. It ensures that only valid data is accepted by the system.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3.Click the "New Patient" button at the bottom. 
+
+4. On the patient registration form on the right type "test" in the Date of Birth field.
+<<<
+EXPECTED_BEHAVIOR: >>>
+There shall be error message asking the user to enter a valid date in the format: MM/DD/YY
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-313
+TITLE: Calibration - Heater current configuration - (UI) Test Case
+STATEMENT: >>>
+This test case verifies system calibration procedures and parameters. It validates that calibration values are correctly stored and applied.
+<<<
+STEPS: >>>
+1. Click the Calibration tab (on the left panel) 
+
+2. Select collimator type and Energy level. 
+
+3 . Click the Heater Current Configuration
+<<<
+EXPECTED_BEHAVIOR: >>>
+The user interface shall allow users to configure the DAC value for the filament-preheat level, one for each kV.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-300
+TITLE: System Setting View - User Managements - (Delete user) Test Case
+STATEMENT: >>>
+Verify that the application have a user interface that allows admin users to manage the system users. Admin should be able to delete a user.
+<<<
+PREREQUISITES: >>>
+An Admin user account is required
+<<<
+STEPS: >>>
+Test Steps: 
+
+1.Launch and login Heracles internal with Admin user 
+
+2.Click the Setting tab 
+
+3.Click the User Management tab. 
+
+4.Click the New button. 
+
+5.Add the following data in the New user tab: 
+
+First Name: FNameTest 
+
+Last Name: LNameTest 
+
+Password:1234 
+
+Confirm password:1234 
+
+Email address:test@email.com 
+
+6.Click the Save button 
+
+7.Click the new created user in the user management list view 
+
+8.Click the Delete button
+<<<
+EXPECTED_BEHAVIOR: >>>
+The user should be removed from the list,
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-775
+TITLE: Physics - Import configuration from CSV file - UI Test Case
+STATEMENT: >>>
+This test case verifies data import/export functionality. It validates that data can be properly exchanged between the system and external formats.
+<<<
+STEPS: >>>
+1. Click the Physics tab in the application navigation menu 
+
+2. Verify that the Physics configuration interface is displayed 
+
+3. Click on the Import from CSV text field or browse button 
+
+4. Navigate to and select the properly formatted CSV file from the filesystem 
+
+5. Click the upload/import button to initiate the import process 
+
+6. Verify that the system processes the CSV file 
+
+7. Verify that the Magnetometer Corrections - Correction Matrix fields are populated with imported data 
+
+8. Verify that the Magnetometer Corrections - Reference Field fields are populated with imported data 
+
+9. Verify that the Coils section fields are populated with imported data 
+
+10. Verify that the Heater Current [mA] field is populated with the imported value 
+
+11. Verify that the Dose Rate [cGy/Min] field is populated with the imported value 
+
+12. Click the Save button to save the imported configuration 
+
+13. Navigate away and return to the Physics tab to verify data persistence
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Import from CSV control is functional and allows file selection 
+
+• The system successfully processes the properly formatted CSV file 
+
+• All imported data populates the corresponding fields correctly: 
+
+o All 12 Magnetometer Correction Matrix fields are populated 
+
+o All 6 Reference Field values are populated 
+
+o All 3 Coils values (X, Y, Focus) are populated 
+
+o Heater Current value is populated 
+
+o Dose Rate value is populated 
+
+• All imported values match the data in the CSV file 
+
+• The Save button is enabled after import (indicating changes) 
+
+• 
+
+Imported data can be saved successfully 
+
+• All imported and saved data persists after navigation
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-784
+TITLE: Main View - System Status - UI Test
+STATEMENT: >>>
+This test case verifies system status and monitoring capabilities. It validates that system state information is accurately displayed and updated.
+<<<
+STEPS: >>>
+• The application is installed and launched successfully 
+
+• User is logged in with appropriate privileges 
+
+• The system is connected to the applicator hardware and actively receiving telemetry data 
+
+1. Log in to the application with valid credentials 
+
+2. Verify that a System Status panel is visible on the screen (typically on the left or right side) 
+
+3. Verify that the System Status panel displays the following information fields: 
+
+o System status: Current status indicator 
+
+o Energy [kV]: Energy level field 
+
+o Timer [Sec]: Emission time field 
+
+o Emission [mA]: Emission current field 
+
+4. Verify that the System status field displays the current state (e.g., "NoComm", "Ready", "Irradiating", "Error") 
+
+5. Verify that system error indicators are displayed when applicable (e.g., red error icon with "Applicator" message) 
+
+6. Verify that the Energy [kV] field displays the current or configured energy level 
+
+7. Verify that the Timer [Sec] field displays: 
+
+1. "0" or empty when system is idle 
+
+2. Countdown time when system is irradiating 
+
+8. Verify that the Emission [mA] field displays the current emission current value 
+
+9. Navigate to different tabs (Patients, Log, Physics, Settings) 
+
+10. Verify that the System Status panel remains visible on all screens/tabs 
+
+11. Verify that additional status indicators are present: 
+
+o Radiation symbol/icon (visible when applicable) 
+
+o System status message: "System not ready" or "Applicator" with appropriate icon 
+
+o 
+
+Information (i) and settings icons at the bottom 
+
+12. initiate a treatment simulation 
+
+13. Verify that during emission: 
+
+o System status changes to "Irradiating" or equivalent 
+
+o Timer counts down from the prescribed duration 
+
+o Energy [kV] displays the delivery energy 
+
+o Emission [mA] displays the actual emission current 
+
+14. Verify that status updates occur in real-time 
+
+15. Test with system errors (if possible): 
+
+o Disconnect applicator 
+
+o Verify error status is displayed 
+
+o Verify appropriate error messages appear
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The System Status panel is visible and accessible at all times 
+
+• The panel displays four key fields: System status, Energy [kV], Timer [Sec], and Emission [mA] 
+
+• System status field accurately reflects the current system state (NoComm, Ready, Irradiating, Error, etc.) 
+
+• System errors are clearly indicated with appropriate icons and messages 
+
+• Energy level is displayed 
+
+• Timer displays countdown during emission/irradiation 
+
+• Emission current is displayed during active emission 
+
+• The System Status panel persists across all application views and tabs 
+
+• Status information updates in real-time during system operation 
+
+• Visual indicators (radiation symbol, status icons) are present 
+
+• Additional status messages ("System not ready", "Applicator") display when relevant 
+
+• The panel provides clear and immediate feedback about system state 
+
+• All status information is accurate and synchronized with actual system state
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-407
+TITLE: Patient - Visits ManagementsPatient - Visits Management - 1
+STATEMENT: >>>
+This test case verifies the functionality and operation of Patient. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Log in to the application. 
+
+2. Navigate to the patient Simulation tab. 
+
+3. Create a new simulation. 
+
+4. Save Simulation. 
+
+5. Navigate to the Image Acquisition view from the Patient view. 
+
+6. Press the Acquire button 
+
+7. Exit Image acquisition view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - Open pgAdmin. Query for Visit data. Verify that a visit was created and there is only one visit for the current date. 
+
+Query for Simulation Table and verify the created simulation references to this visit. 
+
+7 - Open pgAdmin and verify that no new visit was created and series references to the previously created visit.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-298
+TITLE: System Setting View - Endpoint configuration - Test Case
+STATEMENT: >>>
+This test case verifies the functionality and operation of System Setting View. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Launch and login Heracles internal 
+
+2.Click the Setting tab 
+
+3.Click the Endpoints Configuration tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+The interface shall allow the user to configure the system endpoints to enable communication between system components.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-752
+TITLE: System logs’ view - Layout - Filter Selection UI Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the System logs’ view. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+STEPS: >>>
+1. Click the Log tab in the application navigation menu 
+
+2. Click on the Add Filter button 
+
+3. Verify that a filter selection panel or dropdown opens 
+
+4. 
+
+In the Field drop-down menu choose ‘status’ 
+
+5. 
+
+In the Value drop-down choose Error 
+
+6. Apply the filter 
+
+7. Verify that the log list view displays only entries matching the selected filter (e.g., only "Error" entries shown in red) 
+
+8. Remove all filters 
+
+9. Verify that all log entries are displayed again
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The Add Filter button opens a filter selection interface 
+
+• Available filter options are clearly displayed and selectable 
+
+• Filters can be applied to Status (Info, Error, etc.) 
+
+• Filters can be applied to Type (User, Database, etc.) 
+
+• Single filter correctly narrows down log entries 
+
+• Multiple filters can be applied simultaneously (AND logic) 
+
+• Applied filters are visually indicated in the UI 
+
+• Log list view updates correctly when filters are applied 
+
+• Filters can be removed 
+
+• Removing filters restores the full log view
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-315
+TITLE: EMR: Clinical view - Add Treatment Fields to a plan - Calculate the Emission Current - (70kV) Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1.Launch and login Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing the 
+following details: 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:12345 
+
+4. Click the "Save Patient" button at the bottom of the registration form. 
+
+5. In the patients list view, click twice on the newly created patient. 
+
+6.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+
+7. Fill in the following details: 
+
+Site Name: testSite 
+
+Pathology: testPathology 
+
+8. Click the "Save" button. 
+
+9. In the same plan tab under "Simulation" click the "Add" button. 
+
+10.Fill in the following details for "Simulation": 
+
+\*lesion Size[cm]:1.00 x 1.00 
+
+\*Margin Size[cm]:1.00 
+
+\*Sheild Size [cm]: 1.00 
+
+\*lesion Depth [mm]: 1.00 
+
+\*Position: Prone (Select from the Position drop-down menu) 
+
+\*Device :HeadHolder (select HeadHolder from the drop-down menu) 
+
+11.Click the "Save" button under "Simulation". 
+
+12.In the same plan tab, click the "Add" button under "Prescription". 
+
+13. File in the following details: 
+
+Does Pre Fx [cGy]: 1 
+
+TDF: 92(select from the drop-down menu) 
+
+Fx per week: Select 1 from the drop-down menu. 
+
+Number of Fx: 1 
+
+Energy [kV]: 70 (Select from the drop-down menu) 
+
+14. At the bottom of the same screen, select treatment field 31 in the visual control representing the connect collimator and select Duration 
+
+1. 
+
+15. Click add, to add treatment fields.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The Current should be auto-calculate as the quotient of Power[W] divided by Energy Level[kV] : 
+
+Emission Current[mA] = Power[W] / Voltage[kV] 
+
+Current should appear as 0.71 in the treatment filed list view. 
+
+(The device shall operate at a constant power of 50W)
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-258
+TITLE: EMR: Patient's Registration form - Save button - DB communication error - Test Case
+STATEMENT: >>>
+Verify the presence of a warning message when saving a patient fails due to a communication error with the database. The message should ask the user to retry after few seconds.
+<<<
+PREREQUISITES: >>>
+This test case requires the ability to intentionally create a communication error with the database.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients tab 
+
+3.Create a new patient by pressing "New patient" and filing the following details : 
+
+First Name: FirstNameTest 
+
+Middle Name: MiddleNameTest 
+
+Last Name: LastNameTest 
+
+Sex: Male 
+
+DOB: 01/01/1980 
+
+MRN:77771 
+
+5.Create an intended connection error with the database. 
+
+6.Click on the "Save Patient" button at the bottom of the registration form.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. 
+
+The application shall present the user with a warning message when saving a patient fails due to a communication error with the 
+database. The message should ask the user to retry after few seconds.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-392
+TITLE: Patients - Plan view - Create Site (Field) - Pathology
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Navigate to the patient Simulation tab. 
+
+2. Create a new Field (site). 
+
+3. Locate the Pathology dropdown control on the new site creation form. 
+
+4. Click on the Pathology dropdown to expand it and view the options.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The dropdown should display all the following options: 
+
+BCC 
+
+SCC 
+
+SCC-IS 
+
+Keloid 
+
+Basosquamous
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-757
+TITLE: Patients - Patient List View - Customizable Columns –UI Test Case
+STATEMENT: >>>
+This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
+<<<
+STEPS: >>>
+1. Navigate to the Patients tab. 
+
+1. 
+
+In the patient list view, locate the column selection menu (checkbox control in the table header row). 
+
+1. Click the column selection menu to display the list of available columns. 
+
+1. Uncheck the MRN checkbox. 
+
+1. Verify the patient list updates and the MRN column is no longer displayed. 
+
+1. Re-check the MRN checkbox to make the column visible again. 
+
+1. Uncheck the First Name checkbox. 
+
+1. Verify the patient list updates and the First Name column is hidden. 
+
+1. Re-check the First Name checkbox. 
+
+1. Repeat the same process for the remaining columns: 
+
+1. Middle Name 
+
+1. Last Name 
+
+1. Sex 
+
+1. Date of Birth 
+
+1. Last Visit
+<<<
+EXPECTED_BEHAVIOR: >>>
+• When a column’s checkbox is unchecked, the corresponding column is immediately hidden from the patient list view. 
+
+• When a column’s checkbox is checked, the corresponding column is immediately displayed in the patient list view. 
+
+• The visibility of each column accurately reflects the checkbox state. 
+
+• All columns can be toggled independently.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-415
+TITLE: Quality Assurance - Quality Checks Reports
+STATEMENT: >>>
+This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Quality Checks tab in the Quality Assurance view. 
+
+3. Select Energy 50/70/100 in the Energy drop-down. 
+
+4. Press prepare 
+
+5. Press Start QC 
+
+6. Log in to the application. 
+
+7. Navigate to the Quality Checks tab in the Quality Assurance view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+7 - The Quality Checks result performed using the external application is visible with the intensity data read from the QC panel.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-154
+TITLE: EMR - Patient's Data Manipulation Audit Trails - (updating Sex) Test Case
+STATEMENT: >>>
+This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify that a patient with the following details is present in the patient list view or Create a new patient by pressing "New patient" and filing 
+the following details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. press the "Save Patient" button 
+
+5. In the patient list view click on the created patient 
+
+6. Click button "Edit Patient" 
+
+7. Change the Sex to "Female", by pressing the sex scroll down menu, choosing "Female" and click Save patient. 
+
+8. Navigate to "Log" tab by pressing "Log" on the left. 
+
+Expected behavior 
+
+8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its Sex to "Female"), including 
+the corresponding patient ID number, and the user who made the change, specifying the user ID number.
+<<<
+EXPECTED_BEHAVIOR: >>>
+8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its Sex to "Female"), including 
+the corresponding patient ID number, and the user who made the change, specifying the user ID number.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-305
+TITLE: System Setting View - Targets (Collimators) Management - Register new Collimator - Test Case
+STATEMENT: >>>
+This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
+<<<
+STEPS: >>>
+1. Launch and login Heracles internal 
+
+2.Click the Setting tab 
+
+3.Click the Target Management tab 
+
+4.Click the New Target button
+<<<
+EXPECTED_BEHAVIOR: >>>
+The application should open a register form allowing the user to register a new collimator; 
+
+The user shall be able to set the following parameters: 
+
+Type - The collimator type (Target Type) 
+
+SSD - The collimator SSD 
+
+Energy - The collimator energy 
+
+Active - The collimator will be created active by default.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-157
+TITLE: EMR: Patient's Registration form - cancel button - Test Case
+STATEMENT: >>>
+This test case verifies the cancellation functionality. It validates that operations can be properly cancelled and system state is correctly reverted.
+<<<
+STEPS: >>>
+1. Launch Heracles internal SW 
+
+2. Navigate to the patients’ tab 
+
+3. Click on the "New patient" bottom at the bottom of the patients tab. 
+
+4. Under First Name type "testFirstName". 
+
+4. On the opened new patient form on the right, click the "x"(cancel) button on the top right corner.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4.After clicking the "x" (cancel) button, the new patient registration form should closed. The new patient with the First name " testFirstName" 
+should not appear in the patients list view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-759
+TITLE: User Profile Management - Delete UI Test Case
+STATEMENT: >>>
+This test case verifies the deletion or removal of items from the system. It validates that removal is properly executed and reflected in the application.
+<<<
+STEPS: >>>
+1. Log in to the application as the administrator user 
+
+2. Click the Settings tab in the application navigation menu 
+
+3. Click the User Management tab 
+
+4. Verify that the user list displays both the administrator and non-administrator users 
+
+5. Click on the non-administrator user entry in the user list to select it 
+
+6. Click the Delete button at the bottom of the interface 
+
+7. Verify that a confirmation dialog appears asking to confirm the deletion 
+
+8. Click Confirm or Yes in the confirmation dialog 
+
+9. Verify that the non-administrator user is removed from the user list 
+
+10. Verify that a success confirmation message appears (if applicable) 
+
+11. Verify that only the administrator user remains in the user list (or other users if multiple exist) 
+
+Expected behavior 
+
+• The User Management interface displays all existing users 
+
+• Confirming the deletion removes the user account from the system 
+
+• The user list updates immediately to reflect the deletion 
+
+• The deleted user no longer appears in the user list 
+
+• The deleted user account cannot be used to log in to the system
+<<<
+EXPECTED_BEHAVIOR: >>>
+• The User Management interface displays all existing users 
+
+• Confirming the deletion removes the user account from the system 
+
+• The user list updates immediately to reflect the deletion 
+
+• The deleted user no longer appears in the user list 
+
+• The deleted user account cannot be used to log in to the system
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-169
+TITLE: EMR: Patients Registration Form - Input Data Integrity - (ID/MRN test with character behavior) - Test Case
+STATEMENT: >>>
+This test case verifies input validation and data integrity checks. It ensures that only valid data is accepted by the system.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3.Click the "New Patient" button at the bottom. 
+
+4. On the patient registration form on the right type "test" in the MRN/ID field.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4.There shall be error message asking the user to enter only digits or dashes.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-264
+TITLE: EMR: Patient's Clinical Data View - Save Patient Plan - DB Communication Error - Test Case
+STATEMENT: >>>
+Verify that the application presents the user with a warning message when saving a new plan fails due to a communication error with the database
+<<<
+PREREQUISITES: >>>
+A patient with an existing simulation.
+<<<
+STEPS: >>>
+1. Launch Heracles internal SW 
+
+2. Navigate to the patient’s tab 
+
+3. Navigate to the "Simulation" tab in the patient record. 
+
+4. 
+
+Click Add, to add Prescription fields. 
+
+5. Create an intended communication error with the database to prevent it from saving a new patient's treatment plan (Shutdown 
+
+database service). 
+
+6. Click the save button to save the new plan. 
+
+7. Restore the DBService 
+
+8. Click Retry.
+<<<
+EXPECTED_BEHAVIOR: >>>
+6 - The application shall present the user with a warning message when saving a patient’s plan fails due to a communication error with the 
+database. The message should ask the user to retry after a few seconds. 
+
+8 - The retry should succeed, and the new data should be saved.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-136
+TITLE: EMR: Edit patient demographic data - (Edit Last Name)
+STATEMENT: >>>
+This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3. Verify if a patient with the following details exists in the system or create a new patient by pressing "New patient" and filling the following 
+details: 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:12345 
+
+4. Press on the patient created in the list, it should be highlighted. 
+
+5. Press "Edit patient" button at the bottom. 
+
+5. On the edit box on the right, update the Last Name to "UpdatedLastName" 
+
+6. Press "Save Patient" at the bottom of the edit box.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The updated patient’s Last name should appear as "UpdatedLastName" in the patients list.
+<<<
+
+[TEST_CASE]
+UID: TC-H10SG-164
+TITLE: EMR: Patients Registration - patient already exist error - Test Case
+STATEMENT: >>>
+This test case verifies the handling of errors and faults in the system. It ensures appropriate responses to error conditions.
+<<<
+STEPS: >>>
+1.Launch Heracles internal SW 
+
+2.Navigate to the patients’ tab 
+
+3.Create a new patient by pressing "New patient" and filing the following details : 
+
+• First Name: FirstNameTest 
+
+• Middle Name: MiddleNameTest 
+
+• Last Name: LastNameTest 
+
+• Sex: Male 
+
+• DOB: 01/01/1980 
+
+• MRN:77771 
+
+4.Click on the "Save Patient" button at the bottom of the registration form. 
+
+5.Verify the new created patient appears in the patient list view. 
+
+6.Repeat steps 3 and 4, with the same data.
+<<<
+EXPECTED_BEHAVIOR: >>>
+6.The application shall display an error message saying the patient already exists.
+<<<
+
+[[/SECTION]]

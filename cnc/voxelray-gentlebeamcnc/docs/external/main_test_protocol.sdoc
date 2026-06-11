@@ -1,0 +1,1900 @@
+[DOCUMENT]
+TITLE: Heracles External GUI SW Verification Test Protocol
+UID: DHF-HRC-0047-TP
+METADATA:
+  COMPONENT: heracles-external-gui
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+This document provides the verification test protocol and execution results of the External GUI SW for the Heracles system. It defines the test cases that are used to verify the compliance of the software with the Heracles External GUI SW Verification Plan and Software Requirements Specification.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document details all regression test cases for the Verification testing activities of Heracles External GUI Software. Each test case is designed to verify specific functional, interface, and usability requirements of the system, including treatment control, quality assurance, and operational workflows.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+Firmware
+
+SDP
+Software Development Plan
+
+SVP
+Software Verification Plan
+
+SW
+Software
+
+GUI
+Graphical User Interface
+
+QA
+Quality Assurance
+
+DB
+Database
+
+GCB
+Grid Control Board
+
+HVPS
+High Voltage Power Supply
+
+MCU
+Microcontroller Unit
+
+LED
+Light Emitting Diode
+
+PID
+Proportional Integral Derivative
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+Heracles SDP - DHF-HRC-0001 Rev. 2
+
+Heracles SVP - DHF-HRC-0003 Rev. 2
+
+Heracles External GUI SRS - DHF-HRC-0007 Rev. 3
+
+Heracles Software Architecture Description - DHF-HRC-0004 Rev. 2
+
+Heracles External GUI Verification Protocol - DHF-HRC-0047 Rev. 2
+
+Heracles External GUI Verification Execution Report - DHF-HRC-0048 Rev. 2
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: TC-H10TG-
+TITLE: Test Cases
+
+[TEST_CASE]
+UID: TC-H10TG-58
+TITLE: Treatment Console - Radiation Emission Control - Prepare process - Test Case
+STATEMENT: >>>
+Verify the user interface layout of the application accurately reflects the system's status and button labels during the treatment preparation process.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1 - The interface should display the following states: 
+
+System status: COLD 
+
+Button Label: Prepare 
+
+3 - The interface should display the following states: 
+
+System status: WARMUP 
+
+Button's label: Warming up ( with progress bar) 
+
+then System status: HVSetup ( On Loading) 
+
+Upon completion of the preparation process: 
+
+System status: READY
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-121
+TITLE: Quality Assurance - Daily Warmup
+STATEMENT: >>>
+This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Startup Cycle tab in the Quality Assurance view. 
+
+3. Press Warmup.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - The warmup process is performed, and a new record is added to the warmup report.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-62
+TITLE: Radiation Emission Control - Emission Error Indicator - Test Case
+STATEMENT: >>>
+This test case aims to verify the application displays a visible indicator for an emission error in the system.
+<<<
+PREREQUISITES: >>>
+1)Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery 
+
+5. 
+
+.Introduce a deliberate error in the firmware (e.g., trigger an e-stop interlock) .
+<<<
+EXPECTED_BEHAVIOR: >>>
+A visible indicator is displayed to indicate a system error.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-98
+TITLE: Treatment View - Patient Details - Test Case
+STATEMENT: >>>
+This test case aims to verify that the treatment console displays details about the treated patient and its treated site. The patient details shall include the following: • Patient's full name • MRN • Patient DOB • Field Name • Dose to be delivered • Applicator Size • Field/Shield Size • Devices • Setup Notes ( Simulation notes)
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment from the internal unit.
+<<<
+STEPS: >>>
+1.Launch Heracles External 
+
+2.Click the Treatment tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+The treatment console shall display details about the treated patient and its treated site. 
+
+The patient details shall includes all required data
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-101
+TITLE: Treatment View - Telemetry - No communication to GCB indication - (UI) Test Case
+STATEMENT: >>>
+This test case aims to verify that the telemetry controls provide a clear indication when there is no communication with the GCB.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in Heracles Internal unit 
+
+This test case requires the capability to generate a communication error with the GCB
+<<<
+STEPS: >>>
+1.Launch Heracles External 
+
+2.Click the Treatment tab 
+
+3.Generate a deliberate communication error with the GCB
+<<<
+EXPECTED_BEHAVIOR: >>>
+The telemetry controls shall provide a clear indication that there is no communication with the GCB. 
+
+The System Status shall show - NO-COMM 
+
+Timers, Energy, and Current shall show - ~0 ( around 0)
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-114
+TITLE: Quality Assurance - Daily Warmup - Error Indicator
+STATEMENT: >>>
+This test case verifies the handling of errors and faults in the system. It ensures appropriate responses to error conditions.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Startup Cycle tab in the Quality Assurance view. 
+
+3. Press Warmup. 
+
+4. 
+
+Simulate error ( i.e. activate interlock)
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - Error indicator should be displayed on the view, and the user can click on it and see the error.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-295
+TITLE: Resume Uncompleted Treatment Alert
+STATEMENT: >>>
+This test case verifies that the application alerts the operator if the loaded plan was not completely delivered and enables the operator to choose to deliver the remaining plan.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Press the stop button 
+
+6. Unload the plan 
+
+7. Log in to the Internal application. 
+
+8. Navigate to the treatment view. 
+
+9. Load the plan into the external application. 
+
+10. Go to the External application. 
+
+11. Press the Prepare button to prepare the treatment.
+<<<
+EXPECTED_BEHAVIOR: >>>
+5 - The emission process should be stopped, and the status should become primed. 
+
+6 - The plan should be unloaded and removed from the UI. 
+
+11 - An alert message should be displayed informing the user that the treatment was not delivered completely and it will resume the 
+emission for the remaining time.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-131
+TITLE: Treatment View - Alert for uncompleted Daily Safety checks - 2
+STATEMENT: >>>
+This test case verifies that appropriate alerts are displayed to the user when system conditions warrant notification. It validates the alert presentation and timing.
+<<<
+STEPS: >>>
+1. log in to the External application. 
+
+2. Navigate to the Safety Checks tab in the Quality Assurance view. 
+
+3. Check all toggles ( toggle to green option) except for the door interlock and Save Quality checks. 
+
+4. Navigate back to the treatment view. 
+
+5. Press the Prepare button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+5 - An alert message pops up, advising the user that the treatment is not enabled if the daily safety checks are not completed.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-152
+TITLE: Treatment View - Load a Treatment Plan
+STATEMENT: >>>
+This test case verifies the loading of treatment plans into the system. It validates that all plan parameters are correctly loaded and displayed.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Validate the plan parameters against the plan in the internal application. 
+
+4. Press Prepre 
+
+5. Press Beam-on
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - Verify that energy in the telemetry panel is ramping up to the energy of the plan. 
+
+5 - Verify that when emission is completed, the timer has reached the plan’s duration
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-285
+TITLE: Quality Assurance - Audit users' actions
+STATEMENT: >>>
+This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Beam QA Checks tab in the Quality Assurance view. 
+
+3. Select Energy 50/70/100 in the Energy drop-down. 
+
+4. Press prepare 
+
+5. Press Beam-On to Start QC
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - The action of QualityCheck triggered by the user is logged.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-116
+TITLE: Treatment View - Error Handling Received From Record and verify (DB)
+STATEMENT: >>>
+This test case verifies proper error handling and reporting. It validates that appropriate error messages are displayed and logged when system errors occur.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Stop the Record and Verify docker in the internal system during the emission. 
+
+6. Go to Log view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+6 - An error about the DB communication lost during emission should be displayed in the log list.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-80
+TITLE: Warm-Up - Log Performed Warm Up - Test Case
+STATEMENT: >>>
+This test case verifies the system warmup and initialization process. It validates that the system is properly prepared for operation and all parameters are initialized.
+<<<
+STEPS: >>>
+1. Launch Heracles SW External. (The external unit should be located outside the treatment room). 
+
+2. Click the Prepare button. 
+
+3. Click the Reset button 
+
+4. Click the QC tab 
+
+5. Click the Daily Warm-Up tab 
+
+1. Go to Log tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. There shall be a log of all (Full and Fast) warm-ups performed during the system's lifetime. 
+
+Test being executed 
+
+TC-H10TG-80-#14 
+
+Warm-Up - Log Performed 
+Warm Up - Test Case 
+
+13.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-65
+TITLE: Treatment Console - Telemetry - (System status) - Test Case
+STATEMENT: >>>
+This test case verifies system status and monitoring capabilities. It validates that system state information is accurately displayed and updated.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1 - The interface should display the following states: 
+
+System status: COLD 
+
+3 - The interface should display the following steps: 
+
+System status: WARMUP 
+
+then System status: HVSetup ( On Loading) 
+
+Upon completion of the preparation process: 
+
+System status: READY 
+
+4 - The interface should display the following steps: 
+
+System status: Emission 
+
+Upon completion of the process: 
+
+System status: Primed
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-104
+TITLE: Treatment View - Operational Point Emission Progress indicators - (Layout) Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the Treatment View. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The button label should transition to "Launching", and subsequently to "Beaming on" with a progress bar.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-294
+TITLE: Users Authorization
+STATEMENT: >>>
+This test case verifies user authorization and access control. It validates that users can only access features they have permission to use.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Quality Assurance view. 
+
+3. Observe existing tabs.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2 - The Physics tab should not be available.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-293
+TITLE: Physics View - Emission Process
+STATEMENT: >>>
+This test case verifies radiation emission control and safety. It validates that emission parameters are correctly managed and safety limits are enforced.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Physics tab in the Quality Assurance view. 
+
+3. Select the connected applicator size from the Applicator Size dropdown menu. 
+
+4. Select the Energy level of the connected collimator. 
+
+5. Enter duration of 10 sec. 
+
+6. Press the Prepare button. 
+
+7. Press Beam On button
+<<<
+EXPECTED_BEHAVIOR: >>>
+6 - The interface should display the following states: 
+
+System status: WARMUP 
+
+Button's label: Warming up ( with progress bar) 
+
+then System status: HVSetup ( On Loading) 
+
+Upon completion of the preparation process: 
+
+System status: READY 
+
+7 - The button label should transition to "Launching", and subsequently to "Beaming on" with a progress bar. 
+
+System status at the top of the screen should be "Emission". 
+
+Upon completion, a pop-up message should be displayed to confirm successful emission.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-292
+TITLE: Users Authorization
+STATEMENT: >>>
+This test case verifies user authorization and access control. It validates that users can only access features they have permission to use.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Observe the left panel menu.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2 - The Treatment menu item should not be available.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-124
+TITLE: Treatment View - Warmup Progress Monitoring
+STATEMENT: >>>
+This test case verifies the system warmup and initialization process. It validates that the system is properly prepared for operation and all parameters are initialized.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - Verify that the button shows the progress of the warmup process.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-46
+TITLE: Treatment Console - Radiation Emission Control - Beam On process - Test Case
+STATEMENT: >>>
+This test case verifies the functionality and status transitions of the Heracles External GUI during a treatment plan execution. To ensure that the system responds correctly to user interactions.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - The button label should transition to "Launching", and subsequently to "Beaming on" with a progress bar. 
+
+System status at the top of the screen should be "Emission". 
+
+Upon completion, a pop-up message should be displayed to confirm successful delivery. 
+
+Upon approving the pop-up, the system status should change to "Termination" and the Energy level should go down to 0. 
+
+6 - The button label should revert to "Beam On", and the system status should update to "Primed".
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-136
+TITLE: Quality Assurance - Perform Quality Checks - Intesity
+STATEMENT: >>>
+This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Beam QA Checks tab in the Quality Assurance view. 
+
+3. Select Energy 50/70/100 in the Energy drop-down. 
+
+4. Press prepare 
+
+5. Press Beam-On to Start QC 
+
+6. Toggle to report view
+<<<
+EXPECTED_BEHAVIOR: >>>
+6 - The table shows the intensities measured for the selected Applicator, Energy level performed on a specific date.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-142
+TITLE: Treatment View - Treatment Plan Execution Condition - 2
+STATEMENT: >>>
+This test case verifies treatment plan execution and delivery. It validates that treatments are properly executed according to plan specifications.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Observe the Prepare and Beam-On accessibility.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - The Prepare and Beam-On button should be disabled, and the operator can not activate emission
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-149
+TITLE: Treatment View - Treatment Plan Confirmation
+STATEMENT: >>>
+This test case verifies treatment plan operations and management. It ensures that treatment plans are properly created, modified, and applied.
+<<<
+STEPS: >>>
+White box testing: 
+
+1. Open xcc solution in an IDE ( Visual Studio or VSCode). 
+
+2. Search for SendOperationalPoints function
+<<<
+EXPECTED_BEHAVIOR: >>>
+2 - verify that this function is being called with operation = confirmation for each operational point before starting a plan.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-78
+TITLE: Enable window switching after emission delivery - (unlock layout) Test Case
+STATEMENT: >>>
+Verify that the layout unlocks when the emission is completed, allowing navigation to other tabs.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Click the Log tab 
+
+6. Upon completion of the emission, approve the confirmation pop-up. 
+
+7. Click the Log tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The user should be able to navigate to Log view. 
+
+2. The layout should be unlocked so the user can navigate to all views.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-112
+TITLE: Treatment View - Reset Timers and Unload Plan after Treatment is Completed
+STATEMENT: >>>
+This test case verifies the loading of treatment plans into the system. It validates that all plan parameters are correctly loaded and displayed.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Wait until the plan is delivered and the pop-up appears. 
+
+6. Press ok button
+<<<
+EXPECTED_BEHAVIOR: >>>
+5. A pop message should be displayed informing the user that the emission is finished and by pressing the OK button, the timers will be 
+reset and the plan will unload. 
+
+6. The timers in the telemetry block will show 0, and the plan will disappear from the view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-118
+TITLE: Treatment View - Emission audible indicator
+STATEMENT: >>>
+This test case verifies radiation emission control and safety. It validates that emission parameters are correctly managed and safety limits are enforced.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - There should be a plus of half a second on/off audible sound.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-100
+TITLE: Quality Assurance - Quality Checks Reports - (UI) Test Case
+STATEMENT: >>>
+This test case is designed to verify that the application provide the operator with an interface displaying the history of quality test results.
+<<<
+PREREQUISITES: >>>
+Conduct quality checks within the system prior to conducting this test
+<<<
+STEPS: >>>
+Test Steps: 
+
+1.Launch Heracles External 
+
+2.Click the Quality Assurance tab 
+
+3.Inside the Quality Assurance tab, click the Quality Checks tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+The interface shall display the history of quality test results. 
+
+The results will include the current and the intensity for each operational point. 
+
+The operator will be able to filter the results by the collimator type, energy level, and the date the test was performed.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-102
+TITLE: Quality Assurance - Daily Warmup - Inspect Errors - Test Case
+STATEMENT: >>>
+This test case aims to verify that the user can view errors that occurred during daily warmup.
+<<<
+PREREQUISITES: >>>
+Intentionally create errors ( e.g., interlocks) during Daily Warmup
+<<<
+STEPS: >>>
+1.Launch Heracles External 
+
+2.Click the Quality Assurance tab 
+
+3.Inside the Quality Assurance tab, click the Daily Warmup tab 
+
+4.Click the error indicator
+<<<
+EXPECTED_BEHAVIOR: >>>
+
+4.The user shall be able to view the errors that occurred .
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-144
+TITLE: Treatment View - Treatment Plan Execution Condition - 4
+STATEMENT: >>>
+This test case verifies treatment plan execution and delivery. It validates that treatments are properly executed according to plan specifications.
+<<<
+STEPS: >>>
+1. log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Activate E-Stop interlock
+<<<
+EXPECTED_BEHAVIOR: >>>
+3- The Prepare and Beam-On button should be disabled, and the operator can not activate emission
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-70
+TITLE: Treatment Console - Restrict window switching after Prepare - Test Case
+STATEMENT: >>>
+Verify that the user is unable to switch to other views after pressing the “Prepare” button. The treatment tab should remain locked.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Click the Log tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The user should be able to navigate to the Log view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-148
+TITLE: Treatment View - Confirmation of Treatment Plan
+STATEMENT: >>>
+This test case verifies treatment plan operations and management. It ensures that treatment plans are properly created, modified, and applied.
+<<<
+STEPS: >>>
+White box testing: 
+
+1. Open the xcc solution in an IDE ( Visual Studio or VSCode). 
+
+2. Search for SendOperationalPoints is called.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2 - Verify that the command is sent after the plan is staged and the state is GcbStateNew.Staged
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-81
+TITLE: Treatment Console - Radiation Emission Control - Resume Beam On process after error is cleared - Test Case
+STATEMENT: >>>
+Verify that the Resume button correctly resumes emission from the latest operational point and remaining time after an clearing an error.
+<<<
+PREREQUISITES: >>>
+1)Create treatment field with duration of 12 Seconds and Load a plan for treatment in the Heracles Internal unit . 
+
+2) The ability to intentionally create an error in the system.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. After 8 seconds (check elapsed time), create an intended error in the system (e.g., activate the e-stop) 
+
+6. Observe the error 
+
+7. Click the Clear Error button 
+
+8. Click the Resume button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+When the resume process is triggered, the emission should resume for the remaining duration (4 Seconds).
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-132
+TITLE: Treatment View - Alert for uncompleted Daily Safety checks - 3
+STATEMENT: >>>
+This test case verifies that appropriate alerts are displayed to the user when system conditions warrant notification. It validates the alert presentation and timing.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Safety Checks tab in the Quality Assurance view. 
+
+3. Check all toggles ( toggle to green option) except for the normal stop and Save Quality checks. 
+
+4. Navigate back to the treatment view. 
+
+5. Press the Prepare button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+5 - An alert message pops up, advising the user that the treatment is not enabled if the daily safety checks are not completed.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-60
+TITLE: Radiation Emission Control - Record partial treatment - Test Case
+STATEMENT: >>>
+This test case verifies radiation emission control and safety. It validates that emission parameters are correctly managed and safety limits are enforced.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. 
+
+Click the Stop button (during the beaming process) 
+
+6. Click to approve the pop-up message indicating that the beaming has stopped 
+
+7. Open the Internal application. 
+
+8. Open the Treatment tab of the treated patient and locate the recorded treatment.
+<<<
+EXPECTED_BEHAVIOR: >>>
+A partial treatment record should appear in the treatment table.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-130
+TITLE: Treatment View - Alert for uncompleted Daily Safety checks - 1
+STATEMENT: >>>
+This test case verifies that appropriate alerts are displayed to the user when system conditions warrant notification. It validates the alert presentation and timing.
+<<<
+STEPS: >>>
+1. log in to the External application. 
+
+2. Navigate to the Safety Checks tab in the Quality Assurance view. 
+
+3. Check ( toggle to green option) all toggles except e-Stop and Save Quality checks. 
+
+5. Navigate back to the treatment view. 
+
+6. Press the Prepare button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+6 - An alert message pops up, advising the user that the treatment is not enabled if the daily safety checks are not completed.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-141
+TITLE: Treatment View - Treatment Plan Execution Condition - 1
+STATEMENT: >>>
+This test case verifies treatment plan execution and delivery. It validates that treatments are properly executed according to plan specifications.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Observe the Prepare and Beam-On accessibility.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - The Prepare and Beam-On button should be disabled, and the operator can not activate emission
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-145
+TITLE: Treatment View - Treatment Plan Staging - 1
+STATEMENT: >>>
+This test case verifies treatment plan operations and management. It ensures that treatment plans are properly created, modified, and applied.
+<<<
+STEPS: >>>
+White box testing: 
+
+1. Open xcc solution in an IDE ( Visual Studio or VSCode). 
+
+2. Search where GcbStateNew.Primed is used.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2 - Verify that it is used as a condition for staging the treatment
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-151
+TITLE: Treatment View - Initialize the System
+STATEMENT: >>>
+This test case verifies the functionality and operation of Treatment View. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Restart the machine (gcb) 
+
+2. Observe the system status as it restarts.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2 - Verify that the status changed from Startup to Cold.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-44
+TITLE: Treatment Console - Radiation Emission Control - Layout - Test Case
+STATEMENT: >>>
+This test case verifies the layout and user interface components of the Treatment Console. It validates that all UI elements are properly displayed and arranged according to specifications.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit. 
+
+Verify the existence of an interface through which the user can initiate radiation delivery in accordance with a predefined treatment plan.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2 - The layout of the main (treatment) view includes the following: 
+
+A table listing the treatment fields of the plan. 
+
+System telemetry view including: System status, Main timer (in seconds), Backup Timer 1 (in seconds), Backup Timer 2 (in seconds), 
+Energy (in KV), Current (in mA). 
+
+Action panel: 
+
+• Prepare button 
+
+• Beam on 
+
+• Stop button 
+
+Interlock icon 
+
+System Signal icon 
+
+Live Camera view to monitor the patient.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-289
+TITLE: Keyboard Adjustable Position
+STATEMENT: >>>
+This test case verifies the functionality and operation of Keyboard Adjustable Position. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Press the keyboard icon in the bottom-right corner. 
+
+3. Adjust the position of the keyboard by pressing the arrows on the frame
+<<<
+EXPECTED_BEHAVIOR: >>>
+The keyboard position should be changed according to the selected arrow.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-126
+TITLE: Treatment View - Error Handling Received From Firmware
+STATEMENT: >>>
+This test case verifies proper error handling and reporting. It validates that appropriate error messages are displayed and logged when system errors occur.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Activate some interlock ( e.g., E-stop) . 
+
+5. Open Log viewer
+<<<
+EXPECTED_BEHAVIOR: >>>
+5 - Verify that the error from FW is logged in the system log.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-69
+TITLE: Treatment Console - Radiation Emission Control - Stopped Emission Info Pop Up - Test Case
+STATEMENT: >>>
+Verify that upon pressing the stop button, an informative pop-up message is displayed, indicating that the emission has been halted. Ensure the layout and UI elements function correctly.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Press the Beam-On button to trigger emission delivery. 
+
+6. Press the Stop button to stop the emission.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. After the user presses the stop button, an information pop-up message shall indicate that the emission has been halted.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-133
+TITLE: Treatment View - Alert for uncompleted Daily Safety checks - 4
+STATEMENT: >>>
+This test case verifies that appropriate alerts are displayed to the user when system conditions warrant notification. It validates the alert presentation and timing.
+<<<
+STEPS: >>>
+1. log in to the External application. 
+
+2. Navigate to the Safety Checks tab in the Quality Assurance view. 
+
+3. Check all toggles ( toggle to green option) except for the X-ray light, X-ray sound, live video stream, and Save Quality checks. 
+
+4. Navigate back to the treatment view. 
+
+5. Press the Prepare button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+5 - The Prepare process starts.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-143
+TITLE: Treatment View - Treatment Plan Execution Condition - 3
+STATEMENT: >>>
+This test case verifies treatment plan execution and delivery. It validates that treatments are properly executed according to plan specifications.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Activate Base Key interlock
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - The Prepare and Beam-On button should be disabled, and the operator can not activate emission
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-79
+TITLE: Enable window switching after emission delivery - (unload a plan) - Test Case
+STATEMENT: >>>
+Verify that the layout unlocks correctly and that the Clear button unloads the Plan.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1.Launch Heracles SW External . (The external unit should be located outside the treatment room). 
+
+2.Click the Prepare button. 
+
+3.Click the Beam On button. 
+
+4.Upon completion of the emission, Approve confirmation.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The plan should be unloaded and view should be cleared
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-150
+TITLE: Treatment View - Filament Conditioning
+STATEMENT: >>>
+This test case verifies the functionality and operation of Treatment View. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+White box testing: 
+
+1. Open xcc solution in an IDE ( Visual Studio or VSCode). 
+
+2. Search for the Conditioning function.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2 - verify that the application checks that the input Conditioning function is within the valid operational limits.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-59
+TITLE: Treatment Console - Radiation Emission Control - Emission Progress indicators - Test Case
+STATEMENT: >>>
+This test case verifies radiation emission control and safety. It validates that emission parameters are correctly managed and safety limits are enforced.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery.
+<<<
+EXPECTED_BEHAVIOR: >>>
+\*There shall be an X-ray exposure timer indicating the elapsed emission time. 
+
+\*There shall be a visual indicator, a progress bar, representing the progress of radiation.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-111
+TITLE: Quality Assurance - Perform System Safety Checks
+STATEMENT: >>>
+This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+<<<
+STEPS: >>>
+1. log in to the External application. 
+
+2. Navigate to the Quality Assurance view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Toggle the buttons ( combine success and fail ( red and green) 
+
+1. Press the save button. 
+
+2. 
+
+Toggle to report
+<<<
+EXPECTED_BEHAVIOR: >>>
+5 - The user can toggle the button to green ( success) or red ( failure) 
+
+7 - Make sure the result is saved and displayed in the report.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-153
+TITLE: Treatment View - Plan details view
+STATEMENT: >>>
+This test case verifies treatment plan operations and management. It ensures that treatment plans are properly created, modified, and applied.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2- Validate that plan treatment against the plan loaded from the internal application. Validate all parameters for the treatment: 
+
+• Energy level [kVp]. 
+
+• Duration [sec]. 
+
+• Current [mA]. 
+
+• Actual is 0 
+
+• Remaining equal to duration
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-64
+TITLE: Radiation Emission Control - Clear Fault Flags - Test case
+STATEMENT: >>>
+This test case verifies the handling of errors and faults in the system. It ensures appropriate responses to error conditions.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery 
+
+5. 
+
+.Introduce a deliberate error in the firmware (e.g., trigger an e-stop interlock) . 
+
+6. Fix the error ( open the E-Stop button) 
+
+7. Press Clear Error.
+<<<
+EXPECTED_BEHAVIOR: >>>
+5 - When the device transitions to FAULT mode, an option (button) shall be available in the interface to clear fault flags. 
+
+7 - After clearing the error and pressing the button, the fault condition is reset, and the error disappears.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-135
+TITLE: Quality Assurance - Perform Quality Checks - Deviation
+STATEMENT: >>>
+This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Beam QA Checks tab in the Quality Assurance view. 
+
+3. Select Energy 50/70/100 in the Energy drop-down. 
+
+4. Press prepare 
+
+5. Press Beam-On to Start QC 
+
+6. Toggle to report view 
+
+7. Select Applicator Size and Energy Level as performed in previous steps. 
+
+8. Select reference QC result ( The reference is marked with [ref] label in the performed dropdown) 
+
+9. Observe Intensity results 
+
+10. Select the Last QC result (The last QC is the first item in the Performed dropdown) 
+
+11. Observe the Intensity result. 
+
+12. Select Deviation 
+
+13. Observe the Intensity deviation result. 
+
+14. Calculate the deviation of the last result from the reference result.
+<<<
+EXPECTED_BEHAVIOR: >>>
+
+14 - The table shows the deviation from the intensities of the reference QC for the selected Applicator, Energy level.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-113
+TITLE: Treatment View - Plan details view
+STATEMENT: >>>
+This test case verifies treatment plan operations and management. It ensures that treatment plans are properly created, modified, and applied.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2 - The application displays the following data in the plan detail: 
+
+The Treatment Plan parameters: Energy level [kVp], Duration [sec], Current [mA], Actual duration [sec] 
+
+Remaining duration [sec].
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-77
+TITLE: Treatment Console - Restrict window switching during active emission - Test Case
+STATEMENT: >>>
+Verify that the user can not navigate to any view during the emission process.
+<<<
+PREREQUISITES: >>>
+Load a treatment plan in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Click the Log tab
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The user should be able to navigate to Log view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-288
+TITLE: Prevent Treatment Initiation for Unapproved Failed QC Tests
+STATEMENT: >>>
+This test case verifies that the system properly prevents or restricts certain operations. It validates that access control and business logic constraints are correctly enforced.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Log in to the Internal application. 
+
+5. Navigate to the Quality Assurance view. 
+
+6. Approve the latest QC test. 
+
+7. Log in to the External application. 
+
+8. Navigate to the treatment view. 
+
+9. Press the Prepare button to prepare the treatment.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - An error message appears, alerting the user that the treatment cannot be delivered because the most recent QC test failed. 
+
+9 - After approving the QC test, the prepare button is successfully triggered and the treatment can be delivered.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-103
+TITLE: Quality Assurance - Daily Warmup - Clear Errors - (UI) Test Case
+STATEMENT: >>>
+This test case aims to verify that the application provides a control that allows the user to clear latched fault flags that occurred during the daily (Full) Warmup process.
+<<<
+PREREQUISITES: >>>
+Intentionally create Daily Warmup errors in the system prior to conducting this test
+<<<
+STEPS: >>>
+1.Launch Heracles External 
+
+2.Click the Quality Assurance tab 
+
+3.Inside the Quality Assurance tab, click the Daily Warmup tab 
+
+4.Click the the Clear Error button
+<<<
+EXPECTED_BEHAVIOR: >>>
+It should Clear latched fault flags that occurred during the daily (Full) Warmup process. 
+
+This capability will allow the application to reset fault conditions after the fault is addressed or reviewed.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-296
+TITLE: Resume Uncompleted Treatment
+STATEMENT: >>>
+This test case verifies that the application enables the operator to resume an uncompleted treatment.
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Press the stop button 
+
+6. Unload the plan 
+
+7. Log in to the Internal application. 
+
+8. Navigate to the treatment view. 
+
+9. Load the plan into the external application. 
+
+10. Go to the External application. 
+
+11. Press the Prepare button to prepare the treatment. 
+
+12. Press Beam on.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The emission process should be stopped, and the status should become primed. 
+
+6 - The plan should be unloaded and removed from the UI. 
+
+11 - An alert message should be displayed informing the user that the treatment was not delivered completely and it will resume the 
+emission for the remaining time. 
+
+12 - The emission should run for the remining time.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-120
+TITLE: Quality Assurance - Daily Warmup - Progress Monitoring
+STATEMENT: >>>
+This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Startup Cycle tab in the Quality Assurance view. 
+
+3. Press Warmup.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - Verify that the warmup button shows the progress of the warmup process.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-63
+TITLE: Radiation Emission Control - Retrieve and Display Fault Information from Firmware - Test Case
+STATEMENT: >>>
+This test case verifies the user interface and user experience of the application by ensuring that, upon clicking the error indicator, the user is presented with detailed fault information when the device transitions to FAULT mode.
+<<<
+PREREQUISITES: >>>
+1)Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery 
+
+5. 
+
+.Introduce a deliberate error in the firmware (e.g., trigger an e-stop interlock) . 
+
+6. Click the Error indicator
+<<<
+EXPECTED_BEHAVIOR: >>>
+Upon the user's clicking the error indicator, a pop-up view should be displayed presenting detailed fault information. 
+
+This information shall include: 
+
+• The type of fault occurrence. 
+
+• The state in which the fault occurred. 
+
+• A comparison of the expected versus the actual conditions that triggered the fault.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-115
+TITLE: Treatment View - Record Emission Data Failure
+STATEMENT: >>>
+This test case verifies radiation emission control and safety. It validates that emission parameters are correctly managed and safety limits are enforced.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Stop the Record and Verify docker in the internal system during the emission.
+<<<
+EXPECTED_BEHAVIOR: >>>
+5 - An error message should be displayed about the DB communication error during emission.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-108
+TITLE: Quality Assurance - Perform System Safety Checks - Save Results
+STATEMENT: >>>
+This test case verifies the save functionality. It validates that data is properly persisted when save operations are executed.
+<<<
+STEPS: >>>
+1. log in to the External application. 
+
+2. Navigate to the Safety Checks tab in the Quality Assurance view. 
+
+3. Change the toggle state of a few safety options ( e.g., X-ray light, X-ray sound) 
+
+3. Press Save button 
+
+4. toggle to Safety Checks report
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - The safety Checks table shows the safety checks toggle state you have chosen and saved. 
+
+4 - The date is the current date, and the performed-by shows the logged-in user.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-99
+TITLE: Quality Assurance - System Safety Checks Reports - Test Case
+STATEMENT: >>>
+This test case is design to verify that the application provide the operator with an interface to display the history of test results which includes the following system safety features: X-Ray light, X-Ray sound, door interlock, e-stop, normal stop, live video stream, and live audio stream between the patient and operator.
+<<<
+PREREQUISITES: >>>
+Perform System Safety Checks which includes the following system safety features: X-Ray light, X-Ray sound, door 
+interlock, e-stop, normal stop, live video stream, and live audio stream between the patient and operator.
+<<<
+STEPS: >>>
+1.Launch Heracles External 
+
+2.Click the Quality Assurance tab 
+
+3.Inside the Quality Assurance tab, click the Safety Checks tab.
+<<<
+EXPECTED_BEHAVIOR: >>>
+
+The interface should display the history of test results which includes the following system safety features: X-Ray light, X-Ray sound, door 
+interlock, e-stop, normal stop, live video stream, and live audio stream between the patient and operator.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-287
+TITLE: Prevent a Treatment When There Is No Approved Physics Data
+STATEMENT: >>>
+This test case verifies that the system properly prevents or restricts certain operations. It validates that access control and business logic constraints are correctly enforced.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment.
+<<<
+EXPECTED_BEHAVIOR: >>>
+An error message appears, alerting the user that the treatment cannot be delivered without approved physics data.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-117
+TITLE: Treatment View - Plan details view - DB communication error
+STATEMENT: >>>
+This test case verifies the handling of errors and faults in the system. It ensures appropriate responses to error conditions.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Stop the Record and Verify docker in the internal system during the emission. 
+
+3. Navigate to the treatment view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - An error message should be displayed about the DB communication error.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-140
+TITLE: Treatment View - Safety Interlocks
+STATEMENT: >>>
+This test case verifies system safety checks and interlocks. It ensures that safety protocols are properly enforced and system safety constraints are maintained.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press on the interlock button on the right button corner.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - Verify that all the following interlocks are visible: 
+
+• Applicator 
+
+• Remote Key 
+
+• Door 
+
+• Base E-Stop 
+
+• Remote E-Stop 
+
+• Timer #1 
+
+• Timer #2 
+
+• Water Level 
+
+• Head 
+
+• HVPS 
+
+• Cooler Alarm 
+
+• Watchdog 
+
+• 
+
+Ion pump
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-129
+TITLE: Treatment View - Prevent Treatment if the Daily Safety checks is not completed
+STATEMENT: >>>
+This test case verifies that the system properly prevents or restricts certain operations. It validates that access control and business logic constraints are correctly enforced.
+<<<
+STEPS: >>>
+1. log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button. 
+
+4. Navigate to the Safety Checks tab in the Quality Assurance view. 
+
+5. Save Quality checks with all toggles set to green. 
+
+6. Navigate back to the treatment view. 
+
+7. Press the Prepare button.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 An alert message pops up, advising the user that the treatment is not enabled if the daily safety checks are not completed. 
+
+7 - The Prepare process starts.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-109
+TITLE: Treatment View - Audit user's actions
+STATEMENT: >>>
+This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
+<<<
+STEPS: >>>
+1. log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+3. Press the Stop button to trigger stop emission.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - The action of preparation is shown in the log view. 
+
+4 - The action of beaming on is shown in the log view. 
+
+5 - The stop action is shown in the log view.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-290
+TITLE: Physics View - Load collimator physics data
+STATEMENT: >>>
+This test case verifies the functionality and operation of Physics View. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Physics tab in the Quality Assurance view. 
+
+3. Select the connected applicator size from the Applicator Size dropdown menu. 
+
+4. Select the Energy level of the connected collimator. 
+
+5. Enter duration of 10 sec. 
+
+6. Observe X Coil, Y Coil, Focus, and Heater current value
+<<<
+EXPECTED_BEHAVIOR: >>>
+6 - Validate that the values loaded are the ones configured in the physics configuration ( in the internal application)
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-147
+TITLE: Treatment View - Perform System Warmup in COLD State
+STATEMENT: >>>
+This test case verifies the system warmup and initialization process. It validates that the system is properly prepared for operation and all parameters are initialized.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Physics tab in Quality Assurance view. 
+
+3. Select Plan parameters: ( e.g., Applicator Size: 1.5, Energy: 50, Duration: 60). 
+
+4. Press Prepre 
+
+5. Validate that System Status changes to Warmup and then becomes Ready at the end of the prepare ( after laoding phase) . VSetup 
+
+6. Clear Plan 
+
+7. Verify that the status becomes Primed. 
+
+8. Press Prepare ( make sure that the status is still Primed) 
+
+9. Observe System Status.
+<<<
+EXPECTED_BEHAVIOR: >>>
+System status becomes HVSetup, without going through Warmup and Energy is ramped up.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-127
+TITLE: Treatment View - Record Delivered Dose
+STATEMENT: >>>
+This test case verifies the functionality and operation of Treatment View. It validates that the component behaves according to specifications and system requirements.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Log in to the Internal application. 
+
+6. Navigate to the Treatment tab in the Patient view. 
+
+7.
+<<<
+EXPECTED_BEHAVIOR: >>>
+The delivered dose is recorded and displayed in the table.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-291
+TITLE: Allow Quality Checks with Dedicated Collimator only
+STATEMENT: >>>
+This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the Beam QA Checks tab in the Quality Assurance view.
+<<<
+EXPECTED_BEHAVIOR: >>>
+A message should be displayed alerting the user that QC cannot be performed without a QC collimator.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-128
+TITLE: Treatment View - Patient Monitoring
+STATEMENT: >>>
+This test case verifies system status and monitoring capabilities. It validates that system state information is accurately displayed and updated.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - Verify that the camera shows the camera view located on the base of the device.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-50
+TITLE: Treatment Console - Radiation Emission Control - Stop Emission - Test Case
+STATEMENT: >>>
+Verify that the application provides a stop control that allows the user to terminate radiation emissions immediately
+<<<
+PREREQUISITES: >>>
+Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery. 
+
+5. Press the Stop button to stop the emission. 
+
+6. Click to approve the pop-up message indicating that the beaming has stopped.
+<<<
+EXPECTED_BEHAVIOR: >>>
+
+6 - 
+
+• The emission should stop. 
+
+• The emission visual indicator should become gray. 
+
+• The emission audible indicator should stop. 
+
+• The timers should stop. 
+
+• System status shall change to: Staged
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-125
+TITLE: Treatment View - Resume Prepare process after the error is cleared
+STATEMENT: >>>
+This test case verifies the handling of errors and faults in the system. It ensures appropriate responses to error conditions.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Simulate a system error (e.g. activate interlock) 
+
+5. Press clear error.
+<<<
+EXPECTED_BEHAVIOR: >>>
+5 - After the error is cleared, the Prepare button can be re-triggered and complete the process.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-51
+TITLE: Treatment Console - Radiation Emission Control - Emission visible indicator - Test Case
+STATEMENT: >>>
+This test case is designed to verify the presence and correct display of visual indicator in the interface during the emission process. It ensures that an amber-colored radiation icon is visible for the entire duration of emission, confirming the proper functioning of the UI layout element.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery.
+<<<
+EXPECTED_BEHAVIOR: >>>
+There shall be a visible visual indicator in the interface for the entire duration of emission, appearing as an amber-colored radiation icon.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-123
+TITLE: Treatment View - Treatment Fields Emission Progress indicators
+STATEMENT: >>>
+This test case verifies radiation emission control and safety. It validates that emission parameters are correctly managed and safety limits are enforced.
+<<<
+STEPS: >>>
+1. Log in to the External application. 
+
+2. Navigate to the treatment view. 
+
+3. Press the Prepare button to prepare the treatment. 
+
+4. Press the Beam-On button to trigger emission delivery.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - A visual indicator is displayed in the table to reflect the emission progress.
+<<<
+
+[[/SECTION]]
