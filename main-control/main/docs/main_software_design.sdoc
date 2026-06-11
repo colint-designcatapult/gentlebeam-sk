@@ -99,7 +99,219 @@ TITLE: High Level System Architecture
 
 [TEXT]
 STATEMENT: >>>
-See source document DHF-HRC-0096 for the high-level system architecture diagram.
+.. raw:: html
+
+    <pre class="mermaid">
+    graph TD
+
+        BootApp[Bootloader App]
+        PC[PC Application]
+
+        Interlocks[Interlocks]
+        LEDs[LEDs]
+        Indicator[Indicator Board]
+
+        Head[Head Board]
+        HVPS[HVPS]
+        Peltier[Peltier Cooler]
+
+        Timers[External Timers]
+        Cooling[Cooling]
+        Coils[Coils]
+
+        subgraph Main_Control
+            SM[State Machine]
+            GPIO[GPIO]
+            UART[UART]
+            I2C[I2C/SPI]
+            ADC[Ext ADC/DAC]
+            BootFlash[Bootloader / Flash]
+
+            SM --- GPIO
+            SM --- UART
+            SM --- I2C
+            I2C --> ADC
+            BootFlash -.- SM
+        end
+
+        BootApp --> Main_Control
+
+        PC -->|USB| Main_Control
+        PC -->|ETH / LWIP| Main_Control
+        Main_Control -->|ETH / LWIP| PC
+
+        GPIO --> Interlocks
+        GPIO --> LEDs
+        GPIO --> Indicator
+
+        UART --> Head
+        UART --> HVPS
+        UART --> Peltier
+
+        I2C --> Timers
+        ADC --> Cooling
+        ADC --> Coils
+    </pre>
+<<<
+
+[TEXT]
+STATEMENT: >>>
+.. raw:: html
+
+    <pre class="mermaid">
+    graph TD
+
+      %% Top states
+      Startup(["Startup"])
+      Crash(["Crash<br/>disable HV<br/>disable emission<br/>set outputs to 0<br/>stop cooler/pumps<br/>stop indicators"])
+
+      %% Core states
+      Cold(["Cold<br/>disable HV<br/>disable emission<br/>outputs to 0<br/>stop cooling"])
+      Conditioning(["Conditioning<br/>verify estops<br/>set heater<br/>start cooling"])
+      Warmup(["Warmup<br/>enable fast warmup<br/>set heater<br/>start cooling"])
+      WarmupFault(["Warmup Fault<br/>heater = 0<br/>stop cooling"])
+
+      Fault(["Fault<br/>disable HV<br/>disable emission<br/>shutdown outputs"])
+      ColdFault(["Cold Fault<br/>disable HV<br/>outputs to 0"])
+
+      %% Plan pipeline
+      Primed[[Primed]]
+      Staging[[Staging]]
+      Staged[[Staged]]
+
+      %% Execution pipeline
+      HVPSCheck(["HVPS Check<br/>disable HV<br/>disable emission"])
+      Setup(["Setup<br/>enable HV<br/>set KV / grid / coils"])
+      Ready(["Ready<br/>emission disabled"])
+      Launching(["Launching<br/>emission disabled"])
+      Emission(["Emission<br/>emission enabled"])
+      Termination(["Termination<br/>shutdown safely"])
+
+      %% Discharge
+      Discharge(["Discharge<br/>HV off<br/>outputs = 0"])
+
+      %% Startup transitions
+      Startup --> Cold
+      Crash --> Cold
+
+      %% Cold transitions
+      Cold -->|PC CONDITION| Conditioning
+      Cold -->|PC WARMUP| Warmup
+      Cold -->|FAULT| ColdFault
+      Cold -->|PC WIPE PLAN| Cold
+      Cold -->|PC STOP| Cold
+
+      %% Conditioning
+      Conditioning -->|HVPS SP REACHED| Primed
+      Conditioning -->|FAULT| Cold
+
+      %% Warmup
+      Warmup -->|HVPS SP REACHED| Primed
+      Warmup -->|FAULT| WarmupFault
+
+      WarmupFault --> Cold
+
+      %% Fault handling
+      Fault --> Cold
+      ColdFault --> Cold
+
+      %% Plan handling
+      Primed -->|PC NEW SESSION| Staging
+      Staging -->|PC FINISH STAGE| Staged
+      Staging -->|PC WIPE PLAN| Cold
+
+      Staged -->|PC RELEASE PLAN| HVPSCheck
+
+      %% HVPS / Setup
+      HVPSCheck -->|Check done| Setup
+      Setup -->|HVPS SP REACHED| Ready
+
+      %% Ready → emission flow
+      Ready -->|PC RELEASE POINT| Launching
+      Launching -->|HVPS SP REACHED| Emission
+
+      %% Emission loop
+      Emission -->|OP COMPLETE| Ready
+
+      %% Stop / termination
+      Ready -->|PC STOP| Termination
+      Emission -->|PC STOP| Termination
+      Launching -->|PC STOP| Termination
+
+      Termination --> Cold
+
+      %% Discharge path
+      Ready -->|PC STANDBY| Discharge
+      Discharge --> Cold
+
+    </pre>
+<<<
+
+[TEXT]
+STATEMENT: >>>
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        participant User
+        participant Internal_GUI
+        participant External_GUI
+        participant GUI_Either
+        participant Boards
+        participant HVPS
+
+        GUI_Either->>Boards: Initialize (startup only)
+
+        alt Conditioning required
+            GUI_Either->>Internal_GUI: Conditioning required
+            Internal_GUI->>GUI_Either: Condition request
+            GUI_Either->>Boards: Condition (setpoint)
+
+            Boards->>HVPS: Ramp heater to conditioning setpoint
+            HVPS-->>Boards: Filament feedback (setpoint reached)
+            Boards->>HVPS: Ramp heater down to 0
+            Boards-->>GUI_Either: Returned to COLD state
+        end
+
+        User->>Internal_GUI: Create plan and load
+        Internal_GUI->>External_GUI: Send plan information
+        External_GUI-->>User: Plan loaded
+
+        User->>External_GUI: Execute treatment (prepare)
+        External_GUI->>Boards: Warmup (setpoint)
+
+        Boards->>HVPS: Ramp heater to warmup setpoint
+        HVPS-->>Boards: Filament feedback (setpoint reached)
+        Boards-->>External_GUI: Warmup complete (PRIMED)
+
+        External_GUI->>Boards: New session command
+        Boards-->>External_GUI: Session ID (STAGING)
+
+        loop foreach operational point
+            External_GUI->>Boards: Send point info
+        end
+
+        External_GUI->>Boards: Stage plan command
+        Boards-->>External_GUI: Plan staged (STAGED)
+
+        loop foreach operational point
+            External_GUI->>Boards: Confirm point info
+        end
+
+        External_GUI->>Boards: Release plan command
+
+        Boards->>HVPS: Ramp HV
+        HVPS-->>Boards: HV ramp feedback (HV reached)
+        Boards-->>External_GUI: READY state
+
+        External_GUI-->>User: Ready to start emission
+        User->>External_GUI: Start emission
+        External_GUI->>Boards: Release point command
+
+        loop foreach operational point
+            Boards->>HVPS: Run emission
+        end
+    </pre>
 <<<
 
 [[/SECTION]]

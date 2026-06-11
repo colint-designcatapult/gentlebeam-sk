@@ -96,7 +96,22 @@ TITLE: High Level System Architecture
 
 [TEXT]
 STATEMENT: >>>
-See source document DHF-HRC-0105 for the high-level system architecture diagram.
+.. raw:: html
+
+    <pre class="mermaid">
+    flowchart LR
+
+    PC["Main Control Bootloader<br/>PC Application"]
+
+    subgraph BL["Main Control Bootloader<br/>Firmware"]
+        USB["USB"]
+    end
+
+    FLASH[(Main Control Flash Memory)]
+
+    PC --> USB
+    BL --> FLASH
+    </pre>
 <<<
 
 [[/SECTION]]

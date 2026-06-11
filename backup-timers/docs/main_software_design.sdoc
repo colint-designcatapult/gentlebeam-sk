@@ -96,7 +96,23 @@ TITLE: High Level System Architecture
 
 [TEXT]
 STATEMENT: >>>
-See source document DHF-HRC-0096 for the high-level system architecture diagram.
+.. raw:: html
+
+    <pre class="mermaid">
+    flowchart LR
+
+    FW["Main Control Firmware"]
+
+    subgraph ET["External Timer"]
+        direction TB
+        I2C["I2C Interface"]
+    end
+
+    DebugLED["Debug LED"]
+
+    FW <--> I2C
+    ET --> DebugLED
+    </pre>
 <<<
 
 [[/SECTION]]

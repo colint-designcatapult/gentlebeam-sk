@@ -97,7 +97,45 @@ TITLE: High Level System Architecture
 
 [TEXT]
 STATEMENT: >>>
-See source document DHF-HRC-0096 for the high-level system architecture diagram.
+.. raw:: html
+
+   <pre class="mermaid">
+   flowchart TB
+
+    FW["Main Control<br/>Firmware"]
+    EEPROM["EEPROM"]
+
+    subgraph HI["Head Interface"]
+
+        GPIO["GPIO"]
+        PROC["Processing"]
+        ADC["ADC"]
+        SPI["SPI"]
+        UART["UART"]
+        I2C["I2C"]
+
+        GPIO --- PROC
+        PROC --- ADC
+
+        SPI --- PROC
+        UART --- PROC
+        I2C --- PROC
+    end
+
+    SPI <--> EEPROM
+    UART <--> FW
+
+    Lasers <-- GPIO
+    Interlocks --> GPIO
+    Buttons --> GPIO
+
+    Magnetometers --> I2C
+    I2C --> LEDRing["LED Ring"]
+
+    ADC <--> Temp["Temperature<br/>Sensor"]
+    ADC <--> Pressure["Pressure<br/>Sensor"]
+    ADC <--> Flow["Flow<br/>Sensor"]
+   </pre>
 <<<
 
 [[/SECTION]]
