@@ -508,11 +508,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : IO_PB_ZEROG_Pin */
-  GPIO_InitStruct.Pin = IO_PB_ZEROG_Pin;
+  /*Configure GPIO pins : IO_PB_ZEROG_Pin IO_Ready_Pin */
+  GPIO_InitStruct.Pin = IO_PB_ZEROG_Pin|IO_Ready_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(IO_PB_ZEROG_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : IO_LASER_CTRL_Pin */
   GPIO_InitStruct.Pin = IO_LASER_CTRL_Pin;
