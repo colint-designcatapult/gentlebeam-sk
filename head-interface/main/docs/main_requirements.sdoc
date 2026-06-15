@@ -190,13 +190,4 @@ The head interface firmware shall be able to read and report x-ray sensor data f
 when a quality check collimator is mounted
 <<<
 
-[REQUIREMENT]
-UID: RQ-H1FHI-55
-TYPE: Safety
-TITLE: Robot Hand Guidance Button
-STATEMENT: >>>
-The head interface firmware shall monitor the activity state of the hand guidance button and pass
-it to the robotic arm controller
-<<<
-
 [[/SECTION]]

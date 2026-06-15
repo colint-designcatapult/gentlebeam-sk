@@ -217,6 +217,9 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FHI-13
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-53
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FHI-27
@@ -419,6 +422,17 @@ time has expired, the LED interface moves onto the next frame of the current pat
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FHI-6
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-39
+TITLE: Quality Control (QC)
+STATEMENT: >>>
+Two external ADCs capture X-ray sensor data from two diodes when a quality-check collimator is installed. The firmware periodically reads both ADCs, which share the same I²C bus but have different addresses despite being the same model. It alternates between the two devices, retrieves their conversion data, and forwards the results to the main control board, which then sends the data to the PC for quality analysis.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-53
   ROLE: Refines
 
 [[/SECTION]]
