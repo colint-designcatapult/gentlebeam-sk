@@ -1,6 +1,7 @@
 #ifndef SENSUSSRC_CONTROL_COMM_H_
 #define SENSUSSRC_CONTROL_COMM_H_
 
+#include "main.h"
 
 #define CC_FIELD_SIZE	5
 #define CC_SYNC_VAL		0xFF

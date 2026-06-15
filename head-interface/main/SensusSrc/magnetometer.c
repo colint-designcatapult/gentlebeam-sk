@@ -9,9 +9,6 @@
 #include "timer.h"
 #include "sys_data.h"
 
-#define USE_LIS2MDL
-//#define USE_LIS3MDL
-
 #define USE_CHAINED_MAG 1
 
 

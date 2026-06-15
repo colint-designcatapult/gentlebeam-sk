@@ -1,7 +1,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include "stm32f4xx_hal.h"
-#include "main.h"
 
 #include "sys_data.h"
 #include "control_comm.h"

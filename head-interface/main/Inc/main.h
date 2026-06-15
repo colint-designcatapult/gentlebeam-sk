@@ -132,6 +132,8 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 
+//#defined CALIBRATION_MODE
+
 typedef enum
 {
     IO_READY_STATE_NOT_READY = 0,

@@ -2,6 +2,7 @@
 #define SENSUSSRC_SYS_DATA_H_
 
 #include <stdbool.h>
+#include "main.h"
 #include "magnetometer.h"
 
 //#define MAG_CAL 1
