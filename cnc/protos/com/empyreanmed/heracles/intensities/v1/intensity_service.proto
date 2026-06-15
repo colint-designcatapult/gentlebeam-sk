@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.intensities.v1;
+
+import "com/empyreanmed/heracles/intensities/v1/intensity.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// The IntensityService defines the operations for managing intensity entities.
+// This includes creating, retrieving, updating, and deleting intensity records.
+service IntensityService {
+  // Retrieves a list of intensity entities based on provided filters.
+  rpc ListIntensities(ListIntensitiesRequest) returns (ListIntensitiesResponse);
+
+  // Fetches details of a specific intensity entity by ID.
+  rpc GetIntensity(GetIntensityRequest) returns (GetIntensityResponse);
+
+  // Creates a new intensity entity and returns the created record.
+  rpc CreateIntensity(CreateIntensityRequest) returns (CreateIntensityResponse);
+
+  // Updates an existing intensity entity based on the provided details and update mask.
+  rpc UpdateIntensity(UpdateIntensityRequest) returns (UpdateIntensityResponse);
+
+  // Deletes a specific intensity entity identified by its ID.
+  rpc DeleteIntensity(DeleteIntensityRequest) returns (DeleteIntensityResponse);
+}
+
+// Request message for listing intensity entities.
+message ListIntensitiesRequest {
+  // Filters the results by the ID of the associated qcsample_field.
+  optional int64 qcsample_fields_id = 1;
+}
+
+// Response message containing the list of intensity entities.
+message ListIntensitiesResponse {
+  // The list of intensity entities matching the filter criteria.
+  repeated Intensity intensities = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for retrieving a single intensity entity.
+message GetIntensityRequest {
+  // The unique identifier of the intensity entity to retrieve.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message containing the details of a specific intensity entity.
+message GetIntensityResponse {
+  // The intensity entity corresponding to the requested ID.
+  Intensity intensity = 1;
+}
+
+// Request message for creating a new intensity entity.
+message CreateIntensityRequest {
+  // The details of the intensity entity to create.
+  optional Intensity intensity = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message containing the details of the newly created intensity entity.
+message CreateIntensityResponse {
+  // The intensity entity that was created.
+  Intensity intensity = 1;
+}
+
+// Request message for updating an existing intensity entity.
+message UpdateIntensityRequest {
+  // The updated details of the intensity entity.
+  optional Intensity intensity = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The field mask indicating the fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message containing the details of the updated intensity entity.
+message UpdateIntensityResponse {
+  // The intensity entity after the update.
+  Intensity intensity = 1;
+}
+
+// Request message for deleting a specific intensity entity.
+message DeleteIntensityRequest {
+  // The unique identifier of the intensity entity to delete.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message confirming the deletion of an intensity entity.
+message DeleteIntensityResponse {}

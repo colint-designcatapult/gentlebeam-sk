@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.roles.v1;
+
+import "com/empyreanmed/heracles/roles/v1/role.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// RoleService handles CRUD operations for roles in the system.
+service RoleService {
+  // Lists all roles available.
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+
+  // Retrieves a single role by its ID.
+  rpc GetRole(GetRoleRequest) returns (GetRoleResponse);
+
+  // Creates a new role record.
+  rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+
+  // Updates an existing role record by ID.
+  rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
+
+  // Deletes a role record by ID.
+  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+}
+
+// Request message for listing roles.
+message ListRolesRequest {}
+
+// Response containing the list of roles.
+message ListRolesResponse {
+  // The roles matching the list request.
+  repeated Role roles = 1;
+
+  // A token that can be used for pagination to retrieve next page of results.
+  optional string next_page_token = 2;
+}
+
+// Request message for retrieving a single role by ID.
+message GetRoleRequest {
+  // The ID of the role to be retrieved.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response containing the single role record.
+message GetRoleResponse {
+  // The role object matching the requested ID.
+  Role role = 1;
+}
+
+// Request message for creating a new role.
+message CreateRoleRequest {
+  // The role record to be created.
+  optional Role role = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response after creating a new role.
+message CreateRoleResponse {
+  // The newly created role object.
+  Role role = 1;
+}
+
+// Request message for updating an existing role.
+message UpdateRoleRequest {
+  // The role object with updated fields.
+  optional Role role = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Field mask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response containing the updated role object.
+message UpdateRoleResponse {
+  // The updated role record after applying changes.
+  Role role = 1;
+}
+
+// Request message for deleting a role by ID.
+message DeleteRoleRequest {
+  // The unique ID of the role to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response confirming deletion of the specified role (empty).
+message DeleteRoleResponse {}

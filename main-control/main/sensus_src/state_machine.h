@@ -1,0 +1,80 @@
+/*
+*	Empyrean Medical Systems
+*	08/2018
+*	Project: Gryphon System Control Firmware
+*	Module: Control state machine
+*	Author: Carlton Chow
+*	Description:
+*/
+
+
+#ifndef STATE_MACHINE_H_
+#define STATE_MACHINE_H_
+
+#define MAX_EVENT_QUEUE_SIZE	50
+#define PRIMED_STANDBY_TICKS	3000
+#define FAULT_STANDBY_TICKS		1800
+#define STANDBY_TICKS			1200
+
+typedef enum xMode
+{
+	MODE_SERVICE = 0,
+	MODE_NORMAL,
+	MODE_DEMO,
+	MODE_CALIBRATION,
+	MODE_UNKNOWN = 0xFFFFFFFF	//Unknown mode, force uint32_t size
+} XMode;
+
+typedef enum xState
+{
+	STATE_STARTUP = 0,		//0
+	STATE_COLD,
+	STATE_COLD_FAULT,
+	STATE_CONDITIONING,
+	STATE_WARMUP,			//4
+	STATE_WARMUP_FAULT,
+	STATE_PRIMED,
+	STATE_STAGING,
+	STATE_STAGED,			//8
+	STATE_HVPS_CHECK,
+	STATE_SETUP,
+	STATE_READY,
+	STATE_LAUNCHING,		//12
+	STATE_EMISSION,
+	STATE_TERMINATION,
+	STATE_DISCHARGE,
+	STATE_FAULT,			//16
+	STATE_SYSTEM_CRASH,
+	NUM_SYSTEM_STATES,
+	STATE_UNKNOWN = 0xFFFFFFFF	//Unknown state, force uint32_t size
+} XState;
+
+typedef enum eventType
+{
+	EVENT_FAULT = 0,
+	EVENT_STARTUP_INIT,
+	EVENT_PC_CONDITION,
+	EVENT_PC_WARMUP,
+	EVENT_PC_NEW_SESSION,
+	EVENT_PC_WIPE_PLAN,
+	EVENT_PC_FINISH_STAGE,
+	EVENT_PC_RELEASE_PLAN,
+	EVENT_PC_RELEASE_POINT,
+	EVENT_PC_STOP,
+	EVENT_PC_STANDBY,
+	EVENT_PC_RESET_TIMERS,
+	EVENT_PC_CLEAR_FAULT,
+	EVENT_HVPS_CHECK,
+	EVENT_HVPS_SP_REACHED,
+	EVENT_OP_COMPLETE,
+	EVENT_ENTER_BOOTLOADER,
+	EVENT_CLEAR_PULSE_DONE,
+	NUM_EVENT_TYPES
+} EventType;
+
+void init_state_machine();
+void queue_sm_event(EventType ev);
+void process_state_machine();
+
+
+#endif /* STATE_MACHINE_H_ */

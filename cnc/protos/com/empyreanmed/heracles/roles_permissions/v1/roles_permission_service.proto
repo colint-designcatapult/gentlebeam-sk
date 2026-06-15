@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.roles_permissions.v1;
+
+import "com/empyreanmed/heracles/roles_permissions/v1/role_permission.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// RolesPermissionsService handles pivot records linking roles and permissions.
+service RolesPermissionsService {
+  // Lists role-permission links in the system.
+  rpc ListRolesPermissions(ListRolesPermissionsRequest) returns (ListRolesPermissionsResponse);
+
+  // Retrieves a single role-permission link by role_id and permission_id.
+  rpc GetRolesPermissions(GetRolesPermissionsRequest) returns (GetRolesPermissionsResponse);
+
+  // Creates a new role-permission link.
+  rpc CreateRolesPermissions(CreateRolesPermissionsRequest) returns (CreateRolesPermissionsResponse);
+
+  // Updates an existing role-permission link.
+  rpc UpdateRolesPermissions(UpdateRolesPermissionsRequest) returns (UpdateRolesPermissionsResponse);
+
+  // Deletes a role-permission link by composite key.
+  rpc DeleteRolesPermissions(DeleteRolesPermissionsRequest) returns (DeleteRolesPermissionsResponse);
+}
+
+// Request for listing role-permission links.
+message ListRolesPermissionsRequest {
+  // Filter results by parent's ID.
+  optional int64 role_id = 1;
+}
+
+// Response containing an array of roles-permissions links.
+message ListRolesPermissionsResponse {
+  // The collection of roles_permissions pivot records.
+  repeated RolesPermissions roles_permissions = 1;
+
+  // A token for retrieving the next page of results.
+  optional string next_page_token = 2;
+}
+
+// Request for retrieving a single role-permission link.
+message GetRolesPermissionsRequest {
+  // The ID of role permission in the pivot record.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID of the permission in the pivot record.
+  optional int64 permission_id = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response containing the requested role-permission link.
+message GetRolesPermissionsResponse {
+  // The roles_permissions pivot object matching the request.
+  RolesPermissions roles_permissions = 1;
+}
+
+// Request for creating a role-permission link.
+message CreateRolesPermissionsRequest {
+  // The pivot record for associating a role with a permission.
+  optional RolesPermissions roles_permissions = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response containing the newly created role-permission link.
+message CreateRolesPermissionsResponse {
+  // The roles_permissions pivot record that was created.
+  RolesPermissions roles_permissions = 1;
+}
+
+// Request for updating an existing role-permission link.
+message UpdateRolesPermissionsRequest {
+  // The pivot record with updated fields.
+  optional RolesPermissions roles_permissions = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The field mask specifying which fields to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response after updating the role-permission link.
+message UpdateRolesPermissionsResponse {
+  // The updated roles_permissions pivot object.
+  RolesPermissions roles_permissions = 1;
+}
+
+// Request for deleting a role-permission link by composite key.
+message DeleteRolesPermissionsRequest {
+  // The ID of the role permission in the pivot.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response confirming deletion of the pivot record (empty).
+message DeleteRolesPermissionsResponse {}

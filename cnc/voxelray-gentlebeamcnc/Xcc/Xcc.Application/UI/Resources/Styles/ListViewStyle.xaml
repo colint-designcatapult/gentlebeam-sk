@@ -1,0 +1,215 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Constants.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/BaseStyle.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+    
+    
+    <Style x:Key="LeftScrollViewer" TargetType="{x:Type ScrollViewer}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition SharedSizeGroup="ScrollBarColumn" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        
+                        <ScrollContentPresenter CanContentScroll="{TemplateBinding CanContentScroll}" />
+
+                        <ScrollBar 
+                            x:Name="PART_VerticalScrollBar"
+                            Grid.Column="1"
+                            Value="{TemplateBinding VerticalOffset}"
+                            Maximum="{TemplateBinding ScrollableHeight}"
+                            ViewportSize="{TemplateBinding ViewportHeight}"
+                            Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+
+                        <ScrollBar 
+                            x:Name="PART_HorizontalScrollBar"
+                            Grid.Row="1"
+                            Orientation="Horizontal"
+                            Value="{TemplateBinding HorizontalOffset}"
+                            Maximum="{TemplateBinding ScrollableWidth}"
+                            ViewportSize="{TemplateBinding ViewportWidth}"
+                            Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TableListView" TargetType="{x:Type ListView}">
+        <Setter Property="Background" Value="{StaticResource BlockBackgroundColor}"/>
+        <Setter Property="SelectionMode" Value="Single"/>
+        <Setter Property="Border.CornerRadius" Value="{StaticResource BlockCornerRadius}"/>
+        <Setter Property="AlternationCount" Value="2"/>
+        <Setter Property="Grid.IsSharedSizeScope" Value="True"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
+        <Setter Property="VirtualizingPanel.IsContainerVirtualizable" Value="True"/>
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListView">
+                    <Border 
+                        CornerRadius="{Binding Path=(Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" 
+                        Background="{TemplateBinding Background}">
+                        
+                        <Grid Margin="0,0,0,16" Grid.IsSharedSizeScope="True">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid ShowGridLines="False">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition SharedSizeGroup="ScrollBarColumn"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border 
+                                    Background="{StaticResource PatientsListHeaderBackgroundColor}"
+                                    CornerRadius="{StaticResource BlockTopCornerRadius}"
+                                    Grid.ColumnSpan="2"/>
+
+                                <!--Table header row. Should be defined in the Tag property as DataTemplate-->
+                                <ContentControl 
+                                    ContentTemplate="{TemplateBinding Tag}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                    IsTabStop="False"/>
+                            </Grid>
+                                
+                            <ScrollViewer Grid.Row="1" Style="{StaticResource LeftScrollViewer}" IsTabStop="False">
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Setter Property="ItemContainerStyle">
+            <Setter.Value>
+                <Style TargetType="{x:Type ListViewItem}">
+                    <Setter Property="Foreground" Value="{StaticResource ForegroundDefaultBrush}"/>
+                    <Setter Property="IsTabStop" Value="False"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ListViewItem}">
+                                <Grid x:Name="Row">
+                                    <ContentPresenter
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                </Grid>
+
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="ItemsControl.AlternationIndex"  Value="0">
+                                        <Setter TargetName="Row" Property="Background" Value="{StaticResource PatientFieldEvenBackgroundColor}" />
+                                    </Trigger>
+                                    <Trigger Property="ItemsControl.AlternationIndex"  Value="1">
+                                        <Setter TargetName="Row" Property="Background" Value="{StaticResource PatientFieldOddBackgroundColor}" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="true">
+                                        <Setter Property="Foreground" Value="{StaticResource ForegroundSelectedBrush}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TableListViewRoundedTopOnly" TargetType="{x:Type ListView}" BasedOn="{StaticResource TableListView}">
+         <Setter Property="Border.CornerRadius" Value="{StaticResource BlockTopCornerRadius}"/>
+    </Style>
+    
+    
+    
+    
+    <Style x:Key="ListViewMatrixStyle" TargetType="{x:Type ListView}">
+        <Setter Property="SelectionMode" Value="Single"/>
+        <Setter Property="Grid.IsSharedSizeScope" Value="True"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
+        <Setter Property="VirtualizingPanel.IsContainerVirtualizable" Value="True"/>
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
+        <Setter Property="KeyboardNavigation.TabNavigation" Value="Continue"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListView">
+                    <Grid Margin="0,0,0,16" Grid.IsSharedSizeScope="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid ShowGridLines="False" Height="40">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition SharedSizeGroup="ScrollBarColumn"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!--Table header row. Should be defined in the Tag property as DataTemplate-->
+                            <ContentControl 
+                                IsTabStop="False"
+                                ContentTemplate="{TemplateBinding Tag}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                        </Grid>
+                                
+                        <ScrollViewer Grid.Row="1" Style="{StaticResource LeftScrollViewer}">
+                            <ItemsPresenter/>
+                        </ScrollViewer>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Setter Property="ItemContainerStyle">
+            <Setter.Value>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="IsTabStop" Value="False"/>
+
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Grid x:Name="Row">
+                                    <ContentPresenter 
+                                        Margin="0,0,4,0"
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

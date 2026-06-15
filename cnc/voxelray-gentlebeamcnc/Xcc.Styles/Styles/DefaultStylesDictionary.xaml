@@ -1,0 +1,40 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+    
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Border/BorderBlockStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Border/BorderOutlineStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Border/BorderToolbarStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonCloseStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonCrossStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonDefaultStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonToolbarAccentStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonToolbarStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonTransparentStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Calendar/CalendarDefaultStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/CheckBox/CheckBoxDefaultStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/ComboBox/ComboBoxDefaultStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/ContentControl/ContentTextWithShadowStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/GroupBox/GroupBoxDefaultStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/RadioButton/RadioButtonDefaultStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/ScrollBar/ScrollBarDefaultStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Slider/SliderDefaultStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/TextBlock/TextBlockLegendStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/TextBlock/TextBlockValidationErrorStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/TextBox/XccTextBoxDefaultStyle.xaml" />
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/ToggleButton/ToggleButtonDefaultStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/ToggleButton/ToggleButtonSwitchStyle.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>
+    

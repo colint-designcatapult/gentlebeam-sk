@@ -1,0 +1,244 @@
+[DOCUMENT]
+TITLE: Heracles Software Requirements Specification for HVPS Interface Board Application
+UID: DHF-HRC-0019
+METADATA:
+  COMPONENT: hvps-interface/main
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this document is to provide Software Requirements Specifications for the Heracles HVPS
+Interface Application Firmware (FW).
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes all requirements of the Heracles HVPS Interface Application FW.
+The information in this document has been derived from the VoxelRay Heracles Product Requirements
+Specification.
+
+\*The term Software applies to both Software and Firmware systems.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+HVPS
+  High Voltage Power Supply
+
+LED
+  Light Emitting Diode
+
+MCU
+  Microcontroller Unit
+
+PID
+  Proportional Integral Derivative controller
+
+PRS
+  Product Requirements Specification
+
+SDP
+  Software Development Plan
+
+SRS
+  Software Requirements Specification
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The HVPS interface application firmware is used to control and receive feedback from the HVPS. The
+HVPS interface application firmware reports data back to and receives commands from the main control
+firmware. The HVPS interface application firmware contains routines to ramp up the filament current, as
+well as the high voltage. It contains a PID loop for regulating the emission output to a given setpoint.
+The HVPS interface application firmware runs on the MCU of the HVPS interface board.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+EMS-WI-057-13: Generating Documents and Traceability Matrix Analysis in Ketryx WI
+
+EMS-SOP-057: Software Design Control
+
+DHF-HRC-0001, Rev. 1: Heracles Software Development Plan (SDP)
+
+DHF-HRC-0002: VoxelRay Product Requirements Specification (PRS)
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: RQ-H1FWHVPS-
+TITLE: Requirements
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-1
+TYPE: Safety
+TITLE: Grid control clock
+STATEMENT: >>>
+The firmware shall be able to generate an output for a grid control clock at a frequency between 1
+kHz and 20 kHz
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-2
+TYPE: Functional
+TITLE: High voltage setpoint
+STATEMENT: >>>
+The firmware shall be able to accept a command from the main control board to set a target high
+voltage setpoint
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-4
+TYPE: Functional
+TITLE: Main control reporting
+STATEMENT: >>>
+The firmware shall periodically report values to the main control board at a rate greater than 1 Hz
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-5
+TYPE: Functional
+TITLE: HVPS digital status signals
+STATEMENT: >>>
+The firmware shall be able to read and report the following digital status signals from the HVPS:
+- Cathode overcurrent
+- Temperature fault
+- Arc fault
+- Grid status (cutoff vs adjustment)
+- HV status
+- Master fault
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-6
+TYPE: Functional
+TITLE: Filament current setpoint
+STATEMENT: >>>
+The firmware shall be able to set the output control signal for the filament current
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-7
+TYPE: Functional
+TITLE: Adjustment grid setpoint
+STATEMENT: >>>
+The firmware shall be able to set the output control signal for the adjustment grid voltage
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-8
+TYPE: Functional
+TITLE: High voltage setpoint
+STATEMENT: >>>
+The firmware shall be able to set the output control signal for the high voltage
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-9
+TYPE: Functional
+TITLE: Cathode current limiter setpoint
+STATEMENT: >>>
+The firmware shall be able to set the output control signal for the cathode current limiter
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-10
+TYPE: Functional
+TITLE: Cathode current feedback
+STATEMENT: >>>
+The firmware shall be able to read and report the feedback signal for the cathode current
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-11
+TYPE: Functional
+TITLE: High voltage feedback
+STATEMENT: >>>
+The firmware shall be able to read and report the feedback signal for the high voltage
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-12
+TYPE: Functional
+TITLE: Adjustment grid voltage feedback
+STATEMENT: >>>
+The firmware shall be able to read and report the feedback signal for the adjustment grid voltage
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-13
+TYPE: Functional
+TITLE: Filament current feedback
+STATEMENT: >>>
+The firmware shall be able to read and report the feedback signal for the filament current
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-14
+TYPE: Functional
+TITLE: Control loop
+STATEMENT: >>>
+The firmware shall implement a control loop to automatically adjust output parameters during x-ray
+emission in order to help stabilize emission output
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-15
+TYPE: Functional
+TITLE: PC Communication
+STATEMENT: >>>
+The firmware shall be able to jump to execution of the bootloader application when requested by
+the PC over USB.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-16
+TYPE: Functional
+TITLE: PC Communication
+STATEMENT: >>>
+The firmware shall be able to erase a predetermined area of flash memory, corresponding to
+application CRC verification area when requested by the PC
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-17
+TYPE: Functional
+TITLE: Filament current ramping
+STATEMENT: >>>
+When requesting setting an increase in filament current, the firmware shall ramp up the output at
+an overall rate no faster than 1A/second
+<<<
+
+[[/SECTION]]

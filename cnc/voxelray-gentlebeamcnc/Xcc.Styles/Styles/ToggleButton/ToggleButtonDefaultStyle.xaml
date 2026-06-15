@@ -1,0 +1,57 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/BaseStyle.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+    
+    <Style x:Key="ToggleButtonDefaultStyle" TargetType="ToggleButton">
+        <Setter Property="IsThreeState" Value="False" />
+        <Setter Property="Background" Value="#505050" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Border.CornerRadius" Value="{StaticResource BlockCornerRadius}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        
+        <Setter Property="Template" >
+            <Setter.Value>
+                <ControlTemplate>
+                    <Grid>
+                        <Border 
+                            Width="{TemplateBinding ActualWidth}"
+                            Height="{TemplateBinding ActualHeight}"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding Border.CornerRadius}" >
+                            
+                            <Border.Style>
+                                <Style TargetType="{x:Type Border}" >
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType={x:Type ToggleButton}}, Path=IsChecked}" 
+                                                     Value="True">
+                                            <Setter Property="Background" Value="#202020" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                        <Label 
+                            VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Content="{TemplateBinding Button.Content}" 
+                            Background="Transparent"
+                            Foreground="{TemplateBinding Foreground}"
+                            FontSize="{TemplateBinding FontSize}"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True" >
+                <Setter Property="Background" Value="#646464" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--This style will be applied automatically to all ToggleButtons without explicit style-->
+    <Style TargetType="{x:Type ToggleButton}" BasedOn="{StaticResource ToggleButtonDefaultStyle}"/>
+</ResourceDictionary>

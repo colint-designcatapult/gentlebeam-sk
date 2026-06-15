@@ -1,0 +1,308 @@
+﻿<UserControl 
+    x:Class="Heracles.Indoor.Views.PrescriptionView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+    xmlns:enums="clr-namespace:Heracles.Core.Enums;assembly=Heracles.Core"
+    
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    
+    xmlns:prism="http://prismlibrary.com/"
+    xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+
+    FontSize="{StaticResource BaseFontSize}"
+    x:Name="Root"
+
+    UseLayoutRounding="True"
+    mc:Ignorable="d"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:PrescriptionViewModel}}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <ObjectDataProvider x:Key="EnergyDataSource" ObjectType="{x:Type system:Enum}" MethodName="GetValues">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="enums:Energy"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <DockPanel IsEnabled="{Binding TreatmentInfoStore.Simulation, Converter={convx:ObjectIsNotNullConverter}, FallbackValue=false}">
+            <Border Style="{StaticResource BorderToolbarStyle}"  Visibility="{Binding ToolBarVisibility, ElementName=Root}">
+                <Grid HorizontalAlignment="Right">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--Reload button-->
+                    <Button 
+                        Grid.Column="0"
+                        Style="{StaticResource ButtonToolbarStyle}" 
+                        Command="{Binding ResetCommand}"
+                        IsTabStop="False">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path 
+                                Data="{StaticResource ReloadIcon}" 
+                                Style="{StaticResource ButtonPathStyleThickness2}"/>
+
+                            <TextBlock Grid.Column="2" Text="Reload" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Button>
+
+                    <!--Add button-->
+                    <Button
+                        Grid.Column="2" 
+                        Style="{StaticResource ButtonToolbarStyle}" 
+                        Command="{Binding AddCommand}">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path Data="{StaticResource AddIcon}" Style="{StaticResource ButtonPathStyleThickness2}"/>
+                            <TextBlock Grid.Column="2" Text="Add" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Button>
+
+                    <!--Save button-->
+                    <Button
+                        Grid.Column="4" 
+                        Style="{StaticResource ButtonToolbarAccentStyle}" 
+                        Command="{Binding SaveCommand}">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path Data="{StaticResource SaveToDiskIcon}" Style="{StaticResource PathButtonAccentStyle}"/>
+                            <TextBlock Grid.Column="2" Text="Save" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource BorderBlockStyle}"  CornerRadius="{Binding CornerRadius, ElementName=Root}">
+                <Grid Margin="{StaticResource LabeledBlockContentMargin}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock 
+                        Grid.Row="0"
+                        Text="Prescription"  
+                        FontSize="{StaticResource LargeFontSize}" 
+                        Style="{StaticResource TextBlockLegendStyle}"
+                        Foreground="{StaticResource ForegroundPaleBrush}"
+                        HorizontalAlignment="Left"/> 
+
+                    <Grid Grid.Row="2"
+                        IsEnabled="{Binding PrescriptionForm.Status, Converter={convx:ObjectIsNotEqualConverter}, ConverterParameter={x:Static enums:Status.APPROVED}, FallbackValue=false}">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="{StaticResource FieldMarginGridLength}"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource TextBlockLegendStyle}" Text="Fx per week" />
+                            <ComboBox Grid.Row="2" SelectedItem="{Binding PrescriptionForm.FxsPerWeek}">
+                                <system:Int32>1</system:Int32>
+                                <system:Int32>2</system:Int32>
+                                <system:Int32>3</system:Int32>
+                                <system:Int32>4</system:Int32>
+                                <system:Int32>5</system:Int32>
+                                <system:Int32>6</system:Int32>
+                                <system:Int32>7</system:Int32>
+                            </ComboBox>
+                        </Grid>
+
+                        <Grid Grid.Row="0" Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource TextBlockLegendStyle}" Text="Number of Fx" />
+                            <controls:XccTextBox 
+                                Grid.Row="2"
+                                Name="NumberOfFxTextBox"
+                                Text="{Binding PrescriptionForm.NumberOfFxs}"
+                                Watermark="0" />
+                        </Grid>
+
+                        <Grid Grid.Row="2" Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource TextBlockLegendStyle}">
+                                <Run Text="Energy" />
+                                <Run Foreground="{StaticResource ForegroundPaleBrush}" Text="[kV]" />
+                            </TextBlock>
+
+                            <ComboBox Grid.Row="2"
+                                Name="EnergyLevelComboBox"
+                                ItemsSource="{Binding Source={StaticResource EnergyDataSource}}"
+                                SelectedItem="{Binding PrescriptionForm.Energy}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </Grid>
+
+                        <Grid Grid.Row="2" Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource TextBlockLegendStyle}" Text="TDF" />
+                            <ComboBox 
+                                Grid.Row="2"
+                                ItemsSource="{Binding AvailableTdfValues}"
+                                SelectedValue="{Binding PrescriptionForm.Tdf}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </Grid>
+
+                        <Grid Grid.Row="4" Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource TextBlockLegendStyle}">
+                                <Run Text="Dose Per Fx" />
+                                <Run Foreground="{StaticResource ForegroundPaleBrush}" Text="[cGy]" />
+                            </TextBlock>
+
+                            <controls:XccTextBox 
+                                Grid.Row="2"
+                                Name="DosePerFxTextBox"
+                                Text="{Binding PrescriptionForm.DailyDose}"
+                                Watermark="0.00" />
+                        </Grid>
+
+                        <Grid Grid.Row="4" Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource TextBlockLegendStyle}">
+                                <Run Text="Total Dose" />
+                                <Run Foreground="{StaticResource ForegroundPaleBrush}" Text="[cGy]" />
+                            </TextBlock>
+
+                            <controls:XccTextBox Grid.Row="2"
+                                Text="{Binding PrescriptionForm.TotalDose, StringFormat={}{0:F2}}"
+                                IsReadOnly="True" />
+                        </Grid>
+
+                        <Grid Grid.Row="6" Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource TextBlockLegendStyle}">
+                                <Run Text="Duration" />
+                                <Run Foreground="{StaticResource ForegroundPaleBrush}" Text="[s]" />
+                            </TextBlock>
+
+                            <controls:XccTextBox 
+                                Grid.Row="2" 
+                                Text="{Binding PrescriptionForm.Duration, StringFormat={}{0:F1}}"
+                                IsEnabled="{Binding PrescriptionForm.CanCalcDuration}" />
+                        </Grid>
+
+                        <Grid  Grid.Row="6" Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource TextBlockLegendStyle}">
+                                <Run Text="Actual Dose" />
+                                <Run Foreground="{StaticResource ForegroundPaleBrush}" Text="[cGy]" />
+                            </TextBlock>
+
+                            <controls:XccTextBox Grid.Row="2" Text="{Binding PrescriptionForm.ActualDose, StringFormat={}{0:F2}}" IsReadOnly="True" />
+                        </Grid>
+
+                    </Grid>
+                </Grid>
+            </Border>
+        </DockPanel>
+
+        <ucx:TaskOverlay 
+            Grid.RowSpan="2" Grid.ColumnSpan="3"
+            Visibility="{Binding CurrentPrescriptionTask.IsSuccessfullyCompleted, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue=Collapsed}"
+            ObservedTask="{Binding CurrentPrescriptionTask}"
+            RetryCommand="{Binding RetryPrescriptionCommand}"
+            CancelCommand="{Binding CancelPrescriptionTaskCommand}"
+            Description="{Binding CurrentPrescriptionTask.ErrorMessage}"
+            CornerRadius="7,7,7,7"/>
+    </Grid>
+</UserControl>

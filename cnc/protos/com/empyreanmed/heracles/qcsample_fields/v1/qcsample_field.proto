@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.qcsample_fields.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// QCSampleField represents a field in a quality control sample.
+message QCSampleField {
+  // QCSampleField id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The associated QCSample id
+  optional int64 qcsample_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The date the field was created
+  optional google.protobuf.Timestamp create_date = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // The field name
+  optional com.empyreanmed.heracles.enums.v1.FIELDNAME field = 4 [(google.api.field_behavior) = REQUIRED];
+}

@@ -1,0 +1,48 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Constants.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ButtonStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+        
+    <Style x:Key="RevealToggleButton" TargetType="ToggleButton">
+        <Setter Property="IsThreeState" Value="False"/>
+        <Setter Property="UseLayoutRounding" Value="True"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Grid Background="Transparent">
+                        <!--Checkbox mark-->
+                        <Image 
+                            x:Name="PART_RevealIcon"
+                            Style="{StaticResource ButtonImageStyle}"
+                            Source="{StaticResource EyeIcon}"/>
+                        
+                        <Image 
+                            x:Name="PART_HideIcon"
+                            Style="{StaticResource ButtonImageStyle}" 
+                            Source="{StaticResource ClosedEyeIcon}" />
+                    </Grid>
+                        
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="PART_RevealIcon" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="PART_HideIcon" Property="Visibility" Value="Hidden" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="False">
+                            <Setter TargetName="PART_RevealIcon" Property="Visibility" Value="Hidden" />
+                            <Setter TargetName="PART_HideIcon" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>    
+</ResourceDictionary>

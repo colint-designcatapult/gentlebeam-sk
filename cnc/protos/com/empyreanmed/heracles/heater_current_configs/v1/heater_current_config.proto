@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.heater_current_configs.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// HeaterCurrentConfig represents the heater current configuration for an energy configuration.
+message HeaterCurrentConfig {
+  // Unique identifier for the heater current configuration.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The creation date of the heater current configuration.
+  optional google.protobuf.Timestamp create_date = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Foreign key to the preset_configuration entity.
+  optional int64 preset_configuration_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // The heater current value.
+  optional float heater_current = 4 [(google.api.field_behavior) = REQUIRED];
+}

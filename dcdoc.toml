@@ -1,0 +1,8 @@
+[project]
+name = "GentleBeam SK"
+output_dir = "docs/output"
+grammars = { "@grammar" = "docs/meta/grammar.sgra" }
+
+[gen_docx]
+enabled = true
+template = "docs/template.docx"

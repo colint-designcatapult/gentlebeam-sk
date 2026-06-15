@@ -1,0 +1,201 @@
+﻿<UserControl 
+    x:Class="Heracles.Application.UI.Views.BeamQaReportsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    
+    xmlns:prism="http://prismlibrary.com/" 
+    prism:ViewModelLocator.AutoWireViewModel="True"
+
+    xmlns:system="clr-namespace:System;assembly=netstandard"  
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    xmlns:enums="clr-namespace:Heracles.Core.Enums;assembly=Heracles.Core"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:viewModels="clr-namespace:Heracles.Application.UI.ViewModels"
+
+    UseLayoutRounding="True"
+    
+    mc:Ignorable="d" 
+    d:FontFamily="{StaticResource BaseFont}"
+    d:FontSize="{StaticResource BaseFontSize}"
+    d:DesignHeight="680" d:DesignWidth="1700"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:BeamQaReportsViewModel}}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/heracles.Application;Component/UI/Resources/ListViewTemplates.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <ObjectDataProvider x:Key="EnergyDataSource" ObjectType="{x:Type system:Enum}" MethodName="GetValues">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="enums:Energy"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!--Applicator parameters-->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}"/>
+                <ColumnDefinition Width="1.6*"/>
+                <ColumnDefinition Width="{StaticResource BlockMarginGridLength}"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}"/>
+                <ColumnDefinition Width="1.2*"/>
+                <ColumnDefinition Width="{StaticResource BlockMarginGridLength}"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}"/>
+                <ColumnDefinition Width="1.2*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+                <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                <RowDefinition Height="{StaticResource FieldHeightGridLength}"/>
+            </Grid.RowDefinitions>
+
+            <!--Applicator size-->
+            <TextBlock 
+                Style="{StaticResource TextBlockLegendStyle}" 
+                Text="Applicator size:"/>
+
+            <ComboBox 
+                Grid.Row="0" Grid.Column="2"
+                ItemsSource="{Binding AvailableTargetTypeValues}"
+                SelectedItem="{Binding CollimatorType}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <!--Energy-->
+            <TextBlock 
+                Grid.Row="0" Grid.Column="4"
+                Style="{StaticResource TextBlockLegendStyle}">
+                <Run Text="Energy Level"/>
+                <Run Foreground="{StaticResource ForegroundPaleBrush}"  Text="[kV]"/><Run Text=":"/>
+            </TextBlock>
+
+            <ComboBox 
+                x:Name="EnergyComboBox"
+                Grid.Row="0" Grid.Column="6"                      
+                ItemsSource="{Binding Source={StaticResource EnergyDataSource}}"
+                SelectedItem="{Binding Energy}">
+
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <!--Performed-->
+            <TextBlock 
+                Grid.Row="2" Grid.Column="0"
+                Style="{StaticResource TextBlockLegendStyle}" 
+                Text="Performed:"/>
+
+            <ComboBox 
+                Grid.Row="2" Grid.Column="2"
+                ItemsSource="{Binding QcModel.Items}"
+                SelectedItem="{Binding SelectedQcSample}"
+                HorizontalContentAlignment="Stretch">
+
+                <!--ItemsSource="{Binding PerformedDateList, StringFormat='MM.dd.yyyy'}"-->
+
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock 
+                                Text="{Binding CreationDate}"
+                                Style="{StaticResource TextBlockLegendStyle}"/>
+
+                            <TextBlock 
+                                Grid.Column="1" 
+                                Text="[Ref]" 
+                                HorizontalAlignment="Right"
+                                Style="{StaticResource TextBlockLegendStylePale}"
+                                Visibility="{Binding Referenced, Converter={convx:BooleanToVisibilityConverter Invisibility=Collapsed}}"/>
+                        </Grid>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <!--Reload button-->
+            <Button 
+                Grid.Column="10" Grid.Row="0"
+                HorizontalAlignment="Left"
+                Command="{Binding ReloadCommand}">
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Path Data="{StaticResource ReloadIcon}" Style="{StaticResource ButtonPathStyleThickness2}"/>
+                    <TextBlock Grid.Column="2" Text="Reload" Style="{StaticResource TextBlockButtonStyle}"/>
+                </Grid>
+            </Button>
+
+
+            <!--Raw\Dev switch-->
+            <Grid Grid.Column="4" Grid.ColumnSpan="3" Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <RadioButton Grid.Column="0" x:Name="QcRawRadioButton" IsChecked="{Binding ShowRawColumns}">
+                    <TextBlock Style="{StaticResource TextBlockLegendStyle}" Text="Raw"/>
+                </RadioButton>
+                <RadioButton Grid.Column="2" x:Name="QcDevRadioButton" IsChecked="{Binding ShowDeviationColumns}">
+                    <TextBlock Style="{StaticResource TextBlockLegendStyle}">
+                        <Run Text="Deviation"/>
+                        <Run Foreground="{StaticResource ForegroundPaleBrush}" Text="[%]"/>
+                    </TextBlock>
+                </RadioButton>
+            </Grid>
+        </Grid>
+
+        <ListView 
+            Grid.Row="2" Grid.Column="0"
+            Style="{StaticResource TableListView}"
+            Tag="{StaticResource QualityCheckReportDeviationHeaderTemplate}"
+            ItemTemplate="{StaticResource QualityCheckReportDeviationItemTemplate}"
+            IsHitTestVisible="False"
+            ItemsSource="{Binding SelectedQcSample.Fields}"/>
+
+        <ucx:TaskOverlay 
+            Grid.Row="2" Grid.Column="0"
+            Visibility="{Binding CurrentQcTask.IsSuccessfullyCompleted, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue=Collapsed}"
+            ObservedTask="{Binding CurrentQcTask}"
+            RetryCommand="{Binding RetryCurrentTaskCommand}"
+            Description="{Binding CurrentQcTask.ErrorMessage}"
+            CornerRadius="7,7,7,7"/>
+    </Grid>
+</UserControl>

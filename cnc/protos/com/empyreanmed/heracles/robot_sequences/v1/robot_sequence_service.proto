@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.robot_sequences.v1;
+
+import "com/empyreanmed/heracles/robot_sequences/v1/robot_sequence.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Service for performing operations on robot sequences.
+service RobotSequenceService {
+  // Lists robot sequences.
+  rpc ListRobotSequences(ListRobotSequencesRequest) returns (ListRobotSequencesResponse);
+
+  // Returns a single robot sequence.
+  rpc GetRobotSequence(GetRobotSequenceRequest) returns (GetRobotSequenceResponse);
+
+  // Creates a new robot sequence.
+  rpc CreateRobotSequence(CreateRobotSequenceRequest) returns (CreateRobotSequenceResponse);
+
+  // Updates an existing robot sequence.
+  rpc UpdateRobotSequence(UpdateRobotSequenceRequest) returns (UpdateRobotSequenceResponse);
+
+  // Deletes a robot sequence.
+  rpc DeleteRobotSequence(DeleteRobotSequenceRequest) returns (DeleteRobotSequenceResponse);
+}
+
+// Request message for listing robot sequences.
+message ListRobotSequencesRequest {
+  // No specific fields for listing all robot sequences.
+}
+
+// Response message with the listed robot sequences.
+message ListRobotSequencesResponse {
+  // The robot sequences matching the list request. The order is unspecified.
+  repeated RobotSequence sequences = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single robot sequence.
+message GetRobotSequenceRequest {
+  // The ID of the robot sequence to fetch.
+  optional int64 sequence_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched robot sequence.
+message GetRobotSequenceResponse {
+  // The robot sequence with the provided ID.
+  RobotSequence sequence = 1;
+}
+
+// Request message for creating a new robot sequence.
+message CreateRobotSequenceRequest {
+  // Details of the robot sequence to create.
+  optional RobotSequence sequence = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created robot sequence.
+message CreateRobotSequenceResponse {
+  // The robot sequence that was created.
+  RobotSequence sequence = 1;
+}
+
+// Request message for updating an existing robot sequence.
+message UpdateRobotSequenceRequest {
+  // The robot sequence to update.
+  optional RobotSequence sequence = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the robot sequence to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated robot sequence.
+message UpdateRobotSequenceResponse {
+  // The updated robot sequence.
+  RobotSequence sequence = 1;
+}
+
+// Request message for deleting a robot sequence.
+message DeleteRobotSequenceRequest {
+  // The ID of the robot sequence to delete.
+  optional int64 sequence_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteRobotSequence`.
+message DeleteRobotSequenceResponse {}

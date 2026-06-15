@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Platforms>x64</Platforms>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
+    <VersionPrefix>1.1.0</VersionPrefix><!--Used as version of nuget package-->
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DefineConstants>$(DefineConstants);LOG_ME_IN</DefineConstants>
+  </PropertyGroup>
+  <!--<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>$(DefineConstants);_PRESENTATION</DefineConstants>
+  </PropertyGroup>-->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Xcc.Styles\Xcc.Styles.csproj" />
+    <ProjectReference Include="..\Xcc.Application\Xcc.Application.csproj" />
+    <ProjectReference Include="..\Xcc.Infra\Xcc.Infra.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\DatePickerDialogView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\CreateFilterDialogView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+</Project>

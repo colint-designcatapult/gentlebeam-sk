@@ -1,0 +1,122 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.Settings.EndPointsConfigurationView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels.Settings"
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+                
+    UseLayoutRounding="True"
+    mc:Ignorable="d" 
+    d:DesignWidth="1600" d:DesignHeight="900"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:EndPointsConfigurationViewModel}, IsDesignTimeCreatable=True}">
+    
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+    
+    <Grid>
+        <Grid Margin="{StaticResource ViewMargin}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="{StaticResource BlockMarginGridLength}" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Style="{StaticResource BorderBlockStyle}" >
+                    <Grid IsSharedSizeScope="True" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource FieldMarginGridLength}" />
+                            <RowDefinition Height="Auto" />
+                            
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="140" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <ucx:EndPointInputControl 
+                            IsEnabled="False"
+                            Grid.Row="0" Grid.Column="0"
+                            Tag="Record and Verify " 
+                            EndPoint="{Binding EndPointsConfiguration.RecordAndVerifyEndPoint}"/>
+
+                        <ucx:EndPointInputControl 
+                            Grid.Row="2" Grid.Column="0"
+                            Tag="Room Camera " 
+                            EndPoint="{Binding EndPointsConfiguration.ImagingHeadCamEndPoint}"/>
+
+                        <ucx:EndPointInputControl 
+                            Grid.Row="4" Grid.Column="0"
+                            Tag="Treatment Head Camera " 
+                            EndPoint="{Binding EndPointsConfiguration.TreatmentHeadCamEndPoint}"/>
+
+                        <ucx:EndPointInputControl 
+                            Grid.Row="0"  Grid.Column="2"
+                            Tag="GCB Telemetry " 
+                            EndPoint="{Binding EndPointsConfiguration.GCBTelemetryEndPoint}"/>
+
+                        <ucx:EndPointInputControl 
+                            Grid.Row="2"  Grid.Column="2"
+                            Tag="GCB Commands " 
+                            EndPoint="{Binding EndPointsConfiguration.GCBCommandsEndPoint}"/>
+
+                        <ucx:EndPointInputControl 
+                            Grid.Row="4" Grid.Column="2"
+                            Tag="Imaging Server " 
+                            EndPoint="{Binding EndPointsConfiguration.ImagingServerEndPoint}"/>
+
+                        <ucx:EndPointInputControl 
+                            Grid.Row="6" Grid.Column="2"
+                            Tag="GCB QC" 
+                            EndPoint="{Binding EndPointsConfiguration.QcbCommandsEndPoint}"/>
+                    </Grid>
+                </Border>
+
+
+
+
+            <!--'New' and 'Delete' buttons-->
+            <Border 
+                Grid.Row="2" 
+                Style="{StaticResource BorderBlockStyle}">
+
+                <!--Save button-->
+                <Button 
+                    HorizontalAlignment="Right"
+                    Margin="{StaticResource ButtonsBlockMargin}"
+                    Height="{StaticResource ButtonHeight}" Width="{StaticResource ButtonWidth}" 
+                    Command="{Binding SaveCommand}" >
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Image Source="{StaticResource SaveIcon}" Style="{StaticResource ButtonImageStyle}"/>
+                        <TextBlock Text="Save" Grid.Column="2" Style="{StaticResource ButtonTextBlockStyle}"/>
+                    </Grid>
+                </Button>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentControl>

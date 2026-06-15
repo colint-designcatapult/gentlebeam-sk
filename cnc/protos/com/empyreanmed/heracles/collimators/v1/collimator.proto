@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.collimators.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Target represents a collimator` entity in the system.
+message Collimator {
+  // Unique identifier for the collimator.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // id of the collimator's head
+  optional int64 head_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // id of the collimator's configuration.
+  optional int64 collimator_configuration_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // The creation date of the collimator.
+  optional google.protobuf.Timestamp create_date = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Serial number of the collimator.
+  optional string serial = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates if the collimator is active.
+  optional bool is_active = 6 [(google.api.field_behavior) = REQUIRED];
+}

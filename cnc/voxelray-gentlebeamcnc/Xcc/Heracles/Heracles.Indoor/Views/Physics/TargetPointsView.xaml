@@ -1,0 +1,89 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.Physics.TargetPointsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+                
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+             
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+
+    mc:Ignorable="d" 
+    xmlns:vm="clr-namespace:Heracles.Indoor.ViewModels.Physics"
+    xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+    d:DataContext="{d:DesignInstance {x:Type vm:TargetPointsViewModel}, IsDesignTimeCreatable=True}">
+    
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Constants.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml" />
+                
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ListViewTemplates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <!--Target Points configuration-->
+    <Border Style="{StaticResource BorderBlockStyle}">
+        <Grid Margin="{StaticResource BlockContentMargin}" IsEnabled="{Binding Store.Configuration, Converter={convx:ObjectIsNotNullConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" SharedSizeGroup="Header"/>
+                <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                <RowDefinition Height="Auto" SharedSizeGroup="Header"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock 
+                Grid.Row="0" Grid.ColumnSpan="3" 
+                Text="Coils" 
+                FontSize="{StaticResource HugeFontSize}" 
+                Style="{StaticResource TextBlockLegendStyle}"
+                HorizontalAlignment="Left"/>
+
+            <Grid Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="{StaticResource BlockContentMarginGridLength}" />
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="{StaticResource BlockContentMarginGridLength}" />
+                    <ColumnDefinition Width="120" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                    <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource TextBlockLegendStyle}" HorizontalAlignment="Center">
+                    <Run Text="X Coil"/>
+                    <Run Text="[mA]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+                </TextBlock>
+
+                <controls:XccTextBox Grid.Row="2" Grid.Column="0" Text="{Binding Store.Configuration.CoilConfiguration[0].XDeflectionCurrent, StringFormat={}{0:F2}}"/>
+                
+                <TextBlock Grid.Row="0" Grid.Column="2"  Style="{StaticResource TextBlockLegendStyle}" HorizontalAlignment="Center">
+                    <Run Text="Y Coil"/>
+                    <Run Text="[mA]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+                </TextBlock>
+
+                <controls:XccTextBox Grid.Row="2" Grid.Column="2" Text="{Binding Store.Configuration.CoilConfiguration[0].YDeflectionCurrent, StringFormat={}{0:F2}}"/>
+
+                <TextBlock Grid.Row="0" Grid.Column="4"  Style="{StaticResource TextBlockLegendStyle}" HorizontalAlignment="Center">
+                    <Run Text="Focus"/>
+                    <Run Text="[mA]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+                </TextBlock>
+
+                <controls:XccTextBox Grid.Row="2" Grid.Column="4" Text="{Binding Store.Configuration.CoilConfiguration[0].FocusCurrent, StringFormat={}{0:F2}}"/>
+            </Grid>
+        </Grid>
+    </Border>
+</ContentControl>

@@ -1,0 +1,270 @@
+[DOCUMENT]
+TITLE: Heracles Main Control Bootloader FW Software Design Document
+UID: DHF-HRC-0078
+METADATA:
+  COMPONENT: main-control/bootloader
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this document is to outline the design specifications of the Heracles Main Control
+Bootloader Firmware.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes the design modules and sub-modules of the Heracles Main Control Bootloader
+Firmware.
+
+The information in this document is derived from the Main Control Bootloader FW SRS, referenced in this
+document.
+
+\*The term Software applies to both Software and Firmware components.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+MCU
+  Microcontroller Unit
+
+PRS
+  Product Requirements Specification
+
+SDP
+  Software Development Plan
+
+SRS
+  Software Requirements Specification
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The Main Control Bootloader firmware allows the system to update the main control application firmware.
+
+The Main Control Bootloader firmware runs on the main control MCU of the main control board.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
+
+DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
+
+[LINK: DHF-HRC-0015]
+
+DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Architecture Overview
+
+[[SECTION]]
+TITLE: High Level System Architecture
+
+[TEXT]
+STATEMENT: >>>
+.. raw:: html
+
+    <pre class="mermaid">
+    flowchart LR
+
+    PC["Main Control Bootloader<br/>PC Application"]
+
+    subgraph BL["Main Control Bootloader<br/>Firmware"]
+        USB["USB"]
+    end
+
+    FLASH[(Main Control Flash Memory)]
+
+    PC --> USB
+    BL --> FLASH
+    </pre>
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Main Modules
+
+[TEXT]
+STATEMENT: >>>
+**Main Control Bootloader Firmware** – The firmware is stored at the base memory address on the
+microcontroller and facilitates the loading of new Main Control firmware (.hex) files in the remaining flash
+memory
+
+**Main Control Bootloader PC Application** – This app offers a desktop GUI that loads the Main Control
+firmware at the location in memory specified and managed by the bootloader. The GUI allows the
+selection of a COM port that corresponds to the USB port established by the bootloader.
+
+**Flash Memory** – Where the bootloader firmware is stored, and new Main Control firmware is flashed.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: SW-H1FWMCBOOT-
+TITLE: Design Items
+
+[DESIGN_ITEM]
+UID: SW-H1FWMCBOOT-11
+TITLE: PC Communication Interface
+STATEMENT: >>>
+The firmware communicates with the PC via the microcontroller’s serial UART interface. The
+firmware both receives and transmits data on this UART port. Due to the nature of UART having
+independent transmit and receive lines, the transmit and receive functionality operate
+independently. As the UART baud rate is relatively slow compared to the processing speed of the
+microcontroller, both sending and receiving data is performed with non-blocking interrupt callback
+functions.
+
+Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
+the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
+when transmission is initiated, and clears the flag after transmission is finished, to not create
+transmission conflicts on the transmit line.
+
+Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
+available. The parsing of the received byte is done to determine whether a complete data packet
+has been received from the PC, as according to the communication protocol. Once a completed
+data packet has been received, the firmware sets a flag for further data processing outside of the
+parsing inside of the interrupt callback.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-3
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWMCBOOT-12
+TITLE: PC Communication Processing
+STATEMENT: >>>
+The communication protocol the firmware employs for communicating with the PC utilizes ASCII
+character bytes. The firmware both sends and receives data packets. Each received data packet
+from the PC begins with a asterisk character ('*') and terminates with a newline character ('\n'). The
+value of the bytes in between these are comprised of a fixed length command, and a variable
+length data payload. Both command and data payload are also represented by ASCII character
+bytes.
+
+There are four different valid commands that the PC can send: ping, erase, write, and verify. Each
+command is represented in the transmitted packet by preset 5-character values. The firmware
+compares the received command to these preset values. There is no associated data payload for
+the ping and erase command. The ‘write’ command has a data payload containing the flash page
+index and the values to be written to said flash page. The verify command has a CRC value as its
+data payload. The data payload for both commands are sent as ASCII characters which are
+formatted as human readable hexadecimal values.
+
+Each transmitted data packet from the firmware to the PC begins with a period character ('.') and
+terminates with a newline character ('\n'). The value of the bytes in between are a fixed length
+response. The fixed length response are 13 ASCII characters which correspond to the specific
+incoming command that is being responded to (e.g. ping, erase, write, and verify).
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-1
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-5
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWMCBOOT-13
+TITLE: Application Program Handling
+STATEMENT: >>>
+At the beginning of bootloader firmware execution, the program will parse a predesignated area of
+application memory on the microcontroller and calculate a checksum over the existing values
+present in flash memory. The firmware then compares the calculated value to a designated location
+where the application checksum value is stored. If the calculated value matches the stored value,
+then this indicates to the firmware that a valid application exists in memory, and the firmware will
+then jump to the application firmware for execution.
+
+If the calculated value does not match the stored value, then the firmware will not jump to the
+application for execution but will instead wait for PC communication for commands to update the
+application memory.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-3
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWMCBOOT-14
+TITLE: Manufacturer Hardware Abstraction
+STATEMENT: >>>
+The firmware integrates source code provided by the manufacturer of the microcontroller unit to
+interface with various peripherals of the microcontroller. These include functions to interface with
+the following peripherals of the microcontroller:
+
+-UART serial port
+
+-GPIO
+
+-Flash memory controller
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-1
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-3
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-4
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-5
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWMCBOOT-15
+TITLE: Flash Memory Processing
+STATEMENT: >>>
+The firmware can both erase and write to the flash memory of the microcontroller. The flash
+memory of the microcontroller is organized into sectors and pages. Each sector is comprised of a
+given number of pages, and each page is 512 bytes in size. When the firmware receives an ‘erase’
+command from the PC, it will erase several pages in flash memory which have been predesignated
+for application memory. For writing to flash, the communication protocol can transmit
+512 bytes for each flash page size. As such, the firmware simply writes each page with data
+provided by the PC write command.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-3
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-4
+  ROLE: Refines
+
+[[/SECTION]]
+
+[[/SECTION]]

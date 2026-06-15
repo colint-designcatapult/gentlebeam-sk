@@ -1,0 +1,995 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:beh="clr-namespace:Xcc.Application.UI.Behaviors;assembly=Xcc.Application"
+    xmlns:uc="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    xmlns:enums ="clr-namespace:Heracles.Core.Enums;assembly=Heracles.Core">
+
+    
+    <ResourceDictionary.MergedDictionaries>
+
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/PlayButtonStyle.xaml"/>
+        
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/SortableColumnHeaderStyle.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/ProgressBar/ProgressBarEmissionStyle.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ItemsControl/ColumnItemsControlStyleBase.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--Heracles patient list-->
+    <Style x:Key="PatientListColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="{Binding IsChecked, ElementName=MRN, Converter={convx:BooleanToColumnWidthConverter Width=0.8*}}" />
+                            <ColumnDefinition Width="{Binding IsChecked, ElementName=LastName, Converter={convx:BooleanToColumnWidthConverter Width=*}}"/>
+                            <ColumnDefinition Width="{Binding IsChecked, ElementName=MiddleName, Converter={convx:BooleanToColumnWidthConverter Width=*}}"/>
+                            <ColumnDefinition Width="{Binding IsChecked, ElementName=FirstName, Converter={convx:BooleanToColumnWidthConverter Width=*}}"/>
+                            <ColumnDefinition Width="{Binding IsChecked, ElementName=Gender, Converter={convx:BooleanToColumnWidthConverter Width=0.5*}}"/>
+                            <ColumnDefinition Width="{Binding IsChecked, ElementName=DOB, Converter={convx:BooleanToColumnWidthConverter Width=0.8*}}" />
+                            <ColumnDefinition Width="{Binding IsChecked, ElementName=LastVisit, Converter={convx:BooleanToColumnWidthConverter Width=0.8*}}" />
+                            <!--<ColumnDefinition Width="1*" />-->
+                            <ColumnDefinition Width="44"/>
+                            <ColumnDefinition Width="8" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="PatientListHeaderTemplate" >
+        <ItemsControl Style="{StaticResource PatientListColumns}" IsTabStop="False">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <uc:SortableColumnHeader
+                Grid.Column="1" 
+                Content="MRN" 
+                SortPropertyName="MRN"
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}">
+            </uc:SortableColumnHeader>
+
+            <uc:SortableColumnHeader 
+                Grid.Column="2" 
+                Content="Last Name" 
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}"
+                SortPropertyName="LastName">
+            </uc:SortableColumnHeader>
+
+            <uc:SortableColumnHeader
+                Grid.Column="3" 
+                Content="Middle Name" 
+                SortPropertyName="MiddleName"
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}">
+            </uc:SortableColumnHeader>
+
+            <uc:SortableColumnHeader
+                Grid.Column="4" 
+                Content="First Name" 
+                SortPropertyName="FirstName"
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}">
+            </uc:SortableColumnHeader>
+
+            <uc:SortableColumnHeader 
+                Grid.Column="5" 
+                Content="Sex" 
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}"
+                SortPropertyName="Sex">
+            </uc:SortableColumnHeader>
+
+            <uc:SortableColumnHeader 
+                Grid.Column="6" 
+                Content="DOB" 
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}"
+                SortPropertyName="DOB">
+            </uc:SortableColumnHeader>
+
+            <!--<TextBlock Grid.Column="6" Text="Address"/>-->
+            <uc:SortableColumnHeader 
+                Grid.Column="7" 
+                Content="Last Visit" 
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}"
+                SortPropertyName="CreationDate">
+            </uc:SortableColumnHeader>
+        </ItemsControl>
+    </DataTemplate>
+
+    <Style x:Key="HighlightedTextStyle" TargetType="Run">
+        <Setter Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+        <Setter Property="FontSize" Value="{StaticResource BaseFontSize}"/>
+    </Style>
+
+    <DataTemplate x:Key="PatientListItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource PatientListColumns}" Foreground="{StaticResource PatientFieldForegroundColor}" IsTabStop="False">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <ItemsControl.InputBindings>
+                <MouseBinding 
+                  MouseAction="LeftDoubleClick" 
+                  Command="{Binding DataContext.GoToTreatmentCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                  CommandParameter="{Binding}"/>
+            </ItemsControl.InputBindings>
+
+            <TextBlock 
+                Grid.Column="1" 
+                beh:HighlightTermBehavior.Text="{Binding MRN}" 
+                beh:HighlightTermBehavior.TermToBeHighlighted="{Binding DataContext.SearchPhrase, RelativeSource={RelativeSource AncestorType=ListView}}" 
+                beh:HighlightTermBehavior.HighlightStyle="{StaticResource HighlightedTextStyle}"/>
+            
+
+            <TextBlock 
+                Grid.Column="2"
+                beh:HighlightTermBehavior.Text="{Binding LastName}" 
+                beh:HighlightTermBehavior.TermToBeHighlighted="{Binding DataContext.SearchPhrase, RelativeSource={RelativeSource AncestorType=ListView}}" 
+                beh:HighlightTermBehavior.HighlightStyle="{StaticResource HighlightedTextStyle}"/>
+
+            <TextBlock 
+                Grid.Column="3"
+                beh:HighlightTermBehavior.Text="{Binding MiddleName}" 
+                beh:HighlightTermBehavior.TermToBeHighlighted="{Binding DataContext.SearchPhrase, RelativeSource={RelativeSource AncestorType=ListView}}" 
+                beh:HighlightTermBehavior.HighlightStyle="{StaticResource HighlightedTextStyle}"/>
+
+            <TextBlock 
+                Grid.Column="4"
+                beh:HighlightTermBehavior.Text="{Binding FirstName}" 
+                beh:HighlightTermBehavior.TermToBeHighlighted="{Binding DataContext.SearchPhrase, RelativeSource={RelativeSource AncestorType=ListView}}" 
+                beh:HighlightTermBehavior.HighlightStyle="{StaticResource HighlightedTextStyle}"/>
+
+            <TextBlock 
+                Grid.Column="5"
+                beh:HighlightTermBehavior.Text="{Binding Sex, Converter={convx:EnumValueToDisplayNameConverter}}" 
+                beh:HighlightTermBehavior.TermToBeHighlighted="{Binding DataContext.SearchPhrase, RelativeSource={RelativeSource AncestorType=ListView}}" 
+                beh:HighlightTermBehavior.HighlightStyle="{StaticResource HighlightedTextStyle}"/>
+            
+            <TextBlock 
+                Grid.Column="6"
+                beh:HighlightTermBehavior.Text="{Binding DOB}" 
+                beh:HighlightTermBehavior.TermToBeHighlighted="{Binding DataContext.SearchPhrase, RelativeSource={RelativeSource AncestorType=ListView}}" 
+                beh:HighlightTermBehavior.HighlightStyle="{StaticResource HighlightedTextStyle}"/>
+
+            <TextBlock Grid.Column="7" Text="{Binding Visit.CreationDate, Converter={convx:DateTimeToDateStringConverter}}"/>
+
+            <Button 
+              Grid.Column="8" 
+              VerticalAlignment="Center" HorizontalAlignment="Right" 
+              Style="{StaticResource PlayButtonStyle}"
+              Width="36" Height="36"
+              Command="{Binding DataContext.GoToTreatmentCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+              CommandParameter="{Binding}"/>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    
+    <!--Treatments history-->
+    <Style x:Key="TreatmentsListColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListView}}, Converter={convx:ObjectIsNullToColumnWidthConverter Width=0.8*}}"/>
+                            <ColumnDefinition Width="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListView}}, Converter={convx:ObjectIsNullToColumnWidthConverter Width=1.1*}}"/>
+                            <ColumnDefinition Width="0"/>
+                            <ColumnDefinition Width="{Binding SelectedItem, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListView}}, Converter={convx:ObjectIsNullToColumnWidthConverter Width=100}}"/>
+                            <ColumnDefinition Width="4" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="TreatmentsListHeaderTemplate" >
+        <ItemsControl Style="{StaticResource TreatmentsListColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Fx"/>
+            <TextBlock Grid.Column="2" Text="Date"/>
+            <TextBlock Grid.Column="3" Text="Lesion Depth"/>
+            <TextBlock Grid.Column="4">
+                <Run Text="Energy"/>
+                <Run Text="[kV]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="5">
+                <Run Text="Daily Dose"/>
+                <Run Text="[cGy]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="6">
+                <Run Text="Cumulative Dose"/>
+                <Run Text="[cGy]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <!--<TextBlock Grid.Column="7" Text="Performed By"/>-->
+            <TextBlock Grid.Column="8" Text="Details"/>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="TreatmentsListItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource TreatmentsListColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="{Binding Fraction}"/>
+            <TextBlock Grid.Column="2" Text="{Binding CreationDate, StringFormat=G}"/>
+            <TextBlock Grid.Column="3" Text="{Binding LesionDepth, StringFormat={}{0:0.##}}"/>
+            <TextBlock Grid.Column="4" Text="{Binding Energy, Converter={convx:EnumValueToDisplayNameConverter}}"/>
+            <TextBlock Grid.Column="5" Text="{Binding DailyDose, StringFormat={}{0:0.##}}"/>
+            <TextBlock Grid.Column="6" Text="{Binding CumulativeDose, StringFormat={}{0:0.##}}"/>
+            <Button 
+                Grid.Column="8" 
+                VerticalAlignment="Center" HorizontalAlignment="Center" 
+                Style="{StaticResource PlayButtonStyle}"
+                Width="36" Height="36"
+                Command="{Binding DataContext.ShowActualFieldsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                CommandParameter="{Binding}"/>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    
+    <!--Treatments history - actual treatment fields-->
+    <Style x:Key="ActualTreatmentFieldsColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="0"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="4" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="ActualTreatmentFieldsHeaderTemplate" >
+        <ItemsControl Style="{StaticResource ActualTreatmentFieldsColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Treatment Field"/>
+            <TextBlock Grid.Column="2">
+                <Run Text="Actual Duration"/>
+                <Run Text="[sec]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="3">
+                <Run Text="Actual Dose"/>
+                <Run Text="[cGy]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="4">
+                <Run Text="Current"/>
+                <Run Text="[mA]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="ActualTreatmentFieldsItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource ActualTreatmentFieldsColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="{Binding DisplayValue}"/>
+            <TextBlock Grid.Column="2" Text="{Binding ActualDuration, StringFormat={}{0:0.##}}"/>
+            <TextBlock Grid.Column="3" Text="{Binding ActualDose, StringFormat={}{0:0.##}}"/>
+            <TextBlock Grid.Column="4" Text="{Binding ActualCurrent, StringFormat={}{0:0.##}}"/>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+    
+
+    <!--ExternalView treatment field list-->
+    <Style x:Key="ActualFieldsListColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="0"/>
+                            <ColumnDefinition Width="0.95*"/>
+                            <ColumnDefinition Width="1.1*"/>
+                            <ColumnDefinition Width="1.1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1.1*"/>
+                            <ColumnDefinition Width="4" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                                                
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="ActualFieldsListHeaderTemplate" >
+        <ItemsControl Style="{StaticResource ActualFieldsListColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Target"/>
+            <TextBlock Grid.Column="2">
+                <Run Text="Energy"/>
+                <Run Text="[kV]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="3">
+                <Run Text="Current"/>
+                <Run Text="[mA]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="4">
+                <Run Text="Duration"/>
+                <Run Text="[sec]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="5">
+                <Run Text="Actual"/>
+                <Run Text="[sec]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="6">
+                <Run Text="Remain"/>
+                <Run Text="[sec]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="ActualFieldsListItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource ActualFieldsListColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="{Binding DisplayValue}"/>
+            <TextBlock Grid.Column="2" Text="{Binding Energy, Converter={convx:EnumValueToDisplayNameConverter}}"/>
+            <TextBlock Grid.Column="3" Text="{Binding Current, StringFormat={}{0:0.##}}"/>
+            <TextBlock Grid.Column="4" Text="{Binding DwellTime}"/>
+            <TextBlock Grid.Column="5" Text="{Binding Actual, StringFormat={}{0:F0}}"/>
+            <TextBlock Grid.Column="6">
+                <TextBlock.Text>
+                    <MultiBinding Converter="{convx:RemainTimeCalculationConverter}" StringFormat="{}{0:F0}">
+                        <Binding Path="DwellTime" FallbackValue="0"/>
+                        <Binding Path="Actual" FallbackValue="0"/>
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+
+            <ProgressBar 
+                Grid.Row="1" Grid.ColumnSpan="8" 
+                Height="3" 
+                Style="{StaticResource ProgressBarEmissionStyle}"
+                Margin="1,0,2,-4">
+                
+                <ProgressBar.Value>
+                    <MultiBinding Converter="{convx:ProgressBarValueConverter}">
+                        <Binding Path="DwellTime" FallbackValue="1"/>
+                        <Binding Path="Actual" FallbackValue="0"/>
+                        <Binding Path="DataContext.PlanCompletedThreshold" RelativeSource="{RelativeSource AncestorType=ListView}" Mode="OneWay"/>
+                    </MultiBinding>
+                </ProgressBar.Value>
+            </ProgressBar>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+
+    <!--PlanView treatment field list-->
+    <Style x:Key="TreatmentFieldsListColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="8" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="0.7*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="8" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="TreatmentFieldsListHeaderTemplate" >
+        <ItemsControl Style="{StaticResource TreatmentFieldsListColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Target"/>
+            <TextBlock Grid.Column="2">
+                <Run Text="Energy"/>
+                <Run Text="[kV]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="3">
+                <Run Text="Current"/>
+                <Run Text="[mA]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="4">
+                <Run Text="Duration"/>
+                <Run Text="[sec]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="5">
+                <Run Text="Actual Dose"/>
+                <Run Text="[cGy]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="TreatmentFieldsListItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource TreatmentFieldsListColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="{Binding DisplayValue}"/>
+            <TextBlock Grid.Column="2" Text="{Binding Energy, Converter={convx:EnumValueToDisplayNameConverter}}"/>
+            <TextBlock Grid.Column="3" Text="{Binding Current, StringFormat={}{0:0.##}}"/>
+            <TextBlock Grid.Column="4" Text="{Binding DwellTime, StringFormat={}{0:0.##}}"/>
+            <TextBlock Grid.Column="5" Text="{Binding CalculatedDose, StringFormat={}{0:0.##}}"/>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+    
+    
+    <!--Output Factors list-->
+    <Style x:Key="OutputFactorsListColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="8" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="8" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="OutputFactorsListHeaderTemplate" >
+        <ItemsControl Style="{StaticResource OutputFactorsListColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Field"/>
+            <TextBlock Grid.Column="2" Text="Factor"/>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="OutputFactorsListItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource OutputFactorsListColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="{Binding FieldName}"/>
+            <TextBlock Grid.Column="2" Text="{Binding Factor, StringFormat={}{0:0.##}}"/>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+    
+    
+    <!--Targets Management list-->
+    <Style x:Key="TargetsManagementListColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="8" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="0.7*"/>
+                            <ColumnDefinition Width="0.7*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="8" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="TargetsManagementListHeaderTemplate" >
+        <ItemsControl Style="{StaticResource TargetsManagementListColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Serial"/>
+            <TextBlock Grid.Column="2" Text="Type"/>
+            <TextBlock Grid.Column="3" Text="">
+                <Run Text="Energy"/>
+                <Run Text="[kV]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="4" Text="">
+                <Run Text="SSD"/>
+                <Run Text="[mm]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="5" Text="Active"/>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="TargetsManagementListItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource TargetsManagementListColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="{Binding Serial}"/>
+            <TextBlock Grid.Column="2" Text="{Binding Configuration.Type, Converter={convx:EnumValueToDisplayNameConverter}}"/>
+            <TextBlock 
+                Grid.Column="3" 
+                Text="{Binding Configuration.Energy, Converter={convx:EnumValueToDisplayNameConverter}}"
+                Visibility="{Binding Configuration.Type, Converter={convx:ObjectToInvisibilityConverter}, ConverterParameter={x:Static enums:TargetType.TargetType_QC_Collimator}}"/>
+            <TextBlock 
+                Grid.Column="4" 
+                Text="{Binding Configuration.SsdType, Converter={convx:EnumValueToDisplayNameConverter}}"
+                Visibility="{Binding Configuration.Type, Converter={convx:ObjectToInvisibilityConverter}, ConverterParameter={x:Static enums:TargetType.TargetType_QC_Collimator}}"/>
+            <CheckBox Grid.Column="5" IsChecked="{Binding IsActive}" IsHitTestVisible="False" HorizontalAlignment="Center"/>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+    
+    
+    <!--System Fault list-->
+    <Style x:Key="SystemFaultListColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="8" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="8" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="SystemFaultListHeaderTemplate" >
+        <ItemsControl Style="{StaticResource SystemFaultListColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Type"/>
+            <TextBlock Grid.Column="2" Text="State"/>
+            <TextBlock Grid.Column="3" Text="Expected"/>
+            <TextBlock Grid.Column="4" Text="Measured"/>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="SystemFaultListItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource SystemFaultListColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="{Binding FaultType, Converter={convx:EnumValueToDisplayNameConverter}}"/>
+            <TextBlock Grid.Column="2" Text="{Binding FaultEntryStateString}"/>
+            <TextBlock Grid.Column="3" Text="{Binding ExpectedParameter}"/>
+            <TextBlock Grid.Column="4" Text="{Binding MeasuredParameter}"/>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+    
+    
+    <!--Image list-->
+    <Style x:Key="ImageListColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="8" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="{StaticResource ImagePreviewGridLength}"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="44"/>
+                            <ColumnDefinition Width="8" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="ImageListHeaderTemplate" >
+        <ItemsControl Style="{StaticResource ImageListColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <uc:SortableColumnHeader
+                FontSize="{StaticResource BaseFontSize}"
+                HorizontalAlignment="Center"
+                Grid.Column="2" 
+                Content="Creation" 
+                SortPropertyName="CreationDate"
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}">
+            </uc:SortableColumnHeader>
+            
+            <uc:SortableColumnHeader
+                FontSize="{StaticResource BaseFontSize}"
+                HorizontalAlignment="Center"
+                Grid.Column="3" 
+                Content="Field" 
+                SortPropertyName="Location"
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}">
+            </uc:SortableColumnHeader>
+
+            <uc:SortableColumnHeader
+                FontSize="{StaticResource BaseFontSize}"
+                HorizontalAlignment="Center"
+                Grid.Column="4" 
+                Content="Type" 
+                SortPropertyName="Type"
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}">
+            </uc:SortableColumnHeader>
+
+            <uc:SortableColumnHeader
+                FontSize="{StaticResource BaseFontSize}"
+                HorizontalAlignment="Center"
+                Grid.Column="5" 
+                Content="Lesion Depth" 
+                SortPropertyName="LesionDepth"
+                SortDescription="{Binding DataContext.SortDescription, RelativeSource={RelativeSource AncestorType=ListView}}">
+            </uc:SortableColumnHeader>
+
+            <TextBlock Grid.Column="6" Text="Description"/>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="ImageListItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource ImageListColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <Image 
+                Grid.Column="1" 
+                Height="{StaticResource ImagePreviewSize}" 
+                Source="{Binding Location}"
+                RenderOptions.BitmapScalingMode="HighQuality"/>
+                       
+            <TextBlock Grid.Column="2" Text="{Binding CreationDate}"/>
+            <TextBlock Grid.Column="3" Text="{Binding FieldName}"/>
+            <TextBlock Grid.Column="4" Text="{Binding Type}"/>
+            <TextBlock Grid.Column="5" Text="{Binding LesionDepth, StringFormat={}{0:0.##}}"/>
+            <TextBlock Grid.Column="6" Text="{Binding Description}"/>
+            <Button 
+              Grid.Column="7" 
+              VerticalAlignment="Center" HorizontalAlignment="Right" 
+              Style="{StaticResource PlayButtonStyle}"
+              Width="36" Height="36"
+              Command="{Binding DataContext.GoToViewerCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+              CommandParameter="{Binding}"/>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+
+    <!--Quality Check treatment field list-->
+    <Style x:Key="QualityCheckFieldsListColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="0*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="4" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                                                
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="QualityCheckFieldsListHeaderTemplate" >
+        <ItemsControl Style="{StaticResource QualityCheckFieldsListColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Applicator Size"/>
+            <TextBlock Grid.Column="2" Text="Target"/>
+            <TextBlock Grid.Column="3">
+                <Run Text="Energy"/>
+                <Run Text="[kV]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="4">
+                <Run Text="Current"/>
+                <Run Text="[mA]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="5">
+                <Run Text="Duration"/>
+                <Run Text="[sec]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="6">
+                <Run Text="Actual"/>
+                <Run Text="[sec]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="QualityCheckFieldsListItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource QualityCheckFieldsListColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+            <ItemsControl.Foreground>
+                <StaticResource ResourceKey="PatientFieldForegroundColor"/>
+            </ItemsControl.Foreground>
+
+            <TextBlock Grid.Column="1" Text="{Binding CollimatorTypeLabel}"/>
+            <TextBlock Grid.Column="2" Text="{Binding DisplayValue}"/>
+            <TextBlock Grid.Column="3" Text="{Binding Energy, Converter={convx:EnumValueToDisplayNameConverter}}"/>
+            <TextBlock Grid.Column="4" Text="{Binding Current, StringFormat={}{0:0.##}}"/>
+            <TextBlock Grid.Column="5" Text="{Binding Duration, StringFormat={}{0:F1}}"/>
+            <TextBlock Grid.Column="6" Text="{Binding Actual, StringFormat={}{0:F1}}"/>
+
+            <ProgressBar 
+                Grid.Row="1" Grid.ColumnSpan="8" 
+                Height="3" 
+                Style="{StaticResource ProgressBarEmissionStyle}"
+                Margin="1,0,2,-4">
+                
+                <ProgressBar.Value>
+                    <MultiBinding Converter="{convx:ProgressBarValueConverter}">
+                        <Binding Path="Duration" FallbackValue="1"/>
+                        <Binding Path="Actual" FallbackValue="0"/>
+                        <Binding Path="DataContext.PlanCompletedThreshold" RelativeSource="{RelativeSource AncestorType=ListView}" Mode="OneWay"/> 
+                    </MultiBinding>
+                </ProgressBar.Value>
+            </ProgressBar>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+    
+    
+    <!--Quality Check report list-->
+    <Style x:Key="QualityCheckReportListColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="8" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="8" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="QualityCheckReportListHeaderTemplate" >
+        <ItemsControl Style="{StaticResource QualityCheckReportListColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Field"/>
+            <TextBlock Grid.Column="2">
+                <Run Text="Current"/>
+                <Run Text="[mA]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="3" Text="Intensity"/>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="QualityCheckReportListItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource QualityCheckReportListColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="{Binding DisplayValue}"/>
+            <TextBlock Grid.Column="2" Text="{Binding Current, StringFormat={}{0:F2}}"/>
+            <TextBlock Grid.Column="3" Text="{Binding Intensity1.Intensity, StringFormat={}{0:F2}}"/>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+    
+
+    
+    <!--Quality Check report deviation list-->
+    <Style x:Key="QualityCheckReportDeviationColumns" TargetType="ItemsControl"  BasedOn="{StaticResource ColumnsItemsControlStyleBase}">
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <Grid ShowGridLines="False">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="8" SharedSizeGroup="LeftMargin"/>
+                            <ColumnDefinition Width="0.8*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="{Binding DataContext.ShowRawColumns, RelativeSource={RelativeSource AncestorType=ListView}, Converter={convx:BooleanToColumnWidthConverter Width=*}}"/>
+                            <ColumnDefinition Width="{Binding DataContext.ShowRawColumns, RelativeSource={RelativeSource AncestorType=ListView}, Converter={convx:BooleanToColumnWidthConverter Width=*}}"/>
+                            <ColumnDefinition Width="{Binding DataContext.ShowDeviationColumns, RelativeSource={RelativeSource AncestorType=ListView}, Converter={convx:BooleanToColumnWidthConverter Width=*}}"/>
+                            <ColumnDefinition Width="{Binding DataContext.ShowDeviationColumns, RelativeSource={RelativeSource AncestorType=ListView}, Converter={convx:BooleanToColumnWidthConverter Width=*}}"/>
+                            <ColumnDefinition Width="8" SharedSizeGroup="RightMargin"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="QualityCheckReportDeviationHeaderTemplate" >
+        <ItemsControl Style="{StaticResource QualityCheckReportDeviationColumns}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListHeaderTextBlockStyle}">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </Style>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="Field"/>
+            <TextBlock Grid.Column="2">
+                <Run Text="Current"/>
+                <Run Text="[mA]" Foreground="{StaticResource ForegroundPaleBrush}"/>
+            </TextBlock>
+            <TextBlock Grid.Column="3" Text="Intensity 1"/>
+            <TextBlock Grid.Column="4" Text="Intensity 2"/>
+            <TextBlock Grid.Column="5" Text="Intensity 1"/>
+            <TextBlock Grid.Column="6" Text="Intensity 2"/>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="QualityCheckReportDeviationItemTemplate">
+        <ItemsControl x:Name="ItemsHost" Style="{StaticResource QualityCheckReportDeviationColumns}" Foreground="{StaticResource PatientFieldForegroundColor}">
+            <ItemsControl.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}"/>
+            </ItemsControl.Resources>
+
+            <TextBlock Grid.Column="1" Text="{Binding DisplayName}"/>
+            <TextBlock Grid.Column="2" Text="{Binding Current, StringFormat={}{0:F2}}"/>
+            <TextBlock Grid.Column="3" Text="{Binding Values[0], StringFormat={}{0:F2}}"/>
+            <TextBlock Grid.Column="4" Text="{Binding Values[1], StringFormat={}{0:F2}}"/>
+            <TextBlock Grid.Column="5" Text="{Binding Deviations[0], StringFormat={}{0:F2}}"/>
+            <TextBlock Grid.Column="6" Text="{Binding Deviations[1], StringFormat={}{0:F2}}"/>
+        </ItemsControl>
+
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Path=IsSelected}" Value="True">
+                <Setter TargetName="ItemsHost" Property="Foreground" Value="{StaticResource SelectedForegroundBrush}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>    
+</ResourceDictionary>

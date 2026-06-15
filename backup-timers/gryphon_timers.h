@@ -1,0 +1,58 @@
+/*
+ * gryphon_timers.h
+ */ 
+
+
+#ifndef GRYPHON_TIMERS_H_
+#define GRYPHON_TIMERS_H_
+
+#define IO_LED		GPIO(GPIO_PORTA, 2)
+#define IO_FAULT_n	GPIO(GPIO_PORTA, 4)
+#define IO_START_n	GPIO(GPIO_PORTA, 5)
+#define IO_ADDR		GPIO(GPIO_PORTA, 25)
+
+enum
+{
+	TIMER_STATE_CLEARED = 0,
+	TIMER_STATE_PAUSED,
+	TIMER_STATE_RUNNING,
+	TIMER_STATE_ELAPSED
+};
+
+enum
+{
+	RX_MSG_TYPE = 0,
+	RX_PARAM_0,
+	RX_PARAM_1,
+	RX_PARAM_2,
+	RX_PARAM_3,
+	RX_CHECKSUM,
+	RX_MAX_COUNT
+};
+
+enum
+{
+	TX_STATE = 0,
+	TX_TIME_VAL_0,
+	TX_TIME_VAL_1,
+	TX_TIME_VAL_2,
+	TX_TIME_VAL_3,
+	TX_CHECKSUM,
+	//TX_UNUSED,
+	TX_MAX_COUNT
+};
+
+enum messageType
+{
+	MSG_READ_TIMER = 0,
+	MSG_SET_TIMER = 0x01,
+	MSG_STOP_TIMER = 0x02,
+	MSG_CLEAR_TIMER = 0x04,
+	MSG_UNKNOWN
+};
+
+void start_triggered();
+void i2c_rx();
+void i2c_tx();
+
+#endif /* GRYPHON_TIMERS_H_ */

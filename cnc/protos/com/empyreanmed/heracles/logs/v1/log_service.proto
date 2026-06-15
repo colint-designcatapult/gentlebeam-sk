@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.logs.v1;
+
+import "com/empyreanmed/heracles/logs/v1/log.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on logs.
+service LogService {
+  // Lists logs matching request parameters.
+  rpc ListLogs(ListLogsRequest) returns (ListLogsResponse);
+
+  // Returns a single log.
+  rpc GetLog(GetLogRequest) returns (GetLogResponse);
+
+  // Creates a new log.
+  rpc CreateLog(CreateLogRequest) returns (CreateLogResponse);
+
+  // Updates a single log.
+  rpc UpdateLog(UpdateLogRequest) returns (UpdateLogResponse);
+
+  // Deletes a single log.
+  rpc DeleteLog(DeleteLogRequest) returns (DeleteLogResponse);
+
+  // Searches for a log by the message.
+  rpc SearchLogByMessage(SearchLogByMessageRequest) returns (SearchLogByMessageResponse);
+}
+
+// Request message for listing logs.
+message ListLogsRequest {
+  // The maximum number of logs to return. The service may return fewer than this value.
+  // If unset or zero, all logs will be returned.
+  optional int32 skip = 1;
+
+  // A page token, received from a previous `ListLogs` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListLogs` must match
+  // the call that provided the page token.
+  optional int32 get = 2;
+}
+
+// Response message with the listed logs.
+message ListLogsResponse {
+  // The logs matching the list request. The order is unspecified.
+  repeated Log logs = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+
+  // A token that can be sent as `page_token` to retrieve the next page of
+  // results. If this field is omitted, there are no more results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single log.
+message GetLogRequest {
+  // The ID of the log to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single log.
+message GetLogResponse {
+  // The log with the ID provided in the request.
+  Log log = 1;
+}
+
+// Request message for creating a new log.
+message CreateLogRequest {
+  // The log to be created.
+  optional Log log = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created log.
+message CreateLogResponse {
+  // The log that was created.
+  Log log = 1;
+}
+
+// Request message for updating an existing log.
+message UpdateLogRequest {
+  // The log to be updated.
+  optional Log log = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the log to update. Must not be empty.
+  // Fields that have `OUTPUT_ONLY` behavior may not be updated.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated log.
+message UpdateLogResponse {
+  // The updated log.
+  Log log = 1;
+}
+
+// Request message for deleting a log.
+message DeleteLogRequest {
+  // The ID of the log to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteLog`.
+message DeleteLogResponse {}
+
+// Request message for searching a log by message.
+message SearchLogByMessageRequest {
+  // The message of the log to be searched.
+  optional string message = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for searching a log by message.
+message SearchLogByMessageResponse {
+  // The logs with the message provided in the request.
+  repeated Log logs = 1;
+}

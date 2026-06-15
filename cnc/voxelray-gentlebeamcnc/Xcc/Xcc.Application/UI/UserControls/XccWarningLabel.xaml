@@ -1,0 +1,49 @@
+﻿<UserControl 
+    x:Class="Xcc.Application.UI.UserControls.XccWarningLabel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    mc:Ignorable="d"
+
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True"
+
+    x:Name="Root">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Constants.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ButtonStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+
+        <Image Source="{StaticResource ExclamationSmallIcon}" Style="{StaticResource ButtonImageStyle}"/>
+
+        <TextBlock 
+            Grid.Column="2"
+            Foreground="LightYellow"
+            VerticalAlignment="Center"
+            TextTrimming="CharacterEllipsis"
+            TextWrapping="Wrap"
+            MaxHeight="48"
+            FontWeight="Normal"
+            Text="{Binding Text, ElementName=Root, FallbackValue='Audentes fortuna iuvat'}">
+
+            <TextBlock.Effect>
+                <DropShadowEffect BlurRadius="0" ShadowDepth="1.2"></DropShadowEffect>
+            </TextBlock.Effect>
+        </TextBlock>
+    </Grid>
+</UserControl>

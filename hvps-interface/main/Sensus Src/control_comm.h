@@ -1,0 +1,82 @@
+
+#ifndef CONTROL_COMM_H_
+#define CONTROL_COMM_H_
+
+typedef union variableValue
+{
+	uint32_t u;
+	int32_t i;
+	float f;
+} VariableValue;
+
+enum
+{
+	COMM_TX_SYNC_START = 0,
+	COMM_TX_SYNC_NEXT,
+
+	COMM_HVPS_STATUS,
+	COMM_IO,
+	COMM_HVPS_RUNTIME,
+
+	COMM_PWR_SP,
+	COMM_KV_SP,
+	COMM_MA_LIM_SP,
+	COMM_GRID_SP,
+	COMM_FIL_SP,
+
+	COMM_FIL_FB,
+	COMM_KV_FB,
+	COMM_MA_FB,
+	COMM_GRID_FB,
+
+	COMM_TX_CRC,
+	NUM_COMM_TX_FIELDS
+};
+
+enum
+{
+	COMM_RX_SYNC_START = 0,
+	COMM_RX_SYNC_NEXT,
+	COMM_RX_FIELD,
+	COMM_RX_PARAM_F,
+	COMM_RX_PARAM_I,
+	COMM_RX_CRC,
+	NUM_COMM_RX_FIELDS
+};
+
+enum
+{
+	CTRL_CMD_TEST = 0,
+	CTRL_CMD_ALIVE,
+
+	CTRL_CMD_CLEAR_FAULTS,
+	CTRL_CMD_INTERLOCK_TEST,
+
+	CTRL_CMD_SET_PWR,
+	CTRL_CMD_SET_KV,
+	CTRL_CMD_SET_MA_LIM,
+	CTRL_CMD_SET_GRID,
+	CTRL_CMD_SET_FIL,
+
+	CTRL_CMD_CONFIG_PASSWORD,
+	CTRL_CMD_SET_CONFIG,
+#ifdef CALIBRATION_MODE
+	CTRL_CMD_CAL_START,
+	CTRL_CMD_CAL_STOP,
+#endif
+	NUM_CTRL_CMD
+};
+
+#define NUM_COMM_RX_BYTES	(NUM_COMM_RX_FIELDS*4)
+#define NUM_COMM_TX_BYTES	(NUM_COMM_TX_FIELDS*4)
+#define NUM_SYNC_BYTES	8
+#define SYNC_VAL		0xFF
+
+
+void setup_control_comm();
+void process_control_comm();
+
+void comm_rx_cb();
+void comm_tx_cb();
+
+#endif /* CONTROL_COMM_H_ */

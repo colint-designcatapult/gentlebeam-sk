@@ -1,0 +1,36 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.EmptyView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+    xmlns:views ="clr-namespace:Heracles.Indoor.Views"
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+                
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+             
+    xmlns:uc="clr-namespace:Heracles.Application.UI.UserControls;assembly=Heracles.Application"
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    xmlns:conv="clr-namespace:Heracles.Application.UI.Converters;assembly=Heracles.Application"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+                
+    mc:Ignorable="d" 
+    d:DesignWidth="800" d:DesignHeight="600"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:EmptyViewModel}, IsDesignTimeCreatable=True}">
+    
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Constants.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml" />
+                
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Border Style="{StaticResource BorderBlockStyle}">
+    </Border>
+</ContentControl>

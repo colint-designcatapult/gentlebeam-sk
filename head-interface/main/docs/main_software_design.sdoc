@@ -1,0 +1,426 @@
+[DOCUMENT]
+TITLE: Heracles Head Interface FW Software Design Document
+UID: DHF-HRC-0114
+METADATA:
+  COMPONENT: head-interface/main
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this document is to outline the design specifications of the Heracles Head Interface
+Firmware.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes the design modules and sub-modules of the Heracles Head Interface Firmware.
+The information in this document is derived from the Head Interface FW SRS, referenced in this
+document.
+
+\*The term Software applies to both Software and Firmware components.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+FW
+  Firmware
+
+MCU
+  Microcontroller Unit
+
+PRS
+  Product Requirements Specification
+
+SDP
+  Software Development Plan
+
+SRS
+  Software Requirements Specification
+
+SW
+  Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The head interface firmware is used to read various input data from peripherals such as cooling system
+sensors, magnetometers, and collimator identification. This firmware sends feedback information to the
+main control application firmware. The head interface firmware can also set various patterns to the head
+base LED ring for visual indication. The pattern is based off commands received from the main control
+application firmware. The head interface FW can also enable and disable alignment lasers or illumination
+LEDs based on membrane keypad inputs.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
+
+DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
+
+[LINK: DHF-HRC-0023]
+
+DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Architecture Overview
+
+[[SECTION]]
+TITLE: High Level System Architecture
+
+[TEXT]
+STATEMENT: >>>
+.. raw:: html
+
+   <pre class="mermaid">
+   flowchart TB
+
+    FW["Main Control<br/>Firmware"]
+    EEPROM["EEPROM"]
+
+    subgraph HI["Head Interface"]
+
+        GPIO["GPIO"]
+        PROC["Processing"]
+        ADC["ADC"]
+        SPI["SPI"]
+        UART["UART"]
+        I2C["I2C"]
+
+        GPIO --- PROC
+        PROC --- ADC
+
+        SPI --- PROC
+        UART --- PROC
+        I2C --- PROC
+    end
+
+    SPI <--> EEPROM
+    UART <--> FW
+
+    Lasers <-- GPIO
+    Interlocks --> GPIO
+    Buttons --> GPIO
+
+    Magnetometers --> I2C
+    I2C --> LEDRing["LED Ring"]
+
+    ADC <--> Temp["Temperature<br/>Sensor"]
+    ADC <--> Pressure["Pressure<br/>Sensor"]
+    ADC <--> Flow["Flow<br/>Sensor"]
+   </pre>
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Main Modules
+
+[TEXT]
+STATEMENT: >>>
+**Processing Loop** – The main loop processes analog and digital signals and uses them to report Head
+subsystem data back to the Main Control Firmware. Requests from the main control firmware are also
+handled and responded to such as changing the output state of the LED Ring.
+
+**Buttons** – The Head Interface reads 5 GPIO buttons that can change the function for the user.
+
+**Lasers** – GPIO output controls low power positioning lasers
+
+**LED Ring** – RGB LED’s controlled by a UART signal that determines color, brightness, and behavior
+
+**Analog Sensors** – The Head Interface reads analog signal data from Water Temperature, Pressure, and
+Flow sensors. This analog data is processed and then reported to the Main Control firmware. Sensors
+can determine limits that may trigger a fault condition.
+
+**Digital Sensors** – The Head Interface reads digital data from Magnetometer IC’s mounted near the
+deflecting coils. This data is processed and then reported to the Main Control firmware. These sensors
+can create responses such as coil level adjustments or possibly fault conditions.
+
+**EEPROM** – Nonvolatile data storage
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: SW-H1FHI-
+TITLE: Design Items
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-26
+TITLE: Manufacturer Hardware Abstraction
+STATEMENT: >>>
+The firmware integrates source code provided by the manufacturer of the microcontroller unit to
+interface with various peripherals of the microcontroller. These include functions to interface with
+the following peripherals of the microcontroller:
+
+-UART serial port
+
+-I2C serial port
+
+-ADC peripheral
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-1
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-2
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-5
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-6
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-8
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-9
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-10
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-11
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-12
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-13
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-27
+TITLE: Input Signals
+STATEMENT: >>>
+The firmware has 5 inputs which represent five different physical buttons which the system user
+can press. These five inputs are debounced by sampling the state of the input signals every time a
+processing flag gets set. This processing flag is set every 1 msec. Once an input displays a toggled
+value, the firmware begins a debounce countdown. During this debounce period, any bouncing
+signals are ignored. After the debounce period is over, the firmware checks to see if the input truly
+did toggle or if it was just noise. If the signal indicates a “true” toggle, the firmware updates the
+changed button input states for processing and reporting to the main control application firmware.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-6
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-11
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-28
+TITLE: Output Signals
+STATEMENT: >>>
+The firmware controls two digital output signals. One digital output signal controls the output state
+of the illumination LEDs. The second digital output signal controls the output state of the laser
+modules.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-5
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-29
+TITLE: Magnetometers
+STATEMENT: >>>
+The firmware periodically reads two external magnetometers on the same I2C bus. Both
+magnetometers are of the same make and model but vary in their I2C addresses. The firmware
+alternates between reading each magnetometer. The X, Y, and Z values of the magnetometer are
+read and subsequently sent to the main control board for the data to be sent to the PC for
+treatment plan parameter compensation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-10
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-30
+TITLE: Flow Sensor
+STATEMENT: >>>
+The firmware monitors the flow sensor digital input signal once every millisecond (based on a flag
+that is set inside of a time-based interrupt firing once every millisecond). The firmware checks for a
+toggling state of the flow sensor input. Based on the number of signal toggles within a fixed amount
+of time, the flow rate is calculated.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-12
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-31
+TITLE: Pressure Sensor
+STATEMENT: >>>
+The firmware reads and converts the analog signal from the pressure sensor using the internal
+ADC of the microcontroller.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-13
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-32
+TITLE: Temperature Sensor
+STATEMENT: >>>
+The firmware reads a thermistor temperature sensor to determine the water temperature. The
+reading is performed by the internal ADC on the microcontroller. The reading value is converted
+into a temperature using a lookup table and interpolation to derive the approximate intermediate
+values between lookup values. While the actual thermistor conversion is not linear, each step is
+small enough where linear interpolation is good enough.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-1
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-33
+TITLE: Control Communication Interface
+STATEMENT: >>>
+The firmware communicates with the main control board via one of the microcontroller’s serial
+UART interfaces. The firmware both receives and transmits data on this UART port. Due to the
+nature of UART having independent transmit and receive lines, the transmit and receive
+functionality operate independently. As the UART baud rate is relatively slow compared to the
+processing speed of the microcontroller, both sending and receiving data is performed with nonblocking
+interrupt callback functions.
+
+Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
+the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
+when transmission is initiated, and clears the flag after transmission is finished, so as to not create
+transmission conflicts on the transmit line.
+
+Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
+available. The parsing of the received byte is done to determine whether a complete data packet
+has been received from the PC, as according to the communication protocol. Once a completed
+data packet has been received, the firmware sets a flag for further data processing outside of the
+parsing inside of the interrupt callback.
+
+As transmission on UART is asynchronous both in terms of clock as well as word alignment (within
+a packet), a “sync value” is utilized at the start of each packet to help synchronize communication
+in case of any lost or missing bytes.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-8
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-34
+TITLE: Control Communication Data
+STATEMENT: >>>
+The data received from the main control board is the desired indicator LED output, representing the
+current state of the system. As this is a simple single byte value, it is sent by the main control board
+multiple times in a single data packet, to help the head interface board firmware to detect any
+transmission errors.
+
+The transmitted data to the head interface board are cooling system feedback values monitored at
+the system’s x-ray head, as well as the reported values of other x-ray head peripherals such as the
+state of the buttons, and the values from the magnetometers and collimator. All values are reported
+in 4-byte fields separated by delimiters. As the collimator ID value is a 64-bit value, there are two 4-
+byte fields which together represent the 64-bit ID.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-2
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-35
+TITLE: ADC Peripheral
+STATEMENT: >>>
+The firmware utilizes the internal ADC of the microcontroller to measure the pressure and
+temperature sensors. Each signal is on a separate ADC channel. The firmware continuously
+alternates between each channel to get new readings.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-1
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-13
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-36
+TITLE: Buttons
+STATEMENT: >>>
+After monitoring for debouncing, the firmware also performs specific actions based on which
+buttons were pressed. The following actions are mapped to specific button presses:
+
+-Laser button release results in the laser output signal toggling (alternating between lasers on and
+off)
+
+-LED button release results in the illumination LED output signal toggling (alternating between
+illumination LEDs on and off)
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-5
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FHI-38
+TITLE: Indicator LED Data
+STATEMENT: >>>
+As the firmware implements an indicator LED interface witch its individual colors for individual
+sections of the indicator LED ring, the data is structured in such a way so that the indicator LEDs
+can display specific “sequences” or “patterns”. These patterns are each structs, which are then all
+organized into an array of such patterns. Each pattern is indexed according to a specific system
+state (that is, each animation pattern is tied to a specific state).
+
+The animation struct contains two components: an integer indicating the number of “frames” in the
+animation, and an array of multiple “frames”. In turn, each “frame” is itself a struct. A frame is
+comprised of two components: an integer value indicating the millisecond duration of the frame,
+and a two-dimension array indicating the colors of the frame.
+
+The color array of each frame is two dimensional since each frame not only has multiple sectors
+(corresponding to the physical quadrants of the indicator LED ring), but also each sector is
+represented by the values of three individual LEDs (red, green, and blue).
+
+When the indicator LED interface is outputting data to the LED controllers, it will cycle through the
+current animation pattern to output the current frame. It does so by setting the output of the LED
+controllers to the specified colors of the frame, for the given duration of the frame. Once the frame
+time has expired, the LED interface moves onto the next frame of the current pattern.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-6
+  ROLE: Refines
+
+[[/SECTION]]
+
+[[/SECTION]]

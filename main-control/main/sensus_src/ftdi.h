@@ -1,0 +1,34 @@
+/*
+ */ 
+
+
+#ifndef FTDI_H_
+#define FTDI_H_
+
+#define FLASH_ADDR_START	0x400000
+#define CRC_FLASH_PAGE			240
+
+#define FTDI_RX_CMD_IDX			1
+#define FTDI_RX_CMD_BYTES		5
+#define FTDI_RX_PARAM_IDX		(FTDI_RX_CMD_BYTES + FTDI_RX_CMD_IDX)
+#define FTDI_RX_PARAM_BYTES		FTDI_RX_CMD_BYTES
+#define FTDI_RX_DATA_IDX		(FTDI_RX_PARAM_IDX + FTDI_RX_PARAM_BYTES)
+#define FTDI_RX_DATA_BYTES		8
+#define FTDI_MIN_RX_BYTES		(FTDI_RX_PARAM_IDX + 1)
+#define FTDI_RX_MAX_BYTES		(FTDI_RX_DATA_IDX + FTDI_RX_DATA_BYTES + 1)
+
+enum
+{
+	FTDI_CMD_NONE = 0,
+	FTDI_CMD_BOOTLOADER,
+	FTDI_CMD_GET,
+	FTDI_CMD_SET,
+	FTDI_CMD_GO
+};
+
+void init_ftdi();
+void process_ftdi();
+
+uint32_t get_app_crc();
+
+#endif /* FTDI_H_ */

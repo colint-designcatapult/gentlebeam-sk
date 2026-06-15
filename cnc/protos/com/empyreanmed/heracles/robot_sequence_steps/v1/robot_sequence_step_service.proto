@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.robot_sequence_steps.v1;
+
+import "com/empyreanmed/heracles/robot_sequence_steps/v1/robot_sequence_step.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs CRUD operations on robot sequence steps.
+service RobotSequenceStepService {
+  // Lists robot sequence steps matching request parameters.
+  rpc ListRobotSequenceSteps(ListRobotSequenceStepsRequest) returns (ListRobotSequenceStepsResponse);
+
+  // Returns a single robot sequence step.
+  rpc GetRobotSequenceStep(GetRobotSequenceStepRequest) returns (GetRobotSequenceStepResponse);
+
+  // Creates a new robot sequence step.
+  rpc CreateRobotSequenceStep(CreateRobotSequenceStepRequest) returns (CreateRobotSequenceStepResponse);
+
+  // Updates a single robot sequence step.
+  rpc UpdateRobotSequenceStep(UpdateRobotSequenceStepRequest) returns (UpdateRobotSequenceStepResponse);
+
+  // Deletes a single robot sequence step.
+  rpc DeleteRobotSequenceStep(DeleteRobotSequenceStepRequest) returns (DeleteRobotSequenceStepResponse);
+}
+
+// Request message for listing robot sequence steps.
+message ListRobotSequenceStepsRequest {
+  // The maximum number of robot sequence steps to return.
+  optional int32 page_size = 1;
+
+  // A page token, received from a previous `ListRobotSequenceSteps` call.
+  optional string page_token = 2;
+}
+
+// Response message with the listed robot sequence steps.
+message ListRobotSequenceStepsResponse {
+  // The robot sequence steps matching the list request.
+  repeated RobotSequenceStep robot_sequence_steps = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+
+  // A token that can be sent as `page_token` to retrieve the next page of results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single robot sequence step.
+message GetRobotSequenceStepRequest {
+  // The ID of the robot sequence step to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for fetching a single robot sequence step.
+message GetRobotSequenceStepResponse {
+  // The robot sequence step with the ID provided in the request.
+  RobotSequenceStep robot_sequence_step = 1;
+}
+
+// Request message for creating a new robot sequence step.
+message CreateRobotSequenceStepRequest {
+  // The robot sequence step to be created.
+  optional RobotSequenceStep robot_sequence_step = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created robot sequence step.
+message CreateRobotSequenceStepResponse {
+  // The robot sequence step that was created.
+  optional RobotSequenceStep robot_sequence_step = 1;
+}
+
+// Request message for updating an existing robot sequence step.
+message UpdateRobotSequenceStepRequest {
+  // The robot sequence step to be updated.
+  optional RobotSequenceStep robot_sequence_step = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the robot sequence step to update. Must not be empty.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated robot sequence step.
+message UpdateRobotSequenceStepResponse {
+  // The updated robot sequence step.
+  RobotSequenceStep robot_sequence_step = 1;
+}
+
+// Request message for deleting a robot sequence step.
+message DeleteRobotSequenceStepRequest {
+  // The ID of the robot sequence step to be deleted.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteRobotSequenceStep`.
+message DeleteRobotSequenceStepResponse {}

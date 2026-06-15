@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.head.v1;
+
+import "com/empyreanmed/heracles/head/v1/head.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on Head resources.
+service HeadService {
+  // Lists all heads available in the system.
+  rpc ListHeads(ListHeadsRequest) returns (ListHeadsResponse);
+
+  // Gets a specific head by its ID.
+  rpc GetHead(GetHeadRequest) returns (GetHeadResponse);
+
+  // Creates a new head record.
+  rpc CreateHead(CreateHeadRequest) returns (CreateHeadResponse);
+
+  // Updates an existing head record.
+  rpc UpdateHead(UpdateHeadRequest) returns (UpdateHeadResponse);
+
+  // Deletes a head record by ID.
+  rpc DeleteHead(DeleteHeadRequest) returns (DeleteHeadResponse);
+}
+
+// Request message for listing heads.
+message ListHeadsRequest {}
+
+// Response message containing the list of heads.
+message ListHeadsResponse {
+  // The list of heads.
+  repeated Head heads = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for getting a single head.
+message GetHeadRequest {
+  // The unique ID of the head to retrieve.
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for a single head.
+message GetHeadResponse {
+  // The head details.
+  Head head = 1;
+}
+
+// Request message for creating a new head.
+message CreateHeadRequest {
+  // The head resource to create.
+  Head head = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for the created head.
+message CreateHeadResponse {
+  // The created head details.
+  Head head = 1;
+}
+
+// Request message for updating an existing head.
+message UpdateHeadRequest {
+  // The head resource with updated details.
+  Head head = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields to update.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for the updated head.
+message UpdateHeadResponse {
+  // The updated head details.
+  Head head = 1;
+}
+
+// Request message for deleting a head.
+message DeleteHeadRequest {
+  // The unique ID of the head to delete.
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for DeleteHead.
+message DeleteHeadResponse {}

@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.safety_checks.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a safety check
+message SafetyCheck {
+  // Unique identifier for the safety check
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The email address of the person who performed the safety check
+  optional string performed_by = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Date and time when the safety check was created
+  optional google.protobuf.Timestamp create_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Energy level used during the safety check
+  optional com.empyreanmed.heracles.enums.v1.ENERGY energy = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Duration of the safety check in seconds
+  optional float duration = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Dose measured during the safety check
+  optional float dose = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates whether x-ray light was on during the check
+  optional bool x_ray_light = 7 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates whether x-ray sound was on during the check
+  optional bool x_ray_sound = 8 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates whether door interlock was active during the check
+  optional bool door_interlock = 9 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates whether emergency stop (E-stop) was activated
+  optional bool e_stop = 10 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates whether service stop (S-stop) was activated
+  optional bool s_stop = 11 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates whether live video was available during the safety check
+  optional bool live_video = 12 [(google.api.field_behavior) = REQUIRED];
+
+  // Indicates whether live audio was available during the safety check
+  optional bool live_audio = 13 [(google.api.field_behavior) = REQUIRED];
+}

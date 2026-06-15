@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.warmups.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Warmup represents a warmup configuration.
+message Warmup {
+  // Unique identifier for the warmup.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // id of the collimator's head
+  optional int64 head_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The creation date of the warmup.
+  optional google.protobuf.Timestamp create_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Indicates a fast or full warmup.
+  optional com.empyreanmed.heracles.enums.v1.WARMUPTYPE warmup_type = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // heater_current of a warmup
+  optional float heater_current = 5 [(google.api.field_behavior) = REQUIRED];
+}

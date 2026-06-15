@@ -1,0 +1,470 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.SitesView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+ 
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+    
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+ 
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    xmlns:enums ="clr-namespace:Heracles.Core.Enums;assembly=Heracles.Core"
+    xmlns:helpers="clr-namespace:Xcc.Application.Helpers;assembly=Xcc.Application"
+    xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+
+    IsTabStop="False"
+    UseLayoutRounding="True"
+
+    mc:Ignorable="d" 
+    d:DesignHeight="600"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:SitesViewModel}, IsDesignTimeCreatable=True}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Heracles.Application;Component/UI/Resources/ListViewTemplates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <ObjectDataProvider x:Key="PathologyDataSource" ObjectType="{x:Type system:Enum}" MethodName="GetValues">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="enums:Pathology"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+            <ObjectDataProvider x:Key="SiteLocationDataSource" ObjectType="{x:Type helpers:EnumHelper}" MethodName="GetValuesSorted">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="enums:SiteLocation"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+            <ObjectDataProvider x:Key="DescriptionDataSource" ObjectType="{x:Type system:Enum}" MethodName="GetValues">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="enums:Description"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Border Style="{StaticResource BorderBlockStyle}">
+        <Grid>
+            <DockPanel>
+                <!--CRUD buttons-->
+                <Border 
+                Style="{StaticResource BorderToolbarStyle}"
+                Visibility="{Binding SiteToEdit, Converter={convx:ObjectToInvisibilityConverter}}">
+
+                    <Grid HorizontalAlignment="Right">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.2*" />
+                            <ColumnDefinition Width="1.3*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button 
+                            Grid.Column="0" 
+                            Style="{StaticResource ButtonToolbarStyle}" 
+                            Command="{Binding DeleteSiteCommand}"
+                            Visibility="Hidden">
+
+                            <DockPanel Margin="8,4">
+                                <Path 
+                                    Data="{StaticResource DeleteIcon}" 
+                                    Style="{StaticResource ButtonPathStyleThickness2}" 
+                                    StrokeThickness="1.3"
+                                    Height="{StaticResource ToolBarButtonSize}" Width="{StaticResource ToolBarButtonSize}"/>
+
+                                <TextBlock 
+                                    Visibility="{StaticResource ButtonsTextVisibility}"
+                                    Style="{StaticResource ButtonTextBlockStyle}"
+                                    Text="Delete"/>
+                            </DockPanel>
+                        </Button>
+
+                        <Button 
+                            Grid.Column="0" 
+                            Style="{StaticResource ButtonToolbarStyle}" 
+                            Command="{Binding ArchiveCommand}">
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Path Data="{StaticResource  CabinetIcon}" Style="{StaticResource ButtonPathStyleThickness2}"/>
+
+                                <TextBlock Grid.Column="2" Text="Archive" Style="{StaticResource ButtonTextBlockStyle}"/>
+                            </Grid>
+                        </Button>
+
+
+                        <Button 
+                            Grid.Column="1" 
+                            Style="{StaticResource ButtonToolbarStyle}" 
+                            Command="{Binding EditSiteCommand}">
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Path Data="{StaticResource UpdateIcon}" Style="{StaticResource ButtonPathStyleThickness2}">
+                                    <Path.RenderTransform>
+                                        <TranslateTransform Y="-1"/>
+                                    </Path.RenderTransform>
+                                </Path>
+
+                                <TextBlock Grid.Column="2" Text="Update" Style="{StaticResource ButtonTextBlockStyle}"/>
+                            </Grid>
+                        </Button>
+
+                        <Button 
+                            Grid.Column="2"
+                            Style="{StaticResource ButtonToolbarStyle}" 
+                            Command="{Binding NewSiteCommand}">
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Path Data="{StaticResource AddIcon}" Style="{StaticResource ButtonPathStyleThickness2}"/>
+                                <TextBlock Grid.Column="2" Text="Add" Style="{StaticResource ButtonTextBlockStyle}"/>
+                            </Grid>
+                        </Button>
+                    </Grid>
+                </Border>
+
+
+                <DockPanel 
+                    DockPanel.Dock="Bottom"
+                    Visibility="{Binding SiteToEdit, Converter={convx:ObjectToVisibilityConverter}}">
+
+                    <!--Accept and Cancel buttons-->
+                    <Border Style="{StaticResource BorderToolbarStyle}">
+                        <Grid HorizontalAlignment="Right">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button 
+                        Grid.Column="1" 
+                        Style="{StaticResource ButtonToolbarStyle}" 
+                        Command="{Binding AcceptSiteCommand}">
+
+                                <StackPanel Orientation="Horizontal" Margin="8,4">
+                                    <ContentControl Content="{StaticResource AcceptIcon}"/>
+
+                                    <TextBlock 
+                                Visibility="{StaticResource ButtonsTextVisibility}"
+                                Style="{StaticResource ButtonTextBlockStyle}"
+                                Text="Save"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button 
+                            Grid.Column="2" 
+                            Style="{StaticResource ButtonToolbarStyle}" 
+                            Command="{Binding CancelSiteCommand}"
+                            IsCancel="True">
+
+                                <StackPanel Orientation="Horizontal" Margin="8,4">
+                                    <ContentControl Content="{StaticResource CancelIcon}"/>
+
+                                    <TextBlock 
+                                    Visibility="{StaticResource ButtonsTextVisibility}"
+                                    Style="{StaticResource ButtonTextBlockStyle}"
+                                    Text="Cancel"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!--Site editor view-->
+                    
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Border BorderThickness="0,2,0,0" BorderBrush="{StaticResource BlockBorderColor}">
+                            <Border.Margin>
+                                <Thickness 
+                                    Left="{StaticResource BlockContentSmallMarginValue}"
+                                    Right="{StaticResource BlockContentSmallMarginValue}"
+                                    Bottom="{StaticResource BlockContentSmallMarginValue}"/>
+                            </Border.Margin>
+                        </Border>
+
+                        <Grid Grid.Row="1" Background="{StaticResource BlockBackgroundColor}">
+                            <StackPanel  Margin="8,4">
+                                <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Field Name"/>
+                                    <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                </TextBlock>
+
+                                <controls:XccTextBox 
+                                x:Name="SiteNameTextBox" 
+                                
+                                Height="{StaticResource FieldHeight}"
+                                Text="{Binding SiteToEdit.SiteName}"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Grid.Row="2" Background="{StaticResource BlockBackgroundColor}">
+                            <StackPanel  Margin="8,4">
+                                <TextBlock Style="{StaticResource TextBlockLegendStyle}">
+                                <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Field Location"/>
+                                    <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                </TextBlock>
+                            </TextBlock>
+                                <ComboBox
+                                ItemsSource="{Binding Source={StaticResource SiteLocationDataSource}}"
+                                SelectedItem="{Binding SiteToEdit.SiteLocation}"
+                                SelectedIndex="0"
+                                Height="{StaticResource FieldHeight}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Grid.Row="3" Background="{StaticResource BlockBackgroundColor}">
+                            <StackPanel  Margin="8,4">
+                                <TextBlock Style="{StaticResource TextBlockLegendStyle}">
+                                <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Pathology"/>
+                                    <Run Text="*" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                                </TextBlock>
+                            </TextBlock>
+                                <ComboBox
+                                ItemsSource="{Binding Source={StaticResource PathologyDataSource}}"
+                                SelectedItem="{Binding SiteToEdit.Pathology}"
+                                SelectedIndex="0"
+                                Height="{StaticResource FieldHeight}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Grid.Row="4" Background="{StaticResource BlockBackgroundColor}">
+                            <StackPanel  Margin="8,4">
+                                <TextBlock Style="{StaticResource TextBlockLegendStyle}">
+                                <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Subcell #1"/>
+                                </TextBlock>
+                            </TextBlock>
+
+                                <ComboBox
+                                IsEnabled="{Binding IsSubcellRequired}"
+                                ItemsSource="{Binding AvailableSubcells}"
+                                SelectedItem="{Binding SiteToEdit.SubcellOne}"
+                                SelectedIndex="0"                                
+                                Height="{StaticResource FieldHeight}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Grid.Row="5" Background="{StaticResource BlockBackgroundColor}">
+                            <StackPanel  Margin="8,4">
+                                <TextBlock Style="{StaticResource TextBlockLegendStyle}">
+                                <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Subcell #2"/>
+                                </TextBlock>
+                            </TextBlock>
+
+                                <ComboBox
+                                IsEnabled="{Binding IsSubcellRequired}"
+                                ItemsSource="{Binding AvailableSubcells}"
+                                SelectedItem="{Binding SiteToEdit.SubcellTwo}"
+                                SelectedIndex="0"                                
+                                Height="{StaticResource FieldHeight}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Grid.Row="6" Background="{StaticResource BlockBackgroundColor}">
+                            <StackPanel  Margin="8,4">
+                                <TextBlock Style="{StaticResource TextBlockLegendStyle}">
+                                <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Description"/>
+                                </TextBlock>
+                            </TextBlock>
+                                <ComboBox
+                                ItemsSource="{Binding Source={StaticResource DescriptionDataSource}}"
+                                SelectedItem="{Binding SiteToEdit.Description}"
+                                SelectedIndex="0"
+                                Height="{StaticResource FieldHeight}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Grid.Row="7" Background="{StaticResource BlockBackgroundColor}">
+                            <StackPanel  Margin="8,4,8,8">
+                                <TextBlock Text="ICD code" Style="{StaticResource TextBlockLegendStyle}"/>
+                                <controls:XccTextBox IsReadOnly="True" Height="{StaticResource FieldHeight}" Text="{Binding SiteToEdit.IcdCode, Converter={convx:EnumValueToDisplayNameConverter}}"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Grid.Row="8" Background="{StaticResource BlockBackgroundColor}">
+                            <StackPanel  Margin="8,4,8,8">
+                                <TextBlock Text="Referring Provider" Style="{StaticResource TextBlockLegendStyle}"/>
+                                <controls:XccTextBox Height="{StaticResource FieldHeight}" Text="{Binding SiteToEdit.Referring}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </DockPanel>
+
+                <!--Site list-->
+                <ListView 
+                    Grid.Row="0"
+                    SelectionMode="Single" 
+                    ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                    ItemsSource="{Binding FieldModel.Fields}" 
+                    SelectedItem="{Binding TreatmentInfo.Diagnosis, Mode=TwoWay}"
+                    IsHitTestVisible="{Binding SiteToEdit, Converter={convx:ObjectIsNullConverter}}"
+                    HorizontalContentAlignment="Stretch"
+                    AlternationCount="100000000">
+
+                    <ListView.Resources>
+                        <GridLength x:Key="SitesTextVerticalMargin">4</GridLength>
+                    </ListView.Resources>
+
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type ListViewItem}">
+                                        <Border x:Name="PART_Border" Margin="2,4" BorderThickness="2" CornerRadius="{StaticResource BlockCornerRadius}">
+                                            <ContentPresenter
+                                                Margin="8,4"
+                                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                        </Border>
+
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="PART_Border" Property="BorderThickness" Value="2"/>
+                                                <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource SelectedForegroundBrush}"/>
+                                                <Setter TargetName="PART_Border" Property="Background" Value="#20FFA500"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+
+                    <ListView.Template>
+                        <ControlTemplate>
+                            <Border CornerRadius="{StaticResource BlockTopCornerRadius}" Background="{StaticResource BlockBackgroundColor}">
+                                <ScrollViewer Grid.Row="1">
+                                    <ItemsPresenter HorizontalAlignment="Stretch" Margin="{StaticResource BlockContentSmallMargin}" Grid.IsSharedSizeScope="True"/>
+                                </ScrollViewer>
+                            </Border>
+                        </ControlTemplate>
+                    </ListView.Template>
+
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid IsEnabled="{Binding Archived, Converter={convx:InverseBooleanConverter}, FallbackValue=False}" Background="Transparent">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="NumberColumn"/>
+                                    <ColumnDefinition Width="{StaticResource BlockContentMarginGridLength}"/>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}"/>
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="4" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock 
+                                    Grid.Column="0" Grid.Row="0" Grid.RowSpan="3"
+                                    HorizontalAlignment="Center"
+                                    FontWeight="SemiBold"
+                                    FontSize="24"
+                                    Style="{StaticResource TextBlockLegendStyle}"
+                                    Text="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(ItemsControl.AlternationIndex), Converter={convx:IndexPlusOneConverter}, StringFormat={}{0}}"/>
+
+                                <TextBlock 
+                                    Grid.Column="2" Grid.Row="0" 
+                                    FontWeight="SemiBold" 
+                                    FontSize="{StaticResource LargeFontSize}" 
+                                    Foreground="{StaticResource AccentForegroundColor}"
+                                    Text="{Binding SiteName}"/>
+
+                                <TextBlock 
+                                    Grid.Column="2" Grid.Row="2" 
+                                    Text="{Binding Pathology, Converter={convx:EnumValueToDisplayNameConverter}}" 
+                                    Foreground="{StaticResource BaseForegroundColor}"/>
+
+                                <Border 
+                                    Grid.RowSpan="3" Grid.Column="4"
+                                    VerticalAlignment="Center"
+                                    Background="{StaticResource AccentForegroundColor}" 
+                                    CornerRadius="{StaticResource FieldCornerRadius}" 
+                                    Visibility="{Binding Archived, Converter={convx:BooleanToVisibilityConverter Invisibility=Hidden}}">
+
+                                    <TextBlock Text="Archived" Foreground="{StaticResource AppBackgroundColor}" Margin="4,2" FontSize="15"/>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </DockPanel>
+
+            <ucx:TaskOverlay 
+                Grid.RowSpan="2" Grid.ColumnSpan="3"
+                Visibility="{Binding FieldModel.CurrentFieldTask.IsSuccessfullyCompleted, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue=Collapsed}"
+                ObservedTask="{Binding FieldModel.CurrentFieldTask}"
+                RetryCommand="{Binding FieldModel.RetryFieldTaskCommand}"
+                Description="{Binding FieldModel.CurrentFieldTask.ErrorMessage}"
+                CornerRadius="7,7,7,7"/>
+        </Grid>
+    </Border>
+</ContentControl>

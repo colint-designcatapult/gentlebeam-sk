@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.treatments.v1;
+
+import "com/empyreanmed/heracles/treatments/v1/treatment.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on treatments.
+service TreatmentService {
+  // Lists treatments by plan ID.
+  rpc ListTreatmentsByPlanId(ListTreatmentsByPlanIdRequest) returns (ListTreatmentsByPlanIdResponse);
+
+  // Lists treatments by diagnosis ID.
+  rpc ListTreatmentsByDiagnosisId(ListTreatmentsByDiagnosisIdRequest) returns (ListTreatmentsByDiagnosisIdResponse);
+
+  // Returns a single treatment.
+  rpc GetTreatment(GetTreatmentRequest) returns (GetTreatmentResponse);
+
+  // Creates a new treatment for a visit.
+  rpc CreateTreatment(CreateTreatmentRequest) returns (CreateTreatmentResponse);
+
+  // Updates an existing treatment.
+  rpc UpdateTreatment(UpdateTreatmentRequest) returns (UpdateTreatmentResponse);
+
+  // Deletes a treatment.
+  rpc DeleteTreatment(DeleteTreatmentRequest) returns (DeleteTreatmentResponse);
+}
+
+// Request message for listing treatments by plan ID.
+message ListTreatmentsByPlanIdRequest {
+  // The ID of the plan associated with the treatments to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The maximum number of treatments to return. The service may return fewer than this value.
+  // If unset or zero, all treatments will be returned.
+  optional int32 page_size = 2;
+
+  // A page token, received from a previous `ListTreatmentsByPlanId` call.
+  // Provide this to retrieve the subsequent page.
+  optional string page_token = 3;
+}
+
+// Response message with the listed treatments by plan ID.
+message ListTreatmentsByPlanIdResponse {
+  // The treatments matching the list request. The order is unspecified.
+  repeated Treatment treatments = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+
+  // A token that can be sent as `page_token` to retrieve the next page of results.
+  // If this field is omitted, there are no more results.
+  optional string next_page_token = 2;
+}
+
+// Request message for listing treatments by diagnosis ID.
+message ListTreatmentsByDiagnosisIdRequest {
+  // The ID of the diagnosis associated with the treatments to be returned.
+  optional int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The maximum number of treatments to return. The service may return fewer than this value.
+  // If unset or zero, all treatments will be returned.
+  optional int32 page_size = 2;
+
+  // A page token, received from a previous `ListTreatmentsByDiagnosisId` call.
+  // Provide this to retrieve the subsequent page.
+  optional string page_token = 3;
+}
+
+// Response message with the listed treatments by diagnosis ID.
+message ListTreatmentsByDiagnosisIdResponse {
+  // The treatments matching the list request. The order is unspecified.
+  repeated Treatment treatments = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+
+  // A token that can be sent as `page_token` to retrieve the next page of results.
+  // If this field is omitted, there are no more results.
+  optional string next_page_token = 2;
+}
+
+// Request message for fetching a single treatment.
+message GetTreatmentRequest {
+  // The ID of the treatment to fetch.
+  optional int64 treatment_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched treatment.
+message GetTreatmentResponse {
+  // The treatment with the provided ID.
+  Treatment treatment = 1;
+}
+
+// Request message for creating a new treatment.
+message CreateTreatmentRequest {
+  // Details of the treatment to create.
+  optional Treatment treatment = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created treatment.
+message CreateTreatmentResponse {
+  // The treatment that was created.
+  optional Treatment treatment = 1;
+}
+
+// Request message for updating an existing treatment.
+message UpdateTreatmentRequest {
+  // The treatment to update.
+  optional Treatment treatment = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the treatment to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated treatment.
+message UpdateTreatmentResponse {
+  // The updated treatment.
+  Treatment treatment = 1;
+}
+
+// Request message for deleting a treatment.
+message DeleteTreatmentRequest {
+  // The ID of the treatment to delete.
+  optional int64 treatment_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteTreatment`.
+message DeleteTreatmentResponse {}

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.system.v1;
+
+import "com/empyreanmed/heracles/system/v1/system.proto";
+
+// Provides system information and operations
+service SystemService {
+  // Returns system information including version
+  rpc GetSystemInfo(GetSystemInfoRequest) returns (GetSystemInfoResponse);
+}
+
+// Request message for getting system information
+message GetSystemInfoRequest {
+  // Empty request
+}
+
+// Response message with system information
+message GetSystemInfoResponse {
+  // System information including version
+  System system = 1;
+}

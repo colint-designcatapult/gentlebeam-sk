@@ -1,0 +1,11 @@
+!ifndef SETUP_SECTIONS_SHORTCUTS_SEC_START_MENU_SHORTCUTS_NSH
+!define SETUP_SECTIONS_SHORTCUTS_SEC_START_MENU_SHORTCUTS_NSH
+
+LangString DESC_SEC_START_MENU_SHORTCUTS   ${LANG_ENGLISH} "Create shortcuts in Start Menu"
+
+!macro AddSection_SEC_START_MENU_SHORTCUTS
+    Section "Start Menu shortcuts" SEC_START_MENU_SHORTCUTS
+    SectionEnd
+!macroend
+
+!endif

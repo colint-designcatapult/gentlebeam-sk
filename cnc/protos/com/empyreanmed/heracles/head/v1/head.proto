@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.head.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents an head field associated with a head field.
+message Head {
+  // head  id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Head creation date
+  optional google.protobuf.Timestamp create_date = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The Serial associated with the Head
+  optional string serial = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // activity status of head
+  optional bool is_active = 4 [(google.api.field_behavior) = REQUIRED];
+}

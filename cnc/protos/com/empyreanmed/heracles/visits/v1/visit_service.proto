@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.visits.v1;
+
+import "com/empyreanmed/heracles/visits/v1/visit.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on visits.
+service VisitsService {
+  // Lists visits for a given patient.
+  rpc ListVisits(ListVisitsRequest) returns (ListVisitsResponse);
+
+  // Returns a single visit.
+  rpc GetVisit(GetVisitRequest) returns (GetVisitResponse);
+
+  // Creates a new visit for a patient.
+  rpc CreateVisit(CreateVisitRequest) returns (CreateVisitResponse);
+
+  // Updates an existing visit.
+  rpc UpdateVisit(UpdateVisitRequest) returns (UpdateVisitResponse);
+
+  // Deletes a visit.
+  rpc DeleteVisit(DeleteVisitRequest) returns (DeleteVisitResponse);
+}
+
+// Request message for listing visits.
+message ListVisitsRequest {
+  // The ID of the patient for which to list visits.
+  optional int64 patient_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed visits.
+message ListVisitsResponse {
+  // The visits matching the list request. The order is unspecified.
+  repeated Visit visits = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single visit.
+message GetVisitRequest {
+  // The ID of the visit to fetch.
+  optional int64 visit_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched visit.
+message GetVisitResponse {
+  // The visit with the provided ID.
+  Visit visit = 1;
+}
+
+// Request message for creating a new visit.
+message CreateVisitRequest {
+  // Details of the visit to create.
+  optional Visit visit = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created visit.
+message CreateVisitResponse {
+  // The visit that was created.
+  Visit visit = 1;
+}
+
+// Request message for updating an existing visit.
+message UpdateVisitRequest {
+  // The visit to update.
+  optional Visit visit = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the visit to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated visit.
+message UpdateVisitResponse {
+  // The updated visit.
+  Visit visit = 1;
+}
+
+// Request message for deleting a visit.
+message DeleteVisitRequest {
+  // The ID of the visit to delete.
+  optional int64 visit_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteVisit`.
+message DeleteVisitResponse {}

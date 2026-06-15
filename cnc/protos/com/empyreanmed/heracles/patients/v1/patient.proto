@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.patients.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Patients receive treatments and have modalities and treatment plans associated with them.
+message Patient {
+  // Patient id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Patient creation date
+  optional google.protobuf.Timestamp creation_date = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // email of patient's provider.
+  optional string provider_id = 3;
+
+  //path to patient's profile picture in device's storage.
+  optional string picture = 4;
+
+  // Patient identification number, accompanied by a type.
+  optional string patient_id = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // The type of patient identification, e.g Social Security / Passport number.
+  // Should be set from a user interface when setting a `patient_id`, and it can be used
+  // to disambiguate patients that may have the same `patient_id` value, but that represent
+  // different identification schemes in different countries for example.
+  optional com.empyreanmed.heracles.enums.v1.PATIENTIDTYPE patient_id_type = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Medical Record Number
+  optional string mrn = 7 [(google.api.field_behavior) = REQUIRED];
+
+  // First name
+  optional string first_name = 8 [(google.api.field_behavior) = REQUIRED];
+
+  // Middle name
+  optional string middle_name = 9;
+
+  // Last name
+  optional string last_name = 10 [(google.api.field_behavior) = REQUIRED];
+
+  // Sex
+  optional com.empyreanmed.heracles.enums.v1.SEXTYPE sex = 11;
+
+  // Birth date
+  optional google.protobuf.Timestamp dob = 12;
+
+  // Postal address line
+  optional string address = 13;
+
+  // City
+  optional string city = 14;
+
+  // State
+  optional string state = 15;
+
+  // Zip code
+  optional string zip = 16;
+
+  // Country
+  optional string country = 17;
+
+  // Phone number
+  optional string phone = 18;
+
+  // Email address
+  optional string email = 19;
+
+  // Ethnicity
+  optional string ethnicity = 20;
+
+  // Race, e.g White/Caucasian, African-American/Black, Hispanic/Latino etc
+  optional string race = 21;
+
+  //Notes about patient
+  optional string notes = 22;
+
+  //Status for Patient
+  optional com.empyreanmed.heracles.enums.v1.PATIENTSTATUS status = 23;
+}

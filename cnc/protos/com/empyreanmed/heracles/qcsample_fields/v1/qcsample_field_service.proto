@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.qcsample_fields.v1;
+
+import "com/empyreanmed/heracles/qcsample_fields/v1/qcsample_field.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on QCSampleFields.
+service QCSampleFieldService {
+  // Lists fields for a given quality control sample.
+  rpc ListQCSampleFields(ListQCSampleFieldsRequest) returns (ListQCSampleFieldsResponse);
+
+  // Returns a single quality control sample field.
+  rpc GetQCSampleField(GetQCSampleFieldRequest) returns (GetQCSampleFieldResponse);
+
+  // Creates a new quality control sample field.
+  rpc CreateQCSampleField(CreateQCSampleFieldRequest) returns (CreateQCSampleFieldResponse);
+
+  // Updates an existing quality control sample field.
+  rpc UpdateQCSampleField(UpdateQCSampleFieldRequest) returns (UpdateQCSampleFieldResponse);
+
+  // Deletes a quality control sample field.
+  rpc DeleteQCSampleField(DeleteQCSampleFieldRequest) returns (DeleteQCSampleFieldResponse);
+}
+
+// Request message for listing quality control sample fields.
+message ListQCSampleFieldsRequest {
+  // The ID of the quality control sample for which to list fields.
+  optional int64 qcsample_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed quality control sample fields.
+message ListQCSampleFieldsResponse {
+  // The quality control sample fields matching the list request. The order is unspecified.
+  repeated QCSampleField qcsamplefields = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single quality control sample field.
+message GetQCSampleFieldRequest {
+  // The ID of the quality control sample field to fetch.
+  optional int64 qcsamplefield_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched quality control sample field.
+message GetQCSampleFieldResponse {
+  // The quality control sample field with the provided ID.
+  QCSampleField qcsamplefield = 1;
+}
+
+// Request message for creating a new quality control sample field.
+message CreateQCSampleFieldRequest {
+  // Details of the quality control sample field to create.
+  optional QCSampleField qcsamplefield = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created quality control sample field.
+message CreateQCSampleFieldResponse {
+  // The quality control sample field that was created.
+  QCSampleField qcsamplefield = 1;
+}
+
+// Request message for updating an existing quality control sample field.
+message UpdateQCSampleFieldRequest {
+  // The quality control sample field to update.
+  optional QCSampleField qcsamplefield = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the quality control sample field to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated quality control sample field.
+message UpdateQCSampleFieldResponse {
+  // The updated quality control sample field.
+  QCSampleField qcsamplefield = 1;
+}
+
+// Request message for deleting a quality control sample field.
+message DeleteQCSampleFieldRequest {
+  // The ID of the quality control sample field to delete.
+  optional int64 qcsamplefield_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteQCSampleField`.
+message DeleteQCSampleFieldResponse {}

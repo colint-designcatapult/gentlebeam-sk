@@ -1,0 +1,120 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>True</UseWindowsForms>
+    <Platforms>x64</Platforms>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
+    <VersionPrefix>1.1.0</VersionPrefix><!--Used as version of nuget package-->
+    <InformationalVersion>$(AssemblyVersion) build $(BuildNumber) </InformationalVersion>
+    <Title>Command &amp; Control desktop apps library.</Title>
+    <PackageProjectUrl>https://bitbucket.org/empyrean-medical-devices/xcc/src/master/</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Models\RDBMS\Common\**" />
+    <EmbeddedResource Remove="Models\RDBMS\Common\**" />
+    <None Remove="Models\RDBMS\Common\**" />
+    <Page Remove="Models\RDBMS\Common\**" />
+  </ItemGroup>
+
+
+
+  <ItemGroup>
+    <None Remove="UI\Resources\Fonts\Florsn01.ttf" />
+    <None Remove="UI\Resources\Fonts\Florsn02.ttf" />
+    <None Remove="UI\Resources\Fonts\Florsn03.ttf" />
+    <None Remove="UI\Resources\Fonts\Florsn04.ttf" />
+    <None Remove="UI\Resources\Fonts\Florsn13.ttf" />
+    <None Remove="UI\Resources\Fonts\Florsn14.ttf" />
+    <None Remove="UI\Resources\Fonts\Florsn15.ttf" />
+    <None Remove="UI\Resources\Fonts\Florsn16.ttf" />
+    <None Remove="UI\Resources\Fonts\lcd.ttf" />
+    <None Remove="UI\Resources\Fonts\Password.ttf" />
+    <None Remove="UI\Resources\Fonts\WorkSans-Black.otf" />
+    <None Remove="UI\Resources\Fonts\WorkSans-Bold.otf" />
+    <None Remove="UI\Resources\Fonts\WorkSans-ExtraBold.otf" />
+    <None Remove="UI\Resources\Fonts\WorkSans-ExtraLight.otf" />
+    <None Remove="UI\Resources\Fonts\WorkSans-Hairline.otf" />
+    <None Remove="UI\Resources\Fonts\WorkSans-Light.otf" />
+    <None Remove="UI\Resources\Fonts\WorkSans-Medium.otf" />
+    <None Remove="UI\Resources\Fonts\WorkSans-Regular.otf" />
+    <None Remove="UI\Resources\Fonts\WorkSans-SemiBold.otf" />
+    <None Remove="UI\Resources\Fonts\WorkSans-Thin.otf" />
+    <None Remove="UI\Resources\Icons\female.png" />
+    <None Remove="UI\Resources\Icons\male.png" />
+    <None Remove="UI\Resources\Images\DemoImageSet\1.jpg" />
+    <None Remove="UI\Resources\Images\DemoImageSet\2.jpg" />
+    <None Remove="UI\Resources\Images\DemoImageSet\3.jpg" />
+    <None Remove="UI\Resources\Images\DemoImageSet\4.jpg" />
+    <None Remove="UI\Resources\Images\DemoImageSet\5.jpg" />
+    <None Remove="UI\Resources\Images\DemoImageSet\6.jpg" />
+    <None Remove="UI\Resources\Images\DemoImageSet\7.jpg" />
+    <None Remove="UI\Resources\Images\DemoImageSet\8.jpg" />
+    <None Remove="UI\Resources\Images\DemoImageSet\9.jpg" />
+    <None Remove="UI\Resources\Images\DemoImageSet\DeepColorImages\1.png" />
+    <None Remove="UI\Resources\Images\DemoImageSet\DeepColorImages\2.png" />
+    <None Remove="UI\Resources\Images\DemoImageSet\Photos\1.jpeg" />
+    <None Remove="UI\Resources\Images\DemoImageSet\Photos\2.jpeg" />
+    <None Remove="UI\Resources\Images\GentleBeamLogo.png" />
+    <None Remove="UI\Resources\Images\morpheus_18.ico" />
+    <None Remove="UI\Resources\Images\morpheus_18_gray.ico" />
+    <None Remove="UI\Resources\Images\morpheus_6.ico" />
+    <None Remove="UI\Resources\Images\morpheus_6_gray.ico" />
+    <None Remove="UI\Resources\Images\Robot.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="UI\Resources\Fonts\lcd.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="UI\Resources\Fonts\Password.ttf" />
+    <Resource Include="UI\Resources\Fonts\WorkSans-Black.otf" />
+    <Resource Include="UI\Resources\Fonts\WorkSans-Bold.otf" />
+    <Resource Include="UI\Resources\Fonts\WorkSans-ExtraBold.otf" />
+    <Resource Include="UI\Resources\Fonts\WorkSans-ExtraLight.otf" />
+    <Resource Include="UI\Resources\Fonts\WorkSans-Hairline.otf" />
+    <Resource Include="UI\Resources\Fonts\WorkSans-Light.otf" />
+    <Resource Include="UI\Resources\Fonts\WorkSans-Medium.otf" />
+    <Resource Include="UI\Resources\Fonts\WorkSans-Regular.otf" />
+    <Resource Include="UI\Resources\Fonts\WorkSans-SemiBold.otf" />
+    <Resource Include="UI\Resources\Fonts\WorkSans-Thin.otf" />
+    <Resource Include="UI\Resources\Images\DemoImageSet\DeepColorImages\1.png" />
+    <Resource Include="UI\Resources\Images\DemoImageSet\DeepColorImages\2.png" />
+    <Resource Include="UI\Resources\Images\DemoImageSet\Photos\1.jpeg" />
+    <Resource Include="UI\Resources\Images\DemoImageSet\Photos\2.jpeg" />
+    <Resource Include="UI\Resources\Images\female.png" />
+    <Resource Include="UI\Resources\Images\GentleBeamLogo.png" />
+    <Resource Include="UI\Resources\Images\male.png" />
+    <Resource Include="UI\Resources\Images\morpheus_18.ico" />
+    <Resource Include="UI\Resources\Images\morpheus_18_gray.ico" />
+    <Resource Include="UI\Resources\Images\morpheus_6.ico" />
+    <Resource Include="UI\Resources\Images\morpheus_6_gray.ico" />
+    <Resource Include="UI\Resources\Images\Robot.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FFME.Windows" Version="4.4.350" />
+    <PackageReference Include="Prism.Wpf" Version="8.1.97" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Xcc.Styles\Xcc.Styles.csproj" />
+    <ProjectReference Include="..\Xcc.Core\Xcc.Core.csproj" />
+    <ProjectReference Include="..\Xcc.Infra\Xcc.Infra.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\TreatmentConsole\QualityAssurance\SafetyCheckTabView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="echo dotnet nuget push $(AssemblyName).$(VersionPrefix).nupkg --source OrimtechAzureComponents -k az &gt; $(TargetDir)..\PushNugetPackage.bat" />
+  </Target>
+	
+</Project>

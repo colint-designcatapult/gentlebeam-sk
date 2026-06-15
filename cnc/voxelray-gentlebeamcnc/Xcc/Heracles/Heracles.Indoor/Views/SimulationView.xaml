@@ -1,0 +1,440 @@
+﻿<ContentControl
+    x:Class="Heracles.Indoor.Views.SimulationView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    
+    xmlns:system="clr-namespace:System;assembly=netstandard"
+    xmlns:enums ="clr-namespace:Heracles.Core.Enums;assembly=Heracles.Core"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
+    
+    xmlns:commonx="clr-namespace:Xcc.Application.Common;assembly=Xcc.Application"
+    
+    xmlns:prism="http://prismlibrary.com/"
+    xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    IsTabStop="False"
+    KeyboardNavigation.TabNavigation = "Continue"
+    UseLayoutRounding="True"
+
+    x:Name="Root"
+
+    mc:Ignorable="d"
+    d:DesignWidth="1000"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:SimulationViewModel}, IsDesignTimeCreatable=True}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style TargetType="{x:Type controls:XccTextBox}" BasedOn="{StaticResource XccTextBoxDefaultStyle}">
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            </Style>
+            
+            
+            <ObjectDataProvider x:Key="PatientPositionSource" ObjectType="{x:Type system:Enum}" MethodName="GetValues">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="enums:PatientPosition"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+            
+            
+            <ObjectDataProvider x:Key="TreatmentDeviceSource" ObjectType="{x:Type system:Enum}" MethodName="GetValues">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="enums:DeviceType"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Grid>
+        <DockPanel IsEnabled="{Binding TreatmentInfoStore.Diagnosis, Converter={convx:ObjectIsNotNullConverter}, FallbackValue=false}">
+            <Border Style="{StaticResource BorderToolbarStyle}" Visibility="{Binding ToolBarVisibility, ElementName=Root}">
+                <Grid HorizontalAlignment="Right">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--Reload button-->
+                    <Button 
+                        Grid.Column="0"
+                        Style="{StaticResource ButtonToolbarStyle}" 
+                        Command="{Binding ReloadCommand}"
+                        IsTabStop="False">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path 
+                                Data="{StaticResource ReloadIcon}" 
+                                Style="{StaticResource ButtonPathStyleThickness2}"/>
+
+                            <TextBlock Grid.Column="2" Text="Reload" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Button>
+
+                    <!--Add button-->
+                    <Button
+                        Grid.Column="2"
+                        Style="{StaticResource ButtonToolbarStyle}" 
+                        Command="{Binding AddCommand}"
+                        TabIndex="0">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path Data="{StaticResource AddIcon}" Style="{StaticResource ButtonPathStyleThickness2}"/>
+                            <TextBlock Grid.Column="2" Text="Add" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Button>
+
+                    <!--Save button-->
+                    <Button
+                        Grid.Column="4"
+                        Style="{StaticResource ButtonToolbarAccentStyle}" 
+                        Command="{Binding SaveCommand}"
+                        TabIndex="11">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path Data="{StaticResource SaveToDiskIcon}" Style="{StaticResource PathButtonAccentStyle}"/>
+                            <TextBlock Grid.Column="2" Text="Save" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Button>
+                </Grid>
+            </Border>
+        
+            <Border Style="{StaticResource BorderBlockStyle}" CornerRadius="{Binding CornerRadius, ElementName=Root}">
+                <Grid Margin="{StaticResource LabeledBlockContentMargin}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock 
+                        Grid.Row="0" Grid.ColumnSpan="3"
+                        Text="Simulation"  
+                        FontSize="{StaticResource LargeFontSize}" 
+                        Foreground="{StaticResource ForegroundPaleBrush}"
+                        Style="{StaticResource TextBlockLegendStyle}"
+                        HorizontalAlignment="Left"/> 
+
+                    <Grid 
+                        Grid.Row="2"
+                        Grid.IsSharedSizeScope="True"
+                        IsEnabled="{Binding SimulationForm.Status, Converter={convx:ObjectIsNotEqualConverter}, ConverterParameter={x:Static enums:SimulationStatus.Approved}, FallbackValue=false}">
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Grid.IsSharedSizeScope="True">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="{StaticResource BlockMarginGridLength}" />
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="{StaticResource BlockMarginGridLength}" />
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="{StaticResource BlockMarginGridLength}" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="SharedSizeColumn1"/>
+                                <ColumnDefinition Width="{StaticResource BlockMarginGridLength}" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="SharedSizeColumn1"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid Grid.Column="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock 
+                                    Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
+                                    Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Lesion Size"/>
+                                    <Run Foreground="{StaticResource ForegroundPaleBrush}" Text="[cm]"/>
+                                </TextBlock>
+
+                                <controls:XccTextBox
+                                    Grid.Row="2" Grid.Column="0" 
+                                    TabIndex="0"
+                                    Name="LesionSizeLTextBox"
+                                    Watermark="0.0"
+                                    Text="{Binding SimulationForm.LesionSizeL, Converter={convx:DoubleToPersistantStringConverter StringFormat={}{0:F1}}}"/>
+
+                                <TextBlock
+                                    Grid.Row="2" Grid.Column="1"
+                                    HorizontalAlignment="Center"
+                                    Style="{StaticResource TextBlockLegendStyle}"
+                                    Text=" x " />
+
+                                <controls:XccTextBox
+                                    Grid.Row="2" Grid.Column="2"
+                                    TabIndex="1"
+                                    Name="LesionSizeWTextBox"
+                                    Watermark="0.0"
+                                    Text="{Binding SimulationForm.LesionSizeW, Converter={convx:DoubleToPersistantStringConverter StringFormat={}{0:F1}}}"/>
+                            </Grid>
+
+                            <Grid Grid.Column="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock 
+                                    Grid.Row="0" Grid.ColumnSpan="3"
+                                    Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Margin Size"/>
+                                    <Run Foreground="{StaticResource ForegroundPaleBrush}"  Text="[cm]"/>
+                                </TextBlock>
+
+                                <controls:XccTextBox
+                                    Grid.Row="2" Grid.Column="0"
+                                    TabIndex="2"
+                                    Watermark="0.0"
+                                    Text="{Binding SimulationForm.MarginSizeL, Converter={convx:DoubleToPersistantStringConverter StringFormat={}{0:F1}}}"/>
+
+                                <TextBlock
+                                    Grid.Row="2" Grid.Column="1"
+                                    HorizontalAlignment="Center"
+                                    Style="{StaticResource TextBlockLegendStyle}"
+                                    Text=" x " />
+
+                                <controls:XccTextBox
+                                    Grid.Row="2" Grid.Column="2"
+                                    TabIndex="3"
+                                    Watermark="0.0"
+                                    Text="{Binding SimulationForm.MarginSizeW, Converter={convx:DoubleToPersistantStringConverter StringFormat={}{0:F1}}}"/>
+                            </Grid>
+
+                            <Grid Grid.Column="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock 
+                                    Grid.Row="0" Grid.ColumnSpan="3"
+                                    Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Field Size"/>
+                                    <Run Foreground="{StaticResource ForegroundPaleBrush}"  Text="[cm]"/>
+                                </TextBlock>
+
+                                <controls:XccTextBox
+                                    Grid.Row="2" Grid.Column="0"
+                                    TabIndex="4"
+                                    Watermark="0.0"
+                                    IsReadOnly="True"
+                                    Text="{Binding SimulationForm.ShieldSizeL, Converter={convx:DoubleToPersistantStringConverter StringFormat={}{0:F1}}}"/>
+
+                                <TextBlock
+                                    Grid.Row="2" Grid.Column="1"
+                                    HorizontalAlignment="Center"
+                                    Style="{StaticResource TextBlockLegendStyle}"
+                                    Text=" x " />                        
+
+                                <controls:XccTextBox
+                                    Grid.Row="2" Grid.Column="2"
+                                    TabIndex="5"
+                                    IsReadOnly="True"
+                                    Watermark="0.0"
+                                    Text="{Binding SimulationForm.ShieldSizeW, Converter={convx:DoubleToPersistantStringConverter StringFormat={}{0:F1}}}"/>
+                            </Grid>
+
+                            <!--Lesion Depth-->
+                            <Grid Grid.Column="8">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock 
+                                    Grid.Row="0"
+                                    Style="{StaticResource TextBlockLegendStyle}">
+                                    <Run Text="Lesion Depth"/>
+                                    <Run Foreground="{StaticResource ForegroundPaleBrush}"  Text="[mm]"/>
+                                </TextBlock>
+
+                                <controls:XccTextBox
+                                    Grid.Row="2"
+                                    TabIndex="6"
+                                    Name="LesionDepthTextBox"
+                                    Watermark="0.0"
+                                    Text="{Binding SimulationForm.LesionDepth, Converter={convx:DoubleToPersistantStringConverter StringFormat={}{0:F1}}}"/>
+                            </Grid>
+
+                            <!--Applicator size-->
+                            <Grid Grid.Column="6">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                                    <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                                </Grid.RowDefinitions>
+
+
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Style="{StaticResource TextBlockLegendStyle}" 
+                                    Text="Applicator size"/>
+
+                                <ComboBox 
+                                    TabIndex="7"
+                                    Grid.Row="2"
+                                    DisplayMemberPath="DisplayName"
+                                    SelectedValuePath="Value"
+                                    SelectedValue="{Binding SimulationForm.TargetType}"
+                                    ItemsSource="{commonx:EnumToItemsSource {x:Type enums:TargetType}, SkipCount=5}">
+                                </ComboBox>
+                            </Grid>
+                        </Grid>
+                    
+
+                        <!--Devices-->
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock
+                                Grid.Row="0"
+                                Style="{StaticResource TextBlockLegendStyle}"
+                                Text="Devices" />
+
+                            <ucx:XccCheckableEntryComboBox 
+                                Grid.Row="2"
+                                TabIndex="8"
+                                x:Name="Devices"
+                                CheckableEntriesSource="{Binding Source={StaticResource TreatmentDeviceSource}}"
+                                CheckedItemsSource="{Binding SimulationForm.TreatmentDevices}"
+                                UseLayoutRounding="True">
+
+                                <ucx:XccCheckableEntryComboBox.CheckedEntriesItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"></TextBlock> 
+                                    </DataTemplate>
+                                </ucx:XccCheckableEntryComboBox.CheckedEntriesItemTemplate>
+                            </ucx:XccCheckableEntryComboBox>
+                        </Grid>
+
+                        <!--Positions-->
+                        <Grid Grid.Row="4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock
+                                Style="{StaticResource TextBlockLegendStyle}"
+                                Text="Positions" />
+
+                            <ucx:XccCheckableEntryComboBox 
+                                Grid.Row="2"
+                                TabIndex="9"
+                                x:Name="Positions"
+                                CheckableEntriesSource="{Binding Source={StaticResource PatientPositionSource}}"
+                                CheckedItemsSource="{Binding SimulationForm.PatientPositions}"
+                                UseLayoutRounding="True">
+
+                                <ucx:XccCheckableEntryComboBox.CheckedEntriesItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={convx:EnumValueToDisplayNameConverter}}"></TextBlock> 
+                                    </DataTemplate>
+                                </ucx:XccCheckableEntryComboBox.CheckedEntriesItemTemplate>
+                            </ucx:XccCheckableEntryComboBox>
+                        </Grid>
+
+                        <!--Notes-->
+                        <Grid Grid.Row="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                                <RowDefinition Height="{StaticResource FieldHeightGridLength}" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock
+                                Grid.Row="0"
+                                Style="{StaticResource TextBlockLegendStyle}"
+                                Text="Notes"/>
+                       
+                            <controls:XccTextBox
+                                Grid.Row="2"
+                                TabIndex="10"
+                                Name="NotesTextBox"
+                                Style="{StaticResource XccTextBoxDefaultStyle}">
+                       
+                                <controls:XccTextBox.Text>
+                                    <Binding Path="SimulationForm.SetupNote" UpdateSourceTrigger="PropertyChanged"/>
+                                </controls:XccTextBox.Text>
+                            </controls:XccTextBox>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </DockPanel>
+        
+        <ucx:TaskOverlay 
+            Grid.RowSpan="2" Grid.ColumnSpan="3"
+            Visibility="{Binding CurrentSimulationTask.IsSuccessfullyCompleted, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue=Collapsed}"
+            ObservedTask="{Binding CurrentSimulationTask}"
+            RetryCommand="{Binding RetrySimulationCommand}"
+            Description="{Binding CurrentSimulationTask.ErrorMessage}"
+            CornerRadius="7,7,7,7"/>
+    </Grid>
+</ContentControl>

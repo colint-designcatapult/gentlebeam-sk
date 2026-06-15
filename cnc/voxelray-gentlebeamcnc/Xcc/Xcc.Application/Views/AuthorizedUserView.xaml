@@ -1,0 +1,144 @@
+﻿<ContentControl
+    x:Class="Xcc.Application.Views.AuthorizedUserView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters"
+    xmlns:viewModels="clr-namespace:Xcc.Application.ViewModels"
+    xmlns:behaviors="clr-namespace:Xcc.Application.UI.Behaviors"
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls"
+    
+    IsTabStop="False"
+
+    mc:Ignorable="d"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:AuthorizedUserViewModel}}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ButtonStyle.xaml" />
+                
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/ContextMenu/ContextMenuLogoutStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Grid IsEnabled="{Binding AuthorizedUserStore.AuthorizedUser, Converter={convx:ObjectIsNotNullConverter}}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid
+            Grid.RowSpan="2" Grid.Column="2"
+            behaviors:ContextMenuLeftClickBehavior.IsLeftClickEnabled="True"
+            Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}" Margin="0,0,0,0">
+
+            <ucx:ProfileImageControl PathToImage="{Binding AuthorizedUserStore.AuthorizedUser.Picture}"/>
+
+            <Grid.ContextMenu>
+                <ContextMenu Style="{StaticResource ContextMenuLogoutStyle}" IsOpen="{Binding LogoutMenuIsOpen}" MinWidth="240">
+                    <MenuItem IsTabStop="False">
+                        <MenuItem.Header>
+                            <Grid Margin="{StaticResource BlockContentSmallMargin}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition Height="{StaticResource ButtonMarginGridLength}"/>
+                                    <RowDefinition/>
+                                    <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}"/>
+                                    <RowDefinition/>
+                                    <RowDefinition Height="{StaticResource ButtonMarginGridLength}"/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+
+                                <ucx:ProfileImageControl
+                                    Grid.Row="0"
+                                    Width="120" Height="120"
+                                    PathToImage="{Binding AuthorizedUserStore.AuthorizedUser.Picture}"/>
+
+                                <TextBlock
+                                    Grid.Row="2"
+                                    FontSize="{StaticResource LargeFontSize}"
+                                    Style="{StaticResource TextBlockLegendStyle}"
+                                    HorizontalAlignment="Center">
+
+                                    <Run Text="{Binding AuthorizedUserStore.AuthorizedUser.FirstName}"/>
+                                    <Run Text="{Binding AuthorizedUserStore.AuthorizedUser.LastName}"/>
+                                </TextBlock>
+
+                                <TextBlock
+                                    Grid.Row="4"
+                                    FontSize="{StaticResource BaseFontSize}"
+                                    Style="{StaticResource TextBlockLegendStyle}"
+                                    Foreground="{StaticResource ForegroundPaleBrush}"
+                                    Text="{Binding AuthorizedUserStore.AuthorizedUser.EmailAddress}"
+                                    HorizontalAlignment="Center"/>
+
+                                <Grid Grid.Row="6"
+                                      HorizontalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button
+                                        Grid.Column="0"
+                                        Height="{StaticResource ButtonHeight}"
+                                        Style="{StaticResource ButtonDefaultStyle}"
+                                        Command="{Binding LogOutCommand}">
+
+                                        <Grid Margin="12,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                                                <ColumnDefinition/>
+                                            </Grid.ColumnDefinitions>
+                                            <Image Source="{StaticResource GoBackIcon}" Stretch="None"/>
+                                            <TextBlock Text="Logout" Grid.Column="2" Style="{StaticResource ButtonTextBlockStyle}"/>
+                                        </Grid>
+                                    </Button>
+                                    <Button
+                                        Grid.Column="2"
+                                        Height="{StaticResource ButtonHeight}"
+                                        Width="{StaticResource ButtonHeight}"
+                                        Style="{StaticResource ButtonDefaultStyle}"
+                                        Command="{Binding LockSessionCommand}">
+
+                                        <Image Style="{StaticResource ButtonImageStyle}" Source="{StaticResource LockIcon}"/>
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </MenuItem.Header>
+                    </MenuItem>
+                </ContextMenu>
+            </Grid.ContextMenu>
+        </Grid>
+
+        <TextBlock
+            Grid.Column="0" Grid.Row="0"
+            HorizontalAlignment="Right" Margin="0"
+            FontWeight="SemiBold"
+            Style="{StaticResource TextBlockLegendStyle}"
+            Text="{Binding AuthorizedUserStore.AuthorizedUser.Username}"/>
+
+        <TextBlock
+            Grid.Column="0" Grid.Row="1"
+            HorizontalAlignment="Right" Margin="0"
+            Style="{StaticResource TextBlockLegendStyle}"
+            Foreground="{StaticResource ForegroundPaleBrush}"
+            Text="{Binding AuthorizedUserStore.AuthorizedUser.Role.Name}"/>
+    </Grid>
+</ContentControl>

@@ -1,0 +1,69 @@
+﻿using System.Windows;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+
+namespace Xcc.Application.UI.Behaviors;
+
+public static class ContextMenuLeftClickBehavior
+{
+    public static bool GetIsLeftClickEnabled(DependencyObject dependencyObject)
+    {
+        return (bool)dependencyObject.GetValue(IsLeftClickEnabledProperty);
+    }
+
+    public static void SetIsLeftClickEnabled(DependencyObject obj, bool value)
+    {
+        obj.SetValue(IsLeftClickEnabledProperty, value);
+    }
+
+    public static readonly DependencyProperty IsLeftClickEnabledProperty = DependencyProperty.RegisterAttached(
+        "IsLeftClickEnabled",
+        typeof(bool),
+        typeof(ContextMenuLeftClickBehavior),
+        new UIPropertyMetadata(false, OnIsLeftClickEnabledChanged));
+
+    private static void OnIsLeftClickEnabledChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (sender is UIElement uiElement)
+        {
+            if(e.NewValue is not bool isEnabled)
+                return;
+
+            if (isEnabled)
+            {
+                if (uiElement is ButtonBase buttonBase)
+                    buttonBase.Click += OnMouseLeftButtonUp;
+                else
+                    uiElement.MouseLeftButtonUp += OnMouseLeftButtonUp;
+            }
+            else
+            {
+                if (uiElement is ButtonBase buttonBase)
+                    buttonBase.Click -= OnMouseLeftButtonUp;
+                else
+                    uiElement.MouseLeftButtonUp -= OnMouseLeftButtonUp;
+            }
+        }
+    }
+
+    private static void OnMouseLeftButtonUp(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement frameworkElement)
+            return;
+
+        // https://stackoverflow.com/a/29123964
+        // if we use binding in our context menu, then it's DataContext won't be set when we show the menu on left click
+        // (it seems setting DataContext for ContextMenu is hardcoded in WPF when user right-clicks on a control, although I'm not sure)
+        // so we have to set up ContextMenu.DataContext manually here
+        if (frameworkElement.ContextMenu is null)
+            return;
+
+        if (frameworkElement.ContextMenu.DataContext is null)
+        {
+            frameworkElement.ContextMenu.SetBinding(FrameworkElement.DataContextProperty,
+                new Binding { Source = frameworkElement.DataContext });
+        }
+
+        frameworkElement.ContextMenu.IsOpen = true;
+    }
+}

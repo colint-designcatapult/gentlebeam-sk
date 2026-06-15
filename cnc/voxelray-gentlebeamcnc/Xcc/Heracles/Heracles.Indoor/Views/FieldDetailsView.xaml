@@ -1,0 +1,148 @@
+﻿<ContentControl 
+    x:Class="Heracles.Indoor.Views.FieldDetailsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
+                
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:converters="clr-namespace:Heracles.Application.UI.Converters;assembly=Heracles.Application"
+
+    IsTabStop="False"
+
+    mc:Ignorable="d" 
+    d:DesignWidth="800"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:FieldDetailsViewModel}}">
+    
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Constants.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml" />
+                
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <!--Field details-->
+    <Grid>
+        <Grid.ColumnDefinitions >
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="{StaticResource BlockMarginGridLength}"/>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="{StaticResource BlockMarginGridLength}"/>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="{StaticResource BlockMarginGridLength}"/>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="{StaticResource BlockMarginGridLength}"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="{StaticResource BlockMarginGridLength}"/>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="{StaticResource BlockMarginGridLength}"/>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="{StaticResource BlockMarginGridLength}"/>
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Column="0" Style="{StaticResource TextBlockLegendStylePale}">
+            <Run Text="Field " />
+            <Run Text="{Binding TreatmentInfoStore.Diagnosis.SiteName}" Foreground="{StaticResource ForegroundDefaultBrush}" />
+
+            <TextBlock.Visibility>
+                <MultiBinding Converter="{convx:VisibilityConjunction Invisibility=Hidden}">
+                    <Binding Path="TreatmentInfoStore.Diagnosis" Converter="{convx:ObjectToVisibilityConverter}" />
+                    <Binding Path="TreatmentInfoStore.Diagnosis.SiteName" Converter="{convx:ObjectToVisibilityConverter}" />
+                </MultiBinding>
+            </TextBlock.Visibility>
+        </TextBlock>
+
+        <TextBlock Grid.Column="2" Style="{StaticResource TextBlockLegendStylePale}">
+            <Run Text="Pathology " />
+            <Run Text="{Binding TreatmentInfoStore.Diagnosis.Pathology, Converter={convx:EnumValueToDisplayNameConverter}}" Foreground="{StaticResource ForegroundDefaultBrush}" />
+
+            <TextBlock.Visibility>
+                <MultiBinding Converter="{convx:VisibilityConjunction}">
+                    <Binding Path="TreatmentInfoStore.Diagnosis" Converter="{convx:ObjectToVisibilityConverter}" />
+                    <Binding Path="TreatmentInfoStore.Diagnosis.Pathology" Converter="{convx:ObjectToVisibilityConverter}" />
+                </MultiBinding>
+            </TextBlock.Visibility>
+        </TextBlock>
+
+        <TextBlock Grid.Column="4" Style="{StaticResource TextBlockLegendStylePale}">
+            <Run Text="Location" />
+            <Run Text="{Binding TreatmentInfoStore.Diagnosis.SiteLocation, Converter={convx:EnumValueToDisplayNameConverter}}" Foreground="{StaticResource ForegroundDefaultBrush}" />
+
+            <TextBlock.Visibility>
+                <MultiBinding Converter="{convx:VisibilityConjunction}">
+                    <Binding Path="TreatmentInfoStore.Diagnosis" Converter="{convx:ObjectToVisibilityConverter}" />
+                    <Binding Path="TreatmentInfoStore.Diagnosis.SiteLocation" Converter="{convx:ObjectToVisibilityConverter}" />
+                </MultiBinding>
+            </TextBlock.Visibility>
+        </TextBlock>
+
+        <TextBlock Grid.Column="6" Style="{StaticResource TextBlockLegendStylePale}">
+            <Run Text="Provider Name " />
+            <Run Text="{Binding TreatmentInfoStore.Diagnosis.Referring}" Foreground="{StaticResource ForegroundDefaultBrush}" />
+
+            <TextBlock.Visibility>
+                <MultiBinding Converter="{convx:VisibilityConjunction}">
+                    <Binding Path="TreatmentInfoStore.Diagnosis" Converter="{convx:ObjectToVisibilityConverter}" />
+                    <Binding Path="TreatmentInfoStore.Diagnosis.Referring" Converter="{convx:EmptyStringToVisibilityConverter}" />
+                </MultiBinding>
+            </TextBlock.Visibility>
+        </TextBlock>
+
+        <TextBlock Grid.Column="8" Style="{StaticResource TextBlockLegendStylePale}">
+            <Run Text="ICD code" />
+            <Run Text="{Binding TreatmentInfoStore.Diagnosis.IcdCode, Converter={convx:EnumValueToDisplayNameConverter}}" Foreground="{StaticResource ForegroundDefaultBrush}" />
+
+            <TextBlock.Visibility>
+                <MultiBinding Converter="{convx:VisibilityConjunction}">
+                    <Binding Path="TreatmentInfoStore.Diagnosis" Converter="{convx:ObjectToVisibilityConverter}" />
+                    <Binding Path="TreatmentInfoStore.Diagnosis.IcdCode" Converter="{convx:ObjectToVisibilityConverter}" />
+                </MultiBinding>
+            </TextBlock.Visibility>
+        </TextBlock>
+
+        <TextBlock Grid.Column="10" Style="{StaticResource TextBlockLegendStylePale}">
+            <Run Text="Subcell " />
+            <Run Text="{Binding TreatmentInfoStore.Diagnosis.SubcellOne, Converter={convx:EnumValueToDisplayNameConverter}}" Foreground="{StaticResource ForegroundDefaultBrush}" />
+
+            <TextBlock.Visibility>
+                <MultiBinding Converter="{convx:VisibilityConjunction}">
+                    <Binding Path="TreatmentInfoStore.Diagnosis" Converter="{convx:ObjectToVisibilityConverter}" />
+                    <Binding Path="TreatmentInfoStore.Diagnosis.SubcellOne" Converter="{convx:ObjectToVisibilityConverter}" />
+                </MultiBinding>
+            </TextBlock.Visibility>
+        </TextBlock>
+
+        <TextBlock Grid.Column="12" Style="{StaticResource TextBlockLegendStylePale}">
+            <Run Text="Description " />
+            <Run Text="{Binding TreatmentInfoStore.Diagnosis.Description, Converter={convx:EnumValueToDisplayNameConverter}}" Foreground="{StaticResource ForegroundDefaultBrush}" />
+
+            <TextBlock.Visibility>
+                <MultiBinding Converter="{convx:VisibilityConjunction}">
+                    <Binding Path="TreatmentInfoStore.Diagnosis" Converter="{convx:ObjectToVisibilityConverter}" />
+                    <Binding Path="TreatmentInfoStore.Diagnosis.Description" Converter="{convx:ObjectToVisibilityConverter}" />
+                </MultiBinding>
+            </TextBlock.Visibility>
+        </TextBlock>
+
+        <!--Status-->
+        <TextBlock
+            Grid.Column="14"
+            FontSize="{StaticResource BaseFontSize}"
+            Visibility="{Binding TreatmentInfoStore.Plan, Converter={convx:ObjectToVisibilityConverter}}"
+            Style="{StaticResource TextBlockLegendStyle}">
+
+            <Run 
+                Text="{Binding TreatmentInfoStore.Plan.Status, Converter={convx:EnumValueToDisplayNameConverter}}"
+                Foreground="{Binding TreatmentInfoStore.Plan.Status, Converter={converters:PlanStatusToColorConverter}}"/>
+        </TextBlock>
+    </Grid>
+</ContentControl>

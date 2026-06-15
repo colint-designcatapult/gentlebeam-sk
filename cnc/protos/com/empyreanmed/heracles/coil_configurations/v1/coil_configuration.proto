@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.coil_configurations.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// CoilConfiguration represents the coil configuration for an energy configuration.
+message CoilConfiguration {
+  // Unique identifier for the coil configuration.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Foreign key to the preset_configuration entity.
+  optional int64 preset_configuration_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The creation date of the coil configuration.
+  optional google.protobuf.Timestamp create_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The field name of the coil configuration.
+  optional com.empyreanmed.heracles.enums.v1.FIELDNAME field_name = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // The X deflection current.
+  optional float x_deflection_current = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // The Y deflection current.
+  optional float y_deflection_current = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // The focus current.
+  optional float focus_current = 7 [(google.api.field_behavior) = REQUIRED];
+}

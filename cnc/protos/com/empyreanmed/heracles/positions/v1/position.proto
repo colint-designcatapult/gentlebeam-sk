@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.positions.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Position represents a patient's position in a simulation.
+message Position {
+  // ID is the unique identifier for the position.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // SimulationID is the identifier for the associated simulation.
+  optional int64 simulation_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // create_date is the date when the position record was created.
+  optional google.protobuf.Timestamp create_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // PatientPosition is the position of the patient during the simulation.
+  optional com.empyreanmed.heracles.enums.v1.POSITION patient_position = 4 [(google.api.field_behavior) = REQUIRED];
+}

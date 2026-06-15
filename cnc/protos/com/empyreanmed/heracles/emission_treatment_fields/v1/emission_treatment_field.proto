@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.emission_treatment_fields.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents an emission treatment field associated with an actual treatment field.
+message EmissionTreatmentField {
+  // Emission treatment field id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Actual treatment field id associated with the emission treatment field
+  optional int64 actual_treatment_field_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Emission treatment field creation date
+  optional google.protobuf.Timestamp creation_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Actual dwell time of the emission treatment field
+  optional double actual_dwell_time = 4 [(google.api.field_behavior) = REQUIRED];
+}

@@ -1,0 +1,101 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/BaseStyle.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <Style x:Key="ButtonImageStyle" TargetType="{x:Type Image}">
+        <Setter Property="Stretch" Value="None"/>
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.5"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="PathButtonStyle" TargetType="Path">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="Stroke" Value="{StaticResource ButtonStrokeBrush}" />
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Stroke" Value="{StaticResource ButtonDisabledStrokeBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="TextBlockButtonStyle" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="ButtonDefaultStyle" TargetType="{x:Type ButtonBase}">
+        <Setter Property="Background" Value="{StaticResource ButtonBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource ForegroundDefaultBrush}" />
+        <Setter Property="Border.CornerRadius" Value="{StaticResource BlockCornerRadius}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="16,0"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ButtonBase">
+                    <Grid>
+                        <Border 
+                            x:Name="PART_Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding Border.CornerRadius}"/>
+
+                        <Border 
+                            x:Name="PART_BackgroundModifier"
+                            CornerRadius="{TemplateBinding Border.CornerRadius}"
+                            Background="Transparent"/>
+                        
+                        <ContentPresenter
+                            x:Name="ContentHost"
+                            RecognizesAccessKey="True" 
+                            TextElement.FontSize="{TemplateBinding FontSize}"
+                            TextElement.Foreground="{TemplateBinding Foreground}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Margin="{TemplateBinding Padding}"/>
+                    </Grid>                        
+                    
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PART_BackgroundModifier" Property="Background" Value="White" />
+                            <Setter TargetName="PART_BackgroundModifier" Property="Opacity" Value="0.1" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="PART_BackgroundModifier" Property="Background" Value="Black" />
+                            <Setter TargetName="PART_BackgroundModifier" Property="Opacity" Value="0.15" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource ForegroundPaleBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource ButtonBackgroundBrush}" />
+                            <Setter TargetName="PART_BackgroundModifier" Property="Background" Value="{StaticResource ControlDisabledBackgroundBrush}" />
+                            <Setter TargetName="PART_BackgroundModifier" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter Property="BorderBrush" TargetName="PART_Border" Value="{StaticResource ForegroundFocusedBrush}"/>
+                            <Setter Property="BorderThickness" TargetName="PART_Border" Value="2"/>
+                            <Setter Property="Margin" TargetName="PART_Border" Value="-1"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--This style will be applied automatically to all Buttons without explicit style-->
+    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource ButtonDefaultStyle}"/>
+</ResourceDictionary>

@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.treatment_fields.v1;
+
+import "com/empyreanmed/heracles/treatment_fields/v1/treatment_field.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+
+// Performs operations on treatment fields.
+service TreatmentFieldService {
+  // Lists treatment fields for a given plan.
+  rpc ListTreatmentFields(ListTreatmentFieldsRequest) returns (ListTreatmentFieldsResponse);
+
+  // Returns a single treatment field.
+  rpc GetTreatmentField(GetTreatmentFieldRequest) returns (GetTreatmentFieldResponse);
+
+  // Creates a new treatment field for a plan.
+  rpc CreateTreatmentField(CreateTreatmentFieldRequest) returns (CreateTreatmentFieldResponse);
+
+  // Creates a batch of new treatment fields for a plan.
+  rpc CreateBatchTreatmentFields(CreateBatchTreatmentFieldsRequest) returns (CreateBatchTreatmentFieldsResponse);
+
+  // Updates an existing treatment field.
+  rpc UpdateTreatmentField(UpdateTreatmentFieldRequest) returns (UpdateTreatmentFieldResponse);
+
+  // Deletes a treatment field.
+  rpc DeleteTreatmentField(DeleteTreatmentFieldRequest) returns (DeleteTreatmentFieldResponse);
+}
+
+// Request message for listing treatment fields.
+message ListTreatmentFieldsRequest {
+  // The ID of the plan for which to list treatment fields.
+  optional int64 plan_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the listed treatment fields.
+message ListTreatmentFieldsResponse {
+  // The treatment fields matching the list request. The order is unspecified.
+  repeated TreatmentField treatment_fields = 1 [(google.api.field_behavior) = UNORDERED_LIST];
+}
+
+// Request message for fetching a single treatment field.
+message GetTreatmentFieldRequest {
+  // The ID of the treatment field to fetch.
+  optional int64 treatment_field_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the fetched treatment field.
+message GetTreatmentFieldResponse {
+  // The treatment field with the provided ID.
+  TreatmentField treatment_field = 1;
+}
+
+// Request message for creating a new treatment field.
+message CreateTreatmentFieldRequest {
+  // Details of the treatment field to create.
+  optional TreatmentField treatment_field = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created treatment field.
+message CreateTreatmentFieldResponse {
+  // The treatment field that was created.
+  TreatmentField treatment_field = 1;
+}
+
+// Request message for creating a batch of new treatment fields.
+message CreateBatchTreatmentFieldsRequest {
+  // Details of the treatment fields to create.
+  repeated TreatmentField treatment_fields = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the created treatment fields.
+message CreateBatchTreatmentFieldsResponse {
+  // The treatment fields that were created.
+  repeated TreatmentField treatment_fields = 1;
+}
+
+// Request message for updating an existing treatment field.
+message UpdateTreatmentFieldRequest {
+  // The treatment field to update.
+  optional TreatmentField treatment_field = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A FieldMask specifying which fields of the treatment field to update.
+  optional google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the updated treatment field.
+message UpdateTreatmentFieldResponse {
+  // The updated treatment field.
+  TreatmentField treatment_field = 1;
+}
+
+// Request message for deleting a treatment field.
+message DeleteTreatmentFieldRequest {
+  // The ID of the treatment field to delete.
+  optional int64 treatment_field_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// An empty response message for `DeleteTreatmentField`.
+message DeleteTreatmentFieldResponse {}

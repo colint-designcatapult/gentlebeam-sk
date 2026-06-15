@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.system.v1;
+
+import "google/api/field_behavior.proto";
+
+// Represents system information
+message System {
+  // System version string
+  string version = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

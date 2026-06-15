@@ -1,0 +1,4 @@
+[component]
+name = "hvps-interface/bootloader"
+include_docs = [ "docs/*.sdoc" ]
+include_src = [ "Src/*.c" ]

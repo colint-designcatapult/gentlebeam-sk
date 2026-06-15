@@ -1,0 +1,80 @@
+#ifndef SENSUSSRC_CONTROL_COMM_H_
+#define SENSUSSRC_CONTROL_COMM_H_
+
+
+#define CC_FIELD_SIZE	5
+#define CC_SYNC_VAL		0xFF
+#define NUM_SYNC_BYTES	4
+#define CC_DELIM_VAL	0xA5
+#define CC_TERM_VAL		0x99
+
+#define CC_RX_NUM		8
+
+enum
+{
+	CC_TX_SYNC = 0,
+	CC_TX_INFO,
+	CC_TX_IO,
+#if !defined(CALIBRATION_MODE)
+	CC_TX_COL_LOW,
+	CC_TX_COL_HIGH,
+#endif
+	CC_TX_PRESSURE,
+	CC_TX_FLOW,
+	CC_TX_TEMP,
+	CC_TX_MAG_X_1,
+	CC_TX_MAG_Y_1,
+	CC_TX_MAG_Z_1,
+	CC_TX_MAG_X_2,
+	CC_TX_MAG_Y_2,
+	CC_TX_MAG_Z_2,
+#if !defined(CALIBRATION_MODE)
+	CC_TX_QC_VAL,
+#endif
+	CC_TX_CRC,
+	CC_TX_NUM_FIELDS
+};
+
+enum
+{
+	MAG_TX_CAL_SYNC = 0,
+	MAG_TX_CAL_SYNC_2,
+	MAG_TX_CAL_SIZE,
+	MAG_TX_CAL_X1_SUM,
+	MAG_TX_CAL_Y1_SUM,
+	MAG_TX_CAL_Z1_SUM,
+	MAG_TX_CAL_X1_SQ,
+	MAG_TX_CAL_X1_SQ_2,
+	MAG_TX_CAL_Y1_SQ,
+	MAG_TX_CAL_Y1_SQ_2,
+	MAG_TX_CAL_Z1_SQ,
+	MAG_TX_CAL_Z1_SQ_2,
+	MAG_TX_CAL_X2_SUM,
+	MAG_TX_CAL_Y2_SUM,
+	MAG_TX_CAL_Z2_SUM,
+	MAG_TX_CAL_X2_SQ,
+	MAG_TX_CAL_X2_SQ_2,
+	MAG_TX_CAL_Y2_SQ,
+	MAG_TX_CAL_Y2_SQ_2,
+	MAG_TX_CAL_Z2_SQ,
+	MAG_TX_CAL_Z2_SQ_2,
+	MAG_TX_CAL_X3_SUM,
+	MAG_TX_CAL_Y3_SUM,
+	MAG_TX_CAL_Z3_SUM,
+	MAG_TX_CAL_X3_SQ,
+	MAG_TX_CAL_X3_SQ_2,
+	MAG_TX_CAL_Y3_SQ,
+	MAG_TX_CAL_Y3_SQ_2,
+	MAG_TX_CAL_Z3_SQ,
+	MAG_TX_CAL_Z3_SQ_2,
+	NUM_MAG_TX_CAL
+};
+
+
+void init_control_comm();
+void process_control_comm();
+void control_comm_rx_cb();
+void control_comm_tx_cb();
+void toggle_mag_cal();
+
+#endif /* SENSUSSRC_CONTROL_COMM_H_ */

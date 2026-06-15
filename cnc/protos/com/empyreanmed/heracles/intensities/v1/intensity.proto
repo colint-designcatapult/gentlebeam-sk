@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.intensities.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// The Intensity message represents the core data structure of an intensity entity.
+// It includes details such as associated patient information, diagnostic details, and metadata.
+message Intensity {
+  // Unique identifier for the intensity entity.
+  // This field is output-only and typically generated automatically.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Identifier linking this intensity to a specific QC sample field.
+  optional int64 qcsample_fields_id = 2;
+
+  // The timestamp representing when this intensity entry was created.
+  optional google.protobuf.Timestamp create_date = 3;
+
+  // The name of the diode associated with this intensity measurement.
+  optional string diode_name = 4;
+
+  // The measured intensity value.
+  optional double intensity = 5;
+}

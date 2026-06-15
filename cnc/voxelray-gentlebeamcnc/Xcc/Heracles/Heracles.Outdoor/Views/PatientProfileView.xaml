@@ -1,0 +1,239 @@
+﻿<ContentControl x:Class="Heracles.External.Views.PatientProfileView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:viewModels="clr-namespace:Heracles.External.ViewModels"
+             
+             xmlns:system="clr-namespace:System;assembly=netstandard"
+             xmlns:conv1="clr-namespace:Heracles.Application.UI.Converters;assembly=Heracles.Application"
+             xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+             
+             xmlns:prism="http://prismlibrary.com/"
+             xmlns:userControls="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+                
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance viewModels:PatientProfileViewModel, IsDesignTimeCreatable=True}"
+             x:Name="Root">
+
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/BaseStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Border/BorderBlockStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/TextBlock/TextBlockLegendStyle.xaml" />
+
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/TabControlMainIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ButtonStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/heracles.Application;Component/UI/Resources/ListViewTemplates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <GridLength x:Key="FieldMargin">6</GridLength>
+            <system:Double x:Key="UserImageSize">110</system:Double>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+    
+    <Border Style="{StaticResource BorderBlockStyle}">
+        <Grid Margin="{StaticResource BlockContentMargin}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <Grid.Resources>
+                <Style x:Key="PulsingColorTextBlock" TargetType="TextBlock">  
+                    <Setter Property="Foreground">  
+                        <Setter.Value>  
+                            <SolidColorBrush Color="{StaticResource FieldForegroundPaleColor_}" />  
+                        </Setter.Value>  
+                    </Setter>  
+                    <Style.Triggers>  
+                        <EventTrigger RoutedEvent="TextBlock.Loaded">  
+                            <BeginStoryboard>  
+                                <Storyboard>  
+                                    <ColorAnimation 
+                                        Storyboard.TargetProperty="Foreground.(SolidColorBrush.Color)" 
+                                        From="{StaticResource FieldForegroundPaleColor_}" 
+                                        To="{StaticResource FieldForegroundColor_}" 
+                                        Duration="0:0:3" 
+                                        AutoReverse="True" 
+                                        RepeatBehavior="Forever" />  
+                                </Storyboard>  
+                            </BeginStoryboard>  
+                        </EventTrigger>  
+                    </Style.Triggers>  
+                </Style>  
+            </Grid.Resources>
+
+            <Grid 
+                Grid.Column="1" Margin="{StaticResource BlockContentMargin}"
+                Width="{StaticResource UserImageSize}"
+                Height="{StaticResource UserImageSize}">
+                
+                <!--Patient dummy photo-->
+                <Ellipse RenderOptions.BitmapScalingMode="Linear">
+                    <Ellipse.Fill>
+                        <ImageBrush Stretch="UniformToFill" ImageSource="{Binding TreatmentInfoStore.Patient.Sex,  Converter={convx:SexTypeToBitmapConverter}}" />
+                    </Ellipse.Fill>
+                </Ellipse>
+
+                <!--Patient photo-->
+                <Ellipse RenderOptions.BitmapScalingMode="HighQuality" Margin="1">
+                    <Ellipse.Fill>
+                        <ImageBrush 
+                            Stretch="UniformToFill" 
+                            ImageSource="{Binding TreatmentInfoStore.Patient.Picture, Converter={convx:PathToImageSourceConverter}}"/>
+                    </Ellipse.Fill>
+                </Ellipse>
+            </Grid>
+
+            
+            <!--Patient data-->
+            <Grid 
+                Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Grid.RowSpan="2"
+                Visibility="{Binding TreatmentInfoStore.Patient, Converter={convx:ObjectToVisibilityConverter}}"
+                Margin="10,8,16,12">
+                
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!--Patient data (block 1)-->
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="{StaticResource FieldMargin}"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="{StaticResource FieldMargin}"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="{StaticResource FieldMargin}"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="{StaticResource FieldMargin}"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="{StaticResource FieldMargin}"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="{StaticResource FieldMargin}"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="{StaticResource FieldMargin}"/>
+                        <RowDefinition Height="Auto"/>                        
+                    </Grid.RowDefinitions>
+
+                    <TextBlock 
+                        FontSize="{StaticResource HugeFontSize}" 
+                        Style="{StaticResource TextBlockLegendStyle}"
+                        Foreground="{StaticResource ForegroundAccentBrush}">
+
+                        <TextBlock.Text>
+                            <MultiBinding Converter="{conv1:PatientNamesToSingleStringConverter}">
+                                <Binding Path="TreatmentInfoStore.Patient.LastName" FallbackValue="Last"/>
+                                <Binding Path="TreatmentInfoStore.Patient.FirstName" FallbackValue="First"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+
+                    <TextBlock 
+                        Grid.Row="2"
+                        Style="{StaticResource TextBlockLegendStyle}"
+                        Foreground="{StaticResource ForegroundAccentBrush}"
+                        Margin="2,0,0,0">
+                            
+                        <Run Text="{Binding TreatmentInfoStore.Patient.DOB}"/><Run Text=","/>
+                        <Run Text="{Binding TreatmentInfoStore.Patient.Sex}"/>
+                    </TextBlock>
+                    
+                    <TextBlock 
+                        Grid.Row="4"
+                        Style="{StaticResource TextBlockLegendStyle}" 
+                        Margin="2,0,0,0">
+                            
+                        <Run Text="Field:"/>
+                        <Run Text="{Binding TreatmentInfoStore.Diagnosis.SiteName}" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                    </TextBlock>
+                    
+                    <TextBlock 
+                        Grid.Row="6"
+                        Style="{StaticResource TextBlockLegendStyle}" 
+                        Margin="2,0,0,0">
+                            
+                        <Run Text="Dose to be delivered:"/>
+                        <Run Text="{Binding TreatmentInfoStore.Prescription.DailyDose}"  Foreground="{StaticResource ForegroundAccentBrush}"/>
+                    </TextBlock>
+                    
+                    <TextBlock 
+                        Grid.Row="14"
+                        Style="{StaticResource TextBlockLegendStyle}" 
+                        Margin="2,0,0,0">
+                            
+                        <Run Text="Applicator Size:"/>
+                        <Run Text="{Binding TreatmentInfoStore.Simulation.TargetType, Converter={convx:EnumValueToDisplayNameConverter}}" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                    </TextBlock>     
+                    
+                                        
+                    <TextBlock 
+                        Grid.Row="8"
+                        Style="{StaticResource TextBlockLegendStyle}" 
+                        Margin="2,0,0,0">
+                            
+                        <Run Text="Field/Shield Size:"/>
+                        <Run Text="{Binding TreatmentInfoStore.Simulation.ShieldSizeL}" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                        <Run Text="x"/>
+                        <Run Text="{Binding TreatmentInfoStore.Simulation.ShieldSizeW}" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                    </TextBlock>    
+                    
+                    <TextBlock 
+                        Grid.Row="10"
+                        Style="{StaticResource TextBlockLegendStyle}" 
+                        TextWrapping="Wrap"
+                        Margin="2,0,0,0">
+                            
+                        <Run Text="Devices:"/>
+                        <Run Text="{Binding TreatmentInfoStore.TreatmentDevices, Converter={convx:EnumerableToStringConverter}}" Foreground="{StaticResource ForegroundAccentBrush}"/>
+                    </TextBlock>
+                    
+                    <TextBlock 
+                        Grid.Row="12"
+                        Style="{StaticResource TextBlockLegendStyle}" 
+                        Margin="2,0,0,0"
+                        Visibility="{Binding TreatmentInfoStore.Simulation.SetupNote, Converter={convx:ObjectToVisibilityConverter}}" >
+                            
+                        <Run Text="Set up Notes:" Foreground="{StaticResource FieldForegroundPaleColor}"/>
+                        <Run Text="{Binding TreatmentInfoStore.Simulation.SetupNote}"  Foreground="{StaticResource ForegroundAccentBrush}"/>
+                    </TextBlock>
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" Visibility="{Binding TreatmentInfoStore.Patient, Converter={convx:ObjectToInvisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="{StaticResource BlockContentMarginGridLength}" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+
+                <TextBlock 
+                    Style="{StaticResource PulsingColorTextBlock}" 
+                    Grid.Column="0"
+                    FontSize="{StaticResource HugeFontSize}" FontWeight="Light"
+                    Text="Waiting for a plan"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
+
+                <userControls:SpinnerControl Grid.Column="2" Width="48" MillisecondsToSpin="1500"/>
+            </Grid>
+        </Grid>
+    </Border>
+</ContentControl>

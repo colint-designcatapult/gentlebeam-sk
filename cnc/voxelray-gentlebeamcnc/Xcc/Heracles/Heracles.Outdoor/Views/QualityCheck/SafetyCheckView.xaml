@@ -1,0 +1,440 @@
+﻿<UserControl 
+    x:Class="Heracles.External.Views.QualityCheck.SafetyCheckView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    
+    xmlns:uc="clr-namespace:Heracles.Application.UI.UserControls;assembly=Heracles.Application"
+    xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:viewModels="clr-namespace:Heracles.External.ViewModels.QualityCheck" 
+    xmlns:models="clr-namespace:Heracles.External.Models"
+    
+    xmlns:prism="http://prismlibrary.com/" 
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    
+    UseLayoutRounding="True"
+    
+    mc:Ignorable="d" 
+    d:FontFamily="{StaticResource BaseFont}"
+    d:FontSize="{StaticResource BaseFontSize}"
+    d:DesignHeight="680" d:DesignWidth="1700"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:SafetyCheckViewModel}}"
+    Margin="0,-33,0,0">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;component/Styles/ProgressBar/ProgressBarXRayStyle.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ButtonStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Constants.xaml" />
+
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonDefaultStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/Button/ButtonToolbarAccentStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/CheckBox/CheckBoxSliderStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/heracles.Application;Component/UI/Resources/ListViewTemplates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style TargetType="Button" BasedOn="{StaticResource ButtonDefaultStyle}">
+                <Setter Property="FontSize" Value="{StaticResource LargeFontSize}"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+            <RowDefinition Height="1.3*"/>
+            <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+            <RowDefinition Height="{StaticResource XRayButtonHeightGridLength}"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0"/>
+            <ColumnDefinition Width="0"/>
+            <ColumnDefinition Width="1.6*"/>
+            <ColumnDefinition Width="{StaticResource BlockMarginGridLength}"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <!--Unapproved calibration data message-->
+        <ucx:XccWarningLabel
+            Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5"
+            Text="{Binding ApprovePhysicsDataMessage}"
+            FontSize="{StaticResource BaseFontSize}"
+            Visibility="{Binding ApproveRequired, Converter={convx:BooleanToVisibilityConverter Invisibility=Hidden}}"
+            Margin="8,0,188,0"/>
+
+        <!--Target mismatch message-->
+        <ucx:XccWarningLabel
+            Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5"
+            Text="{Binding ApplicatorCompatibilityStatus.CompatibilityMessage}"
+            FontSize="{StaticResource BaseFontSize}"
+            Visibility="{Binding ApplicatorCompatibilityStatus.IsCompatible, Converter={convx:BooleanToInvisibilityConverter Invisibility=Hidden}}"
+            Margin="8,0,188,0"/>
+
+        <!--fields list-->
+        <ListView
+            Grid.Column="2" Grid.Row="2"    
+            Style="{StaticResource TableListView}"
+            Tag="{StaticResource ActualFieldsListHeaderTemplate}"
+            ItemTemplate="{StaticResource ActualFieldsListItemTemplate}"
+            ItemsSource="{Binding FieldsViewSource.View}"
+            SelectedItem="{Binding SafetyCheckModel.SelectedField}"
+            IsHitTestVisible="False"/>
+
+
+        <!--Safety checks-->
+        <DockPanel Grid.Column="2" Grid.Row="4" IsEnabled="{Binding HasMatchingPlanForTreatment}">
+            <Border 
+                Style="{StaticResource BorderToolbarStyle}">
+
+                <Grid HorizontalAlignment="Right">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button 
+                        Style="{StaticResource ButtonToolbarAccentStyle}" 
+                        Command="{Binding SaveCommand}"
+                        IsEnabled="{Binding CommonProperties.IsInSafeState}">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{StaticResource BlockContentSmallMarginLength}" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Path Data="{StaticResource SaveToDiskIcon}" Style="{StaticResource PathButtonAccentStyle}"/>
+                            <TextBlock Grid.Column="2" Text="Save" VerticalAlignment="Top" Margin="0,1,0,0"/>
+                        </Grid>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource BorderBlockStyle}" CornerRadius="{StaticResource BlockTopCornerRadius}">
+                <!--Safety checks-->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="1.3*"/>
+                        <ColumnDefinition Width="1.2*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.Resources>
+                        <Style TargetType="CheckBox" BasedOn="{StaticResource CheckBoxSliderStyle}">
+                            <Setter Property="Margin" Value="16"/>
+                        </Style>
+                    </Grid.Resources>
+
+                    <StackPanel>
+                        <CheckBox 
+                            Content="X-Ray Light" 
+                            IsChecked="{Binding XrayLight}"/>
+
+                        <CheckBox 
+                            Content="X-Ray Sound"                            
+                            IsChecked="{Binding XraySound}"/>
+                    </StackPanel>
+
+
+                    <StackPanel Grid.Column="1">
+                        <CheckBox 
+                            Content="Live audio"
+                            IsChecked="{Binding LiveAudio}"/>
+
+                        <CheckBox 
+                            Content="Monitoring Camera"
+                            IsChecked="{Binding MonitoringCamera}"/>
+
+                    </StackPanel>
+
+
+                    <StackPanel Grid.Column="2">
+                        <CheckBox 
+                            Content="Stop Emission"
+                            IsChecked="{Binding StopEmission}"/>
+
+                        <CheckBox 
+                            Content="Door interlock"
+                            IsChecked="{Binding DoorInterlock}"/>
+
+                        <CheckBox 
+                            Content="E-Stop Interlock"
+                            IsChecked="{Binding EStopInterlock}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DockPanel>
+
+
+        <!--X-Ray control buttons-->
+        <Border
+            x:Name="ButtonsBlock"
+            Grid.Row="6" Grid.ColumnSpan="5"
+            Style="{StaticResource BorderBlockStyle}">
+
+            <Grid Margin="{StaticResource BlockContentMargin}" HorizontalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{StaticResource XRayButtonGridLength}"/>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition Width="{StaticResource XRayButtonGridLength}"/>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition Width="{StaticResource XRayButtonGridLength}"/>
+                </Grid.ColumnDefinitions>
+
+                <!--Prepare buttons group-->
+                <Grid Grid.Column="0">
+                    <!--'Prepare' button-->
+                    <Button 
+                        Command="{Binding PrepareCommand}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        IsEnabled="{Binding PrepareButtonIsEnabled}"
+                        Visibility="{Binding UIStateMachine.LeftButton.State, 
+                            Converter={convx:IntToVisibilityVisibleConverter}, 
+                            ConverterParameter={x:Static models:UILeftButtonState.Prepare}}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Grid>
+                                    <Path 
+                                        Data="{StaticResource PrepareIconPath}" 
+                                        Style="{StaticResource XRayButtonsIconStyle}"/>
+                                    <Path 
+                                        Data="{StaticResource LightningIconPath}"
+                                        Style="{StaticResource XRayButtonsIconStyle}"
+                                        Height="24"
+                                        StrokeThickness="0"
+                                        StrokeLineJoin="Round"
+                                        Fill="White"/>
+                                </Grid>
+                                <TextBlock Text="Prepare" Style="{StaticResource TextBlockButtonStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+
+                    <ProgressBar 
+                        Style="{StaticResource ProgressBarXRayStyle}" 
+                        Background="CornflowerBlue"
+                        Maximum="100" Minimum="0"
+                        Value="{Binding GcbIndicators.WarmUpProgress.Value, Mode=OneWay}"
+                        Tag="Warming Up"
+                        IsEnabled="{Binding UIStateMachine.LeftButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.LeftButton.State, 
+                            Converter={convx:IntToVisibilityVisibleConverter}, 
+                            ConverterParameter={x:Static models:UILeftButtonState.WarmUpProgress}}"/>
+
+                    <!--'Clear Plan' button-->
+                    <Button 
+                        Command="{Binding ClearPlanCommand}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        IsEnabled="{Binding UIStateMachine.LeftButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.LeftButton.State, Converter={convx:IntToVisibilityVisibleConverter}, ConverterParameter={x:Static models:UILeftButtonState.ClearPlan}}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Grid>
+                                    <Path 
+                                        Data="{StaticResource PrepareIconPath}" 
+                                        Style="{StaticResource XRayButtonsIconStyle}"
+                                        StrokeEndLineCap="Round"
+                                        StrokeStartLineCap="Round"
+                                        StrokeLineJoin="Round"/>
+                                    <Path 
+                                        Data="{StaticResource LightningIconPath}"
+                                        Style="{StaticResource XRayButtonsIconStyle}"
+                                        Height="24"
+                                        StrokeThickness="0"
+                                        StrokeLineJoin="Round"
+                                        Fill="White"/>
+                                </Grid>
+                                <TextBlock Text="Clear Plan" Style="{StaticResource TextBlockButtonStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+
+                    <ProgressBar 
+                        Style="{StaticResource ProgressBarXRayStyle}" 
+                        Background="CornflowerBlue" 
+                        Minimum="0" Maximum="100"                                    
+                        Value="{Binding GcbIndicators.HVSetupProgress.Value}"
+                        Tag="Loading"
+                        IsEnabled="{Binding UIStateMachine.LeftButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.LeftButton.State, 
+                            Converter={convx:IntToVisibilityVisibleConverter}, 
+                            ConverterParameter={x:Static models:UILeftButtonState.LoadingProgress}}"/>
+                </Grid>
+
+                <!--Beam On buttons group-->
+                <Grid Grid.Column="2">
+                    <!--'Beam On' button-->
+                    <Button 
+                        Background="{StaticResource StartButtonBackgroundBrush}"
+                        Command="{Binding BeamOnCommand}"
+                        IsEnabled="{Binding UIStateMachine.CentralButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.CentralButton.State, 
+                        Converter={convx:IntToVisibilityVisibleConverter}, 
+                        ConverterParameter={x:Static models:UICentralButtonState.BeamOn}}">
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Path 
+                                Data="{StaticResource TreatmentIcon}" 
+                                Style="{StaticResource XRayButtonsIconStyle}"/>
+                            <TextBlock Text="Beam On" Style="{StaticResource TextBlockButtonStyle}"/>
+                        </StackPanel>
+
+                    </Button>
+
+                    <Border Background="{StaticResource ButtonBackgroundColor}" CornerRadius="{StaticResource BlockCornerRadius}"
+                            IsEnabled="{Binding UIStateMachine.CentralButton.IsEnabled}"
+                            Visibility="{Binding UIStateMachine.CentralButton.State, 
+                                Converter={convx:IntToVisibilityVisibleConverter}, 
+                                ConverterParameter={x:Static models:UICentralButtonState.EmissionProgress}}">
+
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <ProgressBar 
+                                Margin="4,4,4,4"
+                                Style="{StaticResource ProgressBarXRayStyle}" 
+                                Maximum="100" Minimum="0"
+                                Value="{Binding GcbIndicators.LaunchingProgress.Value}" 
+                                Background="CornflowerBlue"
+                                Tag="Launching"/>
+
+                            <ProgressBar 
+                                Grid.Row="1"
+                                Margin="4,4,4,4"
+                                Style="{StaticResource ProgressBarXRayStyle}" 
+                                Maximum="100" Minimum="0"
+                                Value="{Binding GcbIndicators.BeamOnProgress.Value}" 
+                                Tag="Beaming-On"/>
+                        </Grid>
+                    </Border>
+
+                    <!--'Reset Timers' button-->
+                    <Button 
+                        Command="{Binding ResetTimersCommand}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        IsEnabled="{Binding UIStateMachine.CentralButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.CentralButton.State, 
+                            Converter={convx:IntToVisibilityVisibleConverter}, 
+                            ConverterParameter={x:Static models:UICentralButtonState.ResetTimers}}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Path 
+                                    Data="{StaticResource RefreshIcon3}" 
+                                    Style="{StaticResource XRayButtonsIconStyle}"/>
+                                <TextBlock Text="Reset&#10;Timers" Style="{StaticResource TextBlockButtonStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+
+                    <!--'Clear Errors' button-->
+                    <Button 
+                        Command="{Binding ClearErrorsCommand}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        IsEnabled="{Binding UIStateMachine.CentralButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.CentralButton.State, 
+                            Converter={convx:IntToVisibilityVisibleConverter}, 
+                            ConverterParameter={x:Static models:UICentralButtonState.ClearErrors}}">
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Grid>
+                                <Path 
+                                    Data="{StaticResource RefreshIcon3}" 
+                                    Style="{StaticResource XRayButtonsIconStyle}"/>
+                                <Path 
+                                    Data="{StaticResource CancelIconPath}"
+                                    Style="{StaticResource XRayButtonsIconStyle}"
+                                    Height="10"
+                                    StrokeThickness="2"
+                                    Stroke="Red"
+                                    StrokeEndLineCap="Square"
+                                    StrokeStartLineCap="Square"/>
+                            </Grid>
+                            <TextBlock Text="Clear&#10;Errors" Style="{StaticResource TextBlockButtonStyle}"/>
+                        </StackPanel>
+                    </Button>
+
+                </Grid>
+
+                <!--Stop buttons group-->
+                <Grid Grid.Column="4">
+                    <!--Stop-->
+                    <Button 
+                        Background="{StaticResource StopButtonBackgroundBrush}"
+                        Command="{Binding StopCommand}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        IsEnabled="{Binding UIStateMachine.RightButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.RightButton.State, 
+                            Converter={convx:IntToVisibilityVisibleConverter}, 
+                            ConverterParameter={x:Static models:UIRightButtonState.Stop}}">
+
+                        <Grid Margin="0">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Path Data="{StaticResource StopEmissionSequenceIcon}" Style="{StaticResource XRayButtonsIconStyle}"/>
+                                <TextBlock Text="Stop" Style="{StaticResource TextBlockButtonStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+
+                    <!--'Resume' button-->
+                    <Button 
+                        Command="{Binding ResumeCommand}"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        IsEnabled="{Binding UIStateMachine.RightButton.IsEnabled}"
+                        Visibility="{Binding UIStateMachine.RightButton.State, 
+                        Converter={convx:IntToVisibilityVisibleConverter}, 
+                        ConverterParameter={x:Static models:UIRightButtonState.Resume}}">
+
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Path 
+                                    Data="{StaticResource RefreshIcon3}" 
+                                    Style="{StaticResource XRayButtonsIconStyle}">
+
+                                    <Path.LayoutTransform>
+                                        <ScaleTransform ScaleX="-1"></ScaleTransform>
+                                    </Path.LayoutTransform>
+                                </Path>
+
+                                <TextBlock Text="Resume" Style="{StaticResource TextBlockButtonStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+
+
+        <!--Camera-->
+        <ucx:VideoLiveFeedControl 
+            Grid.Row="2" Grid.RowSpan="3" Grid.Column="4"
+            UriSource="{Binding HeraclesExternalSettings.CameraUriSource}"
+            ControlPanelVisibility="Collapsed"/>
+    </Grid>
+</UserControl>

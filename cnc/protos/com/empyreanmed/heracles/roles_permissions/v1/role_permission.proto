@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.roles_permissions.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a link between a role and a permission in the system.
+message RolesPermissions {
+  // Unique identifier for this role (auto-increment).
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // The ID of the role that is assigned the permission.
+  optional int64 role_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The time when this link was created in the database.
+  optional google.protobuf.Timestamp creation_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // role permission
+  optional com.empyreanmed.heracles.enums.v1.PERMISSION permission = 4;
+}

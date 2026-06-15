@@ -1,0 +1,204 @@
+﻿<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:system="clr-namespace:System;assembly=netstandard">
+    
+    <system:Double x:Key="TabItemHeight" >80</system:Double>
+    <system:Double x:Key="TabItemWidth">120</system:Double>
+    <GridLength x:Key="TabItemLength">120</GridLength>
+    
+
+    <system:Double x:Key="ToolBarButtonSize">24</system:Double>
+   
+    <system:Double x:Key="ButtonHeight">54</system:Double>
+    <system:Double x:Key="ButtonWidth">150</system:Double>
+    <system:Double x:Key="ButtonWidthLarge">170</system:Double>
+    <system:Double x:Key="RobotButtonWidth">190</system:Double>
+    <system:Double x:Key="RobotButtonWidthLarge">200</system:Double>
+    <system:Double x:Key="ButtonMarginValue">20</system:Double>
+    <GridLength x:Key="ButtonMarginGridLength">20</GridLength>
+    <GridLength x:Key="ButtonDoubleMarginGridLength">40</GridLength>
+    <GridLength x:Key="ButtonIconMarginGridLength">8</GridLength>
+
+    <system:Double x:Key="XRayButtonWidth">250</system:Double>
+    <GridLength x:Key="XRayButtonGridLength">250</GridLength>
+    <GridLength x:Key="XRayButtonHeightGridLength">110</GridLength>
+
+    <!--Field refers to controls for entering some single-line data (TexBox, ComboBox etc.) -->
+    <system:Double x:Key="FieldHeight">36.0</system:Double>
+    <GridLength x:Key="FieldHeightGridLength">36</GridLength>
+    <GridLength x:Key="TelemetryFieldHeight">44</GridLength>
+
+    <!--Tagged field is a style for field controls with a specified Tag property-->
+    <system:Double x:Key="TaggedFieldHeight">62</system:Double>
+    <GridLength x:Key="TaggedFieldGridLength">62</GridLength>
+    
+    <system:Double x:Key="FieldMarginValue">16</system:Double>
+    <GridLength x:Key="FieldMarginGridLength">16</GridLength>
+
+    <system:Double x:Key="FieldLargeMarginValue">24</system:Double>
+    <GridLength x:Key="FieldLargeMarginGridLength">24</GridLength>
+    <Thickness x:Key="FieldLargeBottomMargin" Bottom="{StaticResource FieldLargeMarginValue}"/>
+    
+    <system:Double x:Key="FieldMarginSmallValue">6</system:Double>
+    <GridLength x:Key="FieldSmallMarginGridLength">6</GridLength>
+    <Thickness x:Key="FieldSmallBottomMargin" Bottom="{StaticResource FieldMarginSmallValue}"/>
+
+    <system:Double x:Key="ToolbarSmallHeight">54</system:Double>
+
+
+
+    <!--List view column margins-->
+    <system:Double x:Key="ListColumnHorizontalMarginValue">8</system:Double>
+    <system:Double x:Key="ListColumnVerticalMarginValue">6</system:Double>
+
+    <Thickness 
+        x:Key="ListColumnHeaderMargin" 
+        Left="{StaticResource ListColumnHorizontalMarginValue}" Top="{StaticResource ListColumnVerticalMarginValue}" 
+        Right="{StaticResource ListColumnHorizontalMarginValue}" Bottom="{StaticResource ListColumnVerticalMarginValue}"/>
+
+    <Thickness 
+        x:Key="ListColumnItemMargin" 
+        Left="{StaticResource ListColumnHorizontalMarginValue}" Right="{StaticResource ListColumnHorizontalMarginValue}"/>
+
+    <system:Double x:Key="ListColumnHorizontalMarginValueSmall">4</system:Double>
+
+    <Thickness
+        x:Key="ListColumnHeaderMarginSmall" 
+        Left="{StaticResource ListColumnHorizontalMarginValueSmall}" Top="{StaticResource ListColumnVerticalMarginValue}" 
+        Right="{StaticResource ListColumnHorizontalMarginValueSmall}" Bottom="{StaticResource ListColumnVerticalMarginValue}"/>
+
+    <Thickness 
+        x:Key="ListColumnItemMarginSmall" 
+        Left="{StaticResource ListColumnHorizontalMarginValueSmall}" Right="{StaticResource ListColumnHorizontalMarginValueSmall}"/>
+
+
+
+    <!--Margin for views-->
+    <system:Double x:Key="ViewMarginValue">24</system:Double>
+    <Thickness 
+        x:Key="ViewMargin" 
+        Left="{StaticResource ViewMarginValue}" Top="{StaticResource ViewMarginValue}"
+        Right="{StaticResource ViewMarginValue}" Bottom="{StaticResource ViewMarginValue}"/>
+
+    <system:Double x:Key="ViewMarginNegativeValue">-24</system:Double>
+    <Thickness 
+        x:Key="ViewMarginNegative" 
+        Left="{StaticResource ViewMarginNegativeValue}" Top="{StaticResource ViewMarginNegativeValue}"
+        Right="{StaticResource ViewMarginNegativeValue}" Bottom="{StaticResource ViewMarginNegativeValue}"/>
+
+
+    <!--Margin between blocks of content-->
+    <system:Double x:Key="BlockMarginValue">24</system:Double>
+    <GridLength x:Key="BlockMarginGridLength">24</GridLength>
+    <Thickness x:Key="BlockTopMargin" Top="{StaticResource BlockMarginValue}"/>
+    <Thickness x:Key="BlockMarginLeft" Left="{StaticResource BlockMarginValue}"/>
+
+    
+    
+    <!--ScrollBar buttons size constants-->
+    <system:Double x:Key="ScrollBarButtonSize">20</system:Double>
+    <GridLength x:Key="ScrollBarButtonGridLength">20</GridLength>
+    
+    <system:Double x:Key="ImagePreviewSize">128</system:Double>
+    <GridLength x:Key="ImagePreviewGridLength">128</GridLength>
+    
+
+    <system:Double x:Key="ButtonsBlockMarginValue">12</system:Double>
+    <Thickness 
+        x:Key="ButtonsBlockMargin" 
+        Left="{StaticResource ButtonsBlockMarginValue}"
+        Right="{StaticResource ButtonsBlockMarginValue}"
+        Top="{StaticResource ButtonsBlockMarginValue}"
+        Bottom="{StaticResource ButtonsBlockMarginValue}"/>
+
+
+
+
+    <!--Margins for content inside views (the same as padding) and between content within a block-->
+    <system:Double x:Key="BlockContentMarginValue">16</system:Double>
+    <GridLength x:Key="BlockContentMarginGridLength">16</GridLength>
+
+    <Thickness x:Key="BlockContentMarginLeft" Left="{StaticResource BlockContentMarginValue}"/>
+    <Thickness x:Key="BlockContentMarginRight" Right="{StaticResource BlockContentMarginValue}"/>
+    <Thickness x:Key="BlockContentMarginTop" Top="{StaticResource BlockContentMarginValue}"/>
+    <Thickness x:Key="BlockContentMarginBottom" Bottom="{StaticResource BlockContentMarginValue}"/>
+
+    <Thickness 
+        x:Key="BlockContentMarginLeftTop" 
+        Left="{StaticResource BlockContentMarginValue}" 
+        Top="{StaticResource BlockContentMarginValue}"/>
+
+    <Thickness 
+        x:Key="BlockContentMarginLeftRightBottom" 
+        Left="{StaticResource BlockContentMarginValue}" 
+        Right="{StaticResource BlockContentMarginValue}"
+        Bottom="{StaticResource BlockContentMarginValue}"/>
+
+    <Thickness 
+        x:Key="BlockContentMarginHorizontal" 
+        Left="{StaticResource BlockContentMarginValue}" 
+        Right="{StaticResource BlockContentMarginValue}"/>
+    
+    
+    <Thickness 
+        x:Key="BlockContentMarginBottomRight" 
+        Right="{StaticResource BlockContentMarginValue}" 
+        Bottom="{StaticResource BlockContentMarginValue}"/>
+
+    <Thickness 
+        x:Key="BlockContentMargin" 
+        Left="{StaticResource BlockContentMarginValue}" Top="{StaticResource BlockContentMarginValue}" 
+        Right="{StaticResource BlockContentMarginValue}" Bottom="{StaticResource BlockContentMarginValue}"/>
+
+    <system:Double x:Key="BlockContentSmallMarginValue">8</system:Double>
+    <GridLength x:Key="BlockContentSmallMarginLength">8</GridLength>
+    <Thickness 
+        x:Key="BlockContentSmallMarginTop" Top="{StaticResource BlockContentSmallMarginValue}"/>
+    
+    <Thickness 
+        x:Key="BlockContentSmallMarginBottom" Bottom="{StaticResource BlockContentSmallMarginValue}"/>
+    
+    <Thickness 
+        x:Key="BlockContentSmallMarginTopBottom" Top="{StaticResource BlockContentSmallMarginValue}" Bottom="{StaticResource BlockContentSmallMarginValue}"/>
+
+    <Thickness 
+        x:Key="BlockContentSmallMargin"
+        Left="{StaticResource BlockContentSmallMarginValue}" Top="{StaticResource BlockContentSmallMarginValue}" 
+        Right="{StaticResource BlockContentSmallMarginValue}" Bottom="{StaticResource BlockContentSmallMarginValue}"/>
+    
+    <Thickness 
+        x:Key="MainTabsContainerMargin" 
+        Top="{StaticResource BlockContentMarginValue}" 
+        Bottom="{StaticResource BlockContentMarginValue}"
+        Right="{StaticResource BlockContentMarginValue}"/>
+
+    
+    <Thickness 
+        x:Key="GroupBoxContentMargin" 
+        Left="{StaticResource BlockContentMarginValue}" Top="12" 
+        Right="{StaticResource BlockContentMarginValue}" Bottom="12"/>
+
+    <system:Double x:Key="BlockCornerRadiusValue">8</system:Double>
+    <CornerRadius x:Key="BlockCornerRadius">8</CornerRadius>
+    
+    <system:Double x:Key="BlockInnerCornerRadiusValue">7</system:Double>
+    <CornerRadius x:Key="BlockInnerCornerRadius">7</CornerRadius>
+    <CornerRadius x:Key="TabContentInnerCornerRadius" BottomLeft="{StaticResource BlockInnerCornerRadiusValue}" TopRight="{StaticResource BlockInnerCornerRadiusValue}" BottomRight="{StaticResource BlockInnerCornerRadiusValue}"/>
+    
+    <CornerRadius 
+        x:Key="BlockTopCornerRadius"
+        TopLeft="{StaticResource BlockCornerRadiusValue}"
+        TopRight="{StaticResource BlockCornerRadiusValue}"/>
+    
+    <CornerRadius 
+        x:Key="BlockBottomCornerRadius"
+        BottomLeft="{StaticResource BlockCornerRadiusValue}"
+        BottomRight="{StaticResource BlockCornerRadiusValue}"/>
+    
+
+    <CornerRadius x:Key="FieldCornerRadius">5</CornerRadius>
+    
+    <Visibility x:Key="ButtonsTextVisibility">Visible</Visibility>
+    <system:String x:Key="ValidationPositiveValueMessage">Please enter a positive number</system:String>
+</ResourceDictionary>

@@ -1,0 +1,52 @@
+﻿<UserControl 
+    x:Class="Xcc.Application.UI.UserControls.SpinnerControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+
+    xmlns:conv="clr-namespace:Xcc.Application.UI.Converters"
+    xmlns:local="clr-namespace:Xcc.Application.UI.UserControls"
+
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+
+    mc:Ignorable="d" 
+    d:DesignHeight="120" d:DesignWidth="120">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <DrawingImage x:Key="SpinnerDots">
+                <DrawingImage.Drawing>
+                    <GeometryDrawing Brush="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:SpinnerControl}}, Path=Color, FallbackValue=Cyan}">
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry Figures="M 304 48 c 0 26.5 -21.5 48 -48 48 s -48 -21.5 -48 -48 s 21.5 -48 48 -48 S 304 21.5 304 48 z M 304 464 c 0 26.5 -21.5 48 -48 48 s -48 -21.5 -48 -48 s 21.5 -48 48 -48 S 304 437.5 304 464 z M 0 256 c 0 -26.5 21.5 -48 48 -48 s 48 21.5 48 48 s -21.5 48 -48 48 S 0 282.5 0 256 z M 512 256 c 0 26.5 -21.5 48 -48 48 s -48 -21.5 -48 -48 s 21.5 -48 48 -48 S 512 229.5 512 256 z M 75 437 c -18.8 -18.7 -18.8 -49.1 0 -67.9 c 18.8 -18.7 49.1 -18.7 67.9 0 c 18.7 18.8 18.7 49.2 0 67.9 C 124.1 455.8 93.7 455.8 75 437 L 75 437 z M 142.9 142.9 c -18.8 18.7 -49.2 18.7 -67.9 0 C 56.2 124.1 56.2 93.7 75 75 c 18.8 -18.8 49.1 -18.8 67.9 0 C 161.6 93.7 161.6 124.1 142.9 142.9 z M 369.1 369.1 c 18.8 -18.7 49.2 -18.7 67.9 0 c 18.8 18.8 18.8 49.2 0 67.9 c -18.7 18.8 -49.1 18.8 -67.9 0 C 350.4 418.3 350.4 387.9 369.1 369.1 L 369.1 369.1 z" FillRule="Nonzero"/>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingImage.Drawing>
+            </DrawingImage>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Image RenderTransformOrigin="0.5,0.5" Source="{StaticResource SpinnerDots}">
+        <Image.RenderTransform>
+            <RotateTransform x:Name="RotateAnimation" Angle="0" />
+        </Image.RenderTransform>
+
+        <Image.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation 
+                            Storyboard.TargetName="RotateAnimation"
+                            Storyboard.TargetProperty="(RotateTransform.Angle)"
+                            RepeatBehavior="Forever" From="0.0" To="360.0" 
+                            Duration="{Binding RelativeSource={RelativeSource Mode=FindAncestor, 
+                                AncestorType={x:Type local:SpinnerControl}}, Path=MillisecondsToSpin, 
+                                Converter={conv:MillisecondsToDurationStringConverter}}" />
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Image.Triggers>
+    </Image>
+</UserControl>

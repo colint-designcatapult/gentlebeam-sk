@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.users.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a user of the system.
+message User {
+  // User id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // User creation date
+  optional google.protobuf.Timestamp creation_date = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Picture URL of the user
+  optional string picture = 3;
+
+  // First name of the user
+  optional string first_name = 4;
+
+  // Middle name of the user
+  optional string middle_name = 5;
+
+  // Last name of the user
+  optional string last_name = 6;
+
+  // Username of the user
+  optional string username = 7 [(google.api.field_behavior) = REQUIRED];
+
+  // Encrypted password of the user
+  optional string password = 8 [(google.api.field_behavior) = REQUIRED];
+
+  // Role of the user within the system
+  optional string role = 9 [(google.api.field_behavior) = REQUIRED];
+
+  // Email address of the user
+  optional string email_address = 10;
+
+  // Last accessed timestamp
+  optional google.protobuf.Timestamp last_accessed = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

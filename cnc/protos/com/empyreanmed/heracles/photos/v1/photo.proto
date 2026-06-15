@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.photos.v1;
+
+import "com/empyreanmed/heracles/enums/v1/enums.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a photo associated with a diagnosis and visit.
+message Photo {
+  // Photo id, globally unique
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Diagnosis id associated with the photo
+  optional int64 diagnosis_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Visit id associated with the photo
+  optional int64 visit_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Photo creation date
+  optional google.protobuf.Timestamp creation_date = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Description of the photo
+  optional string description = 5;
+
+  // Template type of the photo
+  optional com.empyreanmed.heracles.enums.v1.TEMPLATETYPE template_type = 6;
+
+  // Photo type of the photo
+  optional com.empyreanmed.heracles.enums.v1.PHOTOTYPE photo_type = 7;
+}

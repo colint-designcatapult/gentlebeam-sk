@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package com.empyreanmed.heracles.robot_sequence_steps.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+// Represents a step in a robot sequence.
+message RobotSequenceStep {
+  // Unique identifier for the robot sequence step.
+  optional int64 id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The ID of the associated robot sequence.
+  optional int64 robot_sequence_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The creation date of the robot sequence step.
+  optional google.protobuf.Timestamp creation_date = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Index of the step in the sequence.
+  optional int32 step_index = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // The action to be performed in this step.
+  optional string action = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Value associated with the action.
+  optional string value = 6 [(google.api.field_behavior) = REQUIRED];
+}
