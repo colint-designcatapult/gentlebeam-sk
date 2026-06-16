@@ -13,7 +13,6 @@
 #include "sensus_src/hvps.h"
 #include "sensus_src/pc_comm_parser.h"
 #include "sensus_src/pc_msg_processing.h"
-#include "sensus_src/peltier_cooler.h"
 #include "sensus_src/state_machine.h"
 #include "sensus_src/system_monitoring.h"
 #include "sensus_src/system_parameters.h"
@@ -57,7 +56,6 @@ static inline void process_peripherals()
 	process_ext_dac();
 	process_ext_timers();
 	process_hb();
-	process_plt();
 #if !defined(CALIBRATION_MODE)
 	//process_qc();			//No QC well in 
 #endif
@@ -189,7 +187,6 @@ int main(void)
 	init_ext_timers();
 	init_ftdi();
 	init_head_board();
-	init_plt_cooler();
 	init_hvps();
 	init_system_monitoring();
 	init_state_machine();
