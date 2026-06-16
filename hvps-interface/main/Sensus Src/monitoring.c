@@ -399,23 +399,31 @@ void process_monitoring()
     else
     {
 #endif
+#ifndef CALIBRATION_MODE
         if(sys_stat_check(SYS_WARMING))
         {
+#endif
             if(fil_ramp_ms <= 0)
             {
                 fil_ramp_ms = 1000;	//Ramp heater every 1000ms
                 process_fil_ramp();
             }
+#ifndef CALIBRATION_MODE
         }
+#endif
 
+#ifndef CALIBRATION_MODE
         if(sys_stat_check(SYS_KV_RAMPING))
         {
+#endif
             if(kv_ramp_ms <= 0)
             {
                 kv_ramp_ms = 1000;	//Ramp kV every 1000ms
                 process_kv_ramp();
             }
+#ifndef CALIBRATION_MODE
         }
+#endif
 #ifndef CALIBRATION_MODE
     }
 #endif
