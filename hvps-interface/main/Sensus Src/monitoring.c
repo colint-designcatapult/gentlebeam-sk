@@ -65,6 +65,8 @@ void setup_system_monitoring()
     config_vals[SYS_CONFIG_RUN_PID] = 0;
 #endif
 
+	config_vals[SYS_CONFIG_MAX_GRID] = 600;
+
 	config_vals[SYS_CONFIG_MIN_KV] = 2;
 	config_vals[SYS_CONFIG_MAX_KV] = 100;
 	config_vals[SYS_CONFIG_FIL_INIT] = 1000;
