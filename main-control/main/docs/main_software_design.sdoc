@@ -432,9 +432,6 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWMC-53
   ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-59
-  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWMC-177
@@ -682,15 +679,6 @@ The communication protocol is based on the pre-defined protocol defined by the o
 controller TC-48-20-OEM.
 <<<
 RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-56
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-57
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-58
-  ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWMC-64
   ROLE: Refines
