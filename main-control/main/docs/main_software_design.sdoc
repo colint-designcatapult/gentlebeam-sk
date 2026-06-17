@@ -359,12 +359,19 @@ STATEMENT: >>>
 The firmware integrates source code provided by the manufacturer of the microcontroller unit to
 interface with various peripherals of the microcontroller. These include functions to interface with
 the following peripherals of the microcontroller:
+
 -UART serial port
+
 -SPI serial port
+
 -I2C serial port
+
 -GPIO
+
 -Flash memory controller
+
 -Timer peripheral
+
 -Ethernet MAC peripheral
 <<<
 RELATIONS:
@@ -780,13 +787,21 @@ STATEMENT: >>>
 The firmware will continuously check at periodic intervals, various measured and reported feedback
 signals and statuses of the system to detect faults. If any issues are detected, a fault condition may
 be thrown away. The following are monitored conditions for fault reporting:
+
 -Communication timeout with the PC
+
 -Interlock fault
+
 -Ion Repeller overcurrent and out of tolerance voltage readings
+
 -Cooling system pressure overload
+
 -Cooling system over temperature
+
 -Cooling system inadequate flow
+
 -Heatsink over temperature
+
 -Deflection or focus coil out of tolerance feedback
 <<<
 RELATIONS:
