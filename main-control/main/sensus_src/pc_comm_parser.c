@@ -19,7 +19,6 @@
 #include "pc_comm_parser.h"
 #include "pc_msg_processing.h"
 #include "system_parameters.h"
-#include "peltier_cooler.h"
 
 #include "state_machine.h"
 #include "faults.h"

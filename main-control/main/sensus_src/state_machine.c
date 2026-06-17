@@ -13,7 +13,6 @@
 #include "faults.h"
 #include "head_board.h"
 #include "hvps.h"
-#include "peltier_cooler.h"
 #include "system_monitoring.h"
 #include "system_parameters.h"
 #include "state_machine.h"
@@ -227,8 +226,6 @@ static void run_crash_state(EventType ev)
 	set_coil_voltage(Y_COIL_DAC_CH, 0);
 	set_coil_voltage(F_COIL_DAC_CH, 0);
 	
-	//Stop cooler
-	enable_plt(false);
 	//Stop coolant pump and fan
 	enable_pump(false);
 	//Stop x-ray indicators
@@ -263,8 +260,6 @@ static void goto_cold_state()
 	set_coil_voltage(Y_COIL_DAC_CH, 0);
 	set_coil_voltage(F_COIL_DAC_CH, 0);
 	
-	//Stop cooler
-	enable_plt(false);
 	//Stop coolant pump and fan
 	enable_pump(false);
 	//Stop x-ray indicators
@@ -348,8 +343,6 @@ static void goto_conditioning_state()
 	float htr_val = hvps_config[HVPS_CONF_CONDITION_I];
 	set_hvps_heater(htr_val);
 	
-	//Start cooler
-	enable_plt(true);
 	//Start coolant pump and fan
 	enable_pump(true);
 	
@@ -387,8 +380,6 @@ static void goto_warmup_state()
 	float htr_val = hvps_config[HVPS_CONF_WARMUP_I];
 	set_hvps_heater(htr_val);
 	
-	//Start cooler
-	enable_plt(true);
 	//Start coolant pump and fan
 	enable_pump(true);
 	
@@ -429,9 +420,7 @@ static void goto_warmup_fault_state()
 {	
 	//Ensure source heater voltage is 0
 	set_hvps_heater(0);
-	
-	//Stop cooler
-	enable_plt(false);
+
 	//Stop coolant pump and fan
 	enable_pump(false);
 	
@@ -1011,10 +1000,8 @@ static void goto_fault_state()
 	//Turn off coils
 	set_coil_voltage(X_COIL_DAC_CH, 0);
 	set_coil_voltage(Y_COIL_DAC_CH, 0);
-	set_coil_voltage(F_COIL_DAC_CH, 0);
+	set_coil_voltage(F_COIL_DAC_CH, 0);	
 	
-	//Stop cooler
-	enable_plt(false);
 	//Stop coolant pump and fan
 	enable_pump(false);
 	//Stop x-ray indicators

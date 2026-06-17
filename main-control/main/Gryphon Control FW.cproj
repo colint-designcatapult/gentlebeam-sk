@@ -1673,12 +1673,6 @@
     <Compile Include="sensus_src\pc_msg_processing.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="sensus_src\peltier_cooler.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="sensus_src\peltier_cooler.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="sensus_src\qc_well.c">
       <SubType>compile</SubType>
     </Compile>
