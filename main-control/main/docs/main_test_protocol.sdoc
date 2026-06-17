@@ -1503,7 +1503,7 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 1. Verify the value is displaying in the GUI
 2. Physically verify that the cooler is unplugged
-3. Verify it changed and the value is below 0.6 LPM
+3. Verify it changed and the value is below 2 LPM
 4. Verify logs are displayed in the middle of the screen
 5. Verify there are logs for invalid coolant value
 <<<
@@ -1532,7 +1532,7 @@ EXPECTED_BEHAVIOR: >>>
 1. Verify coolant temperature is displayed in the GUI
 2. Physically verify the sensor is unplugged
 3. Verify logs can be seen in the middle of the screen
-4. Verify its values are above 45°C or below TBD
+4. Verify its values are above 35°C
 <<<
 RELATIONS:
 - TYPE: Parent

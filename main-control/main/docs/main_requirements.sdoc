@@ -600,7 +600,7 @@ TYPE: Safety
 TITLE: Coolant monitoring
 STATEMENT: >>>
 The firmware shall monitor the reported coolant temperature and report a fault if the
-temperature is above 45C
+temperature is above 35C
 <<<
 
 [REQUIREMENT]
@@ -609,7 +609,7 @@ TYPE: Safety
 TITLE: Coolant monitoring
 STATEMENT: >>>
 The firmware shall monitor the reported coolant system flow rate and report a fault if the
-rate is below 0.6 LPM when the coolant pump is enabled.
+rate is below 2 LPM or above 6 LPM when the coolant pump is enabled.
 <<<
 
 [REQUIREMENT]
