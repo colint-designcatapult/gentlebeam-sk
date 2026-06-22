@@ -59,7 +59,7 @@ TITLE: Overview
 
 [TEXT]
 STATEMENT: >>>
-The external GUI console provides a means for the user to activate and monitor the treatment. It communicates with the main control board, treatment head camera and imaging head camera.
+The external GUI console provides a means for the user to activate and monitor the treatment. It communicates with the main control board and treatment head camera.
 
 The external GUI software runs on the external tablet console located outside the room.
 <<<

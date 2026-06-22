@@ -65,7 +65,7 @@ TITLE: Overview
 
 [TEXT]
 STATEMENT: >>>
-The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans and perform imaging. It communicates with the record and verify component, flange camera stream and imaging component.
+The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans. It communicates with the record and verify component and flange camera stream.
 
 The internal GUI software runs on an industrial PC located at the base of the system
 <<<
@@ -1310,7 +1310,7 @@ Approvals Calibration - Heater current configuration.
 
 The application is comprised of two key components: Heracles Device Control console (Indoor application) and Treatment Control console (Outdoor application).
 
-The Heracles Device Control console is integrated within the Heracles device. This application addresses functionalities related to patients, demographic data management, clinical data management, treatment data management, Image acquisition, user access, clinical workflows, and system setup and services.
+The Heracles Device Control console is integrated within the Heracles device. This application addresses functionalities related to patients, demographic data management, clinical data management, treatment data management, user access, clinical workflows, and system setup and services.
 
 The Treatment Control application must be located in a console outside the treatment room. This is to provide the operator with a safe work environment. It should allow healthcare professionals e.g., radiation therapists (RTT), and physicians to activate the radiation emission for the patient's treatment and to provide tools for physicists to program the system's calibration values.
 <<<
@@ -2539,20 +2539,6 @@ Fulfilled requirements:
 <<<
 
 [DESIGN_ITEM]
-UID: SW-H10SG-679
-TITLE: Save Lesion Depth Flow
-STATEMENT: >>>
-The application shall provide functionality to save the lesion depth value acquired during image acquisition into the simulation module. The lesion depth shall be captured and populated into the patient's simulation parameters for treatment planning purposes.
-
-Fulfilled requirements:
-- RQ-H10SG-376-#6: Patients - Image Acquisition - Populate Lesion Depth into Simulation
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-376
-  ROLE: Refines
-
-[DESIGN_ITEM]
 UID: SW-H10SG-680
 TITLE: New Collimator Mandatory Fields
 STATEMENT: >>>
@@ -2901,17 +2887,6 @@ TBD
 <<<
 
 [DESIGN_ITEM]
-UID: SW-H10SG-704
-TITLE: Fetch images Sequence
-STATEMENT: >>>
-TBD
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-76
-  ROLE: Refines
-
-[DESIGN_ITEM]
 UID: SW-H10SG-705
 TITLE: Save log records sequence
 STATEMENT: >>>
@@ -2923,28 +2898,6 @@ RELATIONS:
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H10SG-67
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10SG-706
-TITLE: Image Acquisition Sequence
-STATEMENT: >>>
-TBD
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-103
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10SG-707
-TITLE: Retrieve Series and DICOM Sequences
-STATEMENT: >>>
-TBD
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-97
   ROLE: Refines
 
 [DESIGN_ITEM]

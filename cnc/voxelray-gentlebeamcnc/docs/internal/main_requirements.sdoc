@@ -55,9 +55,9 @@ TITLE: Overview
 
 [TEXT]
 STATEMENT: >>>
-The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans, and perform imaging. It communicates with the record and verify component, flange camera stream and imaging component.
+The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans. It communicates with the record and verify component, and flange camera stream.
 
-The internal GUI software runs on an industrial PC located at the base of the system.
+The internal GUI software runs on an all-in-one touchscreen PC.
 <<<
 
 [[/SECTION]]
@@ -147,77 +147,11 @@ The application shall maintain logs of all changes made to patient data, includi
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10SG-103
-TYPE: Functional
-TITLE: Patients - Image Acquisition
-STATEMENT: >>>
-The Application shall have an interface that enables the user to acquire Imaging. This functionality should enable real-time imaging and visualization to assist in accurately targeting and monitoring the treatment area. Imaging shall be part of the planning workflow.
-
-The Layout should include the following parts:
-
-1. Identification of the patient.
-2. DICOM viewer - 3 frames of image visualization for the three orthogonal directions XY, XZ, YZ
-3. Action buttons:
-
-   - Acquire - The image acquisitions shall run according to the configured parameters.
-   - Stop - An acquisition shall be forced to terminate.
-   - Back - The view shall be closed and returned to the Plan view.
-
-4. Setting - Shall open a collapse/expand view to enable the user to configure the imaging settings.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10SG-375
-TYPE: Functional
-TITLE: Patients - Image Acquisition - Measure Lesion Depth
-STATEMENT: >>>
-The application shall have a control that enables the operator to measure the lesion depth from the acquired image sagittal view.
-
-The operator will mark the lesion on the image using a scale bar, representing the length at the magnification of the image.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10SG-376
-TYPE: Functional
-TITLE: Patients - Image Acquisition - Populate Lesion Depth into Simulation
-STATEMENT: >>>
-The application shall automatically populate the measured lesion depth into the simulation. When the operator closes the image acquisition view, the lesion depth is populated into the simulation. This depth is updated only if it is empty in the current simulation.
-
-If the simulation data is entered and not saved yet, then the depth should be populated into the edit box and will be saved when the user presses the save button.
-
-The lesion depth should also be saved on the series record created in the DB.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10SG-97
-TYPE: Functional
-TITLE: Patients - Images - Display Acquired Images
-STATEMENT: >>>
-The application shall provide the user with an interface for viewing all images created for the patient. The images shall be presented in one of two ways: a List view or a Thumbnails view.
-
-The list view will have a list of all the images captured for this patient and will include the following information:
-- Creation - The creation date of the image
-- Site - The image site name
-- Type - The type of the image
-- Description - the image description
-
-The view will include buttons that shall enable the user to switch between the views.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10SG-76
-TYPE: Functional
-TITLE: Patients - Images View - Storage
-STATEMENT: >>>
-The application should provide a user interface to view the images (pictures) captured by the device camara filtered by the visit it was captured.
-<<<
-
-[REQUIREMENT]
 UID: RQ-H10SG-37
 TYPE: Functional
 TITLE: Patients - Patient List View - Open Patient's Clinical view
 STATEMENT: >>>
-The patient list shall have a control that allows users to click and open the patient's clinical view (i.e., prescriptions, plans, images, etc.).
+The patient list shall have a control that allows users to click and open the patient's clinical view (i.e., prescriptions, plans, etc.).
 <<<
 
 [REQUIREMENT]
@@ -548,14 +482,13 @@ The view will include:
    - Duration
    - Actual Dose
 
-5. Image/Pictures Gallery - multi-tab gallery
-6. Treatment history
-7. Images lists
+5. Treatment history
 
-   - The UI Layout shall be implemented as a master-detail view within a multi-tab control. 
 
-The master view shall present a list of the sites, and the details view shall present the clinical data 
-(simulation, prescription, and plan details). 
+   - The UI Layout shall be implemented as a master-detail view within a multi-tab control.
+
+The master view shall present a list of the sites, and the details view shall present the clinical data
+(simulation, prescription, and plan details).
 <<<
 
 [REQUIREMENT]
