@@ -24,6 +24,7 @@ TITLE: Scope
 [TEXT]
 STATEMENT: >>>
 This document describes all requirements of the Heracles Backup Timer FW.
+
 The information in this document has been derived from the VoxelRay Heracles Product Requirements
 Specification, as referenced in this document.
 
@@ -81,7 +82,7 @@ EMS-WI-057-13: Generating Documents and Traceability Matrix Analysis in Ketryx W
 
 EMS-SOP-057: Software Design Control
 
-DHF-HRC-0001, Rev. 1: Heracles Software Development Plan (SDP)
+DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
 
 DHF-HRC-0002: VoxelRay Product Requirements Specification (PRS)
 <<<
@@ -156,7 +157,7 @@ UID: RQ-H1FWT-10
 TYPE: Functional
 TITLE: Timer Characteristics
 STATEMENT: >>>
-The timeout counter shall be able to have a maximum period of 2 minutes or more.
+The timeout counter shall be able to have a maximum period of 2 minutes or more
 <<<
 
 [REQUIREMENT]
@@ -172,7 +173,7 @@ UID: RQ-H1FWT-12
 TYPE: Functional
 TITLE: Timer Functionality
 STATEMENT: >>>
-The timer firmware shall be able to start a timeout counter.
+The timer firmware shall be able to start a timeout counter
 <<<
 
 [REQUIREMENT]
@@ -189,7 +190,7 @@ TYPE: Functional
 TITLE: Timer Functionality
 STATEMENT: >>>
 The timer firmware shall be able to program a timeout counter based on time parameters
-received from the main microcontroller.
+received from the main microcontroller
 <<<
 
 [[/SECTION]]

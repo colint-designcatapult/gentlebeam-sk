@@ -36,23 +36,16 @@ TITLE: Abbreviations and Definitions
 
 [TEXT]
 STATEMENT: >>>
-DB
-Data Base
-
-GUI
-Graphic User Interface
-
-PRS
-Product Requirements Specification
-
-SDP
-Software Development Plan
-
-SRS
-Software Requirements Specification
-
-SW
-Software
+===================  =====================================
+Abbreviation/Term    Definition
+===================  =====================================
+DB                   Data Base
+GUI                  Graphic User Interface
+PRS                  Product Requirements Specification
+SDP                  Software Development Plan
+SRS                  Software Requirements Specification
+SW                   Software
+===================  =====================================
 <<<
 
 [[/SECTION]]
@@ -74,8 +67,11 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-Document ID / Reference Number: DHF-HRC-0001, Rev.2
-Document Title: Heracles Software Development Plan (SDP)
+================================  ==========================================
+Document ID / Reference Number    Document Title
+================================  ==========================================
+DHF-HRC-0001, Rev.2               Heracles Software Development Plan (SDP)
+================================  ==========================================
 <<<
 
 [[/SECTION]]
@@ -115,7 +111,7 @@ The application shall have an interface presenting the operator with the ICD Cod
 [REQUIREMENT]
 UID: RQ-H10SG-377
 TYPE: Functional
-TITLE: Patient - Visits Management
+TITLE: Patient - Visits ManagementsPatient - Visits Management
 STATEMENT: >>>
 The application shall create a visit entity for each simulation or treatment created for a patient per day.
 
@@ -124,7 +120,7 @@ If the operator creates multiple simulations/treatments on the same day (e.g. fo
 
 [REQUIREMENT]
 UID: RQ-H10SG-83
-TYPE: Data
+TYPE: Functional
 TITLE: Patients - Edit Patient Demographic Data
 STATEMENT: >>>
 The application shall allow a user to edit all the fields of an existing patient. It should have an Edit button, which will open a view with all the patient's data, and all fields should be editable.
@@ -213,7 +209,7 @@ UID: RQ-H10SG-76
 TYPE: Functional
 TITLE: Patients - Images View - Storage
 STATEMENT: >>>
-The application should provide a user interface to view the images (pictures) captured by the device camera filtered by the visit it was captured.
+The application should provide a user interface to view the images (pictures) captured by the device camara filtered by the visit it was captured.
 <<<
 
 [REQUIREMENT]
@@ -338,7 +334,8 @@ The form should clearly distinguish which fields are mandatory and which are opt
 
 Mandatory fields should be marked with an asterisk.
 
-Mandatory fields are:
+[These fields are mandatory because they determine the identification of the user] Mandatory fields are:
+
 - First Name
 - Last name
 - Date of birth
@@ -366,9 +363,9 @@ STATEMENT: >>>
 A treatment plan shall be set with Energy, Duration, current, and Actual Dose.
 
 The Actual Dose should be auto-calculate from the duration using the following function:
+
 [Dose Rate cGy/min] \* Duration / 60
 
-Example:
 320 \* 18 / 60 = 96 cGy
 <<<
 
@@ -415,12 +412,17 @@ STATEMENT: >>>
 When adding/editing a simulation, the application shall automatically calculate the Field Size based on the set Lesion size and Margin size.
 
 The calculation shall use the following method:
+
 Field Size X [cm] = Lesion Size X + 2 \* Margin Size X [cm]
+
 Field Size Y [cm] = Lesion Size Y + 2 \* Margin Size Y [cm]
 
-Example:
+For example:
+
 Lesion Size = 1.0 x 1.0
+
 Margin Size = 0.5 x 0.5
+
 Field Size = 2.0 x 2.0
 <<<
 
@@ -480,7 +482,7 @@ TITLE: Patients - Plan View - Disable Treatment when the Patient's Plan is Incon
 STATEMENT: >>>
 The application shall not enable treatment delivery if the plan's applicator type differs from the actual applicator type.
 
-The application shall present an error message when the user tries to load the plan into the external application (i.e. presses the LoadForTreatment).
+The application shall present an error message when the user tries to load the plan into the external application (i.e. presses the LoadForTreatemt).
 <<<
 
 [REQUIREMENT]
@@ -499,16 +501,20 @@ STATEMENT: >>>
 A treatment plan shall be set with Energy, Duration, Current, and Actual Dose.
 
 The Current should be auto calculated as the quotient of Power[W] divided by Energy Level[kV]:
+
 Emission Current[mA] = Power[W] / Voltage[kV]
 
 The device shall operate at a constant power of 50W.
 
 Here are the calculated values as a dependency on Energy Level:
 
-Power[W] | Voltage[kV] | Emission Current[mA]
-50       | 1           | 50
-50       | 70          | 0.71
-50       | 100         | 0.5
+========  ===========  =====================
+Power[W]  Voltage[kV]  Emission Current[mA]
+========  ===========  =====================
+50        50           1
+50        70           0.71
+50        100          0.5
+========  ===========  =====================
 <<<
 
 [REQUIREMENT]
@@ -903,7 +909,7 @@ The parameters include the Correction Matrix and the Reference Fields for the ba
 
 [REQUIREMENT]
 UID: RQ-H10SG-119
-TYPE: Data
+TYPE: Functional
 TITLE: Physics - Save Data
 STATEMENT: >>>
 The user shall be able to save physics data. The save button shall be disabled when no new data is to be saved or when there is an error in one of the inputs and enabled when a change is made.
@@ -954,52 +960,95 @@ UID: RQ-H10SG-65
 TYPE: Functional
 TITLE: Service - System's Signals
 STATEMENT: >>>
-The application shall have a user interface allowing the user (service engineer) to view the real-time system signals read from the board telemetry.
+The application shall have a user interface allowing the user (service engineer) to view the realtime system signals read from the board telemetry.
 
 The System Signals to be presented are:
 
-Type                  | Field                         | Unit
-Coils                 | Y coil current                | [mA]
-Coils                 | X coil current                | [mA]
-Coils                 | Focus current                 | [mA]
-Ion Pump              | Ion pump voltage              | [V]
-Magnetometer          | Mag 1 X                       | [µT]
-Magnetometer          | Mag 1 Y                       | [µT]
-Magnetometer          | Mag 1 Z                       | [µT]
-Magnetometer          | Mag 2 X                       | [µT]
-Magnetometer          | Mag 2 Y                       | [µT]
-Magnetometer          | Mag 2 Z                       | [µT]
-Cooling system        | Water pressure                | [psi]
-Cooling system        | Water Flow                    | [lpm]
-Cooling system        | Water temperature             | [°C]
-Cooling system        | HeadSink temperature          | [°C]
-Cooling system        | Peltier temperature           | [°C]
-Cooling system        | Cabinet temperature           | [°C]
-HVPS                  | HVPS Runtime                  | [ms]
-HVPS                  | HVPS IO                       | [Raw]
-HVPS                  | HVPS Status Flags             | [Raw]
-HVPS                  | kV Feedback                   | [kV]
-HVPS                  | Filament setpoint             | [mA]
-HVPS                  | Filament feedback             | [mA]
-HVPS                  | Grid feedback                 | [V]
-HVPS                  | Grid setpoint                 | [V]
-System                | System state                  | 
-System                | System runtime                | [ms]
-System                | System Fault Flags            | [raw]
-System                | Interlock Flags               | [raw]
-General               | Ring LED State                | 
-General               | Base LED State                | 
-General               | Applicator ID (1)             | [Raw]
-General               | Applicator ID (2)             | [Raw]
-General               | Buttons                       | [Raw]
-Operational Points    | Current Point                 | 
-Operational Points    | Total Points                  | 
-Timers                | Internal Timer Value          | [sec]
-Timers                | Internal Timer State          | 
-Timers                | Timer 1 State                 | 
-Timers                | Timer 1 Value                 | [sec]
-Timers                | Timer 2 State                 | 
-Timers                | Timer 2 Value                 | [sec]
++--------------------+-------------------------+-------+
+| Type               | Field                   | Unit  |
++====================+=========================+=======+
+| Coils              | Y coil current          | [mA]  |
++--------------------+-------------------------+-------+
+| Coils              | X coil current          | [mA]  |
++--------------------+-------------------------+-------+
+| Coils              | Focus current           | [mA]  |
++--------------------+-------------------------+-------+
+| Ion Pump           | Ion pump voltage        | [V]   |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 1 X                 | [µT]  |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 1 Y                 | [µT]  |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 1 Z                 | [µT]  |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 2 X                 | [µT]  |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 2 Y                 | [µT]  |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 2 Z                 | [µT]  |
++--------------------+-------------------------+-------+
+| Cooling system     | Water pressure          | [psi] |
++--------------------+-------------------------+-------+
+| Cooling system     | Water Flow              | [lpm] |
++--------------------+-------------------------+-------+
+| Cooling system     | Water temperature       | [˚ C] |
++--------------------+-------------------------+-------+
+| Cooling system     | HeadSink temperature    | [˚ C] |
++--------------------+-------------------------+-------+
+| Cooling system     | Peltier temperature     | [˚ C] |
++--------------------+-------------------------+-------+
+| Cooling system     | Cabinet temperature     | [˚ C] |
++--------------------+-------------------------+-------+
+| HVPS               | HVPS Runtime            | [ms]  |
++--------------------+-------------------------+-------+
+| HVPS               | HVPS IO                 | [Raw] |
++--------------------+-------------------------+-------+
+| HVPS               | HVPS Status Flags       | [Raw] |
++--------------------+-------------------------+-------+
+| HVPS               | kV Feedback             | [kV]  |
++--------------------+-------------------------+-------+
+| HVPS               | Filament setpoint       | [mA]  |
++--------------------+-------------------------+-------+
+| HVPS               | Filament feedback       | [mA]  |
++--------------------+-------------------------+-------+
+| HVPS               | Grid feedback           | [V]   |
++--------------------+-------------------------+-------+
+| HVPS               | Grid setpoint           | [V]   |
++--------------------+-------------------------+-------+
+| System             | System state            |       |
++--------------------+-------------------------+-------+
+| System             | System runtime          | [ms]  |
++--------------------+-------------------------+-------+
+| System             | System Fault Flags      | [raw] |
++--------------------+-------------------------+-------+
+| System             | Interlock Flags         | [raw] |
++--------------------+-------------------------+-------+
+| General            | Ring LED State          |       |
++--------------------+-------------------------+-------+
+| General            | Base LED State          |       |
++--------------------+-------------------------+-------+
+| General            | Applicator ID (1)       | [Raw] |
++--------------------+-------------------------+-------+
+| General            | Applicator ID (2) [Raw] | [Raw] |
++--------------------+-------------------------+-------+
+| General            | Buttons                 | [Raw] |
++--------------------+-------------------------+-------+
+| Operational Points | Current Point           |       |
++--------------------+-------------------------+-------+
+| Operational Points | Total Points            |       |
++--------------------+-------------------------+-------+
+| Timers             | Internal Timer State    |       |
++--------------------+-------------------------+-------+
+| Timers             | Internal Timer Value    | [sec] |
++--------------------+-------------------------+-------+
+| Timers             | Timer 1 State           |       |
++--------------------+-------------------------+-------+
+| Timers             | Timer 1 Value           | [sec] |
++--------------------+-------------------------+-------+
+| Timers             | Timer 2 State           |       |
++--------------------+-------------------------+-------+
+| Timers             | Timer 2 Value           | [sec] |
++--------------------+-------------------------+-------+
 <<<
 
 [REQUIREMENT]
