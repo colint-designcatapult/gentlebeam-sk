@@ -71,9 +71,7 @@ The main control application firmware serves as the main logical control for sys
 
 The main control application firmware monitors all the inputs from the various connections on the board
 hardware. It can also be used to set and control many of the components that the main control board
-interfaces with. For off the shelf components, the main control application can set/enable the Peltier
-cooler temperature, can set/enable the motor controller drivers for cooling system pump and fans, and
-can enable the ion pump controller.
+interfaces with. For off the shelf components, the main control application can set/enable the motor controller drivers for cooling system pump and fans, and can enable the ion pump controller.
 
 The main control application firmware runs on the main control MCU of the main control board.
 <<<
@@ -603,48 +601,12 @@ The firmware shall be able to set the deflection and focus coil setpoint control
 <<<
 
 [REQUIREMENT]
-UID: RQ-H1FWMC-56
-TYPE: Functional
-TITLE: Cooling system
-STATEMENT: >>>
-The firmware shall monitor the Peltier element temperature and report a fault if no
-response is received from the requested temperature read
-<<<
-
-[REQUIREMENT]
-UID: RQ-H1FWMC-57
-TYPE: Functional
-TITLE: Cooling system
-STATEMENT: >>>
-The firmware shall be able to read the Peltier element temperature value from the Peltier
-controller.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H1FWMC-58
-TYPE: Functional
-TITLE: Cooling system
-STATEMENT: >>>
-The firmware shall have the ability to set the Peltier cooling system target setpoint
-temperature.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H1FWMC-59
-TYPE: Functional
-TITLE: Cooling system
-STATEMENT: >>>
-The main control application firmware shall have the ability to enable and disable the
-Peltier cooling system.
-<<<
-
-[REQUIREMENT]
 UID: RQ-H1FWMC-60
 TYPE: Safety
 TITLE: Coolant monitoring
 STATEMENT: >>>
 The firmware shall monitor the reported coolant temperature and report a fault if the
-temperature is above 45C
+temperature is above 35C
 <<<
 
 [REQUIREMENT]
@@ -653,7 +615,7 @@ TYPE: Safety
 TITLE: Coolant monitoring
 STATEMENT: >>>
 The firmware shall monitor the reported coolant system flow rate and report a fault if the
-rate is below 0.6 LPM when the coolant pump is enabled.
+rate is below 2 LPM or above 6 LPM when the coolant pump is enabled.
 <<<
 
 [REQUIREMENT]
