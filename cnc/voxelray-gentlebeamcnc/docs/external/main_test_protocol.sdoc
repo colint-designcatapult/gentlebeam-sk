@@ -1897,4 +1897,126 @@ EXPECTED_BEHAVIOR: >>>
 4 - A visual indicator is displayed in the table to reflect the emission progress.
 <<<
 
+[TEST_CASE]
+UID: TC-H10TG-61
+TITLE: Radiation Emission Control - Record partial treatment - (After Two stoppings) - Test Case
+STATEMENT: >>>
+Verifying the layout for recording partial treatment, to ensure that the UI correctly displays the details of a partially completed treatment session after the emission is stopped prematurely twice.
+<<<
+PREREQUISITES: >>>
+Create treatment field with duration of 12 Seconds and Load a plan for treatment in the Heracles Internal unit.
+<<<
+STEPS: >>>
+1. Launch Heracles SW External. (The external unit should be located outside the treatment room).
+
+2. Click the Prepare button.
+
+3. Click the Beam On button.
+
+4. After 5 seconds (check elapsed time), Click the Stop button (during the beaming process).
+
+5. Repeat steps 3 and 4 (Click the Beam On button, and after 2 seconds, click the Stop button).
+<<<
+EXPECTED_BEHAVIOR: >>>
+1 - The interface should display: System status: COLD, Button Label: Prepare
+
+2 - The interface should display: System status: WARMUP, then PRIMED, then READY
+
+3 - The button label should transition to "Launching", and subsequently to "Beaming on" with a progress bar.
+
+4 - User shall receive an indicator or pop-up message indicating that the beaming has stopped. System status shall change to: READY.
+
+5 - After stopping the emission at 5 seconds, restarting it, and then stopping it again after 2 seconds (out of total of 12 seconds), the stopped treatment field should appear in the treatment field view with Duration: 12, Remaining[sec]: 5. The remaining time should be specified with a resolution of 0.01 minutes (600msec) and marked as partial in the database.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-110
+TITLE: Treatment View - Enable Loading a Treatment Plan -1
+STATEMENT: >>>
+The objective is to verify that the plan is loaded only in the staging GCB state.
+<<<
+STEPS: >>>
+White box testing:
+
+1. Open xcc solution in an IDE (Visual Studio or VSCode).
+
+2. Search for the LoadPlan function.
+
+3. Search for GcbStateNew.Staging state.
+
+4. Search for SendOperationalPoint command which loads the plan into the GCB.
+<<<
+EXPECTED_BEHAVIOR: >>>
+4 - The command should be sent only after the state is GcbStateNew.Staging.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-119
+TITLE: Quality Assurance - Quality Checks Reports - Deviation
+STATEMENT: >>>
+The objective is to verify that the quality reports show the QC report in the form of a deviation from the referenced QC sample.
+<<<
+PREREQUISITES: >>>
+Retrieve referenced QC sample result from DB.
+<<<
+STEPS: >>>
+1. Log in to the External application.
+
+2. Navigate to the Quality Checks tab in the Quality Assurance view.
+
+3. Run QC process.
+
+4. Toggle to the Quality Checks report.
+
+5. Select the latest result performed.
+
+6. Toggle to Row format.
+
+7. Compare the row data to the referenced QC result.
+
+8. Calculate the deviation.
+
+9. Toggle to deviation format and compare results.
+<<<
+EXPECTED_BEHAVIOR: >>>
+8 - The calculated deviations should be identical to the one presented in the report.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-134
+TITLE: Quality Assurance - Allow Quality Checks with Dedicated Collimator only
+STATEMENT: >>>
+The objective is to verify that the operator cannot treat if the connected collimator is the QC collimator.
+<<<
+PREREQUISITES: >>>
+A Plan is loaded from the Internal application.
+<<<
+STEPS: >>>
+1. Log in to the External application.
+
+2. Navigate to the treatment view.
+
+3. Press the Prepare button to prepare the treatment.
+<<<
+EXPECTED_BEHAVIOR: >>>
+3 - An alert message pops up alerting the user that the connected collimator mismatches the plan's collimator.
+<<<
+
+[TEST_CASE]
+UID: TC-H10TG-146
+TITLE: Treatment View - Treatment Plan Staging - 2
+STATEMENT: >>>
+The objective is to verify that the staging request includes the total number of operational points for the treatment plan and that the response to the request includes a session ID.
+<<<
+STEPS: >>>
+White box testing:
+
+1. Open the xcc solution in an IDE (Visual Studio or VSCode).
+
+2. Search for LoadPlan() command.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2 - Verify that the session id is created and that the request includes the total of operational points.
+<<<
+
 [[/SECTION]]
