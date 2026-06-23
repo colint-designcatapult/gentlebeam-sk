@@ -57,14 +57,14 @@ void check_app_jump()
 	uint32_t *stored_crc = (uint32_t *)CRC_ADDR_START;
 
 	//Compare stored flash with calculated flash, if match, jump to main application
-	//if((calculated_crc == *stored_crc && calculated_crc != 0xFFFFFFFF) || *stored_crc == 0xDEADBEEF)
-	//{
+	if((calculated_crc == *stored_crc && calculated_crc != 0xFFFFFFFF) || *stored_crc == 0xDEADBEEF)
+	{
 		jump_to_main_application();
 		while(1)
 		{
 			//Infinite loop to wait for main jump
 		}
-	//}
+	}
 }
 
 
