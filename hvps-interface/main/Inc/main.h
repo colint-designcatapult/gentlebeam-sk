@@ -32,6 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+//#define CALIBRATION_MODE	1
 
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
@@ -199,7 +200,6 @@ void Error_Handler(void);
 #define IO_BEAM_ALLOWED_GPIO_Port GPIOE
 #define IO_GRID_CLK_Pin GPIO_PIN_1
 #define IO_GRID_CLK_GPIO_Port GPIOE
-
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -209,3 +209,5 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

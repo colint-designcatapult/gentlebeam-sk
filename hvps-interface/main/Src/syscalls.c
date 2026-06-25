@@ -11,7 +11,7 @@
 **
 **  Environment : System Workbench for MCU
 **
-**  Distribution: The file is distributed ï¿½as is,ï¿½ without any warranty
+**  Distribution: The file is distributed “as is,” without any warranty
 **                of any kind.
 **
 *****************************************************************************
@@ -111,9 +111,6 @@ __attribute__((weak)) int _write(int file, char *ptr, int len)
 	return len;
 }
 
-/*
- * REMOVED: Replaced by STM32CubeMX into sysmem.c
- *
 caddr_t _sbrk(int incr)
 {
 	extern char end asm("end");
@@ -136,7 +133,6 @@ caddr_t _sbrk(int incr)
 
 	return (caddr_t) prev_heap_end;
 }
-*/
 
 int _close(int file)
 {
