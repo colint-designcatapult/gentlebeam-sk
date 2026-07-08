@@ -36,6 +36,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Xcc.Shared\Xcc.Shared.csproj" />
     <ProjectReference Include="..\Heracles.Application\Heracles.Application.csproj" />
+    <ProjectReference Include="..\Heracles.Indoor.SqliteGrpcServer\Heracles.Indoor.SqliteGrpcServer.csproj" />
   </ItemGroup>
 
   <ItemGroup>
