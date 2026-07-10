@@ -55,6 +55,17 @@ void run_loop()
 	process_monitoring();
 }
 
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
+	if(hspi->Instance == SPI1)
+	{
+		spi1_error_handler();
+	}
+	else if(hspi->Instance == SPI3)
+	{
+		spi3_error_handler();
+	}
+}
+
 //HAL callbacks here will trigger the module specific functions
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {

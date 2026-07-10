@@ -2,6 +2,8 @@
 #include "stdbool.h"
 #include "stm32f3xx_hal.h"
 
+#include <stdio.h>
+
 #include "ext_adcs.h"
 #include "monitoring.h"
 #include "timers.h"
@@ -39,8 +41,8 @@ void setup_ext_adcs()
 	HAL_GPIO_WritePin(GPIOF, IO_KV_CS_Pin|IO_MA_CS_Pin, GPIO_PIN_SET);
 
 	//Dummy receive to initialize SPI ports
-	HAL_SPI_Receive_IT(&hspi1, kv_rx_buf, 3);
-	HAL_SPI_Receive_IT(&hspi3, ma_rx_buf, 3);
+	HAL_SPI_Receive_DMA(&hspi1, kv_rx_buf, 3);
+	HAL_SPI_Receive_DMA(&hspi3, ma_rx_buf, 3);
 }
 
 void process_ext_adcs()
@@ -52,8 +54,8 @@ void process_ext_adcs()
 			HAL_GPIO_WritePin(GPIOF, IO_KV_CS_Pin|IO_MA_CS_Pin, GPIO_PIN_SET);
 			ext_adc_flags = 0;
 			HAL_GPIO_WritePin(GPIOF, IO_KV_CS_Pin|IO_MA_CS_Pin, GPIO_PIN_RESET);
-			HAL_SPI_Receive_IT(&hspi1, kv_rx_buf, 3);
-			HAL_SPI_Receive_IT(&hspi3, ma_rx_buf, 3);
+			HAL_SPI_Receive_DMA(&hspi1, kv_rx_buf, 3);
+			HAL_SPI_Receive_DMA(&hspi3, ma_rx_buf, 3);
 			ext_adc_ms = 3; //TBD TODO placeholder value
 		}
 
@@ -141,8 +143,8 @@ void process_ext_adcs()
 
 	ext_adc_flags = 0;
 	HAL_GPIO_WritePin(GPIOF, IO_KV_CS_Pin|IO_MA_CS_Pin, GPIO_PIN_RESET);
-	HAL_SPI_Receive_IT(&hspi1, kv_rx_buf, 3);
-	HAL_SPI_Receive_IT(&hspi3, ma_rx_buf, 3);
+	HAL_SPI_Receive_DMA(&hspi1, kv_rx_buf, 3);
+	HAL_SPI_Receive_DMA(&hspi3, ma_rx_buf, 3);
 	ext_adc_ms = 3; //TBD TODO placeholder value
 }
 
@@ -162,4 +164,20 @@ void ext_ma_rx_done()
 {
 	HAL_GPIO_WritePin(GPIOF, IO_MA_CS_Pin, GPIO_PIN_SET);
 	ext_adc_flags |= EXT_ADC_MA_DONE;
+}
+
+void spi1_error_handler(void) {
+
+	__HAL_RCC_SPI1_FORCE_RESET();
+	__HAL_RCC_SPI1_RELEASE_RESET();
+
+	HAL_SPI_Init(&hspi1);
+}
+
+void spi3_error_handler(void) {
+
+	__HAL_RCC_SPI3_FORCE_RESET();
+	__HAL_RCC_SPI3_RELEASE_RESET();
+
+	HAL_SPI_Init(&hspi3);
 }
