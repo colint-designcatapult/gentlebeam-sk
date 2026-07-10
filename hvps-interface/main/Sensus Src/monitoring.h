@@ -1,7 +1,8 @@
-
-
 #ifndef MONITORING_H_
 #define MONITORING_H_
+
+#define GRID_UPPER_THRESHOLD 		595
+#define GRID_MAX_STEP				25	
 
 enum
 {
