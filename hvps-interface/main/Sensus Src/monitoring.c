@@ -120,7 +120,7 @@ void clear_sys_bit(uint8_t bitpos)
 	}
 }
 
-void report_int_adc_vals(uint32_t *vals)
+void report_int_adc_vals(uint16_t *vals)
 {
 #ifndef CALIBRATION_MODE
 	float fil_scale = 0.9102222;

@@ -108,7 +108,7 @@ void set_new_pwr(float pwr);
 void set_new_fil(float fil);
 
 void report_io_state(uint32_t io_bits);
-void report_int_adc_vals(uint32_t *vals);
+void report_int_adc_vals(uint16_t *vals);
 void report_kv_fb(uint32_t kv_fb);
 void report_ma_fb(uint32_t ma_fb);
 
