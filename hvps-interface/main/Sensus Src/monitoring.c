@@ -674,6 +674,7 @@ static void run_grid_ctrl()
 		return;
 	}
 
+#if defined (CALIBRATION_MODE)
 	/* Clamp grid_adj to stay within -GRID_MAX_STEP and GRID_MAX_STEP */
 	if (grid_adj > GRID_MAX_STEP) 
 	{
@@ -682,6 +683,7 @@ static void run_grid_ctrl()
 	{
 		grid_adj = -GRID_MAX_STEP;
 	}
+#endif
 
 	grid_out += grid_adj;
 
