@@ -324,7 +324,7 @@ static void check_ion_repeller_values()
 	else
 	{
 		system_monitoring[SMON_ION_R_V_OOT_COUNTER] = 0;
-#if defined(CALIBREATION_MODE)
+#if defined(CALIBRATION_MODE)
 		fault_detected(IREP_FAULT, false);
 #endif
 	}
