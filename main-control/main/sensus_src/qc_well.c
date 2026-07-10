@@ -46,10 +46,12 @@ void init_qc_well()
 	
 	init_crc16_tab();
 	
+#if !defined(CALIBRATION_MODE)
 	for(int op_idx = 0; op_idx < MAX_OPERATIONAL_POINTS; op_idx++)
 	{
 		qc_data[op_idx][0].i = op_idx;
 	}
+#endif
 	
 	VTIMER_qc_check.interval = 500;
 	VTIMER_qc_check.cb = qc_timer;
