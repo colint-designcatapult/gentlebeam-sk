@@ -33,13 +33,10 @@ void process_adc()
 {
 	if(int_adc_ms <= 0)
 	{
-		//TBD TODO check completion flag if needed
-
 		//Report ADC values
 		report_int_adc_vals(adc_int);
 
 		//Restart ADC DMA
-		HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_int, NUM_INT_ADC);
 		int_adc_ms = 5;	//TBD TODO placeholder/magic number
 	}
 }
