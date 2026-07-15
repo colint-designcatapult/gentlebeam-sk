@@ -22,9 +22,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the design modules and sub-modules of the Heracles External GUI Software.
-
-The information in this document is derived from the External GUI SRS, referenced in this document.
+This document describes the design modules and sub-modules of the Heracles External GUI Software. The information in this document is derived from the External GUI SRS, referenced in this document.
 
 \*The term Software applies to both Software and Firmware components.
 <<<
@@ -62,9 +60,9 @@ TITLE: Overview
 
 [TEXT]
 STATEMENT: >>>
-The external GUI console provides the operator with the ability to perform quality assurance checks, define and manage treatment plans, review patient data, and manage system settings. The external console interfaces with the record and verify service and the imaging component.
+The external GUI console provides a means for the user to activate and monitor the treatment. It communicates with the main control board and treatment head camera.
 
-The external GUI software runs on a treatment console computer.
+The external GUI software runs on the external tablet console located outside the room.
 <<<
 
 [[/SECTION]]
@@ -90,18 +88,298 @@ Document Title: Heracles Software Architecture Description
 [[/SECTION]]
 
 [[SECTION]]
+TITLE: Architecture Overview
+
+[TEXT]
+STATEMENT: >>>
+High Level System Architecture
+
+.. image:: _images/sds_arch_1.png
+
+Main Modules
+
+The design of the application is based on the MVVM pattern. There are three core components in the MVVM pattern: the model, the view, and the view model. Each serves a distinct purpose. The diagram below shows the relationships between the three components.
+
+.. image:: _images/sds_arch_2.png
+
+The MVVN design pattern is implemented in the application as follows: the 4 th  layer is the gRPC wrapper for communication with the Record and Verify services.
+
+.. image:: _images/sds_arch_3.png
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
 PREFIX: SW-H10TG-
 TITLE: Design Items
+
+[DESIGN_ITEM]
+UID: SW-H10TG-269
+TITLE: A visual indication for system faults
+STATEMENT: >>>
+The application will indicate a fault in the system using a visual icon.
+
+.. image:: _images/SW-H10TG-269.png
+<<<
+
+[DESIGN_ITEM]
+UID: SW-H10TG-255
+TITLE: Beam On process
+STATEMENT: >>>
+The flow Beaming On (delivering emission) process should be implemented as described in the following chart diagram:
+
+.. raw:: html
+
+   <pre class="mermaid">
+   graph TD
+       A(["Plan loaded for treatment"]) --> B{"Plan can be executed"}
+       
+       B -- Yes --> C{"State = Startup / Cold / Primed"}
+       B -- No ----> ShowError["Show plan error message"]
+       
+       C -- Yes --> Prepare["Left button: Prepare"]
+       C -- No --> CheckStaged{"State = Staged"}
+       
+       CheckStaged -- Yes ----> CentralResume["Central button: Resume"]
+       CheckStaged -- No ----> ShowError
+       
+       Prepare --> PressPrepare[/press Prepare/]
+       PressPrepare --> StatePrimed{"State = Primed"}
+       
+       StatePrimed -- Yes --> LoadStage["Load and stage plan"]
+       StatePrimed -- No --> WarmUp["WarmUp"] --> LoadStage
+       
+       LoadStage --> ConfirmRelease["Confirm and release plan"]
+       ConfirmRelease --> HVSetup["HVPSCheck and HVSetup"]
+       HVSetup --> StateReady["State = Ready<br>Central button: BeamOn"]
+       
+       StateReady --> PressBeamOn[/press BeamOn/]
+       PressBeamOn --> StartEmission["Start emission"]
+       
+       StartEmission --> CheckInterrupt{"Fault or user interrupt"}
+       
+       CheckInterrupt -- No --> EmissionComplete["Emission complete"]
+       EmissionComplete --> ResetTimers["Central button: ResetTimers"]
+       ResetTimers --> EndNode([end])
+       
+       CheckInterrupt -- Yes --> CheckFault{"Fault state"}
+       
+       CheckFault -- Yes --> ClearErrors["Central button: ClearErrors"]
+       ClearErrors --> PressClear[/press ClearErrors/]
+       PressClear --> CentralResume
+       
+       CheckFault -- No --> CentralResume
+       
+       CentralResume --> PressResume[/press Resume/]
+       PressResume --> ConfirmRelease
+       
+       ShowError --> EndNode
+   </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-9
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-43
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-73
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-271
+TITLE: Clear Fault Flags
+STATEMENT: >>>
+The flow for performing Clear Faults should be implemented as described in the following sequence diagram:
+
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        box Application
+            participant FaultsViewModel
+            participant MainBoardModelBase
+            participant XRayService
+        end
+        box Control Board
+            participant Firmware
+        end
+
+        activate FaultsViewModel
+        FaultsViewModel->>MainBoardModelBase: ClearFaults
+        activate MainBoardModelBase
+        MainBoardModelBase-->>FaultsViewModel: 
+        
+        MainBoardModelBase->>XRayService: ClearFaults
+        XRayService->>Firmware: (UDP) ClearFaults
+        
+        MainBoardModelBase-->>FaultsViewModel: return Faults
+        deactivate MainBoardModelBase
+        deactivate FaultsViewModel
+    </pre>
+<<<
+
+[DESIGN_ITEM]
+UID: SW-H10TG-249
+TITLE: Confirmation of Treatment Plan
+STATEMENT: >>>
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       
+       box Application
+           participant MainBoardModel
+       end
+       box ControlBoard
+           participant Firmware
+       end
+
+       Note over MainBoardModel, Firmware: Board is in Staged state
+       
+       activate MainBoardModel
+       loop "for each operational point"
+           MainBoardModel->>Firmware: "[UDP] send operational parameters confirmation"
+           activate Firmware
+           Firmware-->>MainBoardModel: "[UDP] status response"
+           deactivate Firmware
+       end
+
+       MainBoardModel->>Firmware: "[UDP] ReleasePlan command"
+       activate Firmware
+       Firmware-->>MainBoardModel: "[UDP] status response"
+       deactivate Firmware
+
+       Note over MainBoardModel: wait for Ready board state
+       MainBoardModel->>MainBoardModel: 
+       deactivate MainBoardModel
+   </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-35
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-264
+TITLE: Daily Warmup Process
+STATEMENT: >>>
+The flow for performing Daily Warmup should be implemented as described in the following sequence diagram:
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       
+       box Application
+           participant DailyWarmUpViewModel
+           participant MainBoardModel
+           participant WarmupModel
+       end
+       box ControlBoard
+           participant Firmware
+       end
+       box Record & Verify
+           participant WarmupService
+       end
+
+       Note over DailyWarmUpViewModel, WarmupService: User initiates Warmup/Conditioning
+       
+       DailyWarmUpViewModel->>MainBoardModel: WarmUp
+       activate DailyWarmUpViewModel
+       activate MainBoardModel
+       
+       Note over MainBoardModel: check target filament current range
+       MainBoardModel->>MainBoardModel: 
+
+       alt "[Startup board state]"
+           MainBoardModel->>Firmware: "[UDP] initialization command"
+           activate Firmware
+           Note over Firmware: initialize
+           Firmware->>Firmware: 
+           Firmware-->>MainBoardModel: "[UDP] status response"
+           deactivate Firmware
+           
+           Note over MainBoardModel: wait for Cold state in the telemetry
+           MainBoardModel->>MainBoardModel: 
+       end
+
+       MainBoardModel->>Firmware: "[UDP] Warmup/Conditioning command"
+       activate Firmware
+       Note over Firmware: start warming up
+       Firmware->>Firmware: 
+       Firmware-->>MainBoardModel: "[UDP] status response"
+       deactivate Firmware
+
+       Note over MainBoardModel: wait for Warmup/Conditioning terminal state
+       MainBoardModel->>MainBoardModel: 
+
+       MainBoardModel-->>DailyWarmUpViewModel: 
+       deactivate MainBoardModel
+       
+       DailyWarmUpViewModel->>WarmupModel: Save Warmup/Conditioning event
+       activate WarmupModel
+       
+       WarmupModel->>WarmupService: grpc: Save Warmup event
+       activate WarmupService
+       Note over WarmupService: create a DB record
+       WarmupService->>WarmupService: 
+       WarmupService-->>WarmupModel: stored record
+       deactivate WarmupService
+       
+       Note over WarmupModel: add record to the list
+       WarmupModel->>WarmupModel: 
+       WarmupModel-->>DailyWarmUpViewModel: 
+       deactivate WarmupModel
+       deactivate DailyWarmUpViewModel
+   </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-1
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-265
+TITLE: Display System Telemetry
+STATEMENT: >>>
+The application should subscribe to a UDP event from the firmware to get the system telemetry.
+
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        participant TelemetryViewModel
+        participant TelemetryService
+        participant Firmware
+
+        TelemetryViewModel->>TelemetryService: Subscribe
+        activate TelemetryService
+        activate Firmware
+        Firmware->>TelemetryService: [UDP] telemetry response
+        TelemetryService->>TelemetryViewModel: SystemTelemetryChanged
+        deactivate TelemetryService
+        deactivate Firmware
+    </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-2
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-82
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-6
 TITLE: EMR: Treatment Console - Load For Treatment Plan Flow
 STATEMENT: >>>
-The treatment console application shall be triggered by the base (internal) application with a 
-treatment plan to be delivered. When the application is triggered, the patient details, plan details, 
-and treatment fields should be displayed, and the plan should be ready for activation.  
-The following sequence diagram describes the workflow of LoadForTreatment flow (should be 
-moved to detailed design) 
+The treatment console application shall be triggered by the base (internal) application with a treatment plan to be delivered. When the application is triggered, the patient details, plan details, and treatment fields should be displayed, and the plan should be ready for activation.
+
+The following sequence diagram describes the workflow of LoadForTreatment flow (should be moved to detailed design)
 
 .. raw:: html
 
@@ -133,191 +411,604 @@ moved to detailed design)
        deactivate CC
    </pre>
 
-1. The user presses the LoadForTreatment buttoning the Base UI. 
-2. C&C sends LoadForTreatment API to Moses. 
+1. The user presses the LoadForTreatment buttoning the Base UI.
+2. C&C sends LoadForTreatment API to Moses.
 3. Moses (DB Service) fetches all Pending plans from DB.
-4. If there are no Pending plans, Moses changes the plan state to Pending 
-5.  Moses triggers LoadForTreatment Event with patient details, plan, and treatment fields 
-6. Treatment Console (external) receives the event and loads the plan into the UI. 
-7. Treatment Console sends TreatmentLoaded API 
-8. Treatment Console locks the treatment view. 
-9. Moses changes the plan state to Loaded 
-10. Moses trigger the TreatmentLoaded event to the C&C 
+
+4. If there are no Pending plans, Moses changes the plan state to Pending
+5. Moses triggers LoadForTreatment Event with patient details, plan, and treatment fields
+6. Treatment Console (external) receives the event and loads the plan into the UI.
+7. Treatment Console sends TreatmentLoaded API
+8. Treatment Console locks the treatment view.
+9. Moses changes the plan state to Loaded
+10. Moses trigger the TreatmentLoaded event to the C&C
 11. C&C locks the plan view.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-2
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-82
+  VALUE: RQ-H10TG-32
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-18
-TITLE: Treatment Console - Radiation Emission View - State Machine
+UID: SW-H10TG-266
+TITLE: Emission visible indicator
 STATEMENT: >>>
-Treatment Console - Radiation Emission View - State Machine 
-The radiation emission should be implemented according to the emission board state machine.
+A glowing radiation icon with an Amber color will provide a visual indication of X-ray emission.
+
+.. image:: _images/SW-H10TG-266.png
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-43
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-90
+  VALUE: RQ-H10TG-5
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-19
-TITLE: Treatment Console - Load plan into GB board Flow
+UID: SW-H10TG-253
+TITLE: Enable window switching after emission delivery
 STATEMENT: >>>
-Treatment Console - Load plan into GB board Flow 
-The plan loading flow:
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+       
+       box Application
+           participant OperatePlanViewModelBase
+           participant MainBoardModel
+           participant UIStateMachine
+           participant TabControl
+       end
+
+       Note over OperatePlanViewModelBase, TabControl: "Plan is loaded and confirmed, Board is in Ready state"
+       
+       alt "[Emission]"
+           User->>OperatePlanViewModelBase: BeamOn
+           activate OperatePlanViewModelBase
+           OperatePlanViewModelBase->>MainBoardModel: BeamOn
+           activate MainBoardModel
+           Note over MainBoardModel: command HW to start emission
+           MainBoardModel->>MainBoardModel: 
+           Note over MainBoardModel: "wait for Staged state"
+           MainBoardModel->>MainBoardModel: 
+           
+           MainBoardModel-->>OperatePlanViewModelBase: BeamOn task result
+           deactivate MainBoardModel
+           OperatePlanViewModelBase->>User: "ClearPlan?"
+           deactivate OperatePlanViewModelBase
+       end
+
+       User->>OperatePlanViewModelBase: ClearPlan
+       activate OperatePlanViewModelBase
+       OperatePlanViewModelBase->>MainBoardModel: ClearPlan
+       activate MainBoardModel
+       Note over MainBoardModel: command HW to clear plan
+       MainBoardModel->>MainBoardModel: 
+       Note over MainBoardModel: "wait for Primed state"
+       MainBoardModel->>MainBoardModel: 
+       
+       MainBoardModel-->>OperatePlanViewModelBase: ClearPlan task result
+       deactivate MainBoardModel
+
+       OperatePlanViewModelBase->>UIStateMachine: unlock tabs
+       activate UIStateMachine
+       UIStateMachine->>TabControl: notify on lock flag change
+       activate TabControl
+       Note over TabControl: enable tab switch
+       TabControl->>TabControl: 
+       TabControl-->>UIStateMachine: 
+       deactivate TabControl
+       UIStateMachine-->>OperatePlanViewModelBase: 
+       deactivate UIStateMachine
+       deactivate OperatePlanViewModelBase
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-53
+  VALUE: RQ-H10TG-52
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-20
-TITLE: Treatment Console - Activate emission delivery - Buttons' State
+UID: SW-H10TG-277
+TITLE: Get Interlocks state
 STATEMENT: >>>
-Treatment Console - Activate emission delivery - Buttons' State 
-The following are the labels and the enabled/disabled state of the buttons in every system state:  
+The flow for getting interlocks states should be implemented as described in the following sequence diagram:
 
-User Action Machine State Buttons’ Label Buttons State 
-Start COLD Prepare 
-Beam-On 
-Stop 
-Prepare - Enabled 
-Beam-On - Disabled 
-Stop - Disabled 
-Prepare is pressed WARMUP Warming Up 
-Beam-On 
-Stop 
-Warming Up – 
-progress bar 
-Beam-On - Disabled 
-Stop – Enabled 
-PRIMED ->Staged Loading 
-Beam-On 
-Stop 
-Loading – progress bar 
-Beam-On - Disabled 
-Stop – Enabled 
-READY Clear Plan 
-Beam-On 
-Stop 
-Clear Plan – Enabled 
-Beam-On – Enabled 
-Stop – Disabled 
-Beam-On is pressed LAUNCHING Clear Plan Clear Plan – Disabled 
-Launching 
-Stop 
-Launching 
-– progress bar 
-Stop – Enabled 
-EMISSION Clear Plan 
-Beaming-On 
-Stop 
-Clear Plan – Disabled 
-Beaming-On 
-– progress bar 
-Stop – Enabled 
-STAGED Clear Plan 
-Reset Timers 
-Stop 
-Clear Plan – Disabled 
-Reset Timers - 
-Enabled 
-Stop – Disabled 
-Reset Timers is 
-pressed 
-STAGED/COLD Clear Plan 
-Beam-On 
-Stop 
-Clear Plan 
-– Enabled 
-Beam-On – Disabled 
-Stop – Disabled 
-Fault occurred 
-during Prepare 
-FAULT/COLD FAULT Clear Error 
-Beam-On 
-Stop 
-Clear Error – Enabled 
-Beam-On 
-– Disabled 
-Stop – Disabled 
-Clear Errors  during 
-Prepare is pressed 
-Fault->Warmup-> 
-PRIMED 
-Prepare 
-Beam-On 
-Stop 
-Prepare – Enabled 
-Beam On 
-– Disabled 
-Stop – Disabled 
-Fault occurred 
-during Emission 
-FAULT/COLD FAULT Clear Plan 
-Clear Error 
-Stop 
-Clear Plan – Disabled 
-Clear Error 
-– Enabled 
-Stop – Disabled 
-Clear Errors during 
-emission is pressed ( 
-also Clear timers) 
-Fault->Warmup-> 
-PRIMED/STAGED 
-Clear Plan 
-Resume 
-Stop 
-Clear Plan - enabled 
-Resume - Enabled 
-Stop- Disabled 
-Resume is Pressed READY Clear Plan 
-Beam-ON 
-Stop 
-Clear Plan - Enabled 
-Beam-On- Enabled 
-Stop – Disabled
+The flow for getting interlocks states should be implemented as described in the following 
+sequence diagram:
+
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        participant InterlocksView
+        participant InterlocksViewModel
+        participant GCBDataStore
+
+        activate InterlocksView
+        InterlocksView->>InterlocksViewModel: getGcbInterlocks
+        activate InterlocksViewModel
+        
+        [?] ->> GCBDataStore: OnSystemTelemetry
+        activate GCBDataStore
+        GCBDataStore->>GCBDataStore: setInterlocks
+        activate GCBDataStore
+        deactivate GCBDataStore
+        
+        InterlocksViewModel->>GCBDataStore: getGcbDataStore
+        GCBDataStore-->>InterlocksViewModel: return gcbDataStore
+        deactivate GCBDataStore
+        
+        InterlocksViewModel-->>InterlocksView: return gcbInterlocks
+        deactivate InterlocksViewModel
+        deactivate InterlocksView
+    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-3
+  VALUE: RQ-H10TG-139
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-33
-TITLE: Radiation Emission View - Treatment Plan Staging Operational Point Parameters
+UID: SW-H10TG-258
+TITLE: Initialize the System
 STATEMENT: >>>
-The application shall implement functionality to initiate a new treatment staging request.  
-This request shall include the following parameters for each point: 
-Acceleration potential (kV), range 0 to 100 kV 
-Emission current (mA), ranges from 0 to 1 mA 
-Total delivery time, range 0 to TBD 
-The remaining delivery time ranges from 0 to the total delivery time 
-Beam optic focus adjustment values range from 0 to 3A 
-Beam optic deflection adjustment values range -1.5A to +1.5A 
-Filament current (mA), ranges from 0 to 3999 mA
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       
+       box Application
+           participant OperatePlanViewModelBase
+           participant MainBoardModel
+           participant WarmupModel
+       end
+       box ControlBoard
+           participant Firmware
+       end
+       box Record & Verify
+           participant WarmupService
+       end
+
+       Note over OperatePlanViewModelBase, WarmupService: "User Initiates Warmup/Conditioning"
+       
+       OperatePlanViewModelBase->>MainBoardModel: WarmUp
+       activate OperatePlanViewModelBase
+       activate MainBoardModel
+       
+       Note over MainBoardModel: check target filament current range
+       MainBoardModel->>MainBoardModel: 
+
+       alt "[Startup board state]"
+           MainBoardModel->>Firmware: "[UDP] initialization command"
+           activate Firmware
+           Note over Firmware: initialize
+           Firmware->>Firmware: 
+           Firmware-->>MainBoardModel: "[UDP] status response"
+           deactivate Firmware
+           
+           Note over MainBoardModel: "wait for Cold state in the telemetry"
+           MainBoardModel->>MainBoardModel: 
+       end
+
+       MainBoardModel->>Firmware: "[UDP] Warmup/Conditioning command"
+       activate Firmware
+       Note over Firmware: start warming up
+       Firmware->>Firmware: 
+       Firmware-->>MainBoardModel: "[UDP] status response"
+       deactivate Firmware
+
+       Note over MainBoardModel: "wait for Warmup/Conditioning terminal state"
+       MainBoardModel->>MainBoardModel: 
+
+       MainBoardModel->>WarmupModel: "Save Warmup/Conditioning event"
+       activate WarmupModel
+       
+       WarmupModel->>WarmupService: "grpc: Save Warmup event"
+       activate WarmupService
+       Note over WarmupService: create a DB record
+       WarmupService->>WarmupService: 
+       WarmupService-->>WarmupModel: stored record
+       deactivate WarmupService
+       
+       Note over WarmupModel: add record to the list
+       WarmupModel->>WarmupModel: 
+       WarmupModel-->>MainBoardModel: 
+       deactivate WarmupModel
+       
+       MainBoardModel-->>OperatePlanViewModelBase: 
+       deactivate MainBoardModel
+       deactivate OperatePlanViewModelBase
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-75
+  VALUE: RQ-H10TG-26
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-29
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-30
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-57
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-275
+TITLE: Live Monitoring Camera Integration
+STATEMENT: >>>
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        participant Control as :VideoLiveFeedControl
+        participant Player as FFMEVideoPlayer
+
+        [?] ->> Control: Load
+        activate Control
+        Control->>Control: StartLiveFeed
+        activate Control
+        deactivate Control
+        Control-->>Player: open(URISource)
+        activate Player
+        deactivate Player
+        deactivate Control
+    </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-86
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-272
+TITLE: LogService module
+STATEMENT: >>>
+.. image:: _images/SW-H10TG-272.png
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-89
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-259
+TITLE: Perform Quality Checks
+STATEMENT: >>>
+The flow for performing Daily Quality Checks should be implemented as described in the following sequence diagram:
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+       
+       box Application
+           participant QualityCheckViewModel
+           participant MainBoardModel
+           participant QcbReadingModel
+       end
+       box QualityCheckBoard
+           participant Firmware
+       end
+
+       Note over QualityCheckViewModel: build list of QC configurations
+       QualityCheckViewModel->>QualityCheckViewModel: 
+       
+       User->>QualityCheckViewModel: select collimator type and energy
+       Note over QualityCheckViewModel: update view
+       QualityCheckViewModel-->>User: 
+       
+       User->>QualityCheckViewModel: select full/custom QC plan mode
+       
+       alt "[full QC plan mode]"
+           Note over QualityCheckViewModel: build a complete list of points
+           QualityCheckViewModel->>QualityCheckViewModel: 
+           Note over QualityCheckViewModel: make the list readonly
+           QualityCheckViewModel->>QualityCheckViewModel: 
+       else "[custom QC plan mode]"
+           Note over QualityCheckViewModel: build a list of central points
+           QualityCheckViewModel->>QualityCheckViewModel: 
+           Note over QualityCheckViewModel: make the list editable
+           QualityCheckViewModel->>QualityCheckViewModel: 
+       end
+
+       Note over QualityCheckViewModel: enable Prepare button
+       
+       alt "[custom QC plan mode]"
+           User->>QualityCheckViewModel: add/delete points
+       end
+
+       User->>QualityCheckViewModel: Prepare
+       activate QualityCheckViewModel
+       
+       QualityCheckViewModel->>QcbReadingModel: connection check
+       activate QcbReadingModel
+       QcbReadingModel->>Firmware: "[UDP] ping"
+       activate Firmware
+       Firmware-->>QcbReadingModel: "[UDP] status response"
+       deactivate Firmware
+       QcbReadingModel-->>QualityCheckViewModel: connection status
+       deactivate QcbReadingModel
+
+       QualityCheckViewModel->>MainBoardModel: Load plan
+       activate MainBoardModel
+       Note over MainBoardModel: "create session, stage and confirm the plan"
+       MainBoardModel->>MainBoardModel: 
+       MainBoardModel-->>QualityCheckViewModel: task result
+       deactivate MainBoardModel
+
+       Note over QualityCheckViewModel: enable BeamOn button
+       QualityCheckViewModel-->>User: 
+       deactivate QualityCheckViewModel
+   </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-66
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-260
+TITLE: Perform System Safety Checks
+STATEMENT: >>>
+The flow for performing System Safety Checks should be implemented as described in the following sequence diagram:
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+       
+       box Application
+           participant SafetyCheckViewModel
+           participant SafetyCheckModel
+           participant MainBoardModel
+       end
+       box Record & Verify
+           participant SafetyCheckService
+       end
+
+       SafetyCheckViewModel->>SafetyCheckModel: fetch SafetyCheck reports
+       activate SafetyCheckViewModel
+       activate SafetyCheckModel
+       SafetyCheckModel->>SafetyCheckService: grpc: read report list
+       activate SafetyCheckService
+       SafetyCheckService-->>SafetyCheckModel: grpc: stored reports
+       deactivate SafetyCheckService
+       SafetyCheckModel-->>SafetyCheckViewModel: 
+       deactivate SafetyCheckModel
+
+       alt "[SafetyCheck is allowed with current collimator type]"
+           Note over SafetyCheckViewModel: prepare SafetyCheck emission plan for single point
+           SafetyCheckViewModel->>SafetyCheckViewModel: 
+           Note over SafetyCheckViewModel: enable Prepare button
+           
+           User->>SafetyCheckViewModel: Prepare
+           SafetyCheckViewModel->>MainBoardModel: load emission plan
+           activate MainBoardModel
+           
+           Note over MainBoardModel: send plan and confirmation to ControlBoard
+           MainBoardModel->>MainBoardModel: 
+           Note over MainBoardModel: wait for Ready state
+           MainBoardModel->>MainBoardModel: 
+           
+           MainBoardModel-->>SafetyCheckViewModel: task status
+           deactivate MainBoardModel
+           Note over SafetyCheckViewModel: enable BeamOn button
+           
+           loop "[User starts/stops/resumes emission]"
+               Note over SafetyCheckViewModel: make checks one by one
+               SafetyCheckViewModel->>SafetyCheckViewModel: 
+               Note over SafetyCheckViewModel: toggle check UI controls
+           end
+           
+           User->>SafetyCheckViewModel: save SafetyCheck report
+           SafetyCheckViewModel->>SafetyCheckModel: add new record
+           activate SafetyCheckModel
+           
+           SafetyCheckModel->>SafetyCheckService: create new record
+           activate SafetyCheckService
+           SafetyCheckService-->>SafetyCheckModel: stored record
+           deactivate SafetyCheckService
+           
+           Note over SafetyCheckModel: add record to the list
+           SafetyCheckModel->>SafetyCheckModel: 
+           SafetyCheckModel-->>SafetyCheckViewModel: 
+           deactivate SafetyCheckModel
+           
+           SafetyCheckViewModel->>MainBoardModel: clear plan
+           activate MainBoardModel
+           Note over MainBoardModel: send ResetTimers/ClearPlan commands to ControlBoard
+           MainBoardModel->>MainBoardModel: 
+           MainBoardModel-->>SafetyCheckViewModel: task status
+           deactivate MainBoardModel
+           
+           Note over SafetyCheckViewModel: navigate to SafetyCheck reports view
+           SafetyCheckViewModel->>SafetyCheckViewModel: 
+           SafetyCheckViewModel-->>User: 
+       end
+       deactivate SafetyCheckViewModel
+   </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-91
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-92
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-106
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-267
+TITLE: Plan Details Layout
+STATEMENT: >>>
+The application shall provide an interface allowing the operator to view the treatment plan details with the following parameters:
+
+.. image:: _images/SW-H10TG-267.png
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-8
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-278
+TITLE: Play sound during emission
+STATEMENT: >>>
+The flow for providing audible indication during active emission should be implemented as described in the following sequence diagram:
+
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        box Application
+            participant MainView
+            participant Converter as GcbStatusToRadiation<br/>HazardActiveStateConverter
+            participant GCBDataStore
+        end
+        box Control Board
+            participant Firmware
+        end
+
+        [?] ->> MainView: OnLoad
+        activate MainView
+        
+        MainView->>GCBDataStore: getSystemTelemetry
+        activate GCBDataStore
+        
+        activate Firmware
+        Firmware-->>GCBDataStore: OnTelemetryChanged
+        deactivate Firmware
+        
+        GCBDataStore-->>MainView: return SystemTelemetry
+        deactivate GCBDataStore
+
+        MainView->>Converter: convert
+        activate Converter
+        Converter->>Converter: if emission return else return false
+        activate Converter
+        deactivate Converter
+        Converter->>MainView: return state
+        deactivate Converter
+
+        MainView->>MainView: ChangeRadiationIconColor(state)
+        activate MainView
+        deactivate MainView
+        
+        MainView->>MainView: PlaySound(state)
+        activate MainView
+        deactivate MainView
+        
+        deactivate MainView
+    </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-87
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-262
+TITLE: Prevent Treatment if the Daily Safety checks is not completed
+STATEMENT: >>>
+The flow for Prevent Treatment when no daily safety checks are performed should be implemented as described in the following flow chart diagram:
+
+.. raw:: html
+
+   <pre class="mermaid">
+   graph TD
+       A(["Ready for Prepare"]) --> B[/press Prepare/]
+       B --> C{"Daily SafetyCheck is done?"}
+       
+       C -- Yes --> D{"Is it complete?"}
+       C -- No ----> ShowError["Show error, block treatment"]
+       
+       D -- Yes ----> ProceedPrepare["Proceed with Prepare"]
+       D -- No --> E{"Door interlock, e-stop,<br>normal stop checks passed?"}
+       
+       E -- Yes --> Alert[/Safety alert:<br>ask for confirmation/]
+       E -- No --> ShowError
+       
+       Alert --> F{"Proceed treatment?"}
+       
+       F -- Yes --> ProceedPrepare
+       F -- No ----> EndNode([end])
+       
+       ProceedPrepare --> EndNode
+       ShowError --> EndNode
+   </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-96
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-97
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-250
+TITLE: Prevent treatment plan execution if an interlock is active
+STATEMENT: >>>
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       
+       box Application
+           participant OperatePlanViewModelBase
+           participant InterlockIndicators
+           participant BeamOnCommand
+           participant TelemetryService
+       end
+       box ControlBoard
+           participant Firmware
+       end
+
+       TelemetryService->>Firmware: "[UDP] request telemetry"
+       activate TelemetryService
+       activate Firmware
+       Firmware-->>TelemetryService: "[UDP] telemetry response"
+       deactivate Firmware
+
+       TelemetryService-->>OperatePlanViewModelBase: telemetry changed
+       activate OperatePlanViewModelBase
+       
+       Note over OperatePlanViewModelBase: "check telemetry for intelocks/faults"
+       OperatePlanViewModelBase->>OperatePlanViewModelBase: 
+
+       alt "[interlock flag is set]"
+           OperatePlanViewModelBase->>BeamOnCommand: disable
+       end
+       deactivate OperatePlanViewModelBase
+
+       TelemetryService-->>InterlockIndicators: telemetry changed
+       activate InterlockIndicators
+       Note over InterlockIndicators: update indicators
+       InterlockIndicators->>InterlockIndicators: 
+       deactivate InterlockIndicators
+       deactivate TelemetryService
+   </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-36
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-72
 TITLE: Radiation Emission Control - Beam On process Sequence
 STATEMENT: >>>
-
 .. raw:: html
 
    <pre class="mermaid">
@@ -411,14 +1102,13 @@ STATEMENT: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-36
+  VALUE: RQ-H10TG-9
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-74
 TITLE: Radiation Emission Control - Resume Beam-On process after error is cleared - Sequence
 STATEMENT: >>>
-
 .. raw:: html
 
    <pre class="mermaid">
@@ -491,14 +1181,13 @@ STATEMENT: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-9
+  VALUE: RQ-H10TG-73
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-76
 TITLE: Radiation Emission Control - Resume Prepare process after error is cleared - Sequence
 STATEMENT: >>>
-
 .. raw:: html
 
    <pre class="mermaid">
@@ -545,492 +1234,29 @@ STATEMENT: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-73
+  VALUE: RQ-H10TG-75
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-248
-TITLE: Treatment Staging Sequence
+UID: SW-H10TG-33
+TITLE: Radiation Emission View - Treatment Plan Staging Operational Point Parameters
 STATEMENT: >>>
-Treatment Staging Sequence
+The application shall implement functionality to initiate a new treatment staging request.
 
-.. raw:: html
+This request shall include the following parameters for each point:
 
-    <pre class="mermaid">
-    sequenceDiagram
-        box Application
-            participant M as MainBoardModel
-        end
-        box ControlBoard
-            participant F as Firmware
-        end
-
-        Note over M, F: Board is in Primed state, User initiates plan preparation
-
-        M->>F: [UDP] create a new session for N operational points
-        activate F
-        F-->>M: [UDP] session key
-        deactivate F
-
-        M->>M: wait for Staging board state
-
-        loop for each operational point
-            M->>F: [UDP] send operational parameters
-            activate F
-            F-->>M: [UDP] status response
-            deactivate F
-        end
-
-        M->>F: [UDP] Stage command
-        activate F
-        F-->>M: [UDP] status response
-        deactivate F
-
-        M->>M: wait for Staged board state
-    </pre>
+- Acceleration potential (kV), range 0 to 100 kV
+- Emission current (mA), ranges from 0 to 1 mA
+- Total delivery time, range 0 to TBD
+- The remaining delivery time ranges from 0 to the total delivery time
+- Beam optic focus adjustment values range from 0 to 3A
+- Beam optic deflection adjustment values range -1.5A to +1.5A
+- Filament current (mA), ranges from 0 to 3999 mA
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-10
+  VALUE: RQ-H10TG-31
   ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-4
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-249
-TITLE: Confirmation of Treatment Plan
-STATEMENT: >>>
-
-.. raw:: html
-
-   <pre class="mermaid">
-   sequenceDiagram
-       autonumber
-       
-       box Application
-           participant MainBoardModel
-       end
-       box ControlBoard
-           participant Firmware
-       end
-
-       Note over MainBoardModel, Firmware: Board is in Staged state
-       
-       activate MainBoardModel
-       loop "for each operational point"
-           MainBoardModel->>Firmware: "[UDP] send operational parameters confirmation"
-           activate Firmware
-           Firmware-->>MainBoardModel: "[UDP] status response"
-           deactivate Firmware
-       end
-
-       MainBoardModel->>Firmware: "[UDP] ReleasePlan command"
-       activate Firmware
-       Firmware-->>MainBoardModel: "[UDP] status response"
-       deactivate Firmware
-
-       Note over MainBoardModel: wait for Ready board state
-       MainBoardModel->>MainBoardModel: 
-       deactivate MainBoardModel
-   </pre>
-<<<
-
-[DESIGN_ITEM]
-UID: SW-H10TG-250
-TITLE: Prevent treatment plan execution if an interlock is active
-STATEMENT: >>>
-
-.. raw:: html
-
-   <pre class="mermaid">
-   sequenceDiagram
-       autonumber
-       
-       box Application
-           participant OperatePlanViewModelBase
-           participant InterlockIndicators
-           participant BeamOnCommand
-           participant TelemetryService
-       end
-       box ControlBoard
-           participant Firmware
-       end
-
-       TelemetryService->>Firmware: "[UDP] request telemetry"
-       activate TelemetryService
-       activate Firmware
-       Firmware-->>TelemetryService: "[UDP] telemetry response"
-       deactivate Firmware
-
-       TelemetryService-->>OperatePlanViewModelBase: telemetry changed
-       activate OperatePlanViewModelBase
-       
-       Note over OperatePlanViewModelBase: "check telemetry for intelocks/faults"
-       OperatePlanViewModelBase->>OperatePlanViewModelBase: 
-
-       alt "[interlock flag is set]"
-           OperatePlanViewModelBase->>BeamOnCommand: disable
-       end
-       deactivate OperatePlanViewModelBase
-
-       TelemetryService-->>InterlockIndicators: telemetry changed
-       activate InterlockIndicators
-       Note over InterlockIndicators: update indicators
-       InterlockIndicators->>InterlockIndicators: 
-       deactivate InterlockIndicators
-       deactivate TelemetryService
-   </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-96
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-97
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-251
-TITLE: Prompt the user when an interlock triggered during emission
-STATEMENT: >>>
-prompt the user when an interlock triggered during emission
-
-.. raw:: html
-
-    <pre class="mermaid">
-    sequenceDiagram
-        actor User
-        box Application
-            participant VM as OperatePlanViewModelBase
-            participant M as MainBoardModel
-            participant D as DialogService
-            participant T as TelemetryService
-        end
-        box ControlBoard
-            participant F as Firmware
-        end
-
-        User->>VM: BeamOn
-        activate VM
-        VM->>M: BeamOn
-        activate M
-        
-        M->>F: [UDP] ReleasePoint command
-        activate F
-        F-->>M: [UDP] status response
-        deactivate F
-        
-        M->>M: wait for emission termination
-        
-        activate T
-        T->>F: query telemetry
-        activate F
-        F-->>T: [UDP] telemetry response
-        deactivate F
-        T->>VM: telemetry changed
-        deactivate T
-
-        VM->>VM: check board state
-        
-        alt Board is in Fault state
-            VM->>M: cancel current task
-            M-->>VM: BeamOn task cancellation exception
-            deactivate M
-            VM->>D: show emission error dialog
-            activate D
-            D-->>User: error dialog
-            deactivate D
-        end
-        
-        deactivate VM
-    </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-12
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-252
-TITLE: Restrict window switching during active emission
-STATEMENT: >>>
-
-.. raw:: html
-
-   <pre class="mermaid">
-   sequenceDiagram
-       autonumber
-       actor User
-       
-       box Application
-           participant OperatePlanViewModelBase
-           participant MainBoardModel
-           participant UIStateMachine
-           participant TabControl
-       end
-
-       User->>OperatePlanViewModelBase: Prepare
-       activate OperatePlanViewModelBase
-       
-       OperatePlanViewModelBase->>MainBoardModel: LoadPlan
-       activate MainBoardModel
-       Note over MainBoardModel: create session and load plan to the Board
-       MainBoardModel->>MainBoardModel: 
-       Note over MainBoardModel: wait for Ready state
-       MainBoardModel->>MainBoardModel: 
-       
-       MainBoardModel-->>OperatePlanViewModelBase: LoadPlan task result
-       deactivate MainBoardModel
-
-       OperatePlanViewModelBase->>UIStateMachine: lock on current tab
-       activate UIStateMachine
-       UIStateMachine->>TabControl: notify on lock flag change
-       activate TabControl
-       Note over TabControl: "disable tab switch"
-       TabControl->>TabControl: 
-       TabControl-->>UIStateMachine: 
-       deactivate TabControl
-       UIStateMachine-->>OperatePlanViewModelBase: 
-       deactivate UIStateMachine
-
-       Note over OperatePlanViewModelBase: enable BeamOn command
-       OperatePlanViewModelBase->>OperatePlanViewModelBase: 
-       Note over OperatePlanViewModelBase: enable ClearPlan command
-       OperatePlanViewModelBase->>OperatePlanViewModelBase: 
-       
-       OperatePlanViewModelBase->>User: "ClearPlan/BeamOn?"
-       deactivate OperatePlanViewModelBase
-   </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-21
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-22
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-253
-TITLE: Enable window switching after emission delivery
-STATEMENT: >>>
-
-.. raw:: html
-
-   <pre class="mermaid">
-   sequenceDiagram
-       autonumber
-       actor User
-       
-       box Application
-           participant OperatePlanViewModelBase
-           participant MainBoardModel
-           participant UIStateMachine
-           participant TabControl
-       end
-
-       Note over OperatePlanViewModelBase, TabControl: "Plan is loaded and confirmed, Board is in Ready state"
-       
-       alt "[Emission]"
-           User->>OperatePlanViewModelBase: BeamOn
-           activate OperatePlanViewModelBase
-           OperatePlanViewModelBase->>MainBoardModel: BeamOn
-           activate MainBoardModel
-           Note over MainBoardModel: command HW to start emission
-           MainBoardModel->>MainBoardModel: 
-           Note over MainBoardModel: "wait for Staged state"
-           MainBoardModel->>MainBoardModel: 
-           
-           MainBoardModel-->>OperatePlanViewModelBase: BeamOn task result
-           deactivate MainBoardModel
-           OperatePlanViewModelBase->>User: "ClearPlan?"
-           deactivate OperatePlanViewModelBase
-       end
-
-       User->>OperatePlanViewModelBase: ClearPlan
-       activate OperatePlanViewModelBase
-       OperatePlanViewModelBase->>MainBoardModel: ClearPlan
-       activate MainBoardModel
-       Note over MainBoardModel: command HW to clear plan
-       MainBoardModel->>MainBoardModel: 
-       Note over MainBoardModel: "wait for Primed state"
-       MainBoardModel->>MainBoardModel: 
-       
-       MainBoardModel-->>OperatePlanViewModelBase: ClearPlan task result
-       deactivate MainBoardModel
-
-       OperatePlanViewModelBase->>UIStateMachine: unlock tabs
-       activate UIStateMachine
-       UIStateMachine->>TabControl: notify on lock flag change
-       activate TabControl
-       Note over TabControl: enable tab switch
-       TabControl->>TabControl: 
-       TabControl-->>UIStateMachine: 
-       deactivate TabControl
-       UIStateMachine-->>OperatePlanViewModelBase: 
-       deactivate UIStateMachine
-       deactivate OperatePlanViewModelBase
-   </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-5
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-254
-TITLE: Treatment Fields Emission Progress indicators
-STATEMENT: >>>
-Treatment Fields Emission Progress indicators
-
-.. raw:: html
-
-    <pre class="mermaid">
-    sequenceDiagram
-        autonumber
-        box Application
-            participant VM as OperatePlanViewModelBase
-            participant CC as CollimatorControl
-            participant TFL as TreatmentFieldList
-            participant EP as EmissionProgress
-            participant TS as TelemetryService
-        end
-        box ControlBoard
-            participant F as Firmware
-        end
-
-        Note over VM, F: User initiates the emission delivery
-
-        loop Telemetry polling
-            TS->>F: [UDP] request telemetry
-            activate F
-            F-->>TS: [UDP] telemetry response
-            deactivate F
-            TS-->>VM: telemetry data
-            
-            activate VM
-            VM->>VM: get telemetry CurrentOperationalPoint index
-            VM->>CC: update selection
-            VM->>TFL: update selection
-            
-            alt Emission state
-                VM->>VM: calculate emission progress
-                VM->>EP: set emission progress value
-            end
-            
-            alt Launching state
-                VM->>VM: get telemetry HeaterCurrentSetpoint
-                VM->>VM: calculate launching progress
-                VM->>EP: set launching progress value
-            end
-            deactivate VM
-        end
-    </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-105
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-160
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-161
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-255
-TITLE: Beam On process
-STATEMENT: >>>
-The flow Beaming On (delivering emission) process should be implemented as described in the 
-following chart diagram:
-
-.. raw:: html
-
-   <pre class="mermaid">
-   graph TD
-       A(["Plan loaded for treatment"]) --> B{"Plan can be executed"}
-       
-       B -- Yes --> C{"State = Startup / Cold / Primed"}
-       B -- No ----> ShowError["Show plan error message"]
-       
-       C -- Yes --> Prepare["Left button: Prepare"]
-       C -- No --> CheckStaged{"State = Staged"}
-       
-       CheckStaged -- Yes ----> CentralResume["Central button: Resume"]
-       CheckStaged -- No ----> ShowError
-       
-       Prepare --> PressPrepare[/press Prepare/]
-       PressPrepare --> StatePrimed{"State = Primed"}
-       
-       StatePrimed -- Yes --> LoadStage["Load and stage plan"]
-       StatePrimed -- No --> WarmUp["WarmUp"] --> LoadStage
-       
-       LoadStage --> ConfirmRelease["Confirm and release plan"]
-       ConfirmRelease --> HVSetup["HVPSCheck and HVSetup"]
-       HVSetup --> StateReady["State = Ready<br>Central button: BeamOn"]
-       
-       StateReady --> PressBeamOn[/press BeamOn/]
-       PressBeamOn --> StartEmission["Start emission"]
-       
-       StartEmission --> CheckInterrupt{"Fault or user interrupt"}
-       
-       CheckInterrupt -- No --> EmissionComplete["Emission complete"]
-       EmissionComplete --> ResetTimers["Central button: ResetTimers"]
-       ResetTimers --> EndNode([end])
-       
-       CheckInterrupt -- Yes --> CheckFault{"Fault state"}
-       
-       CheckFault -- Yes --> ClearErrors["Central button: ClearErrors"]
-       ClearErrors --> PressClear[/press ClearErrors/]
-       PressClear --> CentralResume
-       
-       CheckFault -- No --> CentralResume
-       
-       CentralResume --> PressResume[/press Resume/]
-       PressResume --> ConfirmRelease
-       
-       ShowError --> EndNode
-   </pre>
-<<<
-
-[DESIGN_ITEM]
-UID: SW-H10TG-256
-TITLE: Warmup Progress Monitoring
-STATEMENT: >>>
-Warmup Progress Monitoring
-
-.. raw:: html
-
-    <pre class="mermaid">
-    sequenceDiagram
-        box Application
-            participant M as WarmupModel
-            participant WP as WarmupProgress
-            participant TS as TelemetryService
-        end
-        box ControlBoard
-            participant F as Firmware
-        end
-
-        Note over M, F: User initiates Warmup/Conditioning
-
-        loop Telemetry polling
-            TS->>F: [UDP] request telemetry
-            activate F
-            F-->>TS: [UDP] telemetry response
-            deactivate F
-            TS-->>M: telemetry data
-            
-            activate M
-            M->>M: get telemetry HeaterCurrentSetpoint
-            M->>M: calculate warmup progress
-            M->>WP: notify on progress value change
-            deactivate M
-        end
-    </pre>
-<<<
 
 [DESIGN_ITEM]
 UID: SW-H10TG-257
@@ -1125,260 +1351,109 @@ STATEMENT: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-31
+  VALUE: RQ-H10TG-21
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-22
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-258
-TITLE: Initialize the System
+UID: SW-H10TG-252
+TITLE: Restrict window switching during active emission
 STATEMENT: >>>
+
 
 .. raw:: html
 
    <pre class="mermaid">
    sequenceDiagram
        autonumber
+       actor User
        
        box Application
            participant OperatePlanViewModelBase
            participant MainBoardModel
-           participant WarmupModel
-       end
-       box ControlBoard
-           participant Firmware
-       end
-       box Record & Verify
-           participant WarmupService
+           participant UIStateMachine
+           participant TabControl
        end
 
-       Note over OperatePlanViewModelBase, WarmupService: "User Initiates Warmup/Conditioning"
-       
-       OperatePlanViewModelBase->>MainBoardModel: WarmUp
+       User->>OperatePlanViewModelBase: Prepare
        activate OperatePlanViewModelBase
+       
+       OperatePlanViewModelBase->>MainBoardModel: LoadPlan
        activate MainBoardModel
-       
-       Note over MainBoardModel: check target filament current range
+       Note over MainBoardModel: create session and load plan to the Board
        MainBoardModel->>MainBoardModel: 
-
-       alt "[Startup board state]"
-           MainBoardModel->>Firmware: "[UDP] initialization command"
-           activate Firmware
-           Note over Firmware: initialize
-           Firmware->>Firmware: 
-           Firmware-->>MainBoardModel: "[UDP] status response"
-           deactivate Firmware
-           
-           Note over MainBoardModel: "wait for Cold state in the telemetry"
-           MainBoardModel->>MainBoardModel: 
-       end
-
-       MainBoardModel->>Firmware: "[UDP] Warmup/Conditioning command"
-       activate Firmware
-       Note over Firmware: start warming up
-       Firmware->>Firmware: 
-       Firmware-->>MainBoardModel: "[UDP] status response"
-       deactivate Firmware
-
-       Note over MainBoardModel: "wait for Warmup/Conditioning terminal state"
+       Note over MainBoardModel: wait for Ready state
        MainBoardModel->>MainBoardModel: 
-
-       MainBoardModel->>WarmupModel: "Save Warmup/Conditioning event"
-       activate WarmupModel
        
-       WarmupModel->>WarmupService: "grpc: Save Warmup event"
-       activate WarmupService
-       Note over WarmupService: create a DB record
-       WarmupService->>WarmupService: 
-       WarmupService-->>WarmupModel: stored record
-       deactivate WarmupService
-       
-       Note over WarmupModel: add record to the list
-       WarmupModel->>WarmupModel: 
-       WarmupModel-->>MainBoardModel: 
-       deactivate WarmupModel
-       
-       MainBoardModel-->>OperatePlanViewModelBase: 
+       MainBoardModel-->>OperatePlanViewModelBase: LoadPlan task result
        deactivate MainBoardModel
+
+       OperatePlanViewModelBase->>UIStateMachine: lock on current tab
+       activate UIStateMachine
+       UIStateMachine->>TabControl: notify on lock flag change
+       activate TabControl
+       Note over TabControl: "disable tab switch"
+       TabControl->>TabControl: 
+       TabControl-->>UIStateMachine: 
+       deactivate TabControl
+       UIStateMachine-->>OperatePlanViewModelBase: 
+       deactivate UIStateMachine
+
+       Note over OperatePlanViewModelBase: enable BeamOn command
+       OperatePlanViewModelBase->>OperatePlanViewModelBase: 
+       Note over OperatePlanViewModelBase: enable ClearPlan command
+       OperatePlanViewModelBase->>OperatePlanViewModelBase: 
+       
+       OperatePlanViewModelBase->>User: "ClearPlan/BeamOn?"
        deactivate OperatePlanViewModelBase
    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-139
+  VALUE: RQ-H10TG-49
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-259
-TITLE: Perform Quality Checks
+UID: SW-H10TG-270
+TITLE: Retrieve Fault Information from Firmware
 STATEMENT: >>>
-.. raw:: html
-
-   <pre class="mermaid">
-   sequenceDiagram
-       autonumber
-       actor User
-       
-       box Application
-           participant QualityCheckViewModel
-           participant MainBoardModel
-           participant QcbReadingModel
-       end
-       box QualityCheckBoard
-           participant Firmware
-       end
-
-       Note over QualityCheckViewModel: build list of QC configurations
-       QualityCheckViewModel->>QualityCheckViewModel: 
-       
-       User->>QualityCheckViewModel: select collimator type and energy
-       Note over QualityCheckViewModel: update view
-       QualityCheckViewModel-->>User: 
-       
-       User->>QualityCheckViewModel: select full/custom QC plan mode
-       
-       alt "[full QC plan mode]"
-           Note over QualityCheckViewModel: build a complete list of points
-           QualityCheckViewModel->>QualityCheckViewModel: 
-           Note over QualityCheckViewModel: make the list readonly
-           QualityCheckViewModel->>QualityCheckViewModel: 
-       else "[custom QC plan mode]"
-           Note over QualityCheckViewModel: build a list of central points
-           QualityCheckViewModel->>QualityCheckViewModel: 
-           Note over QualityCheckViewModel: make the list editable
-           QualityCheckViewModel->>QualityCheckViewModel: 
-       end
-
-       Note over QualityCheckViewModel: enable Prepare button
-       
-       alt "[custom QC plan mode]"
-           User->>QualityCheckViewModel: add/delete points
-       end
-
-       User->>QualityCheckViewModel: Prepare
-       activate QualityCheckViewModel
-       
-       QualityCheckViewModel->>QcbReadingModel: connection check
-       activate QcbReadingModel
-       QcbReadingModel->>Firmware: "[UDP] ping"
-       activate Firmware
-       Firmware-->>QcbReadingModel: "[UDP] status response"
-       deactivate Firmware
-       QcbReadingModel-->>QualityCheckViewModel: connection status
-       deactivate QcbReadingModel
-
-       QualityCheckViewModel->>MainBoardModel: Load plan
-       activate MainBoardModel
-       Note over MainBoardModel: "create session, stage and confirm the plan"
-       MainBoardModel->>MainBoardModel: 
-       MainBoardModel-->>QualityCheckViewModel: task result
-       deactivate MainBoardModel
-
-       Note over QualityCheckViewModel: enable BeamOn button
-       QualityCheckViewModel-->>User: 
-       deactivate QualityCheckViewModel
-   </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-89
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-260
-TITLE: Perform System Safety Checks
-STATEMENT: >>>
-The flow for performing System Safety Checks should be implemented as described in the 
-following sequence diagram: 
+The flow for Retrieving fault Information from Firmware should be implemented as described in the 
+following sequence diagram:
 
 .. raw:: html
 
-   <pre class="mermaid">
-   sequenceDiagram
-       autonumber
-       actor User
-       
-       box Application
-           participant SafetyCheckViewModel
-           participant SafetyCheckModel
-           participant MainBoardModel
-       end
-       box Record & Verify
-           participant SafetyCheckService
-       end
+    <pre class="mermaid">
+    sequenceDiagram
+        box Application
+            participant FaultsViewModel
+            participant MainBoardModelBase
+            participant XRayService
+        end
+        box Control Board
+            participant Firmware
+        end
 
-       SafetyCheckViewModel->>SafetyCheckModel: fetch SafetyCheck reports
-       activate SafetyCheckViewModel
-       activate SafetyCheckModel
-       SafetyCheckModel->>SafetyCheckService: grpc: read report list
-       activate SafetyCheckService
-       SafetyCheckService-->>SafetyCheckModel: grpc: stored reports
-       deactivate SafetyCheckService
-       SafetyCheckModel-->>SafetyCheckViewModel: 
-       deactivate SafetyCheckModel
-
-       alt "[SafetyCheck is allowed with current collimator type]"
-           Note over SafetyCheckViewModel: prepare SafetyCheck emission plan for single point
-           SafetyCheckViewModel->>SafetyCheckViewModel: 
-           Note over SafetyCheckViewModel: enable Prepare button
-           
-           User->>SafetyCheckViewModel: Prepare
-           SafetyCheckViewModel->>MainBoardModel: load emission plan
-           activate MainBoardModel
-           
-           Note over MainBoardModel: send plan and confirmation to ControlBoard
-           MainBoardModel->>MainBoardModel: 
-           Note over MainBoardModel: wait for Ready state
-           MainBoardModel->>MainBoardModel: 
-           
-           MainBoardModel-->>SafetyCheckViewModel: task status
-           deactivate MainBoardModel
-           Note over SafetyCheckViewModel: enable BeamOn button
-           
-           loop "[User starts/stops/resumes emission]"
-               Note over SafetyCheckViewModel: make checks one by one
-               SafetyCheckViewModel->>SafetyCheckViewModel: 
-               Note over SafetyCheckViewModel: toggle check UI controls
-           end
-           
-           User->>SafetyCheckViewModel: save SafetyCheck report
-           SafetyCheckViewModel->>SafetyCheckModel: add new record
-           activate SafetyCheckModel
-           
-           SafetyCheckModel->>SafetyCheckService: create new record
-           activate SafetyCheckService
-           SafetyCheckService-->>SafetyCheckModel: stored record
-           deactivate SafetyCheckService
-           
-           Note over SafetyCheckModel: add record to the list
-           SafetyCheckModel->>SafetyCheckModel: 
-           SafetyCheckModel-->>SafetyCheckViewModel: 
-           deactivate SafetyCheckModel
-           
-           SafetyCheckViewModel->>MainBoardModel: clear plan
-           activate MainBoardModel
-           Note over MainBoardModel: send ResetTimers/ClearPlan commands to ControlBoard
-           MainBoardModel->>MainBoardModel: 
-           MainBoardModel-->>SafetyCheckViewModel: task status
-           deactivate MainBoardModel
-           
-           Note over SafetyCheckViewModel: navigate to SafetyCheck reports view
-           SafetyCheckViewModel->>SafetyCheckViewModel: 
-           SafetyCheckViewModel-->>User: 
-       end
-       deactivate SafetyCheckViewModel
-   </pre>
+        activate FaultsViewModel
+        FaultsViewModel->>MainBoardModelBase: GetFaults
+        activate MainBoardModelBase
+        MainBoardModelBase-->>FaultsViewModel: 
+        
+        MainBoardModelBase->>XRayService: GetFaults
+        XRayService->>Firmware: (UDP) GetFaultInfo
+        
+        MainBoardModelBase-->>FaultsViewModel: return Faults
+        deactivate MainBoardModelBase
+        deactivate FaultsViewModel
+    </pre>
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-66
-  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-261
 TITLE: Retrieve Quality Checks Reports
 STATEMENT: >>>
-The flow for retrieving Quality Checks Report should be implemented as described in the following 
-sequence diagram:
+The flow for retrieving Quality Checks Report should be implemented as described in the following sequence diagram:
 
 .. raw:: html
 
@@ -1429,414 +1504,19 @@ sequence diagram:
         User->>VM: switch raw/deviation report mode
     </pre>
 <<<
-
-[DESIGN_ITEM]
-UID: SW-H10TG-262
-TITLE: Prevent Treatment if the Daily Safety checks is not completed
-STATEMENT: >>>
-The flow for Prevent Treatment when no daily safety checks are performed should be implemented 
-as described in the following flow chart diagram: 
-
-.. raw:: html
-
-   <pre class="mermaid">
-   graph TD
-       A(["Ready for Prepare"]) --> B[/press Prepare/]
-       B --> C{"Daily SafetyCheck is done?"}
-       
-       C -- Yes --> D{"Is it complete?"}
-       C -- No ----> ShowError["Show error, block treatment"]
-       
-       D -- Yes ----> ProceedPrepare["Proceed with Prepare"]
-       D -- No --> E{"Door interlock, e-stop,<br>normal stop checks passed?"}
-       
-       E -- Yes --> Alert[/Safety alert:<br>ask for confirmation/]
-       E -- No --> ShowError
-       
-       Alert --> F{"Proceed treatment?"}
-       
-       F -- Yes --> ProceedPrepare
-       F -- No ----> EndNode([end])
-       
-       ProceedPrepare --> EndNode
-       ShowError --> EndNode
-   </pre>
-<<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-87
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-263
-TITLE: Stop Emission
-STATEMENT: >>>
-The flow for stopping an emission should be implemented as described in the following sequence 
-diagram:
-<<<
-
-[DESIGN_ITEM]
-UID: SW-H10TG-264
-TITLE: Daily Warmup Process
-STATEMENT: >>>
-The flow for performing Daily Warmup should be implemented as described in the following 
-sequence diagram:
-
-.. raw:: html
-
-   <pre class="mermaid">
-   sequenceDiagram
-       autonumber
-       
-       box Application
-           participant DailyWarmUpViewModel
-           participant MainBoardModel
-           participant WarmupModel
-       end
-       box ControlBoard
-           participant Firmware
-       end
-       box Record & Verify
-           participant WarmupService
-       end
-
-       Note over DailyWarmUpViewModel, WarmupService: User initiates Warmup/Conditioning
-       
-       DailyWarmUpViewModel->>MainBoardModel: WarmUp
-       activate DailyWarmUpViewModel
-       activate MainBoardModel
-       
-       Note over MainBoardModel: check target filament current range
-       MainBoardModel->>MainBoardModel: 
-
-       alt "[Startup board state]"
-           MainBoardModel->>Firmware: "[UDP] initialization command"
-           activate Firmware
-           Note over Firmware: initialize
-           Firmware->>Firmware: 
-           Firmware-->>MainBoardModel: "[UDP] status response"
-           deactivate Firmware
-           
-           Note over MainBoardModel: wait for Cold state in the telemetry
-           MainBoardModel->>MainBoardModel: 
-       end
-
-       MainBoardModel->>Firmware: "[UDP] Warmup/Conditioning command"
-       activate Firmware
-       Note over Firmware: start warming up
-       Firmware->>Firmware: 
-       Firmware-->>MainBoardModel: "[UDP] status response"
-       deactivate Firmware
-
-       Note over MainBoardModel: wait for Warmup/Conditioning terminal state
-       MainBoardModel->>MainBoardModel: 
-
-       MainBoardModel-->>DailyWarmUpViewModel: 
-       deactivate MainBoardModel
-       
-       DailyWarmUpViewModel->>WarmupModel: Save Warmup/Conditioning event
-       activate WarmupModel
-       
-       WarmupModel->>WarmupService: grpc: Save Warmup event
-       activate WarmupService
-       Note over WarmupService: create a DB record
-       WarmupService->>WarmupService: 
-       WarmupService-->>WarmupModel: stored record
-       deactivate WarmupService
-       
-       Note over WarmupModel: add record to the list
-       WarmupModel->>WarmupModel: 
-       WarmupModel-->>DailyWarmUpViewModel: 
-       deactivate WarmupModel
-       deactivate DailyWarmUpViewModel
-   </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-35
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-265
-TITLE: Display System Telemetry
-STATEMENT: >>>
-The application should subscribe to a UDP event from the firmware to get the system telemetry.
-
-.. raw:: html
-
-    <pre class="mermaid">
-    sequenceDiagram
-        participant TelemetryViewModel
-        participant TelemetryService
-        participant Firmware
-
-        TelemetryViewModel->>TelemetryService: Subscribe
-        activate TelemetryService
-        activate Firmware
-        Firmware->>TelemetryService: [UDP] telemetry response
-        TelemetryService->>TelemetryViewModel: SystemTelemetryChanged
-        deactivate TelemetryService
-        deactivate Firmware
-    </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-1
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-266
-TITLE: Emission visible indicator
-STATEMENT: >>>
-A glowing radiation icon with an Amber color will provide a visual indication of X-ray emission. 
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-32
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-267
-TITLE: Plan Details Layout
-STATEMENT: >>>
-The application shall provide an interface allowing the operator to view the treatment plan details 
-with the following parameters:
-
-.. raw:: html
-
-    <pre class="mermaid">
-    quadrantChart
-        title Target Distribution & Layout
-        x-axis "Left Columns" --> "Right Columns"
-        y-axis "Bottom Rows" --> "Top Rows"
-        quadrant-1 "Top Right"
-        quadrant-2 "Top Left"
-        quadrant-3 "Bottom Left"
-        quadrant-4 "Bottom Right"
-        "Target 1 (Active)": [0.35, 0.85]
-        "Target 2": [0.50, 0.85]
-        "Target 3": [0.65, 0.85]
-        "Target 4": [0.25, 0.70]
-        "Target 5": [0.75, 0.70]
-        "Target 6": [0.15, 0.50]
-        "Target 7 (Center/Active)": [0.50, 0.50]
-        "Target 8": [0.85, 0.50]
-        "Target 9": [0.25, 0.30]
-        "Target 10": [0.75, 0.30]
-        "Target 11": [0.35, 0.15]
-        "Target 12": [0.50, 0.15]
-        "Target 13 (Active)": [0.65, 0.15]
-    </pre>
-
-| Target | Energy [kV] | Current [mA] | Duration [sec] | Actual [sec] | Remain [sec] |
-| 1 | 50 | 1 | 5 | 5 | 0 |
-| 7 | 50 | 0.98 | 5 | 5 | 0 |
-| 13 | 50 | 0.99 | 5 | 5 | 0 |
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-106
+  VALUE: RQ-H10TG-93
   ROLE: Refines
 - TYPE: Parent
-  VALUE: RQ-H10TG-91
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-92
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-268
-TITLE: Treatment View Layout
-STATEMENT: >>>
-Treatment View Layout 
-The layout should include: 
-1. The plan’s treatment fields are listed on a table.  
-2. A visual representation of the collimator.  
-3. The system telemetry: System status, Main timer (in sec), backup timers (T1 & T2) (in sec), 
-Energy (in kV), and Current ( in mA). 
-4. Prepare button - which will prepare the system for the radiation (i.e., warmup and loading). 
-5. Beam-On - a multi-state control for triggering the emission, resetting timers, and clearing 
-errors.  
-6. Stop button - Stops the emission.  
-7. Interlocks visualization.  
-8. Live Camera to monitor the patient.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-31
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-34
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-269
-TITLE: A visual indication for system fault.
-STATEMENT: >>>
-The application will indicate a fault in the system using a visual icon. 
-<<<
-
-[DESIGN_ITEM]
-UID: SW-H10TG-270
-TITLE: Retrieve Fault Information from Firmware
-STATEMENT: >>>
-The flow for Retrieving fault Information from Firmware should be implemented as described in the 
-following sequence diagram:
-
-.. raw:: html
-
-    <pre class="mermaid">
-    sequenceDiagram
-        box Application
-            participant FaultsViewModel
-            participant MainBoardModelBase
-            participant XRayService
-        end
-        box Control Board
-            participant Firmware
-        end
-
-        activate FaultsViewModel
-        FaultsViewModel->>MainBoardModelBase: GetFaults
-        activate MainBoardModelBase
-        MainBoardModelBase-->>FaultsViewModel: 
-        
-        MainBoardModelBase->>XRayService: GetFaults
-        XRayService->>Firmware: (UDP) GetFaultInfo
-        
-        MainBoardModelBase-->>FaultsViewModel: return Faults
-        deactivate MainBoardModelBase
-        deactivate FaultsViewModel
-    </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-49
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-271
-TITLE: Clear Fault Flags
-STATEMENT: >>>
-The flow for performing Clear Faults should be implemented as described in the following 
-sequence diagram:
-
-.. raw:: html
-
-    <pre class="mermaid">
-    sequenceDiagram
-        box Application
-            participant FaultsViewModel
-            participant MainBoardModelBase
-            participant XRayService
-        end
-        box Control Board
-            participant Firmware
-        end
-
-        activate FaultsViewModel
-        FaultsViewModel->>MainBoardModelBase: ClearFaults
-        activate MainBoardModelBase
-        MainBoardModelBase-->>FaultsViewModel: 
-        
-        MainBoardModelBase->>XRayService: ClearFaults
-        XRayService->>Firmware: (UDP) ClearFaults
-        
-        MainBoardModelBase-->>FaultsViewModel: return Faults
-        deactivate MainBoardModelBase
-        deactivate FaultsViewModel
-    </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-43
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-73
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-9
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-272
-TITLE: LogService module
-STATEMENT: >>>
-A LogService module will serve all application modules to store and read application logs
-
-.. raw:: html
-
-    <pre class="mermaid">
-    classDiagram
-        class TextLogService {
-            Log()
-            LogAsync()
-            Fetch()
-            FetchAsync()
-        }
-    </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-86
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10TG-273
-TITLE: Show message for DB communication error
-STATEMENT: >>>
-The application will show a DB Communication error when the gRPC command throws a timeout 
-exception. The exception will be populated through the MVVM model.
-
-.. raw:: html
-
-    <pre class="mermaid">
-    sequenceDiagram
-        box Application
-            participant View
-            participant ViewModel
-            participant Model
-            participant gRPCCommand
-        end
-        box Record & Verify
-            participant Object as :Object
-        end
-
-        activate View
-        View->>ViewModel: call
-        activate ViewModel
-        ViewModel->>Model: call
-        activate Model
-        Model->>gRPCCommand: call
-        activate gRPCCommand
-        gRPCCommand->>Object: call
-        activate Object
-        
-        Object-->>gRPCCommand: GRPC_STATUS_DEADLINE_EXCEEDED
-        deactivate Object
-        
-        gRPCCommand-->>Model: throw ex
-        deactivate gRPCCommand
-        Model-->>ViewModel: throw ex
-        deactivate Model
-        ViewModel-->>View: throw ex
-        deactivate ViewModel
-        
-        View->>View: Show DB Communication Error message
-        deactivate View
-    </pre>
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-85
+  VALUE: RQ-H10TG-94
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-274
 TITLE: Retrieve treated patient details
 STATEMENT: >>>
-When the application is loaded, it searches for a plan that is pending to be loaded. Then, the plan 
-details and all the patients' clinical data are initialized.
+When the application is loaded, it searches for a plan that is pending to be loaded. Then, the plan details and all the patients' clinical data are initialized.
 
 .. raw:: html
 
@@ -1883,55 +1563,269 @@ details and all the patients' clinical data are initialized.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-93
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-94
+  VALUE: RQ-H10TG-85
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-275
-TITLE: Live Monitoring Camera Integration
+UID: SW-H10TG-273
+TITLE: Show message for DB communication error
 STATEMENT: >>>
+The application will show a DB Communication error when the gRPC command throws a timeout exception. The exception will be populated through the MVVM model.
+
 .. raw:: html
 
     <pre class="mermaid">
     sequenceDiagram
-        participant Control as :VideoLiveFeedControl
-        participant Player as FFMEVideoPlayer
+        box Application
+            participant View
+            participant ViewModel
+            participant Model
+            participant gRPCCommand
+        end
+        box Record & Verify
+            participant Object as :Object
+        end
 
-        [?] ->> Control: Load
-        activate Control
-        Control->>Control: StartLiveFeed
-        activate Control
-        deactivate Control
-        Control-->>Player: open(URISource)
-        activate Player
-        deactivate Player
-        deactivate Control
+        activate View
+        View->>ViewModel: call
+        activate ViewModel
+        ViewModel->>Model: call
+        activate Model
+        Model->>gRPCCommand: call
+        activate gRPCCommand
+        gRPCCommand->>Object: call
+        activate Object
+        
+        Object-->>gRPCCommand: GRPC_STATUS_DEADLINE_EXCEEDED
+        deactivate Object
+        
+        gRPCCommand-->>Model: throw ex
+        deactivate gRPCCommand
+        Model-->>ViewModel: throw ex
+        deactivate Model
+        ViewModel-->>View: throw ex
+        deactivate ViewModel
+        
+        View->>View: Show DB Communication Error message
+        deactivate View
+    </pre>
+<<<
+
+[DESIGN_ITEM]
+UID: SW-H10TG-263
+TITLE: Stop Emission
+STATEMENT: >>>
+The flow for stopping an emission should be implemented as described in the following sequence diagram:
+
+.. image:: _images/SW-H10TG-263.png
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-3
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-20
+TITLE: Treatment Console - Activate emission delivery - Buttons' State
+STATEMENT: >>>
+The following are the labels and the enabled/disabled state of the buttons in every system state:
+
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+| User Action                                                  | Machine State                 | Buttons' Label               | Buttons State                                                  |
++==============================================================+===============================+==============================+================================================================+
+| Start                                                        | COLD                          | Prepare Beam-On Stop         | Prepare - Enabled Beam-On - Disabled Stop - Disabled           |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+| Prepare is pressed                                           | WARMUP                        | Warming Up Beam-On Stop      | Warming Up - progress bar Beam-On - Disabled Stop - Enabled    |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+|                                                              | PRIMED ->Staged               | Loading Beam-On Stop         | Loading - progress bar Beam-On - Disabled Stop - Enabled       |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+|                                                              | READY                         | Clear Plan Beam-On Stop      | Clear Plan - Enabled Beam-On - Enabled Stop - Disabled         |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+| Beam-On is pressed                                           | LAUNCHING                     | Clear Plan                   | Clear Plan - Disabled                                          |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+|                                                              |                               | Launching Stop               | Launching - progress bar Stop - Enabled                        |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+|                                                              | EMISSION                      | Clear Plan Beaming-On Stop   | Clear Plan - Disabled Beaming-On - progress bar Stop - Enabled |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+|                                                              | STAGED                        | Clear Plan Reset Timers Stop | Clear Plan - Disabled Reset Timers - Enabled Stop - Disabled   |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+| Reset Timers is pressed                                      | STAGED/COLD                   | Clear Plan Beam-On Stop      | Clear Plan - Enabled Beam-On - Disabled Stop - Disabled        |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+| Fault occurred during Prepare                                | FAULT/COLD FAULT              | Clear Error Beam-On Stop     | Clear Error - Enabled Beam-On - Disabled Stop - Disabled       |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+| Clear Errors during Prepare is pressed                       | Fault->Warmup-> PRIMED        | Prepare Beam-On Stop         | Prepare - Enabled Beam On - Disabled Stop - Disabled           |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+| Fault occurred during Emission                               | FAULT/COLD FAULT              | Clear Plan Clear Error Stop  | Clear Plan - Disabled Clear Error - Enabled Stop - Disabled    |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+|                                                              |                               |                              |                                                                |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+| Clear Errors during emission is pressed ( also Clear timers) | Fault->Warmup-> PRIMED/STAGED | Clear Plan Resume Stop       | Clear Plan - enabled Resume - Enabled Stop- Disabled           |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+| Resume is Pressed                                            | READY                         | Clear Plan Beam-ON Stop      | Clear Plan - Enabled Beam-On- Enabled Stop - Disabled          |
++--------------------------------------------------------------+-------------------------------+------------------------------+----------------------------------------------------------------+
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-53
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-19
+TITLE: Treatment Console - Load plan into GB board Flow
+STATEMENT: >>>
+The plan loading flow:
+
+.. image:: _images/SW-H10TG-19.png
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-43
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-90
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-18
+TITLE: Treatment Console - Radiation Emission View - State Machine
+STATEMENT: >>>
+The radiation emission should be implemented according to the emission board state machine.
+
+.. image:: _images/SW-H10TG-18.png
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-105
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-160
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-161
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-254
+TITLE: Treatment Fields Emission Progress indicators
+STATEMENT: >>>
+
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        autonumber
+        box Application
+            participant VM as OperatePlanViewModelBase
+            participant CC as CollimatorControl
+            participant TFL as TreatmentFieldList
+            participant EP as EmissionProgress
+            participant TS as TelemetryService
+        end
+        box ControlBoard
+            participant F as Firmware
+        end
+
+        Note over VM, F: User initiates the emission delivery
+
+        loop Telemetry polling
+            TS->>F: [UDP] request telemetry
+            activate F
+            F-->>TS: [UDP] telemetry response
+            deactivate F
+            TS-->>VM: telemetry data
+            
+            activate VM
+            VM->>VM: get telemetry CurrentOperationalPoint index
+            VM->>CC: update selection
+            VM->>TFL: update selection
+            
+            alt Emission state
+                VM->>VM: calculate emission progress
+                VM->>EP: set emission progress value
+            end
+            
+            alt Launching state
+                VM->>VM: get telemetry HeaterCurrentSetpoint
+                VM->>VM: calculate launching progress
+                VM->>EP: set launching progress value
+            end
+            deactivate VM
+        end
+    </pre>
+
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-4
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-10
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-248
+TITLE: Treatment Staging Sequence
+STATEMENT: >>>
+
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        box Application
+            participant M as MainBoardModel
+        end
+        box ControlBoard
+            participant F as Firmware
+        end
+
+        Note over M, F: Board is in Primed state, User initiates plan preparation
+
+        M->>F: [UDP] create a new session for N operational points
+        activate F
+        F-->>M: [UDP] session key
+        deactivate F
+
+        M->>M: wait for Staging board state
+
+        loop for each operational point
+            M->>F: [UDP] send operational parameters
+            activate F
+            F-->>M: [UDP] status response
+            deactivate F
+        end
+
+        M->>F: [UDP] Stage command
+        activate F
+        F-->>M: [UDP] status response
+        deactivate F
+
+        M->>M: wait for Staged board state
     </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-26
+  VALUE: RQ-H10TG-31
   ROLE: Refines
 - TYPE: Parent
-  VALUE: RQ-H10TG-29
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-30
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10TG-57
+  VALUE: RQ-H10TG-34
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-276
-TITLE: Validate Active Collimator
+UID: SW-H10TG-268
+TITLE: Treatment View Layout
 STATEMENT: >>>
-Validate Active Collimator 
-The flow for validating the active collimator when performing Quality Checks should be 
-implemented as described in the following sequence diagram:
+The layout should include:
+
+1. The plan's treatment fields are listed on a table.
+2. A visual representation of the collimator.
+3. The system telemetry: System status, Main timer (in sec), backup timers (T1 & T2) (in sec), Energy (in kV), and Current ( in mA).
+4. Prepare button - which will prepare the system for the radiation (i.e., warmup and loading).
+5. Beam-On - a multi-state control for triggering the emission, resetting timers, and clearing errors.
+6. Stop button - Stops the emission.
+7. Interlocks visualization.
+8. Live Camera to monitor the patient.
+
+.. image:: _images/SW-H10TG-268.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1939,99 +1833,106 @@ RELATIONS:
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-277
-TITLE: Get Interlocks state
+UID: SW-H10TG-276
+TITLE: Validate Active Collimator
 STATEMENT: >>>
-The flow for getting interlocks states should be implemented as described in the following 
-sequence diagram:
+The flow for validating the active collimator when performing Quality Checks should be implemented as described in the following sequence diagram:
 
-.. raw:: html
-
-    <pre class="mermaid">
-    sequenceDiagram
-        participant InterlocksView
-        participant InterlocksViewModel
-        participant GCBDataStore
-
-        activate InterlocksView
-        InterlocksView->>InterlocksViewModel: getGcbInterlocks
-        activate InterlocksViewModel
-        
-        [?] ->> GCBDataStore: OnSystemTelemetry
-        activate GCBDataStore
-        GCBDataStore->>GCBDataStore: setInterlocks
-        activate GCBDataStore
-        deactivate GCBDataStore
-        
-        InterlocksViewModel->>GCBDataStore: getGcbDataStore
-        GCBDataStore-->>InterlocksViewModel: return gcbDataStore
-        deactivate GCBDataStore
-        
-        InterlocksViewModel-->>InterlocksView: return gcbInterlocks
-        deactivate InterlocksViewModel
-        deactivate InterlocksView
-    </pre>
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-52
-  ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10TG-278
-TITLE: Play sound during emission
+UID: SW-H10TG-256
+TITLE: Warmup Progress Monitoring
 STATEMENT: >>>
-The flow for providing audible indication during active emission should be implemented as 
-described in the following sequence diagram:
-
 .. raw:: html
 
     <pre class="mermaid">
     sequenceDiagram
         box Application
-            participant MainView
-            participant Converter as GcbStatusToRadiation<br/>HazardActiveStateConverter
-            participant GCBDataStore
+            participant M as WarmupModel
+            participant WP as WarmupProgress
+            participant TS as TelemetryService
         end
-        box Control Board
-            participant Firmware
+        box ControlBoard
+            participant F as Firmware
         end
 
-        [?] ->> MainView: OnLoad
-        activate MainView
-        
-        MainView->>GCBDataStore: getSystemTelemetry
-        activate GCBDataStore
-        
-        activate Firmware
-        Firmware-->>GCBDataStore: OnTelemetryChanged
-        deactivate Firmware
-        
-        GCBDataStore-->>MainView: return SystemTelemetry
-        deactivate GCBDataStore
+        Note over M, F: User initiates Warmup/Conditioning
 
-        MainView->>Converter: convert
-        activate Converter
-        Converter->>Converter: if emission return else return false
-        activate Converter
-        deactivate Converter
-        Converter->>MainView: return state
-        deactivate Converter
-
-        MainView->>MainView: ChangeRadiationIconColor(state)
-        activate MainView
-        deactivate MainView
-        
-        MainView->>MainView: PlaySound(state)
-        activate MainView
-        deactivate MainView
-        
-        deactivate MainView
+        loop Telemetry polling
+            TS->>F: [UDP] request telemetry
+            activate F
+            F-->>TS: [UDP] telemetry response
+            deactivate F
+            TS-->>M: telemetry data
+            
+            activate M
+            M->>M: get telemetry HeaterCurrentSetpoint
+            M->>M: calculate warmup progress
+            M->>WP: notify on progress value change
+            deactivate M
+        end
     </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-8
+  VALUE: RQ-H10TG-12
   ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-251
+TITLE: prompt the user when an interlock triggered during emission
+STATEMENT: >>>
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        actor User
+        box Application
+            participant VM as OperatePlanViewModelBase
+            participant M as MainBoardModel
+            participant D as DialogService
+            participant T as TelemetryService
+        end
+        box ControlBoard
+            participant F as Firmware
+        end
+
+        User->>VM: BeamOn
+        activate VM
+        VM->>M: BeamOn
+        activate M
+        
+        M->>F: [UDP] ReleasePoint command
+        activate F
+        F-->>M: [UDP] status response
+        deactivate F
+        
+        M->>M: wait for emission termination
+        
+        activate T
+        T->>F: query telemetry
+        activate F
+        F-->>T: [UDP] telemetry response
+        deactivate F
+        T->>VM: telemetry changed
+        deactivate T
+
+        VM->>VM: check board state
+        
+        alt Board is in Fault state
+            VM->>M: cancel current task
+            M-->>VM: BeamOn task cancellation exception
+            deactivate M
+            VM->>D: show emission error dialog
+            activate D
+            D-->>User: error dialog
+            deactivate D
+        end
+        
+        deactivate VM
+    </pre>
+
+<<<
 
 [[/SECTION]]

@@ -83,7 +83,7 @@ DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
 
 DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
 
-[LINK: DHF-HRC-0019]
+DHF-HRC-0019, Rev. 1: Heracles HVPS Interface Application Software Requirements Specification (SRS)
 
 DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
 <<<
@@ -99,6 +99,16 @@ TITLE: High Level System Architecture
 [TEXT]
 STATEMENT: >>>
 See source document DHF-HRC-0096 for the high-level system architecture diagram.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Sequence Diagram
+
+[TEXT]
+STATEMENT: >>>
+See source document DHF-HRC-0096 for the sequence diagram.
 <<<
 
 [[/SECTION]]
@@ -139,7 +149,7 @@ TITLE: Design Items
 UID: SW-H1FWHVPS-106
 TITLE: Boot loading Communication
 STATEMENT: >>>
-The firmware communicates with the PC via one of the microcontroller's serial UART interface. The
+The firmware communicates with the PC via one of the microcontrollers' serial UART interface. The
 firmware both receives and transmits data on this UART port. Due to the nature of UART having
 independent transmit and receive lines, the transmit and receive functionality operate
 independently. As the UART baud rate is relatively slow compared to the processing speed of the
@@ -152,30 +162,23 @@ when transmission is initiated, and clears the flag after transmission is finish
 transmission conflicts on the transmit line.
 
 Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
-available. The parsing of the received byte is done to determine whether a complete data packet
-has been received from the PC, as according to the communication protocol. Once a completed
-data packet has been received, the firmware sets a flag for further data processing outside of the
-parsing inside of the interrupt callback.
+available. The parsing of the received byte is done to determine whether a complete data packet has
+been received from the PC, as according to the communication protocol. Once a completed data packet
+has been received, the firmware sets a flag for further data processing outside of the parsing
+inside of the interrupt callback.
 
-The firmware will monitor for a boot load command from the PC. Once received the firmware will
-reset the microcontroller into bootloader mode.
+The firmware will monitor for a boot load command from the PC. Once received the firmware will reset
+the microcontroller into bootloader mode.
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-15
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-16
-  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPS-107
 TITLE: Internal ADC
 STATEMENT: >>>
-The firmware reads several feedback signals from the internal ADC peripheral. 15 of the ADC
-channels are used, and they are read sequentially using the manufacturer's built in hardware
-abstraction library for DMA reads of the ADC peripheral. The firmware periodically reads newly
-received values before initiating a new DMA read.
+The firmware reads several feedback signals from the internal ADC peripheral. 15 of the ADC channels
+are used, and they are read sequentially using the manufacturer's built in hardware abstraction
+library for DMA reads of the ADC peripheral. The firmware periodically reads newly received values
+before initiating a new DMA read.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -201,12 +204,12 @@ RELATIONS:
 UID: SW-H1FWHVPS-108
 TITLE: Control Communication Interface
 STATEMENT: >>>
-The firmware communicates with the main control board via one of the microcontroller's serial
-UART interfaces. The firmware both receives and transmits data on this UART port. Due to the
-nature of UART having independent transmit and receive lines, the transmit and receive
-functionality operate independently. As the UART baud rate is relatively slow compared to the
-processing speed of the microcontroller, both sending and receiving data is performed with
-non-blocking interrupt callback functions.
+The firmware communicates with the main control board via one of the microcontroller's serial UART
+interfaces. The firmware both receives and transmits data on this UART port. Due to the nature of
+UART having independent transmit and receive lines, the transmit and receive functionality operate
+independently. As the UART baud rate is relatively slow compared to the processing speed of the
+microcontroller, both sending and receiving data is performed with nonblocking interrupt callback
+functions.
 
 Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
 the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
@@ -214,35 +217,32 @@ when transmission is initiated, and clears the flag after transmission is finish
 transmission conflicts on the transmit line.
 
 Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
-available. The parsing of the received byte is done to determine whether a complete data packet
-has been received from the PC, as according to the communication protocol. Once a completed
-data packet has been received, the firmware sets a flag for further data processing outside of the
-parsing inside of the interrupt callback.
+available. The parsing of the received byte is done to determine whether a complete data packet has
+been received from the PC, as according to the communication protocol. Once a completed data packet
+has been received, the firmware sets a flag for further data processing outside of the parsing
+inside of the interrupt callback.
 
-As transmission on UART is asynchronous both in terms of clock as well as word alignment (within
-a packet), a "sync value" is utilized at the start of each packet to help synchronize communication
-in case of any lost or missing bytes.
+As transmission on UART is asynchronous both in terms of clock as well as word alignment (within a
+packet), a 'sync value' is utilized at the start of each packet to help synchronize communication in
+case of any lost or missing bytes.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-4
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-16
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPS-109
 TITLE: Control Communication Data
 STATEMENT: >>>
-The data received from the main control board are commands to set various output control
-parameters including grid voltage, filament current, high voltage, and output power. There are also
-commands to initiate the process to test the high voltage and grid interlocks that the main control
-board provides to the firmware.
+The data received from the main control board are commands to set various output control parameters
+including grid voltage, filament current, high voltage, and output power. There are also commands to
+initiate the process to test the high voltage and grid interlocks that the main control board
+provides to the firmware.
 
 The transmitted data to the main control board are the target setpoint values for, as well as the
-monitored feedback values from, the HVPS. Additionally, status flags and IO values are reported
-by the firmware.
+monitored feedback values from, the HVPS. Additionally, status flags and IO values are reported by
+the firmware.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -259,11 +259,11 @@ RELATIONS:
 UID: SW-H1FWHVPS-110
 TITLE: External ADC Communication
 STATEMENT: >>>
-The firmware communicates with two external ADC IC chips. Each chip has one channel, and they
-are responsible for reading the mA and kV feedback signals. Both chips are identical make and
-model, and each chip has on its own dedicated SPI bus. While each chip has a dedicated SPI bus,
-each still utilizes a chip select line in order to request new samples from the chips. The external
-ADC module continuously reads both ADC ICs at the same time.
+The firmware communicates with two external ADC IC chips. Each chip has one channel, and they are
+responsible for reading the mA and kV feedback signals. Both chips are identical make and model, and
+each chip has on its own dedicated SPI bus. While each chip has a dedicated SPI bus, each still
+utilizes a chip select line in order to request new samples from the chips. The external ADC module
+continuously reads both ADC ICs at the same time.
 
 The DAC module utilizes the manufacturer provided hardware abstraction library to read serial data
 from the SPI bus. The reads from the SPI bus are non-block interrupt-based calls which allows the
@@ -279,20 +279,20 @@ RELATIONS:
 UID: SW-H1FWHVPS-111
 TITLE: External DAC communication
 STATEMENT: >>>
-The firmware communicates with four external DAC IC chips. Each chip has one channel each and
-are responsible for setting the grid voltage control signal, filament current control signal, high
+The firmware communicates with four external DAC IC chips. Each chip has one channel each and are
+responsible for setting the grid voltage control signal, filament current control signal, high
 voltage control signal, and emission current limit control signal. All DAC chips are identical make
 and model, and the firmware communicates with all chips on a singular SPI bus, using independent
-chip select signals for each chip. The external DAC module waits for any queued-up requests by
-the rest of the firmware to write new DAC values. In case multiple DAC values are queued up
-simultaneously or in quick succession, the DAC module processes them in FIFO (first in first out)
-fashion, waiting for the SPI bus to be free until the next value is processed.
+chip select signals for each chip. The external DAC module waits for any queued-up requests by the
+rest of the firmware to write new DAC values. In case multiple DAC values are queued up simultaneous
+or in quick succession, the DAC module processes them in FIFO (first in first out) fashion, waiting
+for the SPI bus to be free until the next value is processed.
 
 The DAC module utilizes the manufacturer's hardware abstraction library to write serial data to the
-SPI bus. The writes to the SPI bus are non-block interrupt-based calls which allows the processor
-to continue operating during the relatively longer SPI transmission (compared to processing
-speed). The DAC module utilizes the SPI interrupt handler to set flags for handling the queued
-DAC requests (indicating bus is free).
+SPI bus. The writes to the SPI bus are non-block interrupt-based calls which allows the processor to
+continue operating during the relatively longer SPI transmission (compared to processing speed). The
+DAC module utilizes the SPI interrupt handler to set flags for handling the queued DAC requests
+(indicating bus is free).
 
 In addition to sending data over the SPI bus, the DAC module handles the digital chip select
 signals. These signals are independent for each chip, so there are a total of 4 digital output lines
@@ -309,9 +309,9 @@ TITLE: Input Debouncing
 STATEMENT: >>>
 The digital inputs are debounced by sampling the state of the input signals every time a processing
 flag gets set. This processing flag is set every 1 msec. Once an input displays a toggled value, the
-firmware begins a debounce countdown. During this debounce period, any bouncing signals are
-ignored. After the debounce period is over, the firmware checks to see if the input truly did toggle or
-if it was just noise. If the signal indicates a "true" toggle, the firmware updates the changed input
+firmware begins a debounce countdown. During this debounce period, any bouncing signals are ignored.
+After the debounce period is over, the firmware checks to see if the input truly did toggle or if it
+was just noise. If the signal indicates a 'true' toggle, the firmware updates the changed input
 states for processing as well as reporting to the main control application firmware.
 <<<
 RELATIONS:
@@ -327,17 +327,17 @@ UID: SW-H1FWHVPS-113
 TITLE: Interlock Enable
 STATEMENT: >>>
 The firmware monitors the interlock signals coming from the main control board. These signals can
-independently, from the HVPS interface microcontroller, disable emission. However, for
-redundancy, the firmware will also disable its own outputs to the HVPS to terminate emission if it
-detects that the interlock signals are requesting to disable emission.
+independently, from the HVPS interface microcontroller, disable emission. However, for redundancy,
+the firmware will also disable its own outputs to the HVPS to terminate emission if it detects that
+the interlock signals are requesting to disable emission.
 
-Additionally, the firmware will proceed to "lock" its own emission output controls and disallow
-emission until the main control board sends commands to unlock the controls. The unlock
-sequence requires that the main control board send these commands while the interlocks are
-specifically in a "disabled" state and then toggle the interlocks into an "enabled" state within a
-certain time period. This is to ensure that the hardware signals are functioning as the firmware
-expects and are able to disable emission if needed. This lock and unlock process is required for
-both the high voltage interlock and grid interlock signals coming from the main control board.
+Additionally, the firmware will proceed to 'lock' its own emission output controls and disallow
+emission until the main control board sends commands to unlock the controls. The unlock sequence
+requires that the main control board send these commands while the interlocks are specifically in a
+'disabled' state and then toggle the interlocks into an 'enable' state within a certain time period.
+This is to ensure that the hardware signals are functioning as the firmware expects and are able to
+disable emission if needed. This lock and unlock process is required for both the high voltage
+interlock and grid interlock signals coming from the main control board.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -351,6 +351,7 @@ STATEMENT: >>>
 The firmware tracks various Boolean status flags. These status flags are represented in a single
 bitmask with each bit representing one flag. This status is reported to the main control board. The
 following flags are monitored and reported:
+
 - HV interlock control enabled
 - Grid interlock control enabled
 - Filament ramp in progress
@@ -383,29 +384,29 @@ RELATIONS:
 UID: SW-H1FWHVPS-116
 TITLE: High Voltage Output and Ramping
 STATEMENT: >>>
-When a target high voltage value is requested by the main control board, the firmware will
+When a target filament high voltage value is requested by the main control board, the firmware will
 incrementally ramp up or down towards the final target value.
 
-The high voltage power supply is unregulated and has a relatively inaccurate control translation
-(differential between the control signal and feedback signal is around +/-5% tolerance which is too
-far for clinical performance) and as such the firmware must implement a closed loop to adjust the
-control to arrive at a more accurate high voltage output.
+Unfortunately, the high voltage power supply is unregulated and has a relatively inaccurate control
+translation (differential between the control signal and feedback signal is around +/-5% tolerance
+which is too far for clinical performance) and as such the firmware must implement a closed loop to
+adjust the control to arrive at a more accurate high voltage output.
 
 When increasing voltage, the firmware increases the control output, with larger steps the further
-away from the target value. Once the system starts to approach the target high voltage, the
-firmware uses smaller increment steps. This is due to the time lag in the system where increases in
-the control signal to the high voltage power supply take a short but indeterminate amount of time to
-fully stabilize. Stabilization time depends on a variety of factors such as HVPS calibration/tuning, as
-well as high voltage cable and source characteristics. The simplest way to account for all these
+away from the target value. Once the system starts to approach the target high voltage, the firmware
+uses smaller increment steps. This is due to the time lag in the system where increases in the
+control signal to the high voltage power supply take a short but indeterminate amount of time to
+fully stabilize. Stabilization time depends on a variety of factors such as HVPS calibration/tuning,
+as well as high voltage cable and source characteristics. The simplest way to account for all these
 differences is to use smaller steps the closer to the target output to eliminate time lag issues.
 
 For decreasing, once again due to both time lag issues, the decrements are generally small, but if
 the target voltage is much lower, the firmware will drop the control signal to approximately 90% of
 the target value (to account for the unregulated tolerance variances of the HVPS).
 
-The increment/decrement steps are performed at fixed periodic intervals while the ramping process
-is taking place. While the ramping process is taking place the firmware also sets the "high voltage
-ramping" status bit in the flag status value reported to the main control board.
+The increment/decrement steps are performed at fixed periodic intervals while the ramping process is
+taking place. While the ramping process is taking place the firmware also sets the 'high voltage
+ramping' status bit in the flag status value reported to the main control board.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -419,17 +420,17 @@ STATEMENT: >>>
 When a target filament current value is requested by the main control board, the firmware will
 incrementally ramp up or down towards the final target value. The decrement steps are large and
 fixed. The increment steps are variable and are dependent on two factors. The first factor is the
-present output value of the filament current. Higher present filament currents will result in smaller
-steps than lower present filament currents. The second factor is whether fast ramping is enabled or
-not. If fast ramping is enabled, the step size will be increased by a fixed multiple.
+present output value of the filament current. Higher present filament currents will result in
+smaller steps than lower present filament currents. The second factor is whether fast ramping is
+enabled or not. If fast ramping is enabled, the step size will be increased by a fixed multiple.
 
-As the final target filament current may not be a multiple of the final step size, if the final step under
-or overshoots the final target value, the ramp simply sets the filament current on this final step to
-the intended target value.
+As the final target filament current may not be a multiple of the final step size, if the final step
+under or overshoots the final target value, the ramp simply sets the filament current on this final
+step to the intended target value.
 
-The increment/decrement steps are performed at fixed periodic intervals while the ramping process
-is taking place. While the ramping process is taking place the firmware also sets the "filament
-ramping" status bit in the flag status value reported to the main control board.
+The increment/decrement steps are performed at fixed periodic intervals while the ramping process is
+taking place. While the ramping process is taking place the firmware also sets the 'filament
+ramping' status bit in the flag status value reported to the main control board.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -472,22 +473,22 @@ TITLE: Filament Control PID
 STATEMENT: >>>
 The firmware can utilize a PID control closed feedback loop to adjust the filament current during
 emission to manage a stable emission current output. Due to the relatively slower nature of the
-temperature change of the system, there are different "stages" of the PID control.
+temperature change of the system, there are different 'stages' of the PID control.
 
-When the output error (difference between actual emission output compared to the desired target)
-is very large, a stronger PD only control loop is used. In this PD only control portion, a larger P
-value is used, with no I portion, as we do not want to accumulate I error due to the time lag of the
-temperature changes. The P and D coefficients are larger than in other stages and are separately
+When the output error (difference between actual emission output compared to the desired target) is
+very large, a stronger PD only control loop is used. In this PD only control portion, a larger P
+value is used, with no I portion, as we do not want to accumulate, I error due to the time lag of
+the temperature changes. The P and D coefficients are larger than in other stages and are separately
 defined.
 
-When both the output error is very small (difference between actual emission output compared to
-the desired target) and the D factor is not drastically high (indicating an ongoing large overshoot or
-undershoot), we utilize a PI only control loop. The removal of the D coefficient is to prevent smaller
-oscillations and only have the small, accumulated errors slowly nudge the control around the
+When both the output error is very small (difference between actual emission output compared to the
+desired target) and the D factor is not drastically high (indicating an ongoing large overshoot or
+undershoot), we utilize a PI only control loop. The removal of the D coefficient is to prevent
+smaller oscillations and only have the small, accumulated errors slowly nudge the control around the
 target.
 
-When the output error is moderate or there is a larger D factor in the error, a PD is utilized to try to
-balance out the stabilization of the target emission without accumulating too many errors.
+When the output error is moderate or there is a larger D factor in the error, a PD is utilized to
+try to balance out the stabilization of the target emission without accumulating too many errors.
 
 In all cases, the adjustment value to the output of the filament current is capped and cannot change
 at too large of a jump.
@@ -506,8 +507,8 @@ TITLE: Grid Clock
 STATEMENT: >>>
 The HVPS requires a toggling grid clock signal to allow emission. The grid clock signal must be
 several kHz in frequency. The firmware utilizes one of the microcontroller's timer peripherals to
-trigger an interrupt at a 4500 Hz rate. When the interrupt is triggered, the firmware will toggle the
-grid clock output signal.
+trigger an interrupt at a 4500 Hz rate. When the interrupt is triggered, the firmware will toggle
+the grid clock output signal.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -521,6 +522,7 @@ STATEMENT: >>>
 The firmware integrates source code provided by the manufacturer of the microcontroller unit to
 interface with various peripherals of the microcontroller. These include functions to interface with
 the following peripherals of the microcontroller:
+
 - UART serial port
 - GPIO
 - SPI serial port
@@ -583,8 +585,8 @@ UID: SW-H1FWHVPS-37
 TITLE: Output Signals
 STATEMENT: >>>
 The firmware controls various digital output signals. There are grid clocks and watchdog reset
-signals which are toggled periodically by the firmware. Additionally, there are three digital control
-signals which disable output on the HVPS: grid allowed, PFC allowed, and HV allowed. These
+signals which are toggled periodically by the firmware. Additionally, there are three digital
+control signals which disable output on the HVPS: grid allowed, PFC allowed, and HV allowed. These
 three signals correspond to three signals on the HVPS which similarly are used to disallow grid
 switching, PFC enabling, and HV enabling on the HVPS. All these signals need to be appropriately
 asserted for emission output to be enabled.

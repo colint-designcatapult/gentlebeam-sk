@@ -23,11 +23,11 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes all requirements of the Heracles HVPS Interface Application FW.
+This document describes all requirements of the Heracles Main Control Application FW.
 The information in this document has been derived from the VoxelRay Heracles Product Requirements
-Specification.
+Specification, as referenced in this document.
 
-\*The term Software applies to both Software and Firmware systems.
+*The term Software applies to both Software and Firmware systems.*
 <<<
 
 [[/SECTION]]
@@ -37,32 +37,27 @@ TITLE: Abbreviations and Definitions
 
 [TEXT]
 STATEMENT: >>>
-FW
-  Firmware
-
-HVPS
-  High Voltage Power Supply
-
-LED
-  Light Emitting Diode
-
-MCU
-  Microcontroller Unit
-
-PID
-  Proportional Integral Derivative controller
-
-PRS
-  Product Requirements Specification
-
-SDP
-  Software Development Plan
-
-SRS
-  Software Requirements Specification
-
-SW
-  Software
++-------------------+---------------------------------------------+
+| Abbreviation/Term | Definition                                  |
++===================+=============================================+
+| FW                | Firmware                                    |
++-------------------+---------------------------------------------+
+| HVPS              | High Voltage Power Supply                   |
++-------------------+---------------------------------------------+
+| LED               | Light Emitting Diode                        |
++-------------------+---------------------------------------------+
+| MCU               | Microcontroller Unit                        |
++-------------------+---------------------------------------------+
+| PID               | Proportional Integral Derivative controller |
++-------------------+---------------------------------------------+
+| PRS               | Product Requirements Specification          |
++-------------------+---------------------------------------------+
+| SDP               | Software Development Plan                   |
++-------------------+---------------------------------------------+
+| SRS               | Software Requirements Specification         |
++-------------------+---------------------------------------------+
+| SW                | Software                                    |
++-------------------+---------------------------------------------+
 <<<
 
 [[/SECTION]]
@@ -89,9 +84,13 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-DHF-HRC-0001, Rev.2: Heracles Software Development Plan (SDP)
-
-DHF-HRC-0003, Rev.2: Heracles Software Verification Plan (SVP)
++--------------------------------+-------------------------------------------+
+| Document ID / Reference Number | Document Title                            |
++================================+===========================================+
+| DHF-HRC-0001, Rev.2            | Heracles Software Development Plan (SDP)  |
++--------------------------------+-------------------------------------------+
+| DHF-HRC-0003, Rev.2            | Heracles Software Verification Plan (SVP) |
++--------------------------------+-------------------------------------------+
 <<<
 
 [[/SECTION]]
@@ -130,10 +129,14 @@ fault if no valid communication is received within 0.5 seconds
 [REQUIREMENT]
 UID: RQ-H1FWMC-6
 TYPE: Functional
-TITLE: Emission indicator
+TITLE: Fault information
 STATEMENT: >>>
-The firmware shall enable an external emission indicator during the emission state when
-there is an ongoing emission
+The firmware shall be able to respond to a request from the PC with information about the
+fault which triggered the transition into fault mode, including:
+
+- The type of fault occurrence
+- The state in which the fault occurred
+- The expected vs measured conditions which triggered the fault
 <<<
 
 [REQUIREMENT]
@@ -152,11 +155,12 @@ TITLE: Interlocks
 STATEMENT: >>>
 The firmware shall monitor the status of the system interlocks and throw a fault if any
 interlocks are in an invalid condition. Interlocks include:
--E-stops
--Ion pump HV interlocks
--KUKA robot arm interlocks
--Door interlock
--Coolant level sensor
+
+- E-stops
+- Ion pump HV interlocks
+- KUKA robot arm interlocks
+- Door interlock
+- Coolant level sensor
 <<<
 
 [REQUIREMENT]
@@ -207,7 +211,7 @@ during the warmup procedure within a timeout period of 180 seconds
 [REQUIREMENT]
 UID: RQ-H1FWMC-14
 TYPE: Functional
-TITLE: Operation 06 - HVPS Check
+TITLE: Operation 07: Operational point setup
 STATEMENT: >>>
 The firmware shall report a fault if the HVPS has not reached the target kV setpoint during
 the operational point setup processes within a timeout period of 90 seconds
@@ -360,13 +364,14 @@ The firmware shall respond to out of bounds treatment plan operational point
 confirmation parameters from the PC with an error reply indicating out of bounds values
 have been received. Out of bounds values are those which are outside of the range of
 acceptable values. Acceptable values will be:
--Acceleration potential (kV), range 0 to 100 kV
--Emission current (mA), range 0 to 1 mA
--Total delivery time, range 0 to 300 seconds
--Remaining delivery time, range 0 to total delivery time-Beam optic focus adjustment
-values, range 0 to 3A
--Beam optic deflection adjustment values, range -1.5A to +1.5A-Filament current (mA),
-range 0 to 3999 mA
+
+- Acceleration potential (kV), range 0 to 100 kV
+- Emission current (mA), range 0 to 1 mA
+- Total delivery time, range 0 to 300 seconds
+- Remaining delivery time, range 0 to total delivery time
+- Beam optic focus adjustment values, range 0 to 3A
+- Beam optic deflection adjustment values, range -1.5A to +1.5A
+- Filament current (mA), range 0 to 3999 mA
 <<<
 
 [REQUIREMENT]
@@ -377,12 +382,14 @@ STATEMENT: >>>
 The firmware shall acknowledge the receipt of valid treatment plan operational point
 confirmation parameters received from the PC. A valid treatment plan includes the
 following parameters for an operational point:
--Acceleration potential (kV), range 0 to 100 kV-Emission current (mA), range 0 to 1 mA
--Total delivery time, range 0 to 300 seconds
--Remaining delivery time, range 0 to total delivery time-Beam optic focus adjustment
-values, range 0 to 3A
--Beam optic deflection adjustment values, range -1.5A to +1.5A-Filament current (mA),
-range 0 to 3999 mA
+
+- Acceleration potential (kV), range 0 to 100 kV
+- Emission current (mA), range 0 to 1 mA
+- Total delivery time, range 0 to 300 seconds
+- Remaining delivery time, range 0 to total delivery time
+- Beam optic focus adjustment values, range 0 to 3A
+- Beam optic deflection adjustment values, range -1.5A to +1.5A
+- Filament current (mA), range 0 to 3999 mA
 <<<
 
 [REQUIREMENT]
@@ -411,7 +418,7 @@ UID: RQ-H1FWMC-33
 TYPE: Functional
 TITLE: Operation 01: Filament conditioning
 STATEMENT: >>>
-The firmware shall only be able to perform filament conditioning from a “cold” state
+The firmware shall only be able to perform filament conditioning from a 'cold' state
 where there is no filament current present, and shall reply to filament condition requests
 outside of this cold state with an error response
 <<<
@@ -531,7 +538,7 @@ UID: RQ-H1FWMC-46
 TYPE: Functional
 TITLE: PC Ethernet commands
 STATEMENT: >>>
-The firmware shall respond with an “unrecognized message” response when it receives a
+The firmware shall respond with an 'unrecognized message' response when it receives a
 command which is either not formatted properly or not recognized.
 <<<
 
@@ -558,7 +565,7 @@ TYPE: Functional
 TITLE: USB
 STATEMENT: >>>
 The main control application firmware shall be able to receive and process commands
-from PC via the board’s USB connection.
+from PC via the board's USB connection.
 <<<
 
 [REQUIREMENT]
@@ -614,7 +621,7 @@ rate is below 2 LPM or above 6 LPM when the coolant pump is enabled.
 
 [REQUIREMENT]
 UID: RQ-H1FWMC-62
-TYPE: Safety
+TYPE: Functional
 TITLE: Head Interface
 STATEMENT: >>>
 The firmware shall be able to receive cooling system feedback values from the head
@@ -690,7 +697,7 @@ TYPE: Safety
 TITLE: Undesired emission monitoring
 STATEMENT: >>>
 The firmware shall monitor the cathode current feedback from the HVPS and report a fault
-if the value is above 0.2 mA when the system is not in “Emission” state
+if the value is above 0.2 mA when the system is not in 'Emission' state
 <<<
 
 [REQUIREMENT]
@@ -791,13 +798,14 @@ STATEMENT: >>>
 The firmware shall acknowledge the receipt of valid treatment plan staging parameters
 received from the PC. A valid treatment plan includes the following parameter types for an
 operational point:
--Acceleration potential (kV), range 0 to 100 kV
--Emission current (mA), range 0 to 1 mA
--Total delivery time, range 0 to 300 seconds
--Remaining delivery time, range 0 to total delivery time-Beam optic focus adjustment
-values, range 0 to 3A
--Beam optic deflection adjustment values, range -1.5A to +1.5A-Filament current (mA),
-range 0 to 3999 mA
+
+- Acceleration potential (kV), range 0 to 100 kV
+- Emission current (mA), range 0 to 1 mA
+- Total delivery time, range 0 to 300 seconds
+- Remaining delivery time, range 0 to total delivery time
+- Beam optic focus adjustment values, range 0 to 3A
+- Beam optic deflection adjustment values, range -1.5A to +1.5A
+- Filament current (mA), range 0 to 3999 mA
 <<<
 
 [REQUIREMENT]
@@ -807,12 +815,13 @@ TITLE: Report telemetry to PC
 STATEMENT: >>>
 The firmware shall report monitored system parameter values in response to a telemetry
 request from the PC. Parameter types in the response include the following:
--Control board state
--Current system operational point in treatment plan
--Total operational points in treatment plan
--Internal timer value
--Backup timer values
--Feedback values
+
+- Control board state
+- Current system operational point in treatment plan
+- Total operational points in treatment plan
+- Internal timer value
+- Backup timer values
+- Feedback values
 <<<
 
 [REQUIREMENT]
@@ -820,7 +829,7 @@ UID: RQ-H1FWMC-84
 TYPE: Functional
 TITLE: PC Ethernet commands
 STATEMENT: >>>
-The firmware shall be able to respond to commands received from a PC over Ethernet
+The firmware shall be able to respond to commands received from a PC over Ethernet.
 <<<
 
 [REQUIREMENT]
