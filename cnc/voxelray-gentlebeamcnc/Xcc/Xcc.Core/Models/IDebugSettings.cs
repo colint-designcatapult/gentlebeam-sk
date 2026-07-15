@@ -3,6 +3,12 @@
 public interface IDebugSettings
 {
     bool UseDummyDatabase { get; }
+    bool UseSqliteDatabase { get; }
+    /// <summary>
+    /// Use plain HTTP/2 (no TLS) for the gRPC data channel. Required when pointing at the
+    /// embedded SQLite server running on another machine without a TLS certificate.
+    /// </summary>
+    bool UseInsecureGrpc { get; }
     bool UseDummyServices { get; }
     bool UseDummyRobot { get; }
     bool UseDummyAlignmentEngine { get; }

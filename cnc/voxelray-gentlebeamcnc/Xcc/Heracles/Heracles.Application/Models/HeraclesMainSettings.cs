@@ -100,6 +100,8 @@ namespace Heracles.Application.Models
 
         #region IDebugSettings
         public bool UseDummyDatabase { get; } = reader.GetOptionalBool("AppSettings:Debug:UseDummyDatabase", false);
+        public bool UseSqliteDatabase { get; } = reader.GetOptionalBool("AppSettings:Debug:UseSqliteDatabase", false);
+        public bool UseInsecureGrpc { get; } = reader.GetOptionalBool("AppSettings:Debug:UseInsecureGrpc", false);
         public bool UseDummyServices { get; } = reader.GetOptionalBool("AppSettings:Debug:UseDummyServices", false);
         public bool UseDummyRobot { get; } = reader.GetOptionalBool("AppSettings:Debug:UseDummyRobot", false);
         public bool UseDummyAlignmentEngine { get; } = reader.GetOptionalBool("AppSettings:Debug:UseDummyAlignmentEngine", false);

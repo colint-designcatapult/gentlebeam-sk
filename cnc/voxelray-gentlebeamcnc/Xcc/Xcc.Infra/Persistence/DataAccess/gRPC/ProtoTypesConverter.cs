@@ -37,6 +37,10 @@ namespace Xcc.Infra.Persistence.DataAccess.gRPC
         /// <returns></returns>
         public static DateTime FromTimestamp(Timestamp timestamp)
         {
+            if (timestamp == null)
+            {
+                return DateTime.MinValue;
+            }
             var utcTime = timestamp.ToDateTime();
             return utcTime.ToLocalTime();
         }

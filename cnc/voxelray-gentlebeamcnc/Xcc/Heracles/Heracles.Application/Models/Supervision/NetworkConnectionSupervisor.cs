@@ -59,7 +59,7 @@ namespace Heracles.Application.Models.Supervision
                     // In general, we need to specify client port equal to the target one,
                     // as GCB broadcasts the telemetry
 
-                    // We don't want telemetry to raise 'same port' exception on DI resolve on localhost endpoint,
+                    // We don't want telemetry to raise 'same port' exception on DI resolve on localho  st endpoint,
                     // as we'll not be able to fix the issue from the indoor then.
                     // TODO: need to redesign this mechanism.
 

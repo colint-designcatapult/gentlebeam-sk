@@ -3062,7 +3062,7 @@ namespace Heracles.Application.Protos
             var proto = new Log
             {
                 Message = logRecord.Message,
-                //Timestamp = ToTimestamp(logRecord.TimeStamp),
+                Timestamp = ToTimestamp(logRecord.TimeStamp),
                 Severity = ToProto(logRecord.Severity),
                 Type = ToProto(logRecord.Type)
             };
