@@ -120,13 +120,13 @@ TITLE: Main Modules
 
 [TEXT]
 STATEMENT: >>>
-**External Timer** â€" a.k.a. Backup Timer. This is a redundant timer that is started in conjunction with the
-Main Controlâ€™s internal timer and a paired external timer. It reports its time, state, and whether there are
+**External Timer** a.k.a. Backup Timer. This is a redundant timer that is started in conjunction with the
+Main Control's internal timer and a paired external timer. It reports its time, state, and whether there are
 any faults to the main control firmware.
 
-**Main Control Firmware** â€" Sends start, stop, reset commands to the Timer.
+**Main Control Firmware** Sends start, stop, reset commands to the Timer.
 
-**Debug LED** â€" discrete LED that provides visual feedback to the user based on the Timerâ€™s status.
+**Debug LED** discrete LED that provides visual feedback to the user based on the Timer's status.
 <<<
 
 [[/SECTION]]
