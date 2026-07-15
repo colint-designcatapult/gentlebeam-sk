@@ -1,5 +1,5 @@
 [DOCUMENT]
-TITLE: Heracles Software Requirements Specification for HVPS Interface Board Bootloader
+TITLE: Heracles HVPS Interface Bootloader FW Software Requirements Specification
 UID: DHF-HRC-0021
 METADATA:
   COMPONENT: hvps-interface/bootloader
@@ -102,17 +102,17 @@ TITLE: Requirements
 [REQUIREMENT]
 UID: RQ-H1FWHVPSIB-1
 TYPE: Functional
-TITLE: Jump to Application on Valid CRC
+TITLE: Functional
 STATEMENT: >>>
 The HVPS interface bootloader firmware shall jump to execution of the HVPS interface application
 if and only if the existing application code at startup is valid. The application code is valid if the
-programmed CRC value matches the application firmware loaded in flash memory.
+programmed CRC value matches the application firmware loaded in flash memory
 <<<
 
 [REQUIREMENT]
 UID: RQ-H1FWHVPSIB-2
 TYPE: Functional
-TITLE: Write Flash Memory Page
+TITLE: Functional
 STATEMENT: >>>
 The HVPS interface bootloader firmware shall be able to write a specified flash memory page with
 provided data from the PC.
@@ -121,7 +121,7 @@ provided data from the PC.
 [REQUIREMENT]
 UID: RQ-H1FWHVPSIB-3
 TYPE: Functional
-TITLE: Erase Flash Memory
+TITLE: Functional
 STATEMENT: >>>
 The HVPS interface bootloader firmware shall be able to erase a predetermined area of flash
 memory, corresponding to the application firmware programming area.
@@ -130,10 +130,10 @@ memory, corresponding to the application firmware programming area.
 [REQUIREMENT]
 UID: RQ-H1FWHVPSIB-4
 TYPE: Functional
-TITLE: PC Communication Ping Response
+TITLE: PC Communication
 STATEMENT: >>>
 The HVPS interface bootloader firmware shall be able to respond to a ping command from the PC,
-indicating that the system is in bootloader mode.
+indicating that the system is in bootloader mode
 <<<
 
 [[/SECTION]]

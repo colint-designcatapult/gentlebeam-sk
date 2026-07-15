@@ -65,9 +65,9 @@ TITLE: Overview
 
 [TEXT]
 STATEMENT: >>>
-The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans and perform imaging. It communicates with the record and verify component, flange camera stream and imaging component.
+The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans. It communicates with the record and verify component and flange camera stream.
 
-The internal GUI software runs on an industrial PC located at the base of the system.
+The internal GUI software runs on an industrial PC located at the base of the system
 <<<
 
 [[/SECTION]]
@@ -93,6 +93,22 @@ Document Title: Heracles Software Architecture Description
 [[/SECTION]]
 
 [[SECTION]]
+TITLE: Architecture Overview
+
+[TEXT]
+STATEMENT: >>>
+High Level System Architecture
+
+Main Modules
+
+The design of the application is based on the MVVM pattern. There are three core components in the MVVM pattern: the model, the view, and the view model. Each serves a distinct purpose. The diagram below shows the relationships between the three components.
+
+The MVVN design pattern is implemented in the application as follows: the 4 th layer is the gRPC wrapper for communication with Record and Verify services.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
 PREFIX: SW-H10SG-
 TITLE: Design Items
 
@@ -100,939 +116,308 @@ TITLE: Design Items
 UID: SW-H10SG-11
 TITLE: Data management API
 STATEMENT: >>>
-The application shall use a streaming communication (API) to store and retrieve data remotely 
-from/to the centralized data storage (Database) to allow seamless and sustainable integration. 
-The list of API functions is defined in the following protocol document: 
+The application shall use a streaming communication (API) to store and retrieve data remotely from/to the centralized data storage (Database) to allow seamless and sustainable integration.
+
+The list of API functions is defined in the following protocol document:
+
 Heracles DB API
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-47
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-48
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-49
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-50
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-51
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-52
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-83
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-86
-  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-12
 TITLE: Patients' Data Management
 STATEMENT: >>>
-The application shall include a centralized and secure data repository for storing and managing all 
-treatment planning data, including patient information, imaging data, treatment plans, and 
-treatment history. 
-Patient Table will be stored in a secure manner, and data will be encrypted. 
-The data shall be managed in a relational database, which shall support hierarchical organization 
-based on user flow. 
-Entity Relationship Diagram 
-
-Data Entities: 
-User Table 
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CreationDate Date Not Null  
-Picture Varchar(255)  Location path 
-
-FirstName Varchar(255) Not Null  
-MiddleName Varchar(255)   
-LastName Varchar(255) Not Null  
-UserName Varchar(255) Not Null  
-Role Varchar(255) Not Null  
-Email Varchar(255)   
-LastAccessed Date   
-Role Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CreationDate Date Not Null  
-RoleName Varchar(255) Not Null Initilized with : RTT, 
-Physicist,Service,Admi 
-nistrator 
-Description Varchar(255)   
-User-Role Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CreationDate Date Not Null  
-UserID Varchar(255) Not Null  
-RoleID Varchar(255) Not Null  
-Permission Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-
-incremental 
-
-CreationDate Date Not Null  
-PermissionName Permission Enum Not Null  
-Description Varchar(255)   
-Permission Enum 
-
-Name Number UI 
-UNSPECIFIED 0  
-PATIENTS_CLINICAL_DATA 1 Patient’s Clinical Data 
-PATIENTS_TREATMENT 2 Patient’s Treatment 
-SYSTEM_CALIBRATION 3 System Calibration 
-QUALITY_ASSURANCE 4 Quality Assurance 
-SYSTEM_SETTINGS 5 System Settings 
-USER_MANAGEMENT 6 User Management 
-SERVICES 7 Services 
-Roles-Permissions Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CreationDate Date Not Null  
-RoleID Varchar(255) Not Null  
-PermissionID Varchar(255) Not Null  
-Patient Table 
-
-Name Type constraint Description 
-ID Int64 Not Null The Primary key. Auto 
-
-incremental 
-
-CreationDate Date Not Null The Date this patient 
-was created in DB 
-ProviderID Int64  Foreign Key to Users 
-table 
-Picture Varchar(255)  The patient profile pic 
-path 
-PatientID Varchar(255)  The SSN or Passport 
-ID 
-PatientIDType Enum  PatientIDType Enum 
-MRN Varchar(255) Not Null The Patient Medical 
-Record Number from 
-an external EMR (i.e. 
-EMA) 
-FirstName Varchar(255) Not Null  
-MiddleName Varchar(255)   
-LastName Varchar(255) Not Null  
-Sex Enum Not Null SexType Enum 
-DOB Date Not Null Data of birth 
-Address Varchar(255)   
-City Varchar(255)   
-State Varchar(255)   
-Zip Varchar(255)   
-Country Varchar(255)   
-Phone Varchar(255)   
-Email Varchar(255)   
-Ethnicity Varchar(255)   
-Race Varchar(255)   
-Status PatientStatus Enum   
-Notes Varchar(255)   
-PatientStatus Enum 
-
-Name Type constraint 
-UNSPECIFIED 0  
-Active 1  
-Inactive 2  
-Expired 3 Cannot reactivate 
-PatientIDType Enum 
-
-Name number Description 
-UNSPECIFIED 0  
-SSN 1 Security Number 
-PASSPORT 2 Passport Number 
-OTHER 3 Other 
-
-SexType Enum 
-
-Name Type constraint 
-UNSPECIFIED 0  
-MALE 1  
-FEMALE 2  
-INTERSEX 3  
-Diagnosis Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-PatientID Int64 Not Null Foreign Key to Patient 
-table 
-CreationDate Date Not Null  
-SiteName Varchar(255) Not Null  
-SiteLocation SiteLocation Enum Not Null  
-ICDCode ICD Code Enum Not Null  
-Pathology Pathology Enum Not Null  
-CellType CellType Enum Not Null  
-Description Description Enum Not Null  
-Referring Varchar(255)  The referring provider 
-(Not a user) 
-
-
-CellType Enum 
-
-Name number Description 
-UNSPECIFIED 0  
-Aberrant 1 Subcell type for BCC 
-Adenoid 2 Subcell type for BCC 
-AtypicalBasaloidProliferatio 
-n 
-3 Subcell type for BCC 
-BasosquamousMetatypical 4 Subcell type for BCC 
-AdnexalDifferentiation 5 Subcell type for BCC 
-SquamousDifferentiation 6 Subcell type for BCC 
-ClearRing 7 Subcell type for BCC 
-CysticCellCarcinoma 8 Subcell type for BCC 
-FibroepitheliomaOfPinkus 9 Subcell type for BCC 
-Infiltrative 10 Subcell type for BCC 
-Keratotic 11 Subcell type for BCC 
-MicroNodular 12 Subcell type for BCC 
-MixedPattern 13 Subcell type for BCC + SCC 
-MorphoeicSclerosingFibrosi 
-ng 
-14 Subcell type for BCC 
-NodularClassicBasal-Cell) 15 Subcell type for BCC 
-Nodulocystic 16 Subcell type for BCC 
-Pigmented 17 Subcell type for BCC 
-Pleomorphic 18 Subcell type for BCC 
-Polypoid 19 Subcell type for BCC 
-Pore-like 20 Subcell type for BCC 
-Rodent Ulcer (Jacobi Ulcer) 21 Subcell type for BCC 
-Superficial (Multicentric) 22 Subcell type for BCC 
-Acantholytic 23 Subcell type for SCC 
-Adenoid/Pseudoglandular 24 Subcell type for SCC 
-Atypical Squamous 
-Proliferation 
-25 Subcell type for SCC 
-Basaloid 26 Subcell type for SCC 
-Clear-cell 26 Subcell type for SCC 
-Erythroplasia 28 Subcell type for SCC 
-Intraepidermal 29 Subcell type for SCC 
-Invasive 30 Subcell type for SCC 
-Keratoacanthoma 31 Subcell type for SCC 
-LargeCellKeratinzing 32 Subcell type for SCC 
-LargeCellNonKeratinizing 33 Subcell type for SCC 
-Metaplasia 34 Subcell type for SCC 
-ModeratelyDifferentiated 35 Subcell type for SCC 
-PoorlyDifferentiated 36 Subcell type for SCC 
-PapillaryCarcinoma 37 Subcell type for SCC 
-SignetRingCell 38 Subcell type for SCC 
-SmallCellKeratinizin 39 Subcell type for SCC 
-Superficial 40 Subcell type for SCC 
-SpindleCell 41 Subcell type for SCC 
-Verrucous 42 Subcell type for SCC 
-WellDifferentiated 43 Subcell type for SCC 
-SuperficiallyInvasive 44 Subcell type for SCC 
-Other 45 Subcell type for BCC + SCC 
-None 46 no Subcell 
-Description Enum 
-
-Name Type UI(Label) 
-UNSPECIFIED 0  
-Infundibulo_cytic 1 Infundibulo-cytic 
-Ulcerated_long_standing 2 Ulcerated long-standing 
-Adenosquamous 3 Adenosquamous 
-Desmoplastic_Metaplastic 4 Desmoplastic/Metaplastic 
-Recurrent_Lesion_post_surg 
-ery 
-5 Recurrent Lesion post surgery 
-Large_Lesion 6 Large Lesion 
-Deep_Lesion 7 Deep Lesion 
-Rapid_growth 8 Rapid growth 
-Extention_into_hair_follicle 9 Extension into hair follicle 
-Pathology Enum 
-
-Name number Description (UI Label) 
-UNSPECIFIED 0  
-BCC 1 BCC 
-SCC 2 SCC 
-SCC-IS 3 SCC-IS 
-Keloid 4 Keloid 
-Basosquamous 5 Basosquamous 
-
-SiteLocation Enum 
-
-Name number Description (UI) 
-UNSPECIFIED 0  
-Breast 1 Breast 
-LeftEar 2 Ear (Left) 
-RightEar 3 Ear (Right) 
-Forehead 4 Forehead 
-Temple 5 Temple 
-Zygoma 6 Zygoma 
-PreAuricular 7 Pre-Auricular 
-Cheek 8 Cheek 
-Chin 9 Chin 
-Jaw 10 Jaw 
-Lip 11 Lip 
-Neck 12 Neck 
-Nose 13 Nose 
-Scalp 14 Scalp 
-PostAuricular 15 Post Auricular 
-Trunk 16 Trunk 
-Chest 17 Chest 
-Abdomen 18 Abdomen 
-Back 19 Back 
-LeftLowerLimb 20 Lower Limb (Left) 
-RightLowerLimb 21 Lower Limb (Right) 
-LeftUpperLimb 22 Upper Limb (Left) 
-RightUpperLimb 23 Upper Limb (Right) 
-RightUpperEyelid 24 Eyelid (Right Upper) 
-RightLowerEyelid 25 Eyelid (Right Lower) 
-LeftUpperEyelid 26 Eyelid (Left Upper) 
-LeftLowerEyelid 27 Eyelid (Left Lower) 
-UnspecifiedFace  Unspecified parts of Face 
-UnspecifiedCodes  Unspecified Codes 
-UnspecifiedEyelid  Unspecified Eyelid 
-
-ICDCode Enums 
-
-Name number value (UI) 
-UNSPECIFIED 0  
-BCC_Breast 1 C44.511 
-SCC_Breast 2 C44.521 
-SCC_IS_Breast 3 D04.5 
-BCC_LeftEar 4 C44.219 
-SCC_LeftEar 5 C44.229 
-SCC_IS_LeftEar 6 D04.22 
-BCC_RightEar 7 C44.212 
-SCC_RightEar 8 C44.222 
-SCC_IS_RightEar 9 D04.21 
-BCC_Face 10 C44.319 
-
-\*Including BCC in other parts 
-of the face, such as Cheek, 
-Chin, Forehead, Jaw, Pre- 
-Auricular and Zygoma. 
-SCC_Face 11 C44.329 
-
-\*Including SCC in other parts 
-of the face, such as Cheek, 
-Chin, Forehead, Jaw, Pre- 
-Auricular and Zygoma. 
-SCC_IS_Face 12 D04.39 
-
-\*Including SCC-IS in other 
-parts of the face, such as 
-Cheek, Chin, Forehead, Jaw, 
-Pre-Auricular and Zygoma. 
-BCC_Lip 13 C44.01 
-SCC_Lip 14 C44.02 
-SCC_IS_Lip 15 D04.0 
-BCC_Neck 16 C44.41 
-SCC_Neck 17 C44.42 
-SCC_IS_Neck 18 D04.4 
-BCC_Nose 19 C44.311 
-
-\*Including BCC in specific 
-parts of the nose, such as the 
-Ala, the bridge, the tip and 
-root. 
-SCC_Nose 20 C44.321 
-
-\*Including SCC in specific 
-parts of the nose, such as the 
-Ala, the bridge, the tip and 
-root. 
-SCC_IS_Nose 21 D04.39 
-
-\*Including SCC-IS in specific 
-parts of the nose, such as the 
-Ala, the bridge, the tip and 
-root. 
-BCC_Scalp 22 C44.41 
-
-\*Same for BCC_PostAuricular. 
-SCC_Scalp 23 C44.42 
-
-\*Same for SCC_PostAuricular. 
-SCC_IS_Scalp 24 D04.4 
-
-\*Same for 
-SCC_IS_PostAuricular. 
-BCC_PostAuricular 25 C44.41 
-
-\*Same for BCC_Scalp. 
-SCC_PostAuricular 26 C44.42 
-
-\*Same for SCC_Scalp. 
-SCC_IS_PostAuricular 27 D04.4 
-
-\*Same for SCC_IS_Scalp. 
-BCC_Trunk 28 C44.519 
-
-\*Same for BCC_Chest, 
-BCC_Abdomen and 
-BCC_Back. 
-SCC_Trunk 29 C44.529 
-
-\*Same for SCC_Chest, 
-SCC_Abdomen and 
-SCC_Back. 
-SCC_IS_Trunk 30 D04.5 
-
-\*Same for SCC_IS_Chest, 
-SCC_IS_Abdomen and 
-SCC_IS_Back. 
-BCC_Chest 31 C44.519 
-
-\*Same for BCC_Trunk, 
-BCC_Abdomen and 
-BCC_Back. 
-SCC_Chest 32 C44.529 
-\*Same for SCC_Trunk, 
-SCC_Abdomen and 
-SCC_Back 
-SCC_IS_Chest 33 D04.5 
-
-\*Same for SCC_IS_Trunk, 
-SCC_IS_Abdomen and 
-SCC_IS_Back. 
-BCC_Abdomen 34 C44.519 
-
-\*Same for BCC_Trunk, 
-BCC_Chest and BCC_Back. 
-SCC_Abdomen 35 C44.529 
-
-\*Same for BCC_Trunk, 
-BCC_Chest and BCC_Back. 
-SCC_IS_Abdomen 36 D04.5 
-
-\*Same for BCC_Trunk, 
-BCC_Chest and BCC_Back. 
-BCC_Back 37 C44.519 
-
-\*Same for BCC_Trunk, 
-BCC_Abdomen and 
-BCC_Chest. 
-SCC_Back 38 C44.529 
-
-\*Same for SCC_Trunk, 
-SCC_Abdomen and 
-SCC_Chest. 
-SCC_IS_Back 39 D04.5 
-
-\*Same for SCC_IS_Trunk, 
-SCC_IS_Abdomen and 
-SCC_IS_Chest. 
-BCC_LeftLowerLimb 40 C44.719 
-
-\*Including BCC in the left hip. 
-SCC_LeftLowerLimb 41 C44.729 
-
-\*Including SCC in the left hip. 
-SCC_IS_LeftLowerLimb 42 D04.72 
-
-\*Including SCC-IS in the left 
-hip. 
-BCC_RightLowerLimb 43 C44.712 
-
-\*Including BCC in the right hip. 
-SCC_RightLowerLimb 44 C44.722 
-
-\*Including SCC in the right hip. 
-SCC_IS_RightLowerLimb 45 D04.71 
-
-\*Including SCC-IS in the right 
-hip. 
-BCC_LeftUpperLimb 46 C44.619 
-
-\*Including BCC in the left 
-shoulder. 
-SCC_LeftUpperLimb 47 C44.629 
-
-\*Including SCC in the left 
-shoulder. 
-SCC_IS_LeftUpperLimb 48 D04.62 
-
-\*Including SCC-IS in the left 
-shoulder. 
-BCC_RightUpperLimb 49 C44.612 
-
-\*Including BCC in the right 
-shoulder. 
-SCC_RightUpperLimb 50 C44.622 
-
-\*Including SCC in the right 
-shoulder. 
-SCC_IS_RightUpperLimb 51 D04.61 
-
-\*Including SCC-IS in the right 
-shoulder. 
-BCC_RightUpperEyelid 52 C44.1121 
-SCC_RightUpperEyelid 53 C44.1221 
-SCC_IS_RightUpperEyelid 54 D04.111 
-BCC_RightLowerEyelid 55 C44.1122 
-
-\*Including BCC in the right 
-Canthus. 
-SCC_RightLowerEyelid 56 C44.1222 
-
-\*Including SCC in the right 
-Canthus. 
-SCC_IS_RightLowerEyelid 57 D04.112 
-
-\*Including SCC-IS in the right 
-Canthus. 
-BCC_LeftUpperEyelid 58 C44.1191 
-SCC_LeftUpperEyelid 59 C44.1291 
-SCC_IS_LeftUpperEyelid 60 D04.121 
-BCC_LeftLowerEyelid 61 C44.1192 
-
-\*Including BCC in the left 
-Canthus. 
-SCC_LeftLowerEyelid 62 C44.1292 
-
-\*Including SCC in the left 
-Canthus. 
-SCC_IS_LeftLowerEyelid 63 D04.122 
-
-\*Including SCC-IS in the left 
-Canthus. 
-Basosquamous_Breast 64 C44.591 
-Basosquamous_LeftEar 65 C44.299 
-Basosquamous_RightEar 66 C44.292 
-Basosquamous_Face 67 C44.399 
-\*Including Basosquamous in 
-other parts of the face, such as 
-Cheek, Chin, Forehead, Jaw, 
-Pre-Auricular and Zygoma. 
-Basosquamous_Lip 68 C44.09 
-Basosquamous_Neck 69 C44.49 
-Basosquamous_Nose 70 C44.391 
-\*Including Basosquamous in 
-specific parts of the nose, such 
-as the Ala, the bridge, the tip 
-and root. 
-Basosquamous_Scalp 71 C44.49 
-Basosquamous_PostAuricul 
-ar 
-72 C44.49 
-Basosquamous_Trunk 73 C44.599 
-Basosquamous_Chest 74 C44.599 
-Basosquamous_Abdomen 75 C44.599 
-Basosquamous_Back 76 C44.599 
-Basosquamous_LeftLowerLi 
-mb 
-77 C44.799 
-Basosquamous_RightLower 
-Limb 
-78 C44.792 
-Basosquamous_LeftUpperLi 
-mb 
-79 C44.699 
-Basosquamous_RightUpper 
-Limb 
-80 C44.692 
-Basosquamous_RightUpper 
-Eyelid 
-81 C44.1992 
-Basosquamous_RightLower 
-Eyelid 
-82 C44.1991 
-Basosquamous_LeftUpperE 
-yelid 
-83 C44.1922 
-Basosquamous_LeftLowerE 
-yelid 
-84 C44.1921 
-None 85 For Keloid 
-UnspecifiedFace  Unspecified parts of Face 
-UnspecifiedCodes  Unspecified Codes 
-UnspecifiedEyelid  Unspecified Eyelid 
-Series Table 
-This Table maintains the DICOM Image Series 
-
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-DiagnosisID Int64 Not Null Foreign Key to 
-Diagnosis table 
-VisitID Int64 Not Null Foreign Key to Visit 
-table 
-CreationDate Date Not Null  
-Name Varchar(255)   
-Description Varchar(255)   
-Type ImageType Enum   
-NumOfInstances int  Number of instances in 
-a series 
-Location Varchar(255)   
-LesionDepth Decimal  The Depth measured 
-when image acquired 
-
-ImageType Enum 
-
-Name number Description 
-UNSPECIFIED 0  
-XRAY 1  
-PHOTOACOUSTIC 2  
-PHOTOSONIC 3  
-
-Photos Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-DiagnosisID Int64 Not Null Foreign Key to 
-Diagnosis table 
-VisitID Int64 Not Null Foreign Key to Visit 
-table 
-CreationDate Date Not Null  
-Description Varchar(255)   
-TemplateType TemplateType Enum   
-PhotoType PhotoType Enum   
-Path Varchar(255) Not Null Path to the document 
-TemplateType Enum 
-Name number Description(UI) 
-UNSPECIFIED 0  
-SIMULATION 1 Simulation 
-TREATMENT 2 Treatment 
-FOLLOWUP 3 Follow Up 
-OTV 4 OTV 
-OTHER 5 Other 
-PhotoType Enum 
-
-Name number Description(UI) 
-UNSPECIFIED 0  
-LESION_WITH_MARGIN 1 Lesion with Margin 
-FIELD_WITH_SHIELD 2 Field with Shield 
-SIMULATION_SETUP 3 Simulation Setup 
-IDENTIFICATION 4 Identification Photo 
-TREATMENT  Treatment 
-FOLLOWUP  Follow Up 
-OTV  OTV 
-OTHER  Other Visit 
-Simulation Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-DiagnosisID Int64 Not Null Foreign Key to 
-Diagnosis table 
-VisitID Int64 Not Null Foreign Key to Visit 
-table 
-PerformedByID Int64 Not Null Foreign Key to User 
-table 
-CreationDate Date Not Null  
-LesionSizeL Decimal  [cm] 
-LesionSizeW Decimal  [cm] 
-LesionDepth Decimal Nullable [mm] 
-MarginSize Decimal  [cm] 
-ShieldSize Decimal  [cm] 
-ShieldSizeL Decimal  [cm] Field/Shield 
-Size 
-ShieldSizeW Decimal  [cm] Field/Shield Size 
-TargetType Enum  TargetType Enum 
-SetupNote Varchar(255)  Free style Note (i.e. 
-Chair head holder 
-lead back) 
-Status Enum Not Null pending, approved, 
-Active 
-Position Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-SimulationID Int64 Not Null Foreign Key to 
-Simulation table 
-CreationDate Date Not Null  
-PatientPosition Position Enum Not Null  
-Position Enum 
-
-Name number Description (UI Label) 
-UNSPECIFIED 0  
-PRONE 1 Prone 
-SUPINE 2 Supine 
-SITTING 3 Sitting 
-LYING_RT 4 Laying on RIGHT Side 
-LYING_LT 5 Laying on LEFT Side 
-HEAD_LEFT 6 Head turned LEFT 
-HEAD_RIGHT 7 Head turned RIGHT 
-
-TreatmentDevices Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-SimulationID Int64 Not Null Foreign Key to 
-Simulation table 
-CreationDate Date Not Null  
-DeviceName Devices Enum Not Null  
-
-
-Devices Enum 
-
-Name number Description ( UI Label) 
-UNSPECIFIED 0  
-CUSTOM_FABRICATION 1 Custom Shield 
-INTERNAL_EYE 2 Lead Internal Eye Shield 
-GAMMA_PUTTY 3 Gamma Putty 
-EXTERNAL_EYE 4 Lead External Eye Shields 
-EAR_CANAL 5 Lead Ear Canal 
-INTRA_NASAL 6 Lead Intranasal Bullet 
-MASTOID 7 Lead Mastoid Shield 
-DENTAL_PACEMAKER 8 Lead Dental Shield 
-LEAD_APRON 9 Lead Apron 
-THYROID 10 Thyroid Shield 
-LEAD_GLASSES 11 Lead Glasses 
-HEAD_HOLDER 12 Head Holder 
-PILLOW 13 Pillow 
-Pacemaker_Shield 14 Lead Pacemaker Shield 
-Prefabricated_Shield 15 Prefabricated Shield 
-Prescription Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-SimulationID Int64 Not Null Foreign Key to 
-Simulation table 
-CreationDate Date Not Null  
-TxsPerWeek Days Enum?  1-7 
-Energy Energy Enum  i.e. 70/100 [kV] 
-DwellTime Decimal   
-TDF TDF Enum  The prescribed TDF 
-i.e. 97, 100 
-MinTDF TDF Enum  The minimum TDF 
-DailyDose Decimal  i.e. 281.81[cGy] 
-NumberofFXs int  i.e. 21 
-TotalDose Decimal  NumberofFXs \* 
-DailyDose [cGy] 
-Status Status Enum Not Null Pending Approval, 
-Approved, Rejected 
-
-Energy Enum 
-
-Name number Description(UI) 
-UNSPECIFIED 0  
-ENERGY_50 1 50 [kV] 
-ENERGY_70 2 70 [kV] 
-ENERGY_100 3 100 [kV] 
-
-TDF Enum 
-
-Name number Description(UI) 
-UNSPECIFIED 0  
-TDF_94 1  
-TDF_95 2  
-TDF_96 3  
-TDF_97 4  
-TDF_98 5  
-TDF_99 6  
-TDF_100 7  
-TDF_101 8  
-TDF_102 9  
-
-Status Enum 
-
-Name number Description(UI) 
-UNSPECIFIED 0  
-APPROVED 1 Approved 
-PENDING_APPROVAL 2 Pending For Approval 
-REJECTED 3 Rejected 
-
-Plan Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-PrescriptionID Int64 Not Null Foreign Key to 
-Prescription table 
-ApproveByID Int64  Foreign Key to User 
-table 
-OriginSeriesID Int64 Not Null Nullable The ID of the series on 
-which this plan was 
-created 
-CreationDate Date Not Null  
-TargetType Enum  TargetType Enum 
-Name Varchar(255)  Optional 
-Status Status Enum Not Null Pending Approval, 
-Approved, Rejected 
-TreatmentLoadingSta 
-te 
-TREATMENTLOADIN 
-GSTATE enum 
-Not Null  
-TREATMENTLOADINGSTATE Enum 
-
-Name number Description Description ( UI Label) 
-TREATMENTLOADIN 
-GSTATE_UNSPECIFI 
-ED 
-0   
-TREATMENTLOADIN 
-GSTATE_UNLOADED 
-1 Default - Plan is not 
-loaded into external 
-
-TREATMENTLOADIN 
-GSTATE_PENDINGL 
-OAD 
-2 Plan is “sent” to the 
-external waiting for the 
-external to load the 
-plan into UI 
-
-TREATMENTLOADIN 
-GSTATE_LOADED 
-3 Plan is loaded into 
-external application 
-
-Target Type Enum 
-
-Name number Description Description ( UI Label) 
-TARGET_TYPE_UNS 
-PECIFIED 
-0 N/A  
-TARGET_TYPE_IMV 
-B_COLLIMATOR_1M 
-M_CELL 
-1 331 Cells  
-TARGET_TYPE_IMV 
-B_COLLIMATOR_2M 
-M_CELL 
-2 169 Cells  
-TARGET_TYPE_IMV 
-B_COLLIMATOR_3M 
-M_CELL 
-3 127 Cells  
-TARGET_TYPE_IMV 4 91 Cells  
-B_COLLIMATOR_4M 
-M_CELL 
-
-
-TARGET_TYPE_IMV 
-B_COLLIMATOR_5M 
-M_CELL 
-5 61 Cells  
-TARGET_TYPE_IMV 
-B_COLLIMATOR_5C 
-M_SSD_0POINT5CM\_ 
-FIELD_05MM_CELL 
-6 7 Cells 30MM_SSD_7_FIELD 
-S 
-TARGET_TYPE_IMV 
-B_COLLIMATOR_5C 
-M_SSD_1CM\_ 
-FIELD_1MM_CELL 
-7 13 Cells  
-TARGET_TYPE_IMV 
-B_COLLIMATOR_5C 
-M_SSD_1POINT5CM\_ 
-FIELD_1MM_CELL 
-8 37 Cells  
-TARGET_TYPE_IMV 
-B_COLLIMATOR_5C 
-M_SSD_2CM\_ 
-FIELD_1POINT5MM\_ 
-CELL 
-9 37 Cells  
-TARGET_TYPE_IMV 
-B_COLLIMATOR_5C 
-M_SSD_3CM\_ 
-FIELD_1POINT5MM\_ 
-CELL 
-10 97 Cells  
-TARGET_TYPE_IMV 
-B_COLLIMATOR_6M 
-MSPOT_LARGECEN 
-TRAL_CELL 
-11 13 Cells 50MM_SSD_13_FIEL 
-DS 
-TARGET_TYPE_QC\_ 
-COLLIMATOR 
-12 QC COLLIMATOR QC_COLLIMATOR 
-
-TreatmentField Table 
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-PlanID Int64 Not Null Foreign Key to Plan 
-table 
-CreationDate Date Not Null  
-FieldName Enum Field Not Null  
-Energy Energy Enum Not Null  
-DwellTime Decimal Not Null  
-CalculatedDose Decimal Not Null  
-Current Decimal Not Null  
-
-FieldName Enum 
-
-Name number Description(UI) 
-FIELD_NAME_UNSPECIFIED 0 N/A 
-FIELD_NAME_PLUS_4L2 1 FW: +4L2 UI: 1 
-FIELD_NAME_PLUS_4L1 2 FW: +4L1 UI: 2 
-FIELD_NAME_PLUS_4C 3 FW: +4C UI: 3 
-FIELD_NAME_PLUS_4R1 4 FW: +4R1 UI: 4 
-FIELD_NAME_PLUS_4R2 5 FW: +4R2 UI: 5 
-FIELD_NAME_PLUS_3L3 6 FW: +3L3 UI: 6 
-FIELD_NAME_PLUS_3L2 7 FW: +3L2 UI: 7 
-FIELD_NAME_PLUS_3L1 8 FW: +3L1 UI: 8 
-FIELD_NAME_PLUS_3R1 9 FW: +3R1 UI: 9 
-FIELD_NAME_PLUS_3R2 10 FW: +3R2 UI: 10 
-FIELD_NAME_PLUS_3R3 11 FW: +3R3 UI: 11 
-FIELD_NAME_PLUS_2L3 12 FW: +2L3 UI: 12 
-FIELD_NAME_PLUS_2L2 13 FW: +2L2 UI: 13 
-FIELD_NAME_PLUS_2L1 14 FW: +2L1 UI: 14 
-FIELD_NAME_PLUS_2C 15 FW: +2C UI: 15 
-FIELD_NAME_PLUS_2R1 16 FW: +2R1 UI: 16 
-FIELD_NAME_PLUS_2R2 17 FW: +2R2 UI: 17 
-FIELD_NAME_PLUS_2R3 18 FW: +2R3 UI: 18 
-FIELD_NAME_PLUS_1L4 19 FW: +1L4 UI: 19 
-FIELD_NAME_PLUS_1L3 20 FW: +1L3 UI: 20 
-FIELD_NAME_PLUS_1L2 21 FW: +1L2 UI: 21 
-FIELD_NAME_PLUS_1L1 22 FW: +1L1 UI: 22 
-FIELD_NAME_PLUS_1R1 23 FW: +1R1 UI: 23 
-FIELD_NAME_PLUS_1R2 24 FW: +1R2 UI: 24 
-FIELD_NAME_PLUS_1R3 25 FW: +1R3 UI: 25 
-FIELD_NAME_PLUS_1R4 26 FW: +1R4 UI: 26 
-FIELD_NAME_PLUS_0L4 27 FW: +0L4 UI: 27 
-FIELD_NAME_PLUS_0L3 28 FW: +0L3 UI: 28 
-FIELD_NAME_PLUS_0L2 29 FW: +0L2 UI: 29 
-FIELD_NAME_PLUS_0L1 30 FW: +0L1 UI: 30 
-FIELD_NAME_PLUS_C 31 FW: C UI: 31 
-FIELD_NAME_PLUS_0R1 32 FW: +0R1 UI: 32 
-FIELD_NAME_PLUS_0R2 33 FW: +0R2 UI: 33 
-FIELD_NAME_PLUS_0R3 34 FW: +0R3 UI: 34 
-FIELD_NAME_PLUS_0R4 35 FW: +0R4 UI: 35 
-FIELD_NAME_MINUS_1L4 36 FW: -1L4 UI: 36 
-FIELD_NAME_MINUS_1L3 37 FW: -1L3 UI: 37 
-FIELD_NAME_MINUS_1L2 38 FW: -1L2 UI: 38 
-FIELD_NAME_MINUS_1L1 39 FW: -1L1 UI: 39 
-FIELD_NAME_MINUS_1R1 40 FW: -1R1 UI: 40 
-FIELD_NAME_MINUS_1R2 41 FW: -1R2 UI: 41 
-FIELD_NAME_MINUS_1R3 42 FW: -1R3 UI: 42 
-FIELD_NAME_MINUS_1R4 43 FW: -1R4 UI: 43 
-FIELD_NAME_MINUS_2L3 44 FW: -2L3 UI: 44 
-FIELD_NAME_MINUS_2L2 45 FW: -2L2 UI: 45 
-FIELD_NAME_MINUS_2L1 46 FW: -2L1 UI: 46 
-FIELD_NAME_MINUS_2C 47 FW: -2C UI: 47 
-FIELD_NAME_MINUS_2R1 48 FW: -2R1 UI: 48 
-FIELD_NAME_MINUS_2R2 49 FW: -2R2 UI: 49 
-FIELD_NAME_MINUS_2R3 50 FW: -2R3 UI: 50 
-FIELD_NAME_MINUS_3L3 50 FW: -3L3 UI: 51 
-FIELD_NAME_MINUS_3L2 52 FW: -3L2 UI: 52 
-FIELD_NAME_MINUS_3L1 53 FW: -3L1 UI: 53 
-FIELD_NAME_MINUS_3R1 54 FW: -3R1 UI: 54 
-FIELD_NAME_MINUS_3R2 55 FW: -3R2 UI: 55 
-FIELD_NAME_MINUS_3R3 56 FW: -3R3 UI: 56 
-FIELD_NAME_MINUS_4L2 57 FW: -4L2 UI: 57 
-FIELD_NAME_MINUS_4L1 58 FW: -4L1 UI: 58 
-FIELD_NAME_MINUS_4C 59 FW: -4C UI: 59 
-FIELD_NAME_MINUS_4R1 60 FW: -4R1 UI: 60 
-FIELD_NAME_MINUS_4R2 61 FW: -4R2 UI: 61
+The application shall include a centralized and secure data repository for storing and managing all treatment planning data, including patient information, imaging data, treatment plans, and treatment history.
+
+Patient Table will be stored in a secure manner, and data will be encrypted.
+
+The data shall be managed in a relational database, which shall support hierarchical organization based on user flow.
+
+The data shall be stored in the form of JSON-serialized Protocol Buffers based on the communication protocol. 
+Each Protocol Buffers structure shall have a dedicated database table with the following fields:
+
+- ID
+- Parent ID
+- Data (serialized JSON)
+
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-55
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-13
+TITLE: High Level System Architecture
+STATEMENT: >>>
+Approvals Calibration - Heater current configuration.
+
+The application is comprised of two key components: Heracles Device Control console (Indoor application) and Treatment Control console (Outdoor application).
+
+The Heracles Device Control console is integrated within the Heracles device. This application addresses functionalities related to patients, demographic data management, clinical data management, treatment data management, user access, clinical workflows, and system setup and services.
+
+The Treatment Control application must be located in a console outside the treatment room. This is to provide the operator with a safe work environment. It should allow healthcare professionals e.g., radiation therapists (RTT), and physicians to activate the radiation emission for the patient's treatment and to provide tools for physicists to program the system's calibration values.
+<<<
+
+[DESIGN_ITEM]
+UID: SW-H10SG-99
+TITLE: Collimator fields name mapping to DB, UI and GCB
+STATEMENT: >>>
+61 Head collimator Patients - Plan View - Load For Treatment - Cancelation
+
++------------------------+-----------------+
+| Enum Name              | FW: GCB /UI     |
++========================+=================+
+| FIELD_NAME_UNSPECIFIED | N/A             |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_4L2    | FW: +4L2 UI: 1  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_4L1    | FW: +4L1 UI: 2  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_4C     | FW: +4C UI: 3   |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_4R1    | FW: +4R1 UI: 4  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_4R2    | FW: +4R2 UI: 5  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_3L3    | FW: +3L3 UI: 6  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_3L2    | FW: +3L2 UI: 7  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_3L1    | FW: +3L1 UI: 8  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_3R1    | FW: +3R1 UI: 9  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_3R2    | FW: +3R2 UI: 10 |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_3R3    | FW: +3R3 UI: 11 |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_2L3    | FW: +2L3 UI: 12 |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_2L2    | FW: +2L2 UI: 13 |
++------------------------+-----------------+
+
++----------------------+-----------------+
+| FIELD_NAME_PLUS_2L1  | FW: +2L1 UI: 14 |
++======================+=================+
+| FIELD_NAME_PLUS_2C   | FW: +2C UI: 15  |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_2R1  | FW: +2R1 UI: 16 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_2R2  | FW: +2R2 UI: 17 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_2R3  | FW: +2R3 UI: 18 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_1L4  | FW: +1L4 UI: 19 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_1L3  | FW: +1L3 UI: 20 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_1L2  | FW: +1L2 UI: 21 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_1L1  | FW: +1L1 UI: 22 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_1R1  | FW: +1R1 UI: 23 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_1R2  | FW: +1R2 UI: 24 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_1R3  | FW: +1R3 UI: 25 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_1R4  | FW: +1R4 UI: 26 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_0L4  | FW: +0L4 UI: 27 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_0L3  | FW: +0L3 UI: 28 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_0L2  | FW: +0L2 UI: 29 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_0L1  | FW: +0L1 UI: 30 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_C    | FW: C UI: 31    |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_0R1  | FW: +0R1 UI: 32 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_0R2  | FW: +0R2 UI: 33 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_0R3  | FW: +0R3 UI: 34 |
++----------------------+-----------------+
+| FIELD_NAME_PLUS_0R4  | FW: +0R4 UI: 35 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_1L4 | FW: -1L4 UI: 36 |
++----------------------+-----------------+
+
++----------------------+-----------------+
+| FIELD_NAME_MINUS_1L3 | FW: -1L3 UI: 37 |
++======================+=================+
+| FIELD_NAME_MINUS_1L2 | FW: -1L2 UI: 38 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_1L1 | FW: -1L1 UI: 39 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_1R1 | FW: -1R1 UI: 40 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_1R2 | FW: -1R2 UI: 41 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_1R3 | FW: -1R3 UI: 42 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_1R4 | FW: -1R4 UI: 43 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_2L3 | FW: -2L3 UI: 44 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_2L2 | FW: -2L2 UI: 45 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_2L1 | FW: -2L1 UI: 46 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_2C  | FW: -2C UI: 47  |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_2R1 | FW: -2R1 UI: 48 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_2R2 | FW: -2R2 UI: 49 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_2R3 | FW: -2R3 UI: 50 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_3L3 | FW: -3L3 UI: 51 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_3L2 | FW: -3L2 UI: 52 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_3L1 | FW: -3L1 UI: 53 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_3R1 | FW: -3R1 UI: 54 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_3R2 | FW: -3R2 UI: 55 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_3R3 | FW: -3R3 UI: 56 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_4L2 | FW: -4L2 UI: 57 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_4L1 | FW: -4L1 UI: 58 |
++----------------------+-----------------+
+| FIELD_NAME_MINUS_4C  | FW: -4C UI: 59  |
++----------------------+-----------------+
+
++----------------------+-----------------+
+| FIELD_NAME_MINUS_4R1 | FW: -4R1 UI: 60 |
++======================+=================+
+| FIELD_NAME_MINUS_4R2 | FW: -4R2 UI: 61 |
++----------------------+-----------------+
+
+13 Cells Central Large collimator
+
++------------------------+-----------------+
+| Enum Name              | FW: GCB /UI     |
++========================+=================+
+| FIELD_NAME_UNSPECIFIED | N/A             |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_2L1    | FW: +2L1 UI: 1  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_2C     | FW: +2C UI: 2   |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_2R1    | FW: +2R1 UI: 3  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_1L2    | FW: +1L2 UI: 4  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_1R2    | FW: +1R2 UI: 5  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_0L2    | FW: +0L2 UI: 6  |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_C      | FW: C UI: 7     |
++------------------------+-----------------+
+| FIELD_NAME_PLUS_0R2    | FW: +0R2 UI: 8  |
++------------------------+-----------------+
+| FIELD_NAME_MINUS_1L2   | FW: -1L2 UI: 9  |
++------------------------+-----------------+
+| FIELD_NAME_MINUS_1R2   | FW: -1R2 UI: 10 |
++------------------------+-----------------+
+| FIELD_NAME_MINUS_2L1   | FW: -2L1 UI: 11 |
++------------------------+-----------------+
+| FIELD_NAME_MINUS_2C    | FW: -2C UI: 12  |
++------------------------+-----------------+
+| FIELD_NAME_MINUS_2R1   | FW: -2R1 UI: 13 |
++------------------------+-----------------+
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-81
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-100
+TITLE: System Data management
+STATEMENT: >>>
+The application shall include a centralized and secure data repository for storing device system data, including calibration data, system settings, QC history, and warmup history.
+
+The data shall be managed in a relational database.
+
+<<<
+
+[DESIGN_ITEM]
+UID: SW-H10SG-333
+TITLE: Automatically Identify connected collimator type and configuration
+STATEMENT: >>>
+The Identification of the connected Collimator will be done according to the following sequence diagram:
+
+1. The C&C app queries the connected collimator (chip) for its ID (64-bit ID).
+
+1. The C&C queries DB Service (Moses) for the collimator data for this ID. The return value includes a foreign key for the collimator\_configuration.
+
+2. The C&C queries DB Service for the collimator's configuration, which returns the Type, Energy, and SSD of the connected collimator.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-332
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-378
+TITLE: Patient - Plan View - Auto-calculate the ICDCode - ICD Code table
+STATEMENT: >>>
+ICD Code will be generated based on the lesion location (Field Location) and the Pathology as set by the operator:
+
+The calculation will use the following table:
+
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+|                                                                              | ICDforBCC | ICDforSCC                                              | ICDforSCC-15                           | ICDforBasosquam             | ICD for Keloid      |
++==============================================================================+===========+========================================================+========================================+=============================+=====================+
+| Location                                                                     |           | Basal Cell Carcinoma (Bcc)Squamous Cell Carcinoma(ScC) | Squamous CellCarcinoma-in Situ(SCC-IS) | Basosquamous Cell Carcinoma | Keloid L91.0, L73.0 |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Breast                                                                       | C44.511   | C44.521                                                | D04.5                                  | C44.591                     |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Ear (Left)                                                                   | C44.219   | C44.229                                                | D04.22                                 | C44.299                     |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Ear (Right)                                                                  | C44.212   | C44.222                                                | D04.21                                 | C44.292                     |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Face&Other Parts of Face [Ex. Cheek,Chin, Forehead,Jaw,Pre-Auricular,Zygoma) | C44.319   | C44.329                                                | D04.39                                 | C44.399                     |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Lip                                                                          | C44.01    | C44.02                                                 | D04.0                                  | C44.09                      |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Neck                                                                         | C44.41    | C44.42                                                 | D04.4                                  | C44.49                      |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Nose (Ex. Ala, Bridge, Tip, Root)                                            | C44.311   | C44.321                                                | D04.39                                 | C44.391                     |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Scalp &Post Auricular                                                        | C44.41    | C44.42                                                 | D04.4                                  | C44.49                      |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Trunk/Chest/Abdomen/Back                                                     | C44.519   | C44.529                                                | D04.5                                  | C44.599                     |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Lower Limb (Left) (Including Hip)                                            | C44.719   | C44.729                                                | D04.72                                 | C44.799                     |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Lower Limb (Right) (Including Hip)                                           | C44.712   | C44.722                                                | D04.71                                 | C44.792                     |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Upper Limb (Left) (including Shoulder)                                       | C44.619   | C44.629                                                | D04.62                                 | C44.699                     |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Upper Limb (Right) (including Shoulder)                                      | C44.612   | C44.622                                                | D04.61                                 | C44.692                     |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Eyelids:                                                                     | C44.1121  | C44.1221                                               | D04.111                                | C44.1992                    |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Eyelid (Right Upper) Eyelid (Right Lower)including Canthus                   | C44.1122  | C44.1222                                               | D04.112                                | C44.1991                    |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Eyelid (Left Upper)                                                          | C44.1191  | C44.1291                                               | D04.121                                | C44.1922                    |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Eyelid (Left Lower) including Canthus                                        | C44.1192  | C44.1292                                               | D04.122                                | C44.1921                    |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Unspecified Parts of Face (Find More Specific Fit)                           | C44.310   | C44.320                                                | D04.30                                 |                             |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Unspecified Codes (Find More Specific Fit)                                   | C44.91    | C44.92                                                 | D04.9                                  |                             |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
+| Unspecified Eyelid (Find More Specific Fit)                                  | C44.111   | C44.121                                                | D04.10                                 |                             |                     |
++------------------------------------------------------------------------------+-----------+--------------------------------------------------------+----------------------------------------+-----------------------------+---------------------+
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1040,612 +425,22 @@ RELATIONS:
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10SG-13
-TITLE: High Level System Architecture
-STATEMENT: >>>
-The application is comprised of two key components: Heracles Device Control console (Indoor 
-application) and Treatment Control console (Outdoor application). 
-The Heracles Device Control console is integrated within the Heracles device. This application 
-addresses functionalities related to patients, demographic data management, clinical data 
-management, treatment data management, Image acquisition, user access, clinical workflows, and 
-system setup and services. 
-The Treatment Control application must be located in a console outside the treatment room. This is 
-to provide the operator with a safe work environment. It should allow healthcare professionals e.g., 
-radiation therapists (RTT), and physicians to activate the radiation emission for the patient's 
-treatment and to provide tools for physicists to program the system’s calibration values.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-112
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10SG-99
-TITLE: Collimator fields name mapping to DB, UI an GCB
-STATEMENT: >>>
-61 Head collimator 
-
-Enum Name FW: GCB /UI 
-FIELD_NAME_UNSPECIFIED N/A 
-FIELD_NAME_PLUS_4L2 FW: +4L2 UI: 1 
-FIELD_NAME_PLUS_4L1 FW: +4L1 UI: 2 
-FIELD_NAME_PLUS_4C FW: +4C UI: 3 
-FIELD_NAME_PLUS_4R1 FW: +4R1 UI: 4 
-FIELD_NAME_PLUS_4R2 FW: +4R2 UI: 5 
-FIELD_NAME_PLUS_3L3 FW: +3L3 UI: 6 
-FIELD_NAME_PLUS_3L2 FW: +3L2 UI: 7 
-FIELD_NAME_PLUS_3L1 FW: +3L1 UI: 8 
-FIELD_NAME_PLUS_3R1 FW: +3R1 UI: 9 
-FIELD_NAME_PLUS_3R2 FW: +3R2 UI: 10 
-FIELD_NAME_PLUS_3R3 FW: +3R3 UI: 11 
-FIELD_NAME_PLUS_2L3 FW: +2L3 UI: 12 
-FIELD_NAME_PLUS_2L2 FW: +2L2 UI: 13 
-FIELD_NAME_PLUS_2L1 FW: +2L1 UI: 14 
-FIELD_NAME_PLUS_2C FW: +2C UI: 15 
-FIELD_NAME_PLUS_2R1 FW: +2R1 UI: 16 
-FIELD_NAME_PLUS_2R2 FW: +2R2 UI: 17 
-FIELD_NAME_PLUS_2R3 FW: +2R3 UI: 18 
-FIELD_NAME_PLUS_1L4 FW: +1L4 UI: 19 
-FIELD_NAME_PLUS_1L3 FW: +1L3 UI: 20 
-FIELD_NAME_PLUS_1L2 FW: +1L2 UI: 21 
-FIELD_NAME_PLUS_1L1 FW: +1L1 UI: 22 
-FIELD_NAME_PLUS_1R1 FW: +1R1 UI: 23 
-FIELD_NAME_PLUS_1R2 FW: +1R2 UI: 24 
-FIELD_NAME_PLUS_1R3 FW: +1R3 UI: 25 
-FIELD_NAME_PLUS_1R4 FW: +1R4 UI: 26 
-FIELD_NAME_PLUS_0L4 FW: +0L4 UI: 27 
-FIELD_NAME_PLUS_0L3 FW: +0L3 UI: 28 
-FIELD_NAME_PLUS_0L2 FW: +0L2 UI: 29 
-FIELD_NAME_PLUS_0L1 FW: +0L1 UI: 30 
-FIELD_NAME_PLUS_C FW: C UI: 31 
-FIELD_NAME_PLUS_0R1 FW: +0R1 UI: 32 
-FIELD_NAME_PLUS_0R2 FW: +0R2 UI: 33 
-FIELD_NAME_PLUS_0R3 FW: +0R3 UI: 34 
-FIELD_NAME_PLUS_0R4 FW: +0R4 UI: 35 
-FIELD_NAME_MINUS_1L4 FW: -1L4 UI: 36 
-FIELD_NAME_MINUS_1L3 FW: -1L3 UI: 37 
-FIELD_NAME_MINUS_1L2 FW: -1L2 UI: 38 
-FIELD_NAME_MINUS_1L1 FW: -1L1 UI: 39 
-FIELD_NAME_MINUS_1R1 FW: -1R1 UI: 40 
-FIELD_NAME_MINUS_1R2 FW: -1R2 UI: 41 
-FIELD_NAME_MINUS_1R3 FW: -1R3 UI: 42 
-FIELD_NAME_MINUS_1R4 FW: -1R4 UI: 43 
-FIELD_NAME_MINUS_2L3 FW: -2L3 UI: 44 
-FIELD_NAME_MINUS_2L2 FW: -2L2 UI: 45 
-FIELD_NAME_MINUS_2L1 FW: -2L1 UI: 46 
-FIELD_NAME_MINUS_2C FW: -2C UI: 47 
-FIELD_NAME_MINUS_2R1 FW: -2R1 UI: 48 
-FIELD_NAME_MINUS_2R2 FW: -2R2 UI: 49 
-FIELD_NAME_MINUS_2R3 FW: -2R3 UI: 50 
-FIELD_NAME_MINUS_3L3 FW: -3L3 UI: 51 
-FIELD_NAME_MINUS_3L2 FW: -3L2 UI: 52 
-FIELD_NAME_MINUS_3L1 FW: -3L1 UI: 53 
-FIELD_NAME_MINUS_3R1 FW: -3R1 UI: 54 
-FIELD_NAME_MINUS_3R2 FW: -3R2 UI: 55 
-FIELD_NAME_MINUS_3R3 FW: -3R3 UI: 56 
-FIELD_NAME_MINUS_4L2 FW: -4L2 UI: 57 
-FIELD_NAME_MINUS_4L1 FW: -4L1 UI: 58 
-FIELD_NAME_MINUS_4C FW: -4C UI: 59 
-FIELD_NAME_MINUS_4R1 FW: -4R1 UI: 60 
-FIELD_NAME_MINUS_4R2 FW: -4R2 UI: 61 
-
-13 Cells Central Large collimator 
-
-Enum Name FW: GCB /UI 
-FIELD_NAME_UNSPECIFIED N/A 
-FIELD_NAME_PLUS_2L1 FW: +2L1 UI: 1 
-FIELD_NAME_PLUS_2C FW: +2C UI: 2 
-FIELD_NAME_PLUS_2R1 FW: +2R1 UI: 3 
-FIELD_NAME_PLUS_1L2 FW: +1L2 UI: 4 
-FIELD_NAME_PLUS_1R2 FW: +1R2 UI: 5 
-FIELD_NAME_PLUS_0L2 FW: +0L2 UI: 6 
-FIELD_NAME_PLUS_C FW: C UI: 7 
-FIELD_NAME_PLUS_0R2 FW: +0R2 UI: 8 
-FIELD_NAME_MINUS_1L2 FW: -1L2 UI: 9 
-FIELD_NAME_MINUS_1R2 FW: -1R2 UI: 10 
-FIELD_NAME_MINUS_2L1 FW: -2L1 UI: 11 
-FIELD_NAME_MINUS_2C FW: -2C UI: 12 
-FIELD_NAME_MINUS_2R1 FW: -2R1 UI: 13
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-186
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10SG-100
-TITLE: System Data management
-STATEMENT: >>>
-The application shall include a centralized and secure data repository for storing device system 
-data, including calibration data, system settings, QC history, and warmup history.  
-The data shall be managed in a relational database. 
-Entity Relationship Diagram 
-
-Data Entities: 
-CollimatorConfiguration Table 
-Name Type constraint Description 
-ID Int64   
-CreateDate DateTime Not Null  
-
-Type TargetType Enum Not Null Unique with Energy 
-and SSD 
-Energy Energy Enum Not Null Unique with Type 
-and SSD 
-SSD SSDType Enum Not Null Unique with Type 
-and Energy 
-ReferencedDoseRate Decimal  Dose rate in the a 
-specific cell in the 
-collimator that serves 
-as referenced to all 
-other cells 
-SSDType Enum 
-
-Name number Description 
-UNSPESIFICED 0  
-SSD_50_MM 1 SSD 50 mm 
-SSD_30_MM 2 SSD 30 mm 
-Head Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CreateDate Date Not Null  
-Serial String Not Null Unique 
-IsActive Tinyint( Boolean) Not Null Default: True 
-Collimator Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-HeadID Int64 Not Null Foreign Key to Head 
-table 
-CollimatorConfigurati 
-onID 
-Int64 Not Null Foreign Key to 
-CollimatorConfigurati 
-on table 
-CreateDate Date Not Null  
-Serial String Not Null Unique 
-IsActive Tinyint Not Null  
-
-
-
-PresetConfiguration Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CollimatorConfigurati 
-onID 
-Int64 Not Null Foreign Key to 
-Collimator table 
-CreateDate Date Not Null  
-PresetName Varchar(255) Not Null  
-IsDefault Tinyint Not Null  
-IsActive Tinyint Not Null  
-CoilConfiguration Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-PresetID Int64 Not Null Foreign Key to 
-PresetConfiguration 
-table 
-CreateDate Date Not Null  
-FieldName FieldName Enum Not Null  
-XDeflectionCurrent Decimal Not Null  
-YDeflectionCurrent Decimal Not Null  
-FocusCurrent Decimal Not Null  
-
-CorrectionMatrix Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-PresetID Int64 Not Null Foreign Key to 
-PresetConfiguration 
-table 
-CreateDate Date Not Null  
-MagnetometerType MagnetometertType 
-Enum 
-Not Null  
-CM11 Decimal Not Null  
-CM12 Decimal Not Null  
-CM13 Decimal Not Null  
-CM21 Decimal Not Null  
-CM22 Decimal Not Null  
-CM23 Decimal Not Null  
-
-MagnetometerType Enum 
-
-Name number Description 
-MAGNETOMETERTYPE 
-_BACK 
-1 Back 
-MAGNETOMETERTYPE 
-_FRONT 
-2 Front 
-ReferenceField Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-PresetID Int64 Not Null Foreign Key to 
-PresetConfiguration 
-table 
-CreateDate Date Not Null  
-MagnetometerType MagnetometertType 
-Enum 
-Not Null  
-RF11 Decimal Not Null  
-RF21 Decimal Not Null  
-RF31 Decimal Not Null  
-
-HeaterCurrentConfig Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CreateDate Date Not Null  
-PresetID Int64 Not Null Foreign Key to 
-PresetConfiguration 
-table 
-HeaterCurrent Decimal Not Null  
-
-OutputFactor Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-
-incremental 
-
-PresetID Int64 Not Null Foreign Key to 
-PresetConfiguration 
-table 
-CreateDate Date Not Null  
-Field Field Type Not Null Enum 
-Factor Decimal Not Null  
-
-Warmup Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-HeadID Int64 Not Null Foreign Key to Head 
-table 
-CreateDate Date Not Null  
-WarmupType WarmupType Enum Not Null  
-HeaterCurrent Decimal Not Null [mA] 
-
-WarmupType enum 
-
-Name number Description 
-UNSPECIFIED 0  
-WARMUPTYPE _FAST 1 Fast Warmup 
-WARMUPTYPE _FULL 2 Daily Warmup 
-10: RobotStorredPosition Table 
-
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CreateDate Date Not Null  
-PositionName Varchar(255) Not Null  
-J1 Decimal Not Null  
-J2 Decimal Not Null  
-J3 Decimal Not Null  
-J4 Decimal Not Null  
-J5 Decimal Not Null  
-J6 Decimal Not Null  
-
-RobotSequence Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CreationDate DateTime Not Null  
-SequencesName Varchar(255) Not Null  
-RobotSequenceStep table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-RobotSequenceID Int64 Not Null Foriegn Key to Robot 
-Sequence Table 
-CreationDate DateTime Not Null  
-StepIndex int Not Null  
-Action Varchar(255) Not Null  
-Value Varchar(255) Not Null  
-Log Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-Timestamp DateTime Not Null  
-Severity Severity Enum Not Null Severity Enum 
-Type LogType Enum Not Null LogType Enum 
-Message Varchar(255) Not Null The Log Message 
-13.1. Severity Enum 
-
-Name number Description 
-Unspecified 0 
-Info 1 Info 
-Warn 2 Warnining 
-Error 3 Error 
-
-LogType Enum 
-
-Name number Description 
-Unspecified 0  
-System 1  
-User 2  
-Error 3  
-Security 4  
-QCSample Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CollimatorConfigurati 
-onID 
-Int64 Not Null Foreign Key to 
-Collimator table 
-PerformedBy String Not Null Foreign Key to Users 
-table email 
-CreateDate Date Not Null  
-Energy Enum Not Null   
-EmissionCurrent Decimal Not Null [mA] 
-HeaterCurrent Decimal Not Null [mA] 
-Duration Decimal Not null  
-Referenced Boolean Not Null  
-QCSampleFields 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-QCSampleId Int64 Not Null Foreign Key to 
-QCSample table 
-CreateDate Date Not Null  
-Field FieldName Enum Not Null  
-Intensity Decimal Not null The intensity (no units) 
-Intensity 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-QCSampleFieldsId Int64 Not Null Foreign Key to 
-QCSampleFields 
-table 
-CreateDate Date Not Null  
-DiodeName String Not Null  
-Intensity Decimal Not null The intensity (no units) 
-SafetyChecks 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-PerformedBy String Not Null Foreign Key to Users 
-table email 
-CreateDate Date Not Null  
-Energy Energy Enum Not Null The Energy test was 
-performed 
-Duration Decimal Not Null The Duration of the 
-emission in which test 
-was performed 
-Dose Decimal Not Null The Dose0. test was 
-performed 
-X-RayLight Boolean Not null  
-X-RaySound Boolean Not Null  
-DoorInterlock Boolean Not null  
-E-Stop Boolean Not null Electronic stop button 
-that stops the emission 
-S-Stop Boolean Not null Software stop button 
-that stops the emission 
-LiveVideo Boolean Not null  
-LiveAudio Boolean Not null  
-Settings Table 
-
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-CreateDate Date Not Null  
-DeviceSerial String Not Null  
-RecordAndVerify_IP String  IP for Record and 
-Verify 
-RecordAndVerify_Port String  Port for Record and 
-Verify 
-Database_IP String  IP for Database 
-Database_Port String  Port 
-ImagingHeadCam_IP String   
-ImagingHeadCam_Por 
-t 
-String   
-TreatmentHeadCam_I 
-P 
-String   
-TreatmentHeadCam_P 
-ort 
-String   
-RobotCam_IP String   
-RobotCam_Port String   
-GCBTelemetry_IP String   
-GCBTelemetry_Port String   
-GCBCommands_IP String   
-GCBCommands_Port String   
-RoboticROS_IP String   
-RoboticROS_Port String   
-DCDataAcquisition_IP String  IP for Deep Color data 
-Acquisition 
-DCDataAcquisition_Po 
-rt 
-String  Port for Deep Color 
-data Acquisition 
-DCDataReconstruction 
-_IP 
-String  IP for Deep Color data 
-Reconstruction 
-DCDataReconstruction 
-_Port 
-String  Port for Deep Color 
-data Reconstruction 
-DCDataProgressWebs 
-ocket_IP 
-String  IP for Deep Color Data 
-Acquisition/Reconstruc 
-tion Progress 
-WebSocket 
-DCDataProgressWebs 
-ocket_Port 
-String  Port for Deep Color 
-Data 
-Acquisition/Reconstruc 
-tion Progress 
-WebSocket 
-DCDataDataReconstru 
-ctionZmq_IP 
-String  IP for Deep Color Data 
-Reconstruction zmq 
-DCDataDataReconstru 
-ctionZmq_Port 
-String  Port for Deep Color 
-Data Reconstruction 
-zmq 
-DCDatabase_IP String  IP for Deep Color 
-Database Acquisition 
-DCDatabase_Port String  Port for Deep Color 
-Database 
-Attachments 
-
-HeracesSystemDB1.drawio.png 382.63 kB
-<<<
-
-[DESIGN_ITEM]
-UID: SW-H10SG-333
-TITLE: Automatically Identify connected collimator type and configuration
-STATEMENT: >>>
-The Identification of the connected Collimator will be done according to the following sequence 
-diagram: 
-
-1. The C&C app queries the connected collimator (chip) for its ID (64-bit ID). 
-1. The C&C queries DB Service (Moses) for the collimator data for this ID. The return value 
-includes a foreign key for the collimator_configuration. 
-2. The C&C queries DB Service for the collimator’s configuration, which returns the Type, 
-Energy, and SSD of the connected collimator.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-17
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10SG-378
-TITLE: Patient - Plan View - Auto-calculate the ICDCode - ICD Code table
-STATEMENT: >>>
-ICD Code will be generated based on the lesion location (Field Location) and the Pathology as set 
-by the operator: 
-The calculation will use the following table:
-| Location | Basal Cell Carcinoma (BCC) | Squamous Cell Carcinoma (SCC) | Squamous Cell Carcinoma-in Situ (SCC-IS) | Basosquamous Cell Carcinoma | Keloid L91.0, L73.0 |
-| Breast | C44.511 | C44.521 | D04.5 | C44.591 | |
-| Ear (Left) | C44.219 | C44.229 | D04.22 | C44.299 | |
-| Ear (Right) | C44.212 | C44.222 | D04.21 | C44.292 | |
-| Face & Other Parts of Face (Ex. Cheek, Chin, Forehead, Jaw, Pre-Auricular, Zygoma) | C44.319 | C44.329 | D04.39 | C44.399 | |
-| Lip | C44.01 | C44.02 | D04.0 | C44.09 | |
-| Neck | C44.41 | C44.42 | D04.4 | C44.49 | |
-| Nose (Ex. Ala, Bridge, Tip, Root) | C44.311 | C44.321 | D04.39 | C44.391 | |
-| Scalp & Post Auricular | C44.41 | C44.42 | D04.4 | C44.49 | |
-| Trunk/Chest/Abdomen/Back | C44.519 | C44.529 | D04.5 | C44.599 | |
-| Lower Limb (Left) (Including Hip) | C44.719 | C44.729 | D04.72 | C44.799 | |
-| Lower Limb (Right) (Including Hip) | C44.712 | C44.722 | D04.71 | C44.792 | |
-| Upper Limb (Left) (Including Shoulder) | C44.619 | C44.629 | D04.62 | C44.699 | |
-| Upper Limb (Right) (Including Shoulder) | C44.612 | C44.622 | D04.61 | C44.692 | |
-| Eyelids: | | | | | |
-| Eyelid (Right Upper) | C44.1121 | C44.1221 | D04.111 | C44.1992 | |
-| Eyelid (Right Lower) including Canthus | C44.1122 | C44.1222 | D04.112 | C44.1991 | |
-| Eyelid (Left Upper) | C44.1191 | C44.1291 | D04.121 | C44.1922 | |
-| Eyelid (Left Lower) including Canthus | C44.1192 | C44.1292 | D04.122 | C44.1921 | |
-| Unspecified Parts of Face (Find More Specific Fit) | C44.310 | C44.320 | D04.30 | | |
-| Unspecified Codes (Find More Specific Fit) | C44.91 | C44.92 | D04.9 | | |
-| Unspecified Eyelid (Find More Specific Fit) | C44.111 | C44.121 | D04.10 | | |
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-118
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-119
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-120
-  ROLE: Refines
-
-[DESIGN_ITEM]
 UID: SW-H10SG-622
 TITLE: User Login Sequence
 STATEMENT: >>>
-User Login Sequence Diagram
-
-.. raw:: html
-
-    <pre class="mermaid">
-    sequenceDiagram
-        autonumber
-        actor User
-        
-        box Application
-            participant MainModule
-            participant LoginViewModel
-            participant UserModel
-            participant AuthorizedUser
-            participant GrpcSettings
-        end
-        
-        box Server
-            participant UsersService
-        end
-
-        Note over User, GrpcSettings: Application starts or User logs out
-        
-        User->>MainModule: login
-        activate MainModule
-        MainModule->>LoginViewModel: show dialog
-        activate LoginViewModel
-        deactivate MainModule
-        
-        LoginViewModel->>User: enter credentials
-        User-->>LoginViewModel: username & password
-        
-        LoginViewModel->>UserModel: authenticate
-        activate UserModel
-        UserModel->>UsersService: grpc:AuthenticateUserRequest
-        activate UsersService
-        
-        Note over UsersService: check credentials
-        UsersService-->>UserModel: grpc:AuthenticateUserResponse
-        deactivate UsersService
-
-        alt authentication fails
-            UserModel-->>LoginViewModel: authentication error
-            LoginViewModel-->>User: show error
-        else successful authentication
-            UserModel->>AuthorizedUser: set user
-            UserModel->>GrpcSettings: set auth token
-            UserModel-->>LoginViewModel: success
-            deactivate UserModel
-            
-            Note over LoginViewModel: close dialog
-            LoginViewModel-->>User: show main window
-            deactivate LoginViewModel
-        end
-    </pre>
+1. The user is presented with username and password.
+2. The credentials are validated by the UsersService.
+3. If authentication fails, the error is presented to the user.
+4. Otherwise, the application AuthorizedUser is configured with the issued auth token and user information and the login screen closes to the main application screen.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-192
+  VALUE: RQ-H10SG-74
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-623
-TITLE: Disable Treatment when the Patient’s Plan is Inconsistent
+TITLE: Disable Treatment when the Patient's Plan is Inconsistent
 STATEMENT: >>>
 Sequence Diagram:
 Sequence Diagram:
@@ -1683,113 +478,68 @@ Sequence Diagram:
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-249
+  VALUE: RQ-H10SG-14
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-15
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-624
-TITLE: Patient’s treatment fields Audit Trial
+TITLE: Patient's treatment fields Audit Trial
 STATEMENT: >>>
-
-.. raw:: html
-
-   <pre class="mermaid">
-   sequenceDiagram
-       autonumber
-       participant PlanViewModel
-       participant PlanModel
-       participant ActionAuditService
-       participant Storage
-
-       PlanViewModel->>PlanModel: save plan
-       activate PlanModel
-       
-       alt create new plan
-           PlanModel->>Storage: create plan
-           activate Storage
-           Note over Storage: save plan
-           Storage-->>PlanModel: saved plan
-           deactivate Storage
-           
-           PlanModel->>ActionAuditService: register action
-           activate ActionAuditService
-           ActionAuditService-->>Storage: write log
-           activate Storage
-           Note over Storage: save log record
-           deactivate Storage
-           deactivate ActionAuditService
-       end
-
-       loop enumerate field actions
-           alt create/update/delete a field
-               PlanModel-->>Storage: action request
-               activate Storage
-               Note over Storage: apply action
-               Storage-->>PlanModel: response
-               deactivate Storage
-               
-               PlanModel->>ActionAuditService: register action
-               activate ActionAuditService
-               ActionAuditService-->>Storage: write log
-               activate Storage
-               Note over Storage: save log record
-               deactivate Storage
-               deactivate ActionAuditService
-           end
-       end
-       deactivate PlanModel
-   </pre>
+Sequence Diagram for saving audit for Plan and Treatment Fields creation
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-16
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-625
-TITLE: Approve Patient’s Treatment Fields (Plan)
+TITLE: Approve Patient's Treatment Fields (Plan)
 STATEMENT: >>>
-Sequence diagram for ‘approve plan’ use case:
+Sequence diagram for 'approve plan' use case:
 
 .. raw:: html
 
    <pre class="mermaid">
    sequenceDiagram
-       autonumber
-       actor User
+    actor User
+    
+    box rgb(245, 245, 245) Application
+        participant PlanViewModel
+        participant PlanModel
+    end
+    
+    box rgb(245, 245, 245) Server
+        participant Storage
+    end
 
-       box Application
-           participant PlanViewModel
-           participant PlanModel
-       end
-
-       box Server
-           participant Storage
-       end
-
-       User->>PlanViewModel: change plan status
-       activate PlanViewModel
-       PlanViewModel->>User: show dialog
-       User->>PlanViewModel: credentials & desired status
-
-       PlanViewModel->>Storage: authenticate user
-       activate Storage
-       Note over Storage: handle request
-       Storage-->>PlanViewModel: response
-       deactivate Storage
-
-       alt successful authentication
-           PlanViewModel->>PlanModel: change plan status
-           activate PlanModel
-           PlanModel->>Storage: save changes
-           activate Storage
-           Note over Storage: save plan
-           Storage-->>PlanModel: saved plan
-           deactivate Storage
-           deactivate PlanModel
-       end
-       deactivate PlanViewModel
+    User->>PlanViewModel: change plan status
+    PlanViewModel->>User: show dialog
+    User->>PlanViewModel: credentials & desired status
+    
+    PlanViewModel->>Storage: authenticate user
+    activate Storage
+    Storage->>Storage: handle request
+    Storage-->>PlanViewModel: response
+    deactivate Storage
+    
+    alt successful authentication
+        PlanViewModel->>PlanModel: change plan status
+        
+        PlanModel->>Storage: save changes
+        activate Storage
+        Storage->>Storage: save plan
+        Storage-->>PlanModel: saved plan
+        deactivate Storage
+    end
    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-382
+  VALUE: RQ-H10SG-17
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1845,37 +595,21 @@ Fulfilled requirements:
 - RQ-H10SG-18-#9: Patients - Plan view - Refresh Patient's Treatment Fields from the database
 - RQ-H10SG-21-#11: Patients - Plan view - View Patient's Plan's Treatment Fields
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-16
-  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-628
-TITLE: Update Patient’s Treatment Fields for a Plan
+TITLE: Update Patient's Treatment Fields for a Plan
 STATEMENT: >>>
-The application shall provide functionality to update and modify patient's treatment fields for a given treatment plan. This includes the ability to modify relevant treatment parameters associated with the patient's plan and save these changes to the system.
-
-The operator shall be able to edit the treatment fields associated with a plan and have those modifications persisted in the database.
-
-.. raw:: html
-
-    <pre class="mermaid">
-    graph TD
-        A[Plan update] --> B{Plan is approved?}
-        B -- Yes --> C[Show readonly plan]
-        B -- No --> D[Enable emission duration input]
-        D --> E[User selects fields]
-        E --> F{Single field selected?}
-        F -- No --> G[Enable delete button]
-        F -- Yes --> H{Existing plan field?}
-        H -- Yes --> I[Enable update and delete buttons]
-        H -- No --> J[Enable add button]
-    </pre>
+Update patient's treatment fields:
+1. If the plan is not approved, a read-only plan is displayed.
+2. Otherwise, emission duration input is enabled.
+3. User selects fields.
+4. If a single field is selected, the delete button is enabled.
+5. Otherwise, the add button or update and delete buttons are enabled depending on if it is an existing plan field.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-114
+  VALUE: RQ-H10SG-192
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1930,17 +664,10 @@ Fulfilled requirements:
 Attachments:
 - H10SG-22.sequence.mermaid.drawio.png (121.61 kB)
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-45
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-67
-  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-630
-TITLE: Editing Patient’s Prescription
+TITLE: Editing Patient's Prescription
 STATEMENT: >>>
 The application shall allow operators to edit and modify a patient's prescription within the treatment planning interface. The prescription editing functionality enables updates to prescription parameters and details associated with a patient's treatment plan.
 
@@ -1970,7 +697,7 @@ Fulfilled requirements:
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-54
+  VALUE: RQ-H10SG-23
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -2032,7 +759,7 @@ Fulfilled requirements:
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-74
+  VALUE: RQ-H10SG-24
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -2083,112 +810,57 @@ Fulfilled requirements:
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-125
+  VALUE: RQ-H10SG-47
   ROLE: Refines
 - TYPE: Parent
-  VALUE: RQ-H10SG-68
+  VALUE: RQ-H10SG-48
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-49
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-50
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-51
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-52
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-83
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-86
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-671
 TITLE: Mapping Pathology Enum to UI Description
 STATEMENT: >>>
-The dropdown control of Field Pathology should show the following list based on the Pathology 
-Enum IDs: 
+The dropdown control of Field Pathology should show the following list based on the Pathology Enum IDs:
 
-Description (UI Label) Name number 
-Infundibulo-cytic Infundibulo_cytic 1 
-Ulcerated long-standing Ulcerated_long_standing 2 
-Adenosquamous Adenosquamous 3 
-Desmoplastic/Metaplastic Desmoplastic_Metaplastic 4 
-Recurrent Lesion post-surgery Recurrent_Lesion_post_surger 
-y 
-5 
-Large Lesion Large_Lesion 6 
-Deep Lesion Deep_Lesion 7 
-Rapid growth Rapid_growth 8 
-Extention into hair follicle Extention_into_hair_follicle 9
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-386
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10SG-672
-TITLE: Mapping Cell Type to applicable Subcells
-STATEMENT: >>>
-Mapping between Pathology cell-type to applicable sub-type 
-
-Cell Type: Subtypes: 
-BCC Aberrant 
-Adenoid 
-Atypical Basaloid Proliferation 
-
-Basosquamous (Metatypical) 
-Adnexal Differentiation 
-Squamous Differentiation 
-Clear Ring 
-Cystic Cell Carcinoma 
-Fibroepithelioma of Pinkus 
-Infiltrative 
-Keratotic 
-Micro Nodular 
-Mixed Pattern 
-Morphemic/Sclerosing/Fibrosing 
-Nodular (Classic Basal-Cell) 
-Nodulocystic 
-Pigmented 
-Pleomorphic 
-Polypoid 
-Pore-like 
-Rodent Ulcer (Jacobi Ulcer) 
-Superficial (Multicentric) 
-SCC Acantholytic 
-Adenoid/Pseudo glandular 
-Atypical Squamous Proliferation 
-Basaloid 
-Clear cell 
-Erythroplasia 
-Intraepidermal 
-Invasive 
-Keratoacanthoma 
-Large Cell Keratinizing 
-Large Cell Non-Keratinizing 
-Metaplasia 
-Mixed Pattern 
-Moderately Differentiated 
-Poorly differentiated 
-Papillary Carcinoma 
-Signet-ring cell 
-Small Cell Keratinizing 
-Superficial 
-Spindle Cell 
-Verrucous 
-Well-Differentiated 
-Superficially Invasive 
-Other 
-Basosquamous Cell Carcinoma No Subtypes 
-Keloid No Subtypes 
-Squamous Cell Carcinoma In-Situ No Subtypes
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-187
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10SG-673
-TITLE: Mapping Pathology type to UI
-STATEMENT: >>>
-The Pathology should be mapped according to the returned Enum ID: 
-
-DB Enum Name DB Enum Number UI Label 
-BCC 1 BCC 
-SCC 2 SCC 
-SCC-IS 3 SCC-IS 
-Keloid 4 Keloid 
-Basosquamous 5 Basosquamous
++-------------------------------+--------------------------------+--------+
+| Description (UI Label)        | Name                           | number |
++===============================+================================+========+
+| Infundibulo-cytic             | Infundibulo_cytic              | 1      |
++-------------------------------+--------------------------------+--------+
+| Ulcerated long-standing       | Ulcerated_long_standing        | 2      |
++-------------------------------+--------------------------------+--------+
+| Adenosquamous                 | Adenosquamous                  | 3      |
++-------------------------------+--------------------------------+--------+
+| Desmoplastic/Metaplastic      | Desmoplastic_Metaplastic       | 4      |
++-------------------------------+--------------------------------+--------+
+| Recurrent Lesion post-surgery | Recurrent_Lesion_post_surger y | 5      |
++-------------------------------+--------------------------------+--------+
+| Large Lesion                  | Large_Lesion                   | 6      |
++-------------------------------+--------------------------------+--------+
+| Deep Lesion                   | Deep_Lesion                    | 7      |
++-------------------------------+--------------------------------+--------+
+| Rapid growth                  | Rapid_growth                   | 8      |
++-------------------------------+--------------------------------+--------+
+| Extention into hair follicle  | Extention_into_hair_follicle   | 9      |
++-------------------------------+--------------------------------+--------+
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2196,43 +868,122 @@ RELATIONS:
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10SG-674
-TITLE: Mapping Site Location type to UI
+UID: SW-H10SG-672
+TITLE: Mapping Cell Type to applicable Sub cells
 STATEMENT: >>>
-The Site(Field) Location should be mapped according to the returned Enum ID: 
+Mapping between Pathology cell-type to applicable sub-type
 
-DB Enum Name DB Enum Number UI Label 
-Breast 1 Breast 
-LeftEar 2 Ear (Left) 
-RightEar 3 Ear (Right) 
-Forehead 4 Forehead 
-Temple 5 Temple 
-Zygoma 6 Zygoma 
-PreAuricular 7 Pre-Auricular 
-Cheek 8 Cheek 
-Chin 9 Chin 
-Jaw 10 Jaw 
-Lip 11 Lip 
-Neck 12 Neck 
-Nose 13 Nose 
-Scalp 14 Scalp 
-PostAuricular 15 Post Auricular 
-Trunk 16 Trunk 
-Chest 17 Chest 
-Abdomen 18 Abdomen 
-Back 19 Back 
-LeftLowerLimb 20 Lower Limb (Left) 
-RightLowerLimb 21 Lower Limb (Right) 
-LeftUpperLimb 22 Upper Limb (Left) 
-RightUpperLimb 23 Upper Limb (Right) 
-RightUpperEyelid 24 Eyelid (Right Upper) 
-RightLowerEyelid 25 Eyelid (Right Lower) 
-LeftUpperEyelid 26 Eyelid (Left Upper) 
-LeftLowerEyelid 27 Eyelid (Left Lower)
++------------+---------------------------------+
+| Cell Type: | Subtypes:                       |
++============+=================================+
+| BCC        | Aberrant                        |
++------------+---------------------------------+
+|            | Adenoid                         |
++------------+---------------------------------+
+|            | Atypical Basaloid Proliferation |
++------------+---------------------------------+
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-386
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-673
+TITLE: Mapping Pathology type to UI
+STATEMENT: >>>
+The Pathology should be mapped according to the returned Enum ID:
+
++--------------+----------------+----------+
+| DB Enum Name | DB Enum Number | UI Label |
++==============+================+==========+
+| 1            | BCC            | BCC      |
++--------------+----------------+----------+
+| 2            | SCC            | SCC      |
++--------------+----------------+----------+
+| 3            | SCC-IS         | SCC-IS   |
++--------------+----------------+----------+
+| 4            | Keloid         | Keloid   |
++--------------+----------------+----------+
+| Basosquamous | 5 Basosquamous |          |
++--------------+----------------+----------+
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-385
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-674
+TITLE: Mapping Site Location type to UI
+STATEMENT: >>>
+The Site(Field) Location should be mapped according to the returned Enum ID:
+
++--------------+----------------+------------+
+| DB Enum Name | DB Enum Number | UI Label   |
++==============+================+============+
+| Breast       | 1              | Breast     |
++--------------+----------------+------------+
+| LeftEar      | 2              | Ear (Left) |
++--------------+----------------+------------+
+
++------------------+-----+----------------------+
+| RightEar         | 3   | Ear (Right)          |
++==================+=====+======================+
+| Forehead         | 4   | Forehead             |
++------------------+-----+----------------------+
+| Temple           | 5   | Temple               |
++------------------+-----+----------------------+
+| Zygoma           | 6   | Zygoma               |
++------------------+-----+----------------------+
+| PreAuricular     | 7   | Pre-Auricular        |
++------------------+-----+----------------------+
+| Cheek            | 8   | Cheek                |
++------------------+-----+----------------------+
+| Chin             | 9   | Chin                 |
++------------------+-----+----------------------+
+| Jaw              | 10  | Jaw                  |
++------------------+-----+----------------------+
+| Lip              | 11  | Lip                  |
++------------------+-----+----------------------+
+| Neck             | 12  | Neck                 |
++------------------+-----+----------------------+
+| Nose             | 13  | Nose                 |
++------------------+-----+----------------------+
+| Scalp            | 14  | Scalp                |
++------------------+-----+----------------------+
+| PostAuricular    | 15  | Post Auricular       |
++------------------+-----+----------------------+
+| Trunk            | 16  | Trunk                |
++------------------+-----+----------------------+
+| Chest            | 17  | Chest                |
++------------------+-----+----------------------+
+| Abdomen          | 18  | Abdomen              |
++------------------+-----+----------------------+
+| Back             | 19  | Back                 |
++------------------+-----+----------------------+
+| LeftLowerLimb    | 20  | Lower Limb (Left)    |
++------------------+-----+----------------------+
+| RightLowerLimb   | 21  | Lower Limb (Right)   |
++------------------+-----+----------------------+
+| LeftUpperLimb    | 22  | Upper Limb (Left)    |
++------------------+-----+----------------------+
+| RightUpperLimb   | 23  | Upper Limb (Right)   |
++------------------+-----+----------------------+
+| RightUpperEyelid | 24  | Eyelid (Right Upper) |
++------------------+-----+----------------------+
+| RightLowerEyelid | 25  | Eyelid (Right Lower) |
++------------------+-----+----------------------+
+
++-----------------+-----+---------------------+
+| LeftUpperEyelid | 26  | Eyelid (Left Upper) |
++=================+=====+=====================+
+| LeftLowerEyelid | 27  | Eyelid (Left Lower) |
++-----------------+-----+---------------------+
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-384
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -2246,134 +997,142 @@ Fulfilled requirements:
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-162
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-193
+  VALUE: RQ-H10SG-382
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-676
 TITLE: Register New Collimator Flow
 STATEMENT: >>>
-1. First, Identify the connected collimator 
-2. Open the New Collimator form with the serial of the identified collimator 
+1. First, Identify the connected collimator
+
+2. Open the New Collimator form with the serial of the identified collimator
+
 3. Save data to the database.
 <<<
-
-[DESIGN_ITEM]
-UID: SW-H10SG-677
-TITLE: Move to QC Panel Sequence
-STATEMENT: >>>
-The application shall provide a mechanism for moving from the current interface to the Quality Control (QC) panel. The sequence for navigating to the QC panel shall be implemented according to the Quality Assurance module flow.
-
-Fulfilled requirements:
-- RQ-H10SG-379-#8: Quality Assurance - Move to QC Panel
-<<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-384
+  VALUE: RQ-H10SG-126
   ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H10SG-679
-TITLE: Save Lesion Depth Flow
-STATEMENT: >>>
-The application shall provide functionality to save the lesion depth value acquired during image acquisition into the simulation module. The lesion depth shall be captured and populated into the patient's simulation parameters for treatment planning purposes.
-
-Fulfilled requirements:
-- RQ-H10SG-376-#6: Patients - Image Acquisition - Populate Lesion Depth into Simulation
-<<<
-RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-124
+  VALUE: RQ-H10SG-127
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-383
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-680
 TITLE: New Collimator Mandatory Fields
 STATEMENT: >>>
-The Mandatory field of a Collimator should be: 
-• Serial - Automatically identified from telemetry. 
-• Type, Energy, and SSD should be fetched/saved from the Configuration Table. 
-Collimator Table 
+The Mandatory field of a Collimator should be:
 
-Name Type constraint Description 
-ID Int64 Not Null Primary key. Auto 
-incremental 
-HeadID Int64 Not Null Foreign Key to Head 
-table 
-CollimatorConfigurati 
-onID 
-Int64 Not Null Foreign Key to 
-CollimatorConfigurati 
-on table 
-CreateDate Date Not Null  
-Serial String Not Null Unique 
-IsActive Tinyint Not Null  
-CollimatorConfiguration Table 
+- Serial - Automatically identified from telemetry.
 
-Name Type constraint Description 
-ID Int64   
-CreateDate DateTime Not Null  
-Type TargetType Enum Not Null Unique with Energy 
-and SSD 
-Energy Energy Enum Not Null Unique with Type 
-and SSD 
-SSD SSDType Enum Not Null Unique with Type 
-and Energy 
-ReferencedDoseRate Decimal  Dose rate in the a 
-specific cell in the 
-collimator that serves 
+- Type, Energy, and SSD should be fetched/saved from the Configuration Table.
 
-as referenced to all 
+Collimator Table
 
-other cells 
-The Entity Relationship Diagram
++----------------------------+---------+------------+-----------------------------------------------+
+| Name                       | Type    | constraint | Description                                   |
++============================+=========+============+===============================================+
+| ID                         | Int64   | Not Null   | Primary key. Auto incremental                 |
++----------------------------+---------+------------+-----------------------------------------------+
+| HeadID                     | Int64   | Not Null   | Foreign Key to Head table                     |
++----------------------------+---------+------------+-----------------------------------------------+
+| CollimatorConfigurati onID | Int64   | Not Null   | Foreign Key to CollimatorConfigurati on table |
++----------------------------+---------+------------+-----------------------------------------------+
+| CreateDate                 | Date    | Not Null   |                                               |
++----------------------------+---------+------------+-----------------------------------------------+
+| Serial                     | String  | Not Null   | Unique                                        |
++----------------------------+---------+------------+-----------------------------------------------+
+| IsActive                   | Tinyint | Not Null   |                                               |
++----------------------------+---------+------------+-----------------------------------------------+
+
+CollimatorConfiguration Table
+
++--------------------+----------------+------------+----------------------------------------------------------------+
+| Name               | Type           | constraint | Description                                                    |
++====================+================+============+================================================================+
+| ID                 | Int64          |            |                                                                |
++--------------------+----------------+------------+----------------------------------------------------------------+
+| CreateDate         | DateTime       | Not Null   |                                                                |
++--------------------+----------------+------------+----------------------------------------------------------------+
+| Type               | TargetTypeEnum | Not Null   | Unique with Energy and SSD                                     |
++--------------------+----------------+------------+----------------------------------------------------------------+
+| Energy             | Energy Enum    | Not Null   | Unique with Type and SSD                                       |
++--------------------+----------------+------------+----------------------------------------------------------------+
+| SSD                | SSDType Enum   | Not Null   | Unique with Type and Energy                                    |
++--------------------+----------------+------------+----------------------------------------------------------------+
+| ReferencedDoseRate | Decimal        |            | Dose rate in the a specific cell in the collimator that serves |
++--------------------+----------------+------------+----------------------------------------------------------------+
+
+
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-321
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-681
 TITLE: Device ID Validation Flow
 STATEMENT: >>>
-The Device ID is mandatory for the application to be able to run. The application should validate 
-the existence of the DeviceID on startup.
+The Device ID is mandatory for the application to be able to run. The application should validate the existence of the DeviceID on startup.
+
+If no Device ID is present in settings, the user asked to enter such ID in a pop-up modal. The ID is saved to settings and presisted to the database.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-249
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-682
 TITLE: Emission Current Calculation
 STATEMENT: >>>
-The Current should be auto-calculated as the quotient of Power[W] divided by Energy Level[kV]: 
-Emission Current[mA] = Power[W] / Voltage[kV] 
-The device shall operate at a constant power of 50W. 
-Here are the calculated values as a dependency on Energy Level: 
+The Current should be auto-calculated as the quotient of Power[W] divided by Energy Level[kV]:
 
-Power[W] Voltage[kV] Emission Current[mA] 
-50 50 1 
-50 70 0.71 
-50 100 0.5
+Emission Current[mA] = Power[W] / Voltage[kV]
+
+The device shall operate at a constant power of 50W.
+
+Here are the calculated values as a dependency on Energy Level:
+
++----------+-------------+----------------------+
+| Power[W] | Voltage[kV] | Emission Current[mA] |
++==========+=============+======================+
+| 50       | 50          | 1                    |
++----------+-------------+----------------------+
+| 50       | 70          | 0.71                 |
++----------+-------------+----------------------+
+| 50       | 100         | 0.5                  |
++----------+-------------+----------------------+
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-23
+  VALUE: RQ-H10SG-232
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-683
 TITLE: Calculate Emission Duration
 STATEMENT: >>>
-The Field Actual Dose should be auto-calculate from the duration using the following function: 
-[Field Output factor] * [Dose Rate cGy/min] * Duration / 60 
-i.e. 1.05 * 320 * 18 / 60 = 100.8 cGy 
-Field Output factor - This value should be retrieved from the OutputFactor service. 
-Dose Rate - This value should be retrieved from the CollimatorConfiguration Service. 
-Duration - This value is calculated from the [PrescribedDose] / ([FieldOutputFactor] * [DoseRate]) * 
-60
+The Field Actual Dose should be auto-calculate from the duration using the following function:
+
+[Field Output factor] * [Dose Rate cGy/min] * Duration / 60
+
+i.e. 1.05 * 320 * 18 / 60 = 100.8 cGy
+
+Field Output factor - This value should be retrieved from the OutputFactor service.
+
+Dose Rate - This value should be retrieved from the CollimatorConfiguration Service.
+
+Duration - This value is calculated from the [PrescribedDose] / ([FieldOutputFactor] * [DoseRate]) * 60
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-332
+  VALUE: RQ-H10SG-231
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -2381,30 +1140,79 @@ UID: SW-H10SG-684
 TITLE: Alert for an Invalid Plan when there are changes that affect its validity.
 STATEMENT: >>>
 The alert for an Invalid Plan will be triggered according to the following sequence diagram:
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+    actor A as Actor
+    participant PrescriptionView
+    participant PrescriptionViewModel
+
+    A->>PrescriptionView: SavePrescription
+    activate PrescriptionView
+    
+    PrescriptionView->>PrescriptionViewModel: SavePrescriptionAsync
+    activate PrescriptionViewModel
+    
+    PrescriptionViewModel->>PrescriptionViewModel: CheckIfChangeAffectPlan
+    activate PrescriptionViewModel
+    deactivate PrescriptionViewModel
+    
+    PrescriptionViewModel->>PrescriptionViewModel: ShowMessageForUser (Plan will be delted)
+    activate PrescriptionViewModel
+    deactivate PrescriptionViewModel
+    
+    deactivate PrescriptionViewModel
+    deactivate PrescriptionView
+   </pre>
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-162
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-193
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-685
 TITLE: Display Quality Checks Reports
 STATEMENT: >>>
-The ERD for the QualityCheck history is 
+The quality check history shall include the following fields:
+ - Timestamp
+ - Performed by
+ - Emission Current
+ - Heater Current
+ - Duration
+ - Collimator configuration
 
-The report will be retrieved from the DB according to the following sequence diagram:
+The report will be retrieved from the database using the QcSampleService.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-14
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-15
+  VALUE: RQ-H10SG-190
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-686
 TITLE: Lock application during active emission
 STATEMENT: >>>
-The application will be locked when a user loads a plan in the external application. The following 
-flow describes the flow:
+The application will be locked when a user loads a plan in the external application.
+The application will use the Plan DB Event to determine when such a plan is loaded.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-187
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-687
+TITLE: Load For Treatment Flow
+STATEMENT: >>>
+The application will be locked when a user loads a plan in the external application. 
+The application shall create a Plan DB Event.
+When the application receives a Plan DB Event, the internal screen shall be locked.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2415,41 +1223,35 @@ RELATIONS:
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H10SG-687
-TITLE: Load For Treatment Flow
-STATEMENT: >>>
-The application will be locked when a user loads a plan in the external application. The following 
-flow describes the flow:
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10SG-115
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-121
-  ROLE: Refines
-
-[DESIGN_ITEM]
 UID: SW-H10SG-688
 TITLE: Update Collimator Data Flow Diagram
 STATEMENT: >>>
-The application will send an update command to the Collimator Service. The following flow 
-describes the flow:
+The application will send an update command to the Collimator Service. The following flow describes the flow:
+
+1. User edits collimator.
+2. Collimator form is opened.
+3. Upon save, collimator configuration is persisted to the database using CollimatorCommands.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-110
+  VALUE: RQ-H10SG-128
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-689
 TITLE: Create User Sequence
 STATEMENT: >>>
-The following flow describes the flow for creating a user:
+1. The user requests to add a new user.
+2. The user add form is cleared and enabled.
+3. The form is validated. If validation fails, saving is disabled and the error is presented to the user.
+4. The new user record is presisted to the database.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-89
+  VALUE: RQ-H10SG-68
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-125
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -2460,19 +1262,339 @@ The following flow describes the flow for saving Endpoint Configuration:
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-94
+  VALUE: RQ-H10SG-124
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-691
 TITLE: Import Configuration From CSV file
 STATEMENT: >>>
-The application will import machine configuration from CSV file. The Data imported will be 
-validated. The following flow describes the flow:
+The application will import machine configuration from CSV file. The Data imported will be validated. 
+Each collimator specified in the CSV file will have its configuration loaded from the database via the CollimatorConfigurationService.
+The collimator configuration will then be updated from the CSV file parameters and then persisted to the database.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10SG-103
+  VALUE: RQ-H10SG-115
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-121
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-692
+TITLE: Configuring Output Factors
+STATEMENT: >>>
+Output Factors hould support multiple collimators.
+
+<<<
+
+[DESIGN_ITEM]
+UID: SW-H10SG-693
+TITLE: Update Output Factor Sequence
+STATEMENT: >>>
+The output factor of the reference field is the collimator's dose rate.
+The output factor shall be persisted to the database via OutputFactorCommands.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-114
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-694
+TITLE: Output Factor Configuration Flow
+STATEMENT: >>>
+1. The user selects a collimator configuration.
+2. The application requests configuration data via the OutputFactorService.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-118
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-119
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-120
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-695
+TITLE: Heater Current Configuration Sequence
+STATEMENT: >>>
+The application shall store the heater current in the database. When the user changes the heater current, it shall be validated before saving. Validation errors shall be presented to the user.
+
+When retrieving the current configuration, if no such configuration exists, a configuration record shall be created.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-112
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-696
+TITLE: Configure Correction Matrix for Magnetometer
+STATEMENT: >>>
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+    box rgb(245, 245, 245) Application
+        participant ConfigurationViewModel
+        participant MagnetometerViewMode
+        participant MagnetometerCorrections
+        participant IReferenceFieldCommands
+        participant ICorrectionMatrixCommands
+    end
+    
+    box rgb(245, 245, 245) Server
+        participant ReferenceFieldService
+        participant CorrectionMatrixService
+    end
+
+    Note over ConfigurationViewModel: User selects a collimator configuration
+    
+    activate ConfigurationViewModel
+    ConfigurationViewModel->>MagnetometerCorrections: fetch configuration data
+    activate MagnetometerCorrections
+    
+    MagnetometerCorrections->>IReferenceFieldCommands: read reference fields by preset id
+    activate IReferenceFieldCommands
+    
+    IReferenceFieldCommands->>ReferenceFieldService: grpc:ListReferneceFieldsRequest
+    activate ReferenceFieldService
+    
+    ReferenceFieldService->>ReferenceFieldService: handle request
+    ReferenceFieldService-->>IReferenceFieldCommands: grpc:ListReferneceFieldsResponse
+    deactivate ReferenceFieldService
+    
+    IReferenceFieldCommands-->>MagnetometerCorrections: list of reference field records
+    deactivate IReferenceFieldCommands
+    
+    MagnetometerCorrections->>ICorrectionMatrixCommands: read correction matrices by preset id
+    activate ICorrectionMatrixCommands
+    
+    ICorrectionMatrixCommands->>CorrectionMatrixService: grpc:ListCorrectionMatricesRequest
+    activate CorrectionMatrixService
+    
+    CorrectionMatrixService->>CorrectionMatrixService: handle request
+    CorrectionMatrixService-->>ICorrectionMatrixCommands: grpc:ListCorrectionMatricesResponse
+    deactivate CorrectionMatrixService
+    
+    ICorrectionMatrixCommands-->>MagnetometerCorrections: list of correction matrix records
+    deactivate ICorrectionMatrixCommands
+    
+    MagnetometerCorrections->>MagnetometerCorrections: update configuration
+    
+    MagnetometerCorrections-->>MagnetometerViewMode: configuration changed
+    deactivate MagnetometerCorrections
+    deactivate ConfigurationViewModel
+   </pre>
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-111
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-698
+TITLE: Retrieve Treatment History Sequence
+STATEMENT: >>>
+TBD
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-94
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-699
+TITLE: Retrieve Actual Treatment Fields
+STATEMENT: >>>
+TBD
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-95
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-700
+TITLE: Create Patient's Treatment Simulation
+STATEMENT: >>>
+1. The user requests to add a simulation.
+2. The simulation form is cleared and enabled.
+3. The form is validated. If there is a validation error, the form is disabled and the user is presented the error.
+4. The simulation and site simulation records are persisted to the database.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-89
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-701
+TITLE: Retrieve Patient's Treatment Simulation
+STATEMENT: >>>
+TBD
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-88
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-702
+TITLE: Create Patient's Prescription Sequence
+STATEMENT: >>>
+1. When the user adds a prescription, the prescription form is cleared and enabled.
+2. Entered prescription data is validated. If validation fails, saving is disabled and the user is presented the error.
+3. The prescription and the simulation's prescription records are saved in the database.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-80
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-703
+TITLE: Actual Treatment Delivered
+STATEMENT: >>>
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+    box rgb(245, 245, 245) Application
+        participant TreatmentViewModel
+        participant TreatmentHistoryModel
+        participant IEmrTreatmentCommands
+        participant IEmrActualTreatmentFieldCommands
+    end
+    
+    box rgb(245, 245, 245) Server
+        participant TreatmentService
+        participant TreatmentFieldService
+    end
+
+    Note over TreatmentViewModel,IEmrActualTreatmentFieldCommands: current plan changed or current treatment process finished
+    
+    TreatmentViewModel-->>TreatmentHistoryModel: fetch/update treatment data
+    activate TreatmentHistoryModel
+    
+    TreatmentHistoryModel->>IEmrTreatmentCommands: fetch plan treatments
+    activate IEmrTreatmentCommands
+    
+    IEmrTreatmentCommands->>TreatmentService: grpc: ListTreatmentsRequest
+    activate TreatmentService
+    
+    TreatmentService->>TreatmentService: handle request
+    TreatmentService-->>IEmrTreatmentCommands: grpc: ListTreatmentsResponse
+    deactivate TreatmentService
+    
+    IEmrTreatmentCommands-->>TreatmentHistoryModel: list of treatments
+    deactivate IEmrTreatmentCommands
+    
+    loop [for each treatment record]
+        TreatmentHistoryModel->>IEmrActualTreatmentFieldCommands: fetch treatment fields
+        activate IEmrActualTreatmentFieldCommands
+        
+        IEmrActualTreatmentFieldCommands->>TreatmentFieldService: grpc:ListActualTreatmentFieldsRequest
+        activate TreatmentFieldService
+        
+        TreatmentFieldService->>TreatmentFieldService: handle request
+        TreatmentFieldService-->>IEmrActualTreatmentFieldCommands: grpc:ListActualTreatmentFieldsResponse
+        deactivate TreatmentFieldService
+        
+        IEmrActualTreatmentFieldCommands-->>TreatmentHistoryModel: list of actual fields
+        deactivate IEmrActualTreatmentFieldCommands
+        
+        TreatmentHistoryModel->>TreatmentHistoryModel: sort fields and set to treatment
+        TreatmentHistoryModel->>TreatmentHistoryModel: build treatment summary
+        
+        TreatmentHistoryModel-->>TreatmentViewModel: 
+    end
+    deactivate TreatmentHistoryModel
+   </pre>
+<<<
+
+[DESIGN_ITEM]
+UID: SW-H10SG-705
+TITLE: Save log records sequence
+STATEMENT: >>>
+TBD
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-45
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-67
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-708
+TITLE: Display System Telemetry
+STATEMENT: >>>
+The application should subscribe to a UDP event from the firmware to get the system telemetry.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-54
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-709
+TITLE: Cancel Load For Treatment Flow
+STATEMENT: >>>
+The application is unlocked when a user cancels.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-186
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-710
+TITLE: Show message for DB communication error
+STATEMENT: >>>
+The application will show a DB Communication error when the gRPC command throws a timeout exception. The exception will be populated through the MVVM model.
+<<<
+
+[DESIGN_ITEM]
+UID: SW-H10SG-711
+TITLE: Retrieve Patients List
+STATEMENT: >>>
+The flow for retrieving the patient list should be implemented as described in the following sequence diagram:
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-40
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-50
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-712
+TITLE: Retrieve Patient's Fields (Sites)
+STATEMENT: >>>
+The flow for retrieving Patient's Fields ( Sites) should be implemented as described in the following sequence diagram:
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-388
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-713
+TITLE: Retrieve System Signals
+STATEMENT: >>>
+The flow for retrieving System Signals should be implemented as described in the following sequence diagram:
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-65
   ROLE: Refines
 
 [[/SECTION]]

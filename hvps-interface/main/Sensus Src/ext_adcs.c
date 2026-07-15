@@ -23,6 +23,9 @@ uint32_t ma_buf_idx = 0;
 uint32_t ma_buf_sum = 0;
 uint32_t ma_median_buf[EXT_ADC_MA_MEDIAN_SIZE];
 
+extern volatile bool spi1_recovery_needed;
+extern volatile bool spi3_recovery_needed;
+
 void setup_ext_adcs()
 {
 	ext_adc_flags = 0;
@@ -39,12 +42,19 @@ void setup_ext_adcs()
 	HAL_GPIO_WritePin(GPIOF, IO_KV_CS_Pin|IO_MA_CS_Pin, GPIO_PIN_SET);
 
 	//Dummy receive to initialize SPI ports
-	HAL_SPI_Receive_IT(&hspi1, kv_rx_buf, 3);
-	HAL_SPI_Receive_IT(&hspi3, ma_rx_buf, 3);
+	if (HAL_SPI_Receive_DMA(&hspi1, kv_rx_buf, 3) != HAL_OK) {
+		spi1_recovery_needed = true;
+	}
+	if (HAL_SPI_Receive_DMA(&hspi3, ma_rx_buf, 3) != HAL_OK) {
+		spi3_recovery_needed = true;
+	}
 }
 
 void process_ext_adcs()
 {
+	spi1_recovery_handler();
+	spi3_recovery_handler();
+
 	if(ext_adc_flags != EXT_ADC_DONE)
 	{
 		if(ext_adc_ms < -100)
@@ -52,8 +62,8 @@ void process_ext_adcs()
 			HAL_GPIO_WritePin(GPIOF, IO_KV_CS_Pin|IO_MA_CS_Pin, GPIO_PIN_SET);
 			ext_adc_flags = 0;
 			HAL_GPIO_WritePin(GPIOF, IO_KV_CS_Pin|IO_MA_CS_Pin, GPIO_PIN_RESET);
-			HAL_SPI_Receive_IT(&hspi1, kv_rx_buf, 3);
-			HAL_SPI_Receive_IT(&hspi3, ma_rx_buf, 3);
+			HAL_SPI_Receive_DMA(&hspi1, kv_rx_buf, 3);
+			HAL_SPI_Receive_DMA(&hspi3, ma_rx_buf, 3);
 			ext_adc_ms = 3; //TBD TODO placeholder value
 		}
 
@@ -140,9 +150,15 @@ void process_ext_adcs()
 	report_ma_fb(ma_buf_sum / EXT_ADC_MA_BUF_SIZE);
 
 	ext_adc_flags = 0;
+
 	HAL_GPIO_WritePin(GPIOF, IO_KV_CS_Pin|IO_MA_CS_Pin, GPIO_PIN_RESET);
-	HAL_SPI_Receive_IT(&hspi1, kv_rx_buf, 3);
-	HAL_SPI_Receive_IT(&hspi3, ma_rx_buf, 3);
+	if (HAL_SPI_Receive_DMA(&hspi1, kv_rx_buf, 3) != HAL_OK) {
+		spi1_recovery_needed = true;
+	}
+	if (HAL_SPI_Receive_DMA(&hspi3, ma_rx_buf, 3) != HAL_OK) {
+		spi3_recovery_needed = true;
+	}
+
 	ext_adc_ms = 3; //TBD TODO placeholder value
 }
 
@@ -162,4 +178,32 @@ void ext_ma_rx_done()
 {
 	HAL_GPIO_WritePin(GPIOF, IO_MA_CS_Pin, GPIO_PIN_SET);
 	ext_adc_flags |= EXT_ADC_MA_DONE;
+}
+
+void spi1_recovery_handler(void) {
+	if (spi1_recovery_needed)
+	{
+	    spi1_recovery_needed = false;
+
+	    HAL_SPI_DeInit(&hspi1);
+
+	    __HAL_RCC_SPI1_FORCE_RESET();
+	    __HAL_RCC_SPI1_RELEASE_RESET();
+
+	    HAL_SPI_Init(&hspi1);
+	}
+}
+
+void spi3_recovery_handler(void) {
+	if (spi3_recovery_needed)
+	{
+	    spi3_recovery_needed = false;
+
+	    HAL_SPI_DeInit(&hspi3);
+
+	    __HAL_RCC_SPI3_FORCE_RESET();
+	    __HAL_RCC_SPI3_RELEASE_RESET();
+
+	    HAL_SPI_Init(&hspi3);
+	}
 }

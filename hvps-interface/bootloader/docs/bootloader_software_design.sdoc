@@ -80,7 +80,7 @@ DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
 
 DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
 
-[LINK: DHF-HRC-0021]
+DHF-HRC-0021, Rev. 1: Heracles HVPS Interface Bootloader Software Requirements Specification (SRS)
 
 DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
 <<<
@@ -105,15 +105,15 @@ TITLE: Main Modules
 
 [TEXT]
 STATEMENT: >>>
-**HVPS Bootloader Firmware** – The firmware is stored at the base memory address on the
-microcontroller and facilitates the loading of new HVPS Interface firmware (.hex) files in the remaining
+HVPS Bootloader Firmware - The firmware is stored at the base memory address on the microcontroller
+and facilitates the loading of new HVPS Interface firmware (.hex) files in the remaining
 flash memory.
 
-**HVPS Bootloader PC Application** – This app offers a desktop GUI that loads the HVPS Interface
+HVPS Bootloader PC Application - This app offers a desktop GUI that loads the HVPS Interface
 firmware at the location in memory specified and managed by the bootloader. The GUI allows the
 selection of a COM port that corresponds to the USB port established by the bootloader.
 
-**Flash Memory** – Where the bootloader firmware is stored and new HVPS Interface firmware is flashed.
+Flash Memory - Where the bootloader firmware is stored and new HVPS Interface firmware is flashed.
 <<<
 
 [[/SECTION]]
@@ -151,8 +151,8 @@ memory of the microcontroller is organized into pages which are 2048 bytes in si
 firmware receives an erase command from the PC, it will erase a number of pages in flash memory
 which have been pre-designated for application memory. For writing to flash, the communication
 protocol is limited to fewer than 2048 bytes of each flash page size. As such, the firmware
-subdivides each flash page into "sub-pages". The firmware will program these "sub-pages" by
-using the "sub-page" index provided by the PC command. The firmware iterates word by word (32-
+subdivides each flash page into 'sub-pages'. The firmware will program these 'sub-pages' by
+using the 'sub-page' index provided by the PC command. The firmware iterates word by word (32-
 bit value) for writing values.
 
 The flash memory controller for the microcontroller requires that the firmware lock and unlock the
@@ -224,7 +224,7 @@ TITLE: PC Communication Processing
 STATEMENT: >>>
 The communication protocol the firmware employs for communicating with the PC utilizes ASCII
 character bytes. The firmware both sends and receives data packets. Each received data packet
-from the PC begins with an asterisk character ('*') and terminates with a newline character ('\n'). The
+from the PC begins with a asterisk character ('*') and terminates with a newline character ('\n'). The
 value of the bytes in between these are comprised of a fixed length command, and a variable
 length data payload. Both command and data payload are also represented by ASCII character
 bytes.
@@ -232,7 +232,7 @@ bytes.
 There are four different valid commands that the PC can send: ping, erase, write, and verify. Each
 command is represented in the transmitted packet by preset 5-character values. The firmware
 compares the received command to these preset values. There is no associated data payload for
-the ping and erase command. The 'write' command has a data payload containing the flash page
+the ping and erase command. The' write' command has a data payload containing the flash page
 index and the values to be written to said flash page. The verify command has a CRC value as its
 data payload. The data payload for both commands are sent as ASCII characters which are
 formatted as human readable hexadecimal values.
