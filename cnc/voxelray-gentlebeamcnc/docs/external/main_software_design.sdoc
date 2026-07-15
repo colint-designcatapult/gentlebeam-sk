@@ -94,17 +94,17 @@ TITLE: Architecture Overview
 STATEMENT: >>>
 High Level System Architecture
 
-.. image:: _images/image_000005_a76b0f97d52454316ad15fffbd1ed550133a43ac381d98b61605e53887702cbf.png
+.. image:: _images/sds_arch_1.png
 
 Main Modules
 
 The design of the application is based on the MVVM pattern. There are three core components in the MVVM pattern: the model, the view, and the view model. Each serves a distinct purpose. The diagram below shows the relationships between the three components.
 
-.. image:: _images/image_000007_beca19990cf8a5f84597c0c2e38aa8f03cb52503b74d4351e7202156820f627d.png
+.. image:: _images/sds_arch_2.png
 
 The MVVN design pattern is implemented in the application as follows: the 4 th  layer is the gRPC wrapper for communication with the Record and Verify services.
 
-.. image:: _images/image_000010_e0c56dab2bc20e969d55cc71cc5355895703eb59b380e31767e98f013a7311e2.png
+.. image:: _images/sds_arch_3.png
 <<<
 
 [[/SECTION]]
@@ -119,7 +119,7 @@ TITLE: A visual indication for system faults
 STATEMENT: >>>
 The application will indicate a fault in the system using a visual icon.
 
-.. image:: _images/image_000012_dbe429c414ce0e8288101b1f1f23631ef6bdceeb027175ba4de61f14d7e58338.png
+.. image:: _images/SW-H10TG-269.png
 <<<
 
 [DESIGN_ITEM]
@@ -128,7 +128,53 @@ TITLE: Beam On process
 STATEMENT: >>>
 The flow Beaming On (delivering emission) process should be implemented as described in the following chart diagram:
 
-.. image:: _images/image_000015_27503b2a6bbb0b8c64daa25352d9ac1b559f6b92013527b157c62f71b318394a.png
+.. raw:: html
+
+   <pre class="mermaid">
+   graph TD
+       A(["Plan loaded for treatment"]) --> B{"Plan can be executed"}
+       
+       B -- Yes --> C{"State = Startup / Cold / Primed"}
+       B -- No ----> ShowError["Show plan error message"]
+       
+       C -- Yes --> Prepare["Left button: Prepare"]
+       C -- No --> CheckStaged{"State = Staged"}
+       
+       CheckStaged -- Yes ----> CentralResume["Central button: Resume"]
+       CheckStaged -- No ----> ShowError
+       
+       Prepare --> PressPrepare[/press Prepare/]
+       PressPrepare --> StatePrimed{"State = Primed"}
+       
+       StatePrimed -- Yes --> LoadStage["Load and stage plan"]
+       StatePrimed -- No --> WarmUp["WarmUp"] --> LoadStage
+       
+       LoadStage --> ConfirmRelease["Confirm and release plan"]
+       ConfirmRelease --> HVSetup["HVPSCheck and HVSetup"]
+       HVSetup --> StateReady["State = Ready<br>Central button: BeamOn"]
+       
+       StateReady --> PressBeamOn[/press BeamOn/]
+       PressBeamOn --> StartEmission["Start emission"]
+       
+       StartEmission --> CheckInterrupt{"Fault or user interrupt"}
+       
+       CheckInterrupt -- No --> EmissionComplete["Emission complete"]
+       EmissionComplete --> ResetTimers["Central button: ResetTimers"]
+       ResetTimers --> EndNode([end])
+       
+       CheckInterrupt -- Yes --> CheckFault{"Fault state"}
+       
+       CheckFault -- Yes --> ClearErrors["Central button: ClearErrors"]
+       ClearErrors --> PressClear[/press ClearErrors/]
+       PressClear --> CentralResume
+       
+       CheckFault -- No --> CentralResume
+       
+       CentralResume --> PressResume[/press Resume/]
+       PressResume --> ConfirmRelease
+       
+       ShowError --> EndNode
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -147,14 +193,69 @@ TITLE: Clear Fault Flags
 STATEMENT: >>>
 The flow for performing Clear Faults should be implemented as described in the following sequence diagram:
 
-.. image:: _images/image_000016_4caa1c5fae3f6f0144bb14e65fc4c6f223ec99ff63281a0daba218da5b2187b7.png
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        box Application
+            participant FaultsViewModel
+            participant MainBoardModelBase
+            participant XRayService
+        end
+        box Control Board
+            participant Firmware
+        end
+
+        activate FaultsViewModel
+        FaultsViewModel->>MainBoardModelBase: ClearFaults
+        activate MainBoardModelBase
+        MainBoardModelBase-->>FaultsViewModel: 
+        
+        MainBoardModelBase->>XRayService: ClearFaults
+        XRayService->>Firmware: (UDP) ClearFaults
+        
+        MainBoardModelBase-->>FaultsViewModel: return Faults
+        deactivate MainBoardModelBase
+        deactivate FaultsViewModel
+    </pre>
 <<<
 
 [DESIGN_ITEM]
 UID: SW-H10TG-249
 TITLE: Confirmation of Treatment Plan
 STATEMENT: >>>
-.. image:: _images/image_000018_7ab2ff20e01ecc900420d7a270e0ee0adff633cf4102bf76a2c30ff59e9d46f5.png
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       
+       box Application
+           participant MainBoardModel
+       end
+       box ControlBoard
+           participant Firmware
+       end
+
+       Note over MainBoardModel, Firmware: Board is in Staged state
+       
+       activate MainBoardModel
+       loop "for each operational point"
+           MainBoardModel->>Firmware: "[UDP] send operational parameters confirmation"
+           activate Firmware
+           Firmware-->>MainBoardModel: "[UDP] status response"
+           deactivate Firmware
+       end
+
+       MainBoardModel->>Firmware: "[UDP] ReleasePlan command"
+       activate Firmware
+       Firmware-->>MainBoardModel: "[UDP] status response"
+       deactivate Firmware
+
+       Note over MainBoardModel: wait for Ready board state
+       MainBoardModel->>MainBoardModel: 
+       deactivate MainBoardModel
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -167,7 +268,74 @@ TITLE: Daily Warmup Process
 STATEMENT: >>>
 The flow for performing Daily Warmup should be implemented as described in the following sequence diagram:
 
-.. image:: _images/image_000020_3eca2f0808691565be18a8597936ba182ba7d8a4f9215562dd0757b499f92a74.png
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       
+       box Application
+           participant DailyWarmUpViewModel
+           participant MainBoardModel
+           participant WarmupModel
+       end
+       box ControlBoard
+           participant Firmware
+       end
+       box Record & Verify
+           participant WarmupService
+       end
+
+       Note over DailyWarmUpViewModel, WarmupService: User initiates Warmup/Conditioning
+       
+       DailyWarmUpViewModel->>MainBoardModel: WarmUp
+       activate DailyWarmUpViewModel
+       activate MainBoardModel
+       
+       Note over MainBoardModel: check target filament current range
+       MainBoardModel->>MainBoardModel: 
+
+       alt "[Startup board state]"
+           MainBoardModel->>Firmware: "[UDP] initialization command"
+           activate Firmware
+           Note over Firmware: initialize
+           Firmware->>Firmware: 
+           Firmware-->>MainBoardModel: "[UDP] status response"
+           deactivate Firmware
+           
+           Note over MainBoardModel: wait for Cold state in the telemetry
+           MainBoardModel->>MainBoardModel: 
+       end
+
+       MainBoardModel->>Firmware: "[UDP] Warmup/Conditioning command"
+       activate Firmware
+       Note over Firmware: start warming up
+       Firmware->>Firmware: 
+       Firmware-->>MainBoardModel: "[UDP] status response"
+       deactivate Firmware
+
+       Note over MainBoardModel: wait for Warmup/Conditioning terminal state
+       MainBoardModel->>MainBoardModel: 
+
+       MainBoardModel-->>DailyWarmUpViewModel: 
+       deactivate MainBoardModel
+       
+       DailyWarmUpViewModel->>WarmupModel: Save Warmup/Conditioning event
+       activate WarmupModel
+       
+       WarmupModel->>WarmupService: grpc: Save Warmup event
+       activate WarmupService
+       Note over WarmupService: create a DB record
+       WarmupService->>WarmupService: 
+       WarmupService-->>WarmupModel: stored record
+       deactivate WarmupService
+       
+       Note over WarmupModel: add record to the list
+       WarmupModel->>WarmupModel: 
+       WarmupModel-->>DailyWarmUpViewModel: 
+       deactivate WarmupModel
+       deactivate DailyWarmUpViewModel
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -180,7 +348,22 @@ TITLE: Display System Telemetry
 STATEMENT: >>>
 The application should subscribe to a UDP event from the firmware to get the system telemetry.
 
-.. image:: _images/image_000022_db72f76a26e9b3634a6e3eb73fe78ec856a2f218288a3500b035c5d6debf4c9c.png
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        participant TelemetryViewModel
+        participant TelemetryService
+        participant Firmware
+
+        TelemetryViewModel->>TelemetryService: Subscribe
+        activate TelemetryService
+        activate Firmware
+        Firmware->>TelemetryService: [UDP] telemetry response
+        TelemetryService->>TelemetryViewModel: SystemTelemetryChanged
+        deactivate TelemetryService
+        deactivate Firmware
+    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -198,7 +381,35 @@ The treatment console application shall be triggered by the base (internal) appl
 
 The following sequence diagram describes the workflow of LoadForTreatment flow (should be moved to detailed design)
 
-.. image:: _images/image_000024_ba418f750d736c1d99a90a46c1981be430d48e341047f6fbe0935203d0fd9fda.png
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+       participant CC
+       participant Moses
+       participant DB
+       participant TC
+
+       User->>CC: LoadForTreatment
+       activate CC
+       CC->>Moses: LoadForTreatment
+       activate Moses
+       Moses->>DB: UpdatePlanTreatmentState(Pending)
+       activate DB
+       DB->>TC: LoadForTreatment Event
+       activate TC
+       TC->>Moses: UpdatePlanTreatmentState(Loaded)
+       Moses->>DB: UpdatePlanTreatmentState(Loaded)
+       DB->>CC: PlanLoaded Event
+       activate CC
+       deactivate CC
+       deactivate TC
+       deactivate DB
+       deactivate Moses
+       deactivate CC
+   </pre>
 
 1. The user presses the LoadForTreatment buttoning the Base UI.
 2. C&C sends LoadForTreatment API to Moses.
@@ -224,7 +435,7 @@ TITLE: Emission visible indicator
 STATEMENT: >>>
 A glowing radiation icon with an Amber color will provide a visual indication of X-ray emission.
 
-.. image:: _images/image_000027_6fe4505e9ff723535c84b6d4921249ee2efb404afc2a0936c493bf738ec97c73.png
+.. image:: _images/SW-H10TG-266.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -235,7 +446,62 @@ RELATIONS:
 UID: SW-H10TG-253
 TITLE: Enable window switching after emission delivery
 STATEMENT: >>>
-.. image:: _images/image_000028_6e1c8d203552a1f0400ca8b60e017a05797cfc861ca9b75305906c2923da2830.png
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+       
+       box Application
+           participant OperatePlanViewModelBase
+           participant MainBoardModel
+           participant UIStateMachine
+           participant TabControl
+       end
+
+       Note over OperatePlanViewModelBase, TabControl: "Plan is loaded and confirmed, Board is in Ready state"
+       
+       alt "[Emission]"
+           User->>OperatePlanViewModelBase: BeamOn
+           activate OperatePlanViewModelBase
+           OperatePlanViewModelBase->>MainBoardModel: BeamOn
+           activate MainBoardModel
+           Note over MainBoardModel: command HW to start emission
+           MainBoardModel->>MainBoardModel: 
+           Note over MainBoardModel: "wait for Staged state"
+           MainBoardModel->>MainBoardModel: 
+           
+           MainBoardModel-->>OperatePlanViewModelBase: BeamOn task result
+           deactivate MainBoardModel
+           OperatePlanViewModelBase->>User: "ClearPlan?"
+           deactivate OperatePlanViewModelBase
+       end
+
+       User->>OperatePlanViewModelBase: ClearPlan
+       activate OperatePlanViewModelBase
+       OperatePlanViewModelBase->>MainBoardModel: ClearPlan
+       activate MainBoardModel
+       Note over MainBoardModel: command HW to clear plan
+       MainBoardModel->>MainBoardModel: 
+       Note over MainBoardModel: "wait for Primed state"
+       MainBoardModel->>MainBoardModel: 
+       
+       MainBoardModel-->>OperatePlanViewModelBase: ClearPlan task result
+       deactivate MainBoardModel
+
+       OperatePlanViewModelBase->>UIStateMachine: unlock tabs
+       activate UIStateMachine
+       UIStateMachine->>TabControl: notify on lock flag change
+       activate TabControl
+       Note over TabControl: enable tab switch
+       TabControl->>TabControl: 
+       TabControl-->>UIStateMachine: 
+       deactivate TabControl
+       UIStateMachine-->>OperatePlanViewModelBase: 
+       deactivate UIStateMachine
+       deactivate OperatePlanViewModelBase
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -248,7 +514,35 @@ TITLE: Get Interlocks state
 STATEMENT: >>>
 The flow for getting interlocks states should be implemented as described in the following sequence diagram:
 
-.. image:: _images/image_000030_4b165d73aa612d6f09d0c8f679a1cb418d159c7d45c831cb5604060f52a86c52.png
+The flow for getting interlocks states should be implemented as described in the following 
+sequence diagram:
+
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        participant InterlocksView
+        participant InterlocksViewModel
+        participant GCBDataStore
+
+        activate InterlocksView
+        InterlocksView->>InterlocksViewModel: getGcbInterlocks
+        activate InterlocksViewModel
+        
+        [?] ->> GCBDataStore: OnSystemTelemetry
+        activate GCBDataStore
+        GCBDataStore->>GCBDataStore: setInterlocks
+        activate GCBDataStore
+        deactivate GCBDataStore
+        
+        InterlocksViewModel->>GCBDataStore: getGcbDataStore
+        GCBDataStore-->>InterlocksViewModel: return gcbDataStore
+        deactivate GCBDataStore
+        
+        InterlocksViewModel-->>InterlocksView: return gcbInterlocks
+        deactivate InterlocksViewModel
+        deactivate InterlocksView
+    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -259,7 +553,74 @@ RELATIONS:
 UID: SW-H10TG-258
 TITLE: Initialize the System
 STATEMENT: >>>
-.. image:: _images/image_000032_f6347e8124315c7d3ff8539c348d9719a2988bafa37072f82ab949190b2b9163.png
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       
+       box Application
+           participant OperatePlanViewModelBase
+           participant MainBoardModel
+           participant WarmupModel
+       end
+       box ControlBoard
+           participant Firmware
+       end
+       box Record & Verify
+           participant WarmupService
+       end
+
+       Note over OperatePlanViewModelBase, WarmupService: "User Initiates Warmup/Conditioning"
+       
+       OperatePlanViewModelBase->>MainBoardModel: WarmUp
+       activate OperatePlanViewModelBase
+       activate MainBoardModel
+       
+       Note over MainBoardModel: check target filament current range
+       MainBoardModel->>MainBoardModel: 
+
+       alt "[Startup board state]"
+           MainBoardModel->>Firmware: "[UDP] initialization command"
+           activate Firmware
+           Note over Firmware: initialize
+           Firmware->>Firmware: 
+           Firmware-->>MainBoardModel: "[UDP] status response"
+           deactivate Firmware
+           
+           Note over MainBoardModel: "wait for Cold state in the telemetry"
+           MainBoardModel->>MainBoardModel: 
+       end
+
+       MainBoardModel->>Firmware: "[UDP] Warmup/Conditioning command"
+       activate Firmware
+       Note over Firmware: start warming up
+       Firmware->>Firmware: 
+       Firmware-->>MainBoardModel: "[UDP] status response"
+       deactivate Firmware
+
+       Note over MainBoardModel: "wait for Warmup/Conditioning terminal state"
+       MainBoardModel->>MainBoardModel: 
+
+       MainBoardModel->>WarmupModel: "Save Warmup/Conditioning event"
+       activate WarmupModel
+       
+       WarmupModel->>WarmupService: "grpc: Save Warmup event"
+       activate WarmupService
+       Note over WarmupService: create a DB record
+       WarmupService->>WarmupService: 
+       WarmupService-->>WarmupModel: stored record
+       deactivate WarmupService
+       
+       Note over WarmupModel: add record to the list
+       WarmupModel->>WarmupModel: 
+       WarmupModel-->>MainBoardModel: 
+       deactivate WarmupModel
+       
+       MainBoardModel-->>OperatePlanViewModelBase: 
+       deactivate MainBoardModel
+       deactivate OperatePlanViewModelBase
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -306,9 +667,7 @@ RELATIONS:
 UID: SW-H10TG-272
 TITLE: LogService module
 STATEMENT: >>>
-.. image:: _images/image_000035_497d6b204265e8c495c23d9551e8a47c42e4bac7d5755f4ce959020cb44e858c.png
-
-.. image:: _images/image_000036_37cd38d70e5494ad30dda4ae151b6e0e18000e62923f440c35d0f3f43023187b.png
+.. image:: _images/SW-H10TG-272.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -321,7 +680,72 @@ TITLE: Perform Quality Checks
 STATEMENT: >>>
 The flow for performing Daily Quality Checks should be implemented as described in the following sequence diagram:
 
-.. image:: _images/image_000039_06a5a693d2a36a50cdaf7cd23f27be2fa2d2bfaf71a6547eb4fe736b99a4b124.png
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+       
+       box Application
+           participant QualityCheckViewModel
+           participant MainBoardModel
+           participant QcbReadingModel
+       end
+       box QualityCheckBoard
+           participant Firmware
+       end
+
+       Note over QualityCheckViewModel: build list of QC configurations
+       QualityCheckViewModel->>QualityCheckViewModel: 
+       
+       User->>QualityCheckViewModel: select collimator type and energy
+       Note over QualityCheckViewModel: update view
+       QualityCheckViewModel-->>User: 
+       
+       User->>QualityCheckViewModel: select full/custom QC plan mode
+       
+       alt "[full QC plan mode]"
+           Note over QualityCheckViewModel: build a complete list of points
+           QualityCheckViewModel->>QualityCheckViewModel: 
+           Note over QualityCheckViewModel: make the list readonly
+           QualityCheckViewModel->>QualityCheckViewModel: 
+       else "[custom QC plan mode]"
+           Note over QualityCheckViewModel: build a list of central points
+           QualityCheckViewModel->>QualityCheckViewModel: 
+           Note over QualityCheckViewModel: make the list editable
+           QualityCheckViewModel->>QualityCheckViewModel: 
+       end
+
+       Note over QualityCheckViewModel: enable Prepare button
+       
+       alt "[custom QC plan mode]"
+           User->>QualityCheckViewModel: add/delete points
+       end
+
+       User->>QualityCheckViewModel: Prepare
+       activate QualityCheckViewModel
+       
+       QualityCheckViewModel->>QcbReadingModel: connection check
+       activate QcbReadingModel
+       QcbReadingModel->>Firmware: "[UDP] ping"
+       activate Firmware
+       Firmware-->>QcbReadingModel: "[UDP] status response"
+       deactivate Firmware
+       QcbReadingModel-->>QualityCheckViewModel: connection status
+       deactivate QcbReadingModel
+
+       QualityCheckViewModel->>MainBoardModel: Load plan
+       activate MainBoardModel
+       Note over MainBoardModel: "create session, stage and confirm the plan"
+       MainBoardModel->>MainBoardModel: 
+       MainBoardModel-->>QualityCheckViewModel: task result
+       deactivate MainBoardModel
+
+       Note over QualityCheckViewModel: enable BeamOn button
+       QualityCheckViewModel-->>User: 
+       deactivate QualityCheckViewModel
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -334,7 +758,83 @@ TITLE: Perform System Safety Checks
 STATEMENT: >>>
 The flow for performing System Safety Checks should be implemented as described in the following sequence diagram:
 
-.. image:: _images/image_000040_3ab51519047aecb38c983d31a4abe847e2ea9e23a7779e70666e94fdbd2f9849.png
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+       
+       box Application
+           participant SafetyCheckViewModel
+           participant SafetyCheckModel
+           participant MainBoardModel
+       end
+       box Record & Verify
+           participant SafetyCheckService
+       end
+
+       SafetyCheckViewModel->>SafetyCheckModel: fetch SafetyCheck reports
+       activate SafetyCheckViewModel
+       activate SafetyCheckModel
+       SafetyCheckModel->>SafetyCheckService: grpc: read report list
+       activate SafetyCheckService
+       SafetyCheckService-->>SafetyCheckModel: grpc: stored reports
+       deactivate SafetyCheckService
+       SafetyCheckModel-->>SafetyCheckViewModel: 
+       deactivate SafetyCheckModel
+
+       alt "[SafetyCheck is allowed with current collimator type]"
+           Note over SafetyCheckViewModel: prepare SafetyCheck emission plan for single point
+           SafetyCheckViewModel->>SafetyCheckViewModel: 
+           Note over SafetyCheckViewModel: enable Prepare button
+           
+           User->>SafetyCheckViewModel: Prepare
+           SafetyCheckViewModel->>MainBoardModel: load emission plan
+           activate MainBoardModel
+           
+           Note over MainBoardModel: send plan and confirmation to ControlBoard
+           MainBoardModel->>MainBoardModel: 
+           Note over MainBoardModel: wait for Ready state
+           MainBoardModel->>MainBoardModel: 
+           
+           MainBoardModel-->>SafetyCheckViewModel: task status
+           deactivate MainBoardModel
+           Note over SafetyCheckViewModel: enable BeamOn button
+           
+           loop "[User starts/stops/resumes emission]"
+               Note over SafetyCheckViewModel: make checks one by one
+               SafetyCheckViewModel->>SafetyCheckViewModel: 
+               Note over SafetyCheckViewModel: toggle check UI controls
+           end
+           
+           User->>SafetyCheckViewModel: save SafetyCheck report
+           SafetyCheckViewModel->>SafetyCheckModel: add new record
+           activate SafetyCheckModel
+           
+           SafetyCheckModel->>SafetyCheckService: create new record
+           activate SafetyCheckService
+           SafetyCheckService-->>SafetyCheckModel: stored record
+           deactivate SafetyCheckService
+           
+           Note over SafetyCheckModel: add record to the list
+           SafetyCheckModel->>SafetyCheckModel: 
+           SafetyCheckModel-->>SafetyCheckViewModel: 
+           deactivate SafetyCheckModel
+           
+           SafetyCheckViewModel->>MainBoardModel: clear plan
+           activate MainBoardModel
+           Note over MainBoardModel: send ResetTimers/ClearPlan commands to ControlBoard
+           MainBoardModel->>MainBoardModel: 
+           MainBoardModel-->>SafetyCheckViewModel: task status
+           deactivate MainBoardModel
+           
+           Note over SafetyCheckViewModel: navigate to SafetyCheck reports view
+           SafetyCheckViewModel->>SafetyCheckViewModel: 
+           SafetyCheckViewModel-->>User: 
+       end
+       deactivate SafetyCheckViewModel
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -353,7 +853,7 @@ TITLE: Plan Details Layout
 STATEMENT: >>>
 The application shall provide an interface allowing the operator to view the treatment plan details with the following parameters:
 
-.. image:: _images/image_000042_67457963c617d05d3357283639f335561d64691ddb047eed6ae54d374f5c5376.png
+.. image:: _images/SW-H10TG-267.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -366,7 +866,50 @@ TITLE: Play sound during emission
 STATEMENT: >>>
 The flow for providing audible indication during active emission should be implemented as described in the following sequence diagram:
 
-.. image:: _images/image_000044_c14ead311e0e546f931506297a093f6b14c1d93ff12e0adc038fca4f225c8988.png
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        box Application
+            participant MainView
+            participant Converter as GcbStatusToRadiation<br/>HazardActiveStateConverter
+            participant GCBDataStore
+        end
+        box Control Board
+            participant Firmware
+        end
+
+        [?] ->> MainView: OnLoad
+        activate MainView
+        
+        MainView->>GCBDataStore: getSystemTelemetry
+        activate GCBDataStore
+        
+        activate Firmware
+        Firmware-->>GCBDataStore: OnTelemetryChanged
+        deactivate Firmware
+        
+        GCBDataStore-->>MainView: return SystemTelemetry
+        deactivate GCBDataStore
+
+        MainView->>Converter: convert
+        activate Converter
+        Converter->>Converter: if emission return else return false
+        activate Converter
+        deactivate Converter
+        Converter->>MainView: return state
+        deactivate Converter
+
+        MainView->>MainView: ChangeRadiationIconColor(state)
+        activate MainView
+        deactivate MainView
+        
+        MainView->>MainView: PlaySound(state)
+        activate MainView
+        deactivate MainView
+        
+        deactivate MainView
+    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -379,7 +922,30 @@ TITLE: Prevent Treatment if the Daily Safety checks is not completed
 STATEMENT: >>>
 The flow for Prevent Treatment when no daily safety checks are performed should be implemented as described in the following flow chart diagram:
 
-.. image:: _images/image_000046_51e39c8f74f4c7869d85af71666497828602920bcb013dd490816ff438c5dea2.png
+.. raw:: html
+
+   <pre class="mermaid">
+   graph TD
+       A(["Ready for Prepare"]) --> B[/press Prepare/]
+       B --> C{"Daily SafetyCheck is done?"}
+       
+       C -- Yes --> D{"Is it complete?"}
+       C -- No ----> ShowError["Show error, block treatment"]
+       
+       D -- Yes ----> ProceedPrepare["Proceed with Prepare"]
+       D -- No --> E{"Door interlock, e-stop,<br>normal stop checks passed?"}
+       
+       E -- Yes --> Alert[/Safety alert:<br>ask for confirmation/]
+       E -- No --> ShowError
+       
+       Alert --> F{"Proceed treatment?"}
+       
+       F -- Yes --> ProceedPrepare
+       F -- No ----> EndNode([end])
+       
+       ProceedPrepare --> EndNode
+       ShowError --> EndNode
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -393,7 +959,46 @@ RELATIONS:
 UID: SW-H10TG-250
 TITLE: Prevent treatment plan execution if an interlock is active
 STATEMENT: >>>
-.. image:: _images/image_000048_54f0b620e0f7cf7c17dd75c90a12a062ff7565cfbc56ff31673f8d44d1254a41.png
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       
+       box Application
+           participant OperatePlanViewModelBase
+           participant InterlockIndicators
+           participant BeamOnCommand
+           participant TelemetryService
+       end
+       box ControlBoard
+           participant Firmware
+       end
+
+       TelemetryService->>Firmware: "[UDP] request telemetry"
+       activate TelemetryService
+       activate Firmware
+       Firmware-->>TelemetryService: "[UDP] telemetry response"
+       deactivate Firmware
+
+       TelemetryService-->>OperatePlanViewModelBase: telemetry changed
+       activate OperatePlanViewModelBase
+       
+       Note over OperatePlanViewModelBase: "check telemetry for intelocks/faults"
+       OperatePlanViewModelBase->>OperatePlanViewModelBase: 
+
+       alt "[interlock flag is set]"
+           OperatePlanViewModelBase->>BeamOnCommand: disable
+       end
+       deactivate OperatePlanViewModelBase
+
+       TelemetryService-->>InterlockIndicators: telemetry changed
+       activate InterlockIndicators
+       Note over InterlockIndicators: update indicators
+       InterlockIndicators->>InterlockIndicators: 
+       deactivate InterlockIndicators
+       deactivate TelemetryService
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -404,9 +1009,96 @@ RELATIONS:
 UID: SW-H10TG-72
 TITLE: Radiation Emission Control - Beam On process Sequence
 STATEMENT: >>>
-.. image:: _images/image_000051_4a49d1bfffd86d1374af70392e8185d91e2ceb2a5741f3a07356e15acd3f0f38.png
+.. raw:: html
 
-.. image:: _images/image_000052_7812f8da5e18edfdf337099d73341f782d28dee68230b8d9be7caf509513c854.png
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+       participant ExtCC as Ext C&amp;C
+       participant Boards
+       participant HVPS
+
+       User->>ExtCC: Beam On
+       activate ExtCC
+       Note over ExtCC: Check if the state is Ready
+       
+       ExtCC->>Boards: Release Point
+       activate Boards
+
+       loop foreach operational point
+           ExtCC->>HVPS: Filament set point
+           activate HVPS
+           Note over ExtCC: "Button shows Launching progress"
+           Boards->>HVPS: Start Emission
+           HVPS-->>ExtCC: Operational point emission finished
+           deactivate HVPS
+           Note over ExtCC: "Button shows Beaming on progress"
+           Note over ExtCC: "Button shows Launching progress"
+       end
+       deactivate Boards
+
+       Note over ExtCC: "Button shows Clear Timers"
+       deactivate ExtCC
+
+       User->>ExtCC: Clear Timers
+       activate ExtCC
+       ExtCC->>Boards: Clear Timers
+       activate Boards
+       deactivate Boards
+       deactivate ExtCC
+
+       User->>ExtCC: Unload Plan
+       activate ExtCC
+       ExtCC->>Boards: Unload Plan
+       activate Boards
+       deactivate Boards
+       deactivate ExtCC
+   </pre>
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+
+       box Application
+           participant PlanViewModel
+           participant PlanModel
+       end
+
+       box Server
+           participant Storage
+       end
+
+       User->>PlanViewModel: refresh treatment fields
+       activate PlanViewModel
+       PlanViewModel->>PlanModel: fetch fields
+       activate PlanModel
+       
+       Note over PlanModel: clear displayed fields
+       PlanModel->>Storage: query stored fields
+       activate Storage
+       Note over Storage: handle request
+       Storage-->>PlanModel: treatment fields
+       deactivate Storage
+       
+       Note over PlanModel: update displayed fields
+       PlanModel-->>PlanViewModel: 
+       PlanViewModel-->>User: display fields
+
+       PlanViewModel->>PlanModel: validate field doses
+       Note over PlanModel: verify dose calculations
+       PlanModel-->>PlanViewModel: validity status
+       deactivate PlanModel
+
+       alt "validation fails"
+           Note over PlanViewModel: disable treatment
+           PlanViewModel-->>User: show warning
+       end
+       deactivate PlanViewModel
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -417,7 +1109,75 @@ RELATIONS:
 UID: SW-H10TG-74
 TITLE: Radiation Emission Control - Resume Beam-On process after error is cleared - Sequence
 STATEMENT: >>>
-.. image:: _images/image_000054_157b2d007c9bf03b224a89093547a7f8e820c4c441de0d86df9deacb5a62ec49.png
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+       participant ExtCC as Ext C&amp;C
+       participant Boards
+       participant HVPS
+
+       HVPS->>Boards: Error
+       activate HVPS
+       activate Boards
+       Boards->>ExtCC: Error
+       deactivate Boards
+       deactivate HVPS
+       
+       activate ExtCC
+       Note over ExtCC: Show error indication to the user
+       Note over ExtCC: "Button shows Clear Error"
+       deactivate ExtCC
+
+       User->>ExtCC: Clear Errors
+       activate ExtCC
+       ExtCC->>Boards: Clear Errors
+       activate Boards
+       deactivate Boards
+       deactivate ExtCC
+
+       User->>ExtCC: Reset timers
+       activate ExtCC
+       ExtCC->>Boards: Reset timers
+       activate Boards
+       deactivate Boards
+       deactivate ExtCC
+
+       Note over ExtCC: "Button shows Continue"
+       User->>ExtCC: Continue
+       activate ExtCC
+       Note over ExtCC: Check if status is STAGED
+       
+       rect rgb(235, 247, 235)
+           Note left of ExtCC: Reconfirm plan before resume emission
+           loop foreach operational point
+               ExtCC->>Boards: "Re-Send operational point info with new duration (confirmation)"
+               activate Boards
+               deactivate Boards
+           end
+           ExtCC->>Boards: Release Plan Command
+           activate Boards
+           Boards->>HVPS: Ramp HV
+           activate HVPS
+           HVPS-->>Boards: "HV ramp feedback. Setpoint reached"
+           deactivate HVPS
+           Boards-->>ExtCC: In ready State
+           deactivate Boards
+       end
+
+       rect rgb(253, 238, 238)
+           Note left of ExtCC: Resume emission
+           ExtCC->>Boards: Release point command
+           activate Boards
+           loop Foreach operational point
+               Boards->>Boards: Run emission
+           end
+           deactivate Boards
+       end
+       deactivate ExtCC
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -428,7 +1188,49 @@ RELATIONS:
 UID: SW-H10TG-76
 TITLE: Radiation Emission Control - Resume Prepare process after error is cleared - Sequence
 STATEMENT: >>>
-.. image:: _images/image_000056_6f4d9ed9fcabcab634c4c2eb3ccb61b5261c26a6a0462e6769f456d09832af75.png
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+
+       box Application
+           participant PlanViewModel
+           participant PlanModel
+       end
+
+       box Server
+           participant Storage
+       end
+
+       User->>PlanViewModel: refresh treatment fields
+       activate PlanViewModel
+       PlanViewModel->>PlanModel: fetch fields
+       activate PlanModel
+       
+       Note over PlanModel: clear displayed fields
+       PlanModel->>Storage: query stored fields
+       activate Storage
+       Note over Storage: handle request
+       Storage-->>PlanModel: treatment fields
+       deactivate Storage
+       
+       Note over PlanModel: update displayed fields
+       PlanModel-->>PlanViewModel: 
+       PlanViewModel-->>User: display fields
+
+       PlanViewModel->>PlanModel: validate field doses
+       Note over PlanModel: verify dose calculations
+       PlanModel-->>PlanViewModel: validity status
+       deactivate PlanModel
+
+       alt "validation fails"
+           Note over PlanViewModel: disable treatment
+           PlanViewModel-->>User: show warning
+       end
+       deactivate PlanViewModel
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -460,7 +1262,92 @@ RELATIONS:
 UID: SW-H10TG-257
 TITLE: Record Delivered Dose
 STATEMENT: >>>
-.. image:: _images/image_000059_9e88f9fab7aebce7b49fba5e9072bd7edfb354f3349f9863b77c4487b5d41446.png
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       
+       box Application
+           participant OperatePlanViewModelBase
+           participant TreatmentModel
+           participant ActualTreatmentFieldModel
+           participant MainBoardModel
+           participant TelemetryService
+       end
+       box ControlBoard
+           participant Firmware
+       end
+       box Record & Verify
+           participant TreatmentService
+           participant ActualTreatmentFieldService
+       end
+
+       Note over OperatePlanViewModelBase, ActualTreatmentFieldService: User initiates emission delivery
+       
+       OperatePlanViewModelBase->>TreatmentModel: create new treatment
+       activate OperatePlanViewModelBase
+       activate TreatmentModel
+       TreatmentModel->>TreatmentService: "grpc: CreateTreatment"
+       activate TreatmentService
+       Note over TreatmentService: create DB record
+       TreatmentService-->>TreatmentModel: stored record
+       deactivate TreatmentService
+       deactivate TreatmentModel
+
+       loop "[Telemetry polling]"
+           TelemetryService->>Firmware: "[UDP] request telemetry"
+           activate TelemetryService
+           activate Firmware
+           Firmware-->>TelemetryService: "[UDP] telemetry response"
+           deactivate Firmware
+           TelemetryService-->>OperatePlanViewModelBase: telemetry data
+           deactivate TelemetryService
+           
+           alt "[Emission state: update treatment field from telemetry]"
+               Note over OperatePlanViewModelBase: get telemetry CurrentOperationalPoint index
+               OperatePlanViewModelBase->>OperatePlanViewModelBase: 
+               Note over OperatePlanViewModelBase: get telemetry timer values
+               OperatePlanViewModelBase->>OperatePlanViewModelBase: 
+               OperatePlanViewModelBase->>ActualTreatmentFieldModel: "SaveActualTreatmentField(treatment, index, timer)"
+           end
+       end
+
+       alt "[Leaving Emission state: update treatment field from the board]"
+           OperatePlanViewModelBase->>MainBoardModel: query last OperationalPoint data
+           activate MainBoardModel
+           MainBoardModel->>Firmware: query operational point data
+           activate Firmware
+           Firmware-->>MainBoardModel: data response
+           deactivate Firmware
+           MainBoardModel-->>OperatePlanViewModelBase: point data
+           deactivate MainBoardModel
+           
+           Note over OperatePlanViewModelBase: get timer value from point data
+           OperatePlanViewModelBase->>OperatePlanViewModelBase: 
+           OperatePlanViewModelBase->>ActualTreatmentFieldModel: "SaveActualTreatmentField(treatment, index, timer)"
+           activate ActualTreatmentFieldModel
+           
+           alt "[new actual treatment field data]"
+               ActualTreatmentFieldModel->>ActualTreatmentFieldService: "grpc: CreateActualTreatmentField"
+               activate ActualTreatmentFieldService
+               Note over ActualTreatmentFieldService: create DB record
+               ActualTreatmentFieldService-->>ActualTreatmentFieldModel: stored record
+               deactivate ActualTreatmentFieldService
+           end
+           
+           alt "[existing actual treatment field data]"
+               ActualTreatmentFieldModel->>ActualTreatmentFieldService: "grpc: UpdateActualTreatmentField"
+               activate ActualTreatmentFieldService
+               Note over ActualTreatmentFieldService: update DB record
+               ActualTreatmentFieldService-->>ActualTreatmentFieldModel: stored record
+               deactivate ActualTreatmentFieldService
+           end
+           deactivate ActualTreatmentFieldModel
+       end
+       deactivate OperatePlanViewModelBase
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -474,7 +1361,54 @@ RELATIONS:
 UID: SW-H10TG-252
 TITLE: Restrict window switching during active emission
 STATEMENT: >>>
-.. image:: _images/image_000061_9851f3474cbbd74a7c691ba38aa6c51c7312443020eb8de3ba01ce3fef94fe78.png
+
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+       autonumber
+       actor User
+       
+       box Application
+           participant OperatePlanViewModelBase
+           participant MainBoardModel
+           participant UIStateMachine
+           participant TabControl
+       end
+
+       User->>OperatePlanViewModelBase: Prepare
+       activate OperatePlanViewModelBase
+       
+       OperatePlanViewModelBase->>MainBoardModel: LoadPlan
+       activate MainBoardModel
+       Note over MainBoardModel: create session and load plan to the Board
+       MainBoardModel->>MainBoardModel: 
+       Note over MainBoardModel: wait for Ready state
+       MainBoardModel->>MainBoardModel: 
+       
+       MainBoardModel-->>OperatePlanViewModelBase: LoadPlan task result
+       deactivate MainBoardModel
+
+       OperatePlanViewModelBase->>UIStateMachine: lock on current tab
+       activate UIStateMachine
+       UIStateMachine->>TabControl: notify on lock flag change
+       activate TabControl
+       Note over TabControl: "disable tab switch"
+       TabControl->>TabControl: 
+       TabControl-->>UIStateMachine: 
+       deactivate TabControl
+       UIStateMachine-->>OperatePlanViewModelBase: 
+       deactivate UIStateMachine
+
+       Note over OperatePlanViewModelBase: enable BeamOn command
+       OperatePlanViewModelBase->>OperatePlanViewModelBase: 
+       Note over OperatePlanViewModelBase: enable ClearPlan command
+       OperatePlanViewModelBase->>OperatePlanViewModelBase: 
+       
+       OperatePlanViewModelBase->>User: "ClearPlan/BeamOn?"
+       deactivate OperatePlanViewModelBase
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -485,9 +1419,34 @@ RELATIONS:
 UID: SW-H10TG-270
 TITLE: Retrieve Fault Information from Firmware
 STATEMENT: >>>
-The flow for Retrieving fault Information from Firmware should be implemented as described in the following sequence diagram:
+The flow for Retrieving fault Information from Firmware should be implemented as described in the 
+following sequence diagram:
 
-.. image:: _images/image_000063_dae2b70ba6e75d49d65ee1656b27af941861319c960ab5c7bd2fd92136187f0a.png
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        box Application
+            participant FaultsViewModel
+            participant MainBoardModelBase
+            participant XRayService
+        end
+        box Control Board
+            participant Firmware
+        end
+
+        activate FaultsViewModel
+        FaultsViewModel->>MainBoardModelBase: GetFaults
+        activate MainBoardModelBase
+        MainBoardModelBase-->>FaultsViewModel: 
+        
+        MainBoardModelBase->>XRayService: GetFaults
+        XRayService->>Firmware: (UDP) GetFaultInfo
+        
+        MainBoardModelBase-->>FaultsViewModel: return Faults
+        deactivate MainBoardModelBase
+        deactivate FaultsViewModel
+    </pre>
 <<<
 
 [DESIGN_ITEM]
@@ -496,7 +1455,54 @@ TITLE: Retrieve Quality Checks Reports
 STATEMENT: >>>
 The flow for retrieving Quality Checks Report should be implemented as described in the following sequence diagram:
 
-.. image:: _images/image_000067_b237a9c4b89530607f8d7106afe5a9890fc0cf40586edfb3bc797c7c1ee56361.png
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        autonumber
+        actor User
+        box Application
+            participant VM as QualityCheckReportsViewModel
+            participant M as QcModel
+        end
+        box Record & Verify
+            participant S as QC Services
+        end
+
+        VM->>VM: build list of QC configurations
+        
+        User->>VM: select collimator type and energy
+        VM->>VM: find matching collimator configuration
+        
+        VM->>M: read configuration QC samples
+        M->>S: grpc: read QC samples
+        S-->>M: grpc: stored samples
+        M-->>VM: list of samples
+        VM-->>User: [Show list of samples]
+
+        User->>VM: select a sample
+        VM->>M: fetch sample data
+        M->>S: read sample fields/intensities
+        S-->>M: grpc: stored records
+        M-->>VM: sample data
+
+        VM->>M: fetch reference sample data
+        M->>M: check for cached data
+        
+        alt No cached sample data
+            M->>S: read sample fields/intensities
+            S-->>M: grpc: stored records
+            M->>M: cache as reference
+        end
+        
+        M-->>VM: reference sample data
+        
+        VM->>VM: calc sample deviation from reference
+        VM->>VM: update sample report view
+        VM-->>User: [Display updated report]
+
+        User->>VM: switch raw/deviation report mode
+    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -512,7 +1518,48 @@ TITLE: Retrieve treated patient details
 STATEMENT: >>>
 When the application is loaded, it searches for a plan that is pending to be loaded. Then, the plan details and all the patients' clinical data are initialized.
 
-.. image:: _images/image_000068_78d6f0b14b31638fb4fc9772a7fd3a3bceb72277399869eed7f025869801ad6b.png
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        participant Object as :Object
+        participant OutdoorViewModel
+        participant PlanModel
+        participant TreatmentFieldCommands
+        participant PrescriptionCommands
+        participant TreatmentCommands
+
+        [?] ->> Object: dispatch
+        activate Object
+        Object->>OutdoorViewModel: LookForPlanAsync
+        activate OutdoorViewModel
+        
+        OutdoorViewModel->>PlanModel: LookPendingPlan
+        activate PlanModel
+        OutdoorViewModel->>Object: callback
+        activate Object
+        Object-->>OutdoorViewModel: return
+        deactivate Object
+        
+        OutdoorViewModel->>PlanModel: SetPlan
+        OutdoorViewModel-->>Object: return
+        deactivate OutdoorViewModel
+        
+        PlanModel->>TreatmentFieldCommands: ReadFieldsAsync
+        activate TreatmentFieldCommands
+        deactivate TreatmentFieldCommands
+        
+        PlanModel->>PrescriptionCommands: ReadAsync
+        activate PrescriptionCommands
+        deactivate PrescriptionCommands
+        
+        PlanModel->>TreatmentCommands: Text
+        activate TreatmentCommands
+        deactivate TreatmentCommands
+        
+        deactivate PlanModel
+        deactivate Object
+    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -525,7 +1572,43 @@ TITLE: Show message for DB communication error
 STATEMENT: >>>
 The application will show a DB Communication error when the gRPC command throws a timeout exception. The exception will be populated through the MVVM model.
 
-.. image:: _images/image_000070_d0990b5cf21a4ff4687eb432829cb685847560588b0faf481dbd6be55160732e.png
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        box Application
+            participant View
+            participant ViewModel
+            participant Model
+            participant gRPCCommand
+        end
+        box Record & Verify
+            participant Object as :Object
+        end
+
+        activate View
+        View->>ViewModel: call
+        activate ViewModel
+        ViewModel->>Model: call
+        activate Model
+        Model->>gRPCCommand: call
+        activate gRPCCommand
+        gRPCCommand->>Object: call
+        activate Object
+        
+        Object-->>gRPCCommand: GRPC_STATUS_DEADLINE_EXCEEDED
+        deactivate Object
+        
+        gRPCCommand-->>Model: throw ex
+        deactivate gRPCCommand
+        Model-->>ViewModel: throw ex
+        deactivate Model
+        ViewModel-->>View: throw ex
+        deactivate ViewModel
+        
+        View->>View: Show DB Communication Error message
+        deactivate View
+    </pre>
 <<<
 
 [DESIGN_ITEM]
@@ -534,7 +1617,7 @@ TITLE: Stop Emission
 STATEMENT: >>>
 The flow for stopping an emission should be implemented as described in the following sequence diagram:
 
-.. image:: _images/image_000072_0907b0643d0d45b670e65c8f5b19f3641a721cd0dae3836b38b77307df36da57.png
+.. image:: _images/SW-H10TG-263.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -592,7 +1675,7 @@ TITLE: Treatment Console - Load plan into GB board Flow
 STATEMENT: >>>
 The plan loading flow:
 
-.. image:: _images/image_000077_12e9dc67047f56021663051abdfa6f3bcc7353ea3cb71891d0d9a91b166a7879.png
+.. image:: _images/SW-H10TG-19.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -608,7 +1691,7 @@ TITLE: Treatment Console - Radiation Emission View - State Machine
 STATEMENT: >>>
 The radiation emission should be implemented according to the emission board state machine.
 
-.. image:: _images/image_000081_90698438e1b404ba1898552d10e61d8d2e3a2ef0a7684241df6ba33be59c4f32.png
+.. image:: _images/SW-H10TG-18.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -625,7 +1708,51 @@ RELATIONS:
 UID: SW-H10TG-254
 TITLE: Treatment Fields Emission Progress indicators
 STATEMENT: >>>
-.. image:: _images/image_000082_812bc01cfcac5fa9281b2872461623a7e84823ac542322bd2d3199e59c304ac4.png
+
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        autonumber
+        box Application
+            participant VM as OperatePlanViewModelBase
+            participant CC as CollimatorControl
+            participant TFL as TreatmentFieldList
+            participant EP as EmissionProgress
+            participant TS as TelemetryService
+        end
+        box ControlBoard
+            participant F as Firmware
+        end
+
+        Note over VM, F: User initiates the emission delivery
+
+        loop Telemetry polling
+            TS->>F: [UDP] request telemetry
+            activate F
+            F-->>TS: [UDP] telemetry response
+            deactivate F
+            TS-->>VM: telemetry data
+            
+            activate VM
+            VM->>VM: get telemetry CurrentOperationalPoint index
+            VM->>CC: update selection
+            VM->>TFL: update selection
+            
+            alt Emission state
+                VM->>VM: calculate emission progress
+                VM->>EP: set emission progress value
+            end
+            
+            alt Launching state
+                VM->>VM: get telemetry HeaterCurrentSetpoint
+                VM->>VM: calculate launching progress
+                VM->>EP: set launching progress value
+            end
+            deactivate VM
+        end
+    </pre>
+
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -639,7 +1766,41 @@ RELATIONS:
 UID: SW-H10TG-248
 TITLE: Treatment Staging Sequence
 STATEMENT: >>>
-.. image:: _images/image_000086_b39bb4ea1912cd196d35b5277b81bf51d172a982236a908b17469b913c3d1236.png
+
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        box Application
+            participant M as MainBoardModel
+        end
+        box ControlBoard
+            participant F as Firmware
+        end
+
+        Note over M, F: Board is in Primed state, User initiates plan preparation
+
+        M->>F: [UDP] create a new session for N operational points
+        activate F
+        F-->>M: [UDP] session key
+        deactivate F
+
+        M->>M: wait for Staging board state
+
+        loop for each operational point
+            M->>F: [UDP] send operational parameters
+            activate F
+            F-->>M: [UDP] status response
+            deactivate F
+        end
+
+        M->>F: [UDP] Stage command
+        activate F
+        F-->>M: [UDP] status response
+        deactivate F
+
+        M->>M: wait for Staged board state
+    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -664,7 +1825,7 @@ The layout should include:
 7. Interlocks visualization.
 8. Live Camera to monitor the patient.
 
-.. image:: _images/image_000089_5f5d25d387de8114b03f8554a4fb5957e703099668c7ec3a4122f33b6d1cfbd6.png
+.. image:: _images/SW-H10TG-268.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -677,14 +1838,41 @@ TITLE: Validate Active Collimator
 STATEMENT: >>>
 The flow for validating the active collimator when performing Quality Checks should be implemented as described in the following sequence diagram:
 
-.. image:: _images/image_000090_dea819d096c3a0a5fd5ae9ef03a6b7e0bad6c6fd9f7074ea43d9cdc8deeb813d.png
 <<<
 
 [DESIGN_ITEM]
 UID: SW-H10TG-256
 TITLE: Warmup Progress Monitoring
 STATEMENT: >>>
-.. image:: _images/image_000092_27faca531cff34da7a2aa0cb764e4fade8996e5864f85b501a7c364e44b3f1df.png
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        box Application
+            participant M as WarmupModel
+            participant WP as WarmupProgress
+            participant TS as TelemetryService
+        end
+        box ControlBoard
+            participant F as Firmware
+        end
+
+        Note over M, F: User initiates Warmup/Conditioning
+
+        loop Telemetry polling
+            TS->>F: [UDP] request telemetry
+            activate F
+            F-->>TS: [UDP] telemetry response
+            deactivate F
+            TS-->>M: telemetry data
+            
+            activate M
+            M->>M: get telemetry HeaterCurrentSetpoint
+            M->>M: calculate warmup progress
+            M->>WP: notify on progress value change
+            deactivate M
+        end
+    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -695,7 +1883,56 @@ RELATIONS:
 UID: SW-H10TG-251
 TITLE: prompt the user when an interlock triggered during emission
 STATEMENT: >>>
-.. image:: _images/image_000094_1ad35ed0dd0e6501aea44b2e096ead5936d8aeac562dfd437b24879cc4470fa4.png
+.. raw:: html
+
+    <pre class="mermaid">
+    sequenceDiagram
+        actor User
+        box Application
+            participant VM as OperatePlanViewModelBase
+            participant M as MainBoardModel
+            participant D as DialogService
+            participant T as TelemetryService
+        end
+        box ControlBoard
+            participant F as Firmware
+        end
+
+        User->>VM: BeamOn
+        activate VM
+        VM->>M: BeamOn
+        activate M
+        
+        M->>F: [UDP] ReleasePoint command
+        activate F
+        F-->>M: [UDP] status response
+        deactivate F
+        
+        M->>M: wait for emission termination
+        
+        activate T
+        T->>F: query telemetry
+        activate F
+        F-->>T: [UDP] telemetry response
+        deactivate F
+        T->>VM: telemetry changed
+        deactivate T
+
+        VM->>VM: check board state
+        
+        alt Board is in Fault state
+            VM->>M: cancel current task
+            M-->>VM: BeamOn task cancellation exception
+            deactivate M
+            VM->>D: show emission error dialog
+            activate D
+            D-->>User: error dialog
+            deactivate D
+        end
+        
+        deactivate VM
+    </pre>
+
 <<<
 
 [[/SECTION]]
