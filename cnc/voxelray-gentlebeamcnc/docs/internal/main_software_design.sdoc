@@ -135,9 +135,10 @@ The data shall be managed in a relational database, which shall support hierarch
 
 The data shall be stored in the form of JSON-serialized Protocol Buffers based on the communication protocol. 
 Each Protocol Buffers structure shall have a dedicated database table with the following fields:
- - ID
- - Parent ID
- - Data (serialized JSON)
+
+- ID
+- Parent ID
+- Data (serialized JSON)
 
 <<<
 RELATIONS:
