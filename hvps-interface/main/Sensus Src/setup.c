@@ -14,6 +14,9 @@
 #include "processing.h"
 #include "timers.h"
 
+volatile bool spi1_recovery_needed = false;
+volatile bool spi3_recovery_needed = false;
+
 //Run once at startup to initialize peripherals
 void run_setup()
 {
@@ -53,6 +56,17 @@ void run_loop()
 	process_ftdi();
 	process_io();
 	process_monitoring();
+}
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
+	if(hspi->Instance == SPI1)
+	{
+		spi1_recovery_needed = true;
+	}
+	else if(hspi->Instance == SPI3)
+	{
+		spi3_recovery_needed = true;
+	}
 }
 
 //HAL callbacks here will trigger the module specific functions
