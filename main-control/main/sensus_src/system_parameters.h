@@ -12,7 +12,7 @@
 #define SYSTEM_PARAMETERS_H_
 
 #if defined(CALIBRATION_MODE)
-#define MRSRC 1
+#define MRSRC 0
 #define GBSRC 1
 
 #if (MRSRC + GBSRC) != 1

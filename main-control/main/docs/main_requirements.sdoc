@@ -71,7 +71,8 @@ The main control application firmware serves as the main logical control for sys
 
 The main control application firmware monitors all the inputs from the various connections on the board
 hardware. It can also be used to set and control many of the components that the main control board
-interfaces with. For off the shelf components, the main control application can set/enable the motor controller drivers for cooling system pump and fans, and can enable the ion pump controller.
+interfaces with. For off the shelf components, the main control application can set/enable the motor controller drivers for cooling system pump and fans, and
+can enable the ion pump controller.
 
 The main control application firmware runs on the main control MCU of the main control board.
 <<<
