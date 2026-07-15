@@ -17,7 +17,7 @@ void setup_ext_adcs();
 void process_ext_adcs();
 void ext_kv_rx_done();
 void ext_ma_rx_done();
-void spi1_error_handler(void);
-void spi3_error_handler(void);
+void spi1_recovery_handler(void);
+void spi3_recovery_handler(void);
 
 #endif /* EXT_ADCS_H_ */
