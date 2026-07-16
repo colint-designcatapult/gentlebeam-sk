@@ -22,5 +22,6 @@ void update_timers();
 void enable_grid_clock();
 void disable_grid_clock();
 void enable_runtime_timer();
+void heartbeat();
 
 #endif /* TIMERS_H_ */

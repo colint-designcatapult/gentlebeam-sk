@@ -56,6 +56,7 @@ void run_loop()
 	process_ftdi();
 	process_io();
 	process_monitoring();
+	heartbeat();
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
