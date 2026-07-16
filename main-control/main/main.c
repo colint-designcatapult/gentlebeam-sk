@@ -193,6 +193,8 @@ int main(void)
 	
 	//Finish setup with misc IO and HVPS test
 	finalize_setup();
+
+	uint32_t last_10ms = sys_now(); 
 	
 	//Synchronous loop
 	while (1) {		
@@ -225,5 +227,12 @@ int main(void)
 		
 		//Send PC response
 		send_pc_response();
+
+		//Send telemetry packet every 10ms
+		static u16_t port = 40020;
+		if((sys_now() - last_10ms) >= 10) {	
+			last_10ms = sys_now();
+			send_telemetry_packet(port);
+		}
 	}
 }

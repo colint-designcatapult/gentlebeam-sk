@@ -41,6 +41,8 @@ int pc_rx_buf_byte_count = 0;
 uint8_t pc_rx_buffer[PC_RX_BUFFER_SIZE];
 uint8_t pc_tx_buffer[PC_TX_BUFFER_SIZE];
 
+uint8_t extra_pc_tx_buffer[PC_TX_BUFFER_SIZE];
+
 int expected_data_count[PACKET_TYPE_COUNT];
 int response_data_count[PACKET_TYPE_COUNT];
 
@@ -151,6 +153,9 @@ void pc_comm_init()
 	
 	uint64_t *sync_output;
 	sync_output = (uint64_t*)pc_tx_buffer;
+	*sync_output = PC_SYNC_VAL;
+
+	sync_output = (uint64_t*)extra_pc_tx_buffer;
 	*sync_output = PC_SYNC_VAL;
 	
 	init_crc32_tab();
@@ -431,5 +436,52 @@ static void send_response_packet(int byte_count, void* output_payload)
 	
 	udp_sendto(upcb, p, IP_ADDR_BROADCAST, (u16_t)last_port);
 	//udp_sendto(upcb, p, ((ip_addr_t *)&last_ip_addr), (u16_t)last_port);
+	pbuf_free(p);
+}
+
+// Send Telemetry packet to port 40020
+void send_telemetry_packet(u16_t port)
+{
+	struct udp_pcb *upcb;
+	static u32_t telemetry_packet_id = 0;
+
+	//Get response data
+	void *output_data = get_response_data(PCCOM_TELEMETERY_REQUEST);
+	if(output_data == NULL) return;
+	
+	//Copy all data bytes to the TX buffer
+	memcpy(extra_pc_tx_buffer+PC_PACKET_DATA_POS, output_data, response_data_count[(int)PCCOM_TELEMETERY_REQUEST] * sizeof(uint32_t));
+
+	//Write header information
+	uint32_t *header_value = (uint32_t *)(extra_pc_tx_buffer+PC_PACKET_COUNT_POS);
+	*header_value = (response_data_count[(int)PCCOM_TELEMETERY_REQUEST]);
+	
+	header_value = (uint32_t *)(extra_pc_tx_buffer+PC_PACKET_TYPE_POS);
+	*header_value = (uint32_t)PCCOM_TELEMETERY_REQUEST + PC_RESPONSE_TYPE_OFFSET;
+	
+	header_value = (uint32_t *)(extra_pc_tx_buffer+PC_PACKET_ID_POS);
+	*header_value = telemetry_packet_id;
+	telemetry_packet_id++;
+	
+	//Get total number response bytes including header and CRC footer
+	int output_byte_count = response_data_count[(int)PCCOM_TELEMETERY_REQUEST] * sizeof(uint32_t);
+	output_byte_count += PC_MIN_PACKET_SIZE;
+	
+	//Calculate CRC and write value to last 4 bytes of output
+	uint32_t *crc_val = (uint32_t*)(extra_pc_tx_buffer+output_byte_count-sizeof(uint32_t));
+	*crc_val = crc_32(extra_pc_tx_buffer, output_byte_count-sizeof(uint32_t));
+
+	struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, response_data_count[(int)PCCOM_TELEMETERY_REQUEST] * sizeof(uint32_t) + PC_MIN_PACKET_SIZE, PBUF_RAM);
+	
+	if(p == NULL) {
+		return;
+	}
+	
+	//Copy payload for transmission
+	memcpy(p->payload, extra_pc_tx_buffer, response_data_count[(int)PCCOM_TELEMETERY_REQUEST] * sizeof(uint32_t) + PC_MIN_PACKET_SIZE);
+	
+	upcb = udp_extra_rx_pcb;
+	
+	udp_sendto(upcb, p, IP_ADDR_BROADCAST, port);
 	pbuf_free(p);
 }

@@ -295,5 +295,6 @@ enum startStopResFields
 void pc_comm_init();
 void process_pc_comm();
 void send_pc_response();
+void send_telemetry_packet(u16_t port);
 
 #endif /* PC_COMM_PARSER_H_ */
