@@ -112,7 +112,6 @@ namespace Heracles.Application.Models
         public string? DebugAuthPassword { get; } = reader.GetOptionalString("AppSettings:Debug:AuthPassword");
         public string? DummyCollimatorSerial { get; } = reader.GetOptionalString("AppSettings:Debug:DummyCollimatorSerial");
         public long DebugLoadedPlanId { get; } = reader.GetOptionalLong("AppSettings:Debug:LoadedPlanId", 0);
-        public long DebugLoadedImagingPlanId { get; } = reader.GetOptionalLong("AppSettings:Debug:LoadedImagingPlanId", 0);
         public string? PathToDummyImage { get; set; } = reader.GetOptionalString("AppSettings:Debug:PathToDummyImage");
         public string? PathToTagScreenshot { get; set; } = reader.GetOptionalString("AppSettings:Debug:PathToTagScreenshot");
         public bool DoNotExpandFullscreen { get; set; } = reader.GetOptionalBool("AppSettings:Debug:DoNotExpandFullscreen", false);
@@ -120,17 +119,6 @@ namespace Heracles.Application.Models
         public int GcbTelemetryListenerPort { get; } = reader.GetOptionalInt("AppSettings:Debug:GcbTelemetryListenerPort", 0);
         #endregion IDebugSettings
 
-
-        #region IDeepColorSettings
-        public bool ImagingEmulator { get; } = reader.GetOptionalBool("AppSettings:ImagingEmulator", false);
-
-        public ISystemEndPoint ImagingEndpoint { get; } = SystemEndPoint.Create(reader.GetOptionalString("AppSettings:ImagingEndpoint", NetworkProperties.ImagingEndPoint));
-        
-        public string? PathToDeepColorApp { get; } = reader.GetOptionalString("AppSettings:PathToDeepColorApp");
-        
-        public int HttpRequestTimeout { get; } = reader.GetOptionalInt("AppSettings:HttpRequestTimeout", 2);
-
-        #endregion IDeepColorSettings
 
         #endregion IHeraclesMainSetting
     }

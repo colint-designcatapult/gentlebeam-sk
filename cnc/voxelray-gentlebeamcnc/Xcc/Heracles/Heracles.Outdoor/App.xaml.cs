@@ -199,7 +199,6 @@ namespace Heracles.External
                 containerRegistry.RegisterSingleton<IEmrActualTreatmentFieldCommands, EmrDummyActualTreatmentFieldCommands>();
                 containerRegistry.RegisterSingleton<IEmrEmissionTreatmentFieldCommands, EmrDummyEmissionTreatmentFieldCommands>();
                 containerRegistry.RegisterSingleton<IEmrTreatmentCommands, EmrDummyTreatmentCommands>();
-                containerRegistry.RegisterSingleton<IEmrSeriesCommands, EmrDummySeriesCommands>();
                 containerRegistry.RegisterSingleton<IEmrPhotoCommands, EmrDummyPhotoCommands>();
 
                 containerRegistry.RegisterSingleton<IUserCommands, DummyUserCommands>();
@@ -272,7 +271,6 @@ namespace Heracles.External
                 containerRegistry.RegisterSingleton<ILogCommands, GrpcLogCommands>();
 
                 //containerRegistry.RegisterSingleton<IUserCommands, GrpcUserCommands>();
-                containerRegistry.RegisterSingleton<IEmrSeriesCommands, GrpcSeriesCommands>();
                 containerRegistry.RegisterSingleton<ISystemCommands, GrpcSystemCommands>();
                 #endregion
             }
