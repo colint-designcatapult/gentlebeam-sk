@@ -27,6 +27,9 @@
 
 #define PC_RESPONSE_TYPE_OFFSET	100
 
+#define PC_TELEMETRY_FREQ_MS 10
+#define PC_TELEMETRY_PORT	 40020
+
 typedef enum packetType
 {
 	PCCOM_INVALID_PACKET = 0,
@@ -295,5 +298,6 @@ enum startStopResFields
 void pc_comm_init();
 void process_pc_comm();
 void send_pc_response();
+void send_telemetry();
 
 #endif /* PC_COMM_PARSER_H_ */

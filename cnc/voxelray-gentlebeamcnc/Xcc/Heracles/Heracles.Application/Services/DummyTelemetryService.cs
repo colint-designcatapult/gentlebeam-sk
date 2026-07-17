@@ -84,7 +84,6 @@ namespace Heracles.Application.Services
         public IEventAggregator EventAggregator { get; }
         public ISystemTelemetryChanged SystemTelemetryChangedCallback { get; }
         public IDebugSettings DebugSettings { get; }
-        public TelemetryServiceMode Mode { get; private set; } = TelemetryServiceMode.None;
 
         private int _currentOperationalPoint = 0;
         private int _totalOperationPoints = 0;
@@ -109,9 +108,8 @@ namespace Heracles.Application.Services
 
         #region ITelemetryService
         
-        public void Start(TelemetryServiceMode mode)
+        public void Start()
         {
-            Mode = mode;
         }
 
         public void Stop()

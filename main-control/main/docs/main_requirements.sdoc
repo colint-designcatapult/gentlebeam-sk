@@ -813,8 +813,8 @@ UID: RQ-H1FWMC-83
 TYPE: Functional
 TITLE: Report telemetry to PC
 STATEMENT: >>>
-The firmware shall report monitored system parameter values in response to a telemetry
-request from the PC. Parameter types in the response include the following:
+The firmware shall transmit monitored system parameter values to the PC as unsolicited UDP
+telemetry packets every 10 ms (100 Hz) and in response to a telemetry request from the PC. Parameter types in each packet include the following:
 
 - Control board state
 - Current system operational point in treatment plan

@@ -225,5 +225,8 @@ int main(void)
 		
 		//Send PC response
 		send_pc_response();
+		
+		//Send telemetry
+		send_telemetry();
 	}
 }
