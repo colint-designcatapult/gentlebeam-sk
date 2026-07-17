@@ -62,7 +62,7 @@ namespace Xcc.Infra.GryphonBoard
                 if (property.PropertyType == typeof(float) || property.PropertyType == typeof(double))
                 {
                     var value = property.GetValue(this);
-                    sb.AppendLine($"{property.Name}: {string.Format("{0:F}", value)}");
+                    sb.AppendLine($"{property.Name}: {string.Format("{0:F3}", value)}");
                 }
                 else if (property.PropertyType == typeof(int) || property.PropertyType == typeof(uint) || property.PropertyType == typeof(ulong))
                 {

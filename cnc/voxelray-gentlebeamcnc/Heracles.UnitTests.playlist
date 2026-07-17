@@ -4023,13 +4023,13 @@
               </Rule>
             </Rule>
             <Rule Match="All">
-              <Property Name="Namespace" Value="Xcc.Test.Xcc.Infra.Services.GcbServices" />
+              <Property Name="Namespace" Value="Empyrean.Common.Test.Infra.Networking.Udp" />
               <Rule Match="Any">
                 <Rule Match="All">
                   <Property Name="Class" Value="AsyncUdpClientConnection_PortReuseTests" />
                   <Rule Match="Any">
                     <Rule Match="All">
-                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Xcc.Test.Xcc.Infra.Services.GcbServices.AsyncUdpClientConnection_PortReuseTests.PortReuseTest" />
+                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Empyrean.Common.Test.Infra.Networking.Udp.AsyncUdpClientConnection_PortReuseTests.PortReuseTest" />
                       <Rule Match="Any">
                         <Property Name="DisplayName" Value="PortReuseTest" />
                       </Rule>
@@ -4037,16 +4037,16 @@
                   </Rule>
                 </Rule>
                 <Rule Match="All">
-                  <Property Name="Class" Value="AsyncUdpClientConnectionTests" />
+                  <Property Name="Class" Value="UdpClientConnectionTests" />
                   <Rule Match="Any">
                     <Rule Match="All">
-                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Xcc.Test.Xcc.Infra.Services.GcbServices.AsyncUdpClientConnectionTests.SendAsyncTest" />
+                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Empyrean.Common.Test.Infra.Networking.Udp.UdpClientConnectionTests.SendAsyncTest" />
                       <Rule Match="Any">
                         <Property Name="DisplayName" Value="SendAsyncTest" />
                       </Rule>
                     </Rule>
                     <Rule Match="All">
-                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Xcc.Test.Xcc.Infra.Services.GcbServices.AsyncUdpClientConnectionTests.SetEndpointTest" />
+                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Empyrean.Common.Test.Infra.Networking.Udp.UdpClientConnectionTests.SetEndpointTest" />
                       <Rule Match="Any">
                         <Property Name="DisplayName" Value="SetEndpointTest" />
                       </Rule>

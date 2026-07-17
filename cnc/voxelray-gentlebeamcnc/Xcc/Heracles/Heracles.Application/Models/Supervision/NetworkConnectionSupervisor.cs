@@ -5,7 +5,7 @@ using System.IO;
 using Empyrean.Common.Infra.Networking;
 using Empyrean.Common.Infra.Networking.Udp;
 using Xcc.Core.Models;
-using Xcc.Infra.Services.GcbServices;
+using Xcc.Infra.GryphonBoard.Comm;
 using Xcc.Core.Logging;
 using Xcc.Infra.Networking.Udp;
 
@@ -13,7 +13,7 @@ namespace Heracles.Application.Models.Supervision
 {
     public class NetworkConnectionSupervisor 
         : IGcbTelemetryConnectionFactory
-        , IGcbCommunicationConnectionFactory
+        , IGcbCommandConnectionFactory
         , IQcbCommConnectionFactory
     {
         private readonly ISystemSettingsStore settingsStore;
@@ -78,7 +78,7 @@ namespace Heracles.Application.Models.Supervision
             }
         }
 
-        public IAsyncClientConnection CreateGcbCommandConnection()
+        public IAsyncClientConnection GetGcbCommandConnection()
         {
             lock (connectionLockObject)
             {

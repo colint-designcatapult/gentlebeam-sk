@@ -47,7 +47,7 @@ namespace Xcc.Test.Xcc.Core.Models.GryphonBoard
         [TestCase((int)GcbStateNew.Startup, "Startup")]
         [TestCase((int)GcbStateNew.Cold, "Cold")]
         [TestCase((int)GcbStateNew.ColdFault, "ColdFault")]
-        [TestCase((int)GcbStateNew.DailyWarmup, "Conditioning")]
+        [TestCase((int)GcbStateNew.DailyWarmup, "DailyWarmup")]
         [TestCase((int)GcbStateNew.Warmup, "Warmup")]
         [TestCase((int)GcbStateNew.WarmupFault, "WarmupFault")]
         [TestCase((int)GcbStateNew.Primed, "Primed")]
@@ -94,10 +94,10 @@ namespace Xcc.Test.Xcc.Core.Models.GryphonBoard
             Assert.That(res, Does.Contain("FaultIdSupportingDetails: 2"));
             Assert.That(res, Does.Contain("FaultEntryState: 2"));
             Assert.That(res, Does.Contain("FaultTimeValue: 3"));
-            Assert.That(res, Does.Contain("ExpectedParameter: 1,1"));
+            Assert.That(res, Does.Contain("ExpectedParameter: 1.1"));
             Assert.That(res, Does.Contain("ExpectedParameterSupportingDetails: 4"));
-            Assert.That(res, Does.Contain("ParameterTolerance: 2,3"));
-            Assert.That(res, Does.Contain("MeasuredParameter: 3,4"));
+            Assert.That(res, Does.Contain("ParameterTolerance: 2.3"));
+            Assert.That(res, Does.Contain("MeasuredParameter: 3.4"));
             Assert.That(res, Does.Contain("MeasuredParameterSupportingDetails: 5"));   
         }
     }

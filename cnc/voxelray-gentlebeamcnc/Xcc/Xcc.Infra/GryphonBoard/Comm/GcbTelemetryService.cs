@@ -6,7 +6,6 @@ using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Logging;
 using Xcc.Core.Models;
 using Xcc.Core.Services;
-using Xcc.Infra.GryphonBoard.Comm.Udp;
 
 namespace Xcc.Infra.GryphonBoard.Comm
 {
@@ -28,14 +27,14 @@ namespace Xcc.Infra.GryphonBoard.Comm
         public GcbTelemetryService(
             IAppGlobals appGlobals,
             IGcbXRayCommandOperator gcbXRayCommandOperator,
-            IGcbTelemetryConnection gcbTelemetryConnection,
+            IGcbTelemetryConnectionFactory gcbTelemetryConnectionFactory,
             ISystemTelemetryChanged systemTelemetryChangedCallback,
             ILogWriter logWriter)
         {
             GlobalToken = appGlobals.AppCancellationTokenSource.Token;
             GcbXRayCommandOperator = gcbXRayCommandOperator;
             LogWriter = logWriter;
-            Connection = gcbTelemetryConnection;
+            Connection = gcbTelemetryConnectionFactory.GetGcbTelemetryConnection();
             SystemTelemetryChangedCallback = systemTelemetryChangedCallback;
             ExpirationTimer = new(ResetTelemetry);
         }
