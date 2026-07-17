@@ -11,6 +11,9 @@
 #ifndef SYSTEM_PARAMETERS_H_
 #define SYSTEM_PARAMETERS_H_
 
+#define FW_NORMAL_MODE		0x0
+#define FW_CALIBRATION_MODE 0x494C4143 // Hex-encoded ASCII "CALI" 
+
 #if defined(CALIBRATION_MODE)
 #define MRSRC 0
 #define GBSRC 1

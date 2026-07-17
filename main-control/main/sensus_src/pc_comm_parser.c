@@ -439,32 +439,31 @@ static void send_response_packet(int byte_count, void* output_payload)
 	pbuf_free(p);
 }
 
-// Send Telemetry packet to port 40020
-void send_telemetry_packet(u16_t port)
+// Send an unsolicited response packet to the telemetry port.
+// The caller owns packet_id so related packets can share an ID.
+void send_telemetry_packet(u16_t port, PacketType_t packet_type, u32_t packet_id)
 {
 	struct udp_pcb *upcb;
-	static u32_t telemetry_packet_id = 0;
 
 	//Get response data
-	void *output_data = get_response_data(PCCOM_TELEMETERY_REQUEST);
+	void *output_data = get_response_data(packet_type);
 	if(output_data == NULL) return;
 	
 	//Copy all data bytes to the TX buffer
-	memcpy(extra_pc_tx_buffer+PC_PACKET_DATA_POS, output_data, response_data_count[(int)PCCOM_TELEMETERY_REQUEST] * sizeof(uint32_t));
+	memcpy(extra_pc_tx_buffer+PC_PACKET_DATA_POS, output_data, response_data_count[(int)packet_type] * sizeof(uint32_t));
 
 	//Write header information
 	uint32_t *header_value = (uint32_t *)(extra_pc_tx_buffer+PC_PACKET_COUNT_POS);
-	*header_value = (response_data_count[(int)PCCOM_TELEMETERY_REQUEST]);
+	*header_value = response_data_count[(int)packet_type];
 	
 	header_value = (uint32_t *)(extra_pc_tx_buffer+PC_PACKET_TYPE_POS);
-	*header_value = (uint32_t)PCCOM_TELEMETERY_REQUEST + PC_RESPONSE_TYPE_OFFSET;
+	*header_value = (uint32_t)packet_type + PC_RESPONSE_TYPE_OFFSET;
 	
 	header_value = (uint32_t *)(extra_pc_tx_buffer+PC_PACKET_ID_POS);
-	*header_value = telemetry_packet_id;
-	telemetry_packet_id++;
+	*header_value = packet_id;
 	
 	//Get total number response bytes including header and CRC footer
-	int output_byte_count = response_data_count[(int)PCCOM_TELEMETERY_REQUEST] * sizeof(uint32_t);
+	int output_byte_count = response_data_count[(int)packet_type] * sizeof(uint32_t);
 	output_byte_count += PC_MIN_PACKET_SIZE;
 	
 	//Calculate CRC and write value to last 4 bytes of output
@@ -487,10 +486,16 @@ void send_telemetry_packet(u16_t port)
 
 void send_telemetry()
 {
-	static u32_t last_10ms = 0;
+	static u32_t last_10ms = 0, last_1000ms = 0;
+	static u32_t telemetry_packet_id = 0;
 	
 	if((sys_now() - last_10ms) >= PC_TELEMETRY_FREQ_MS) {
-		last_10ms += 10; // Maintain 10ms cadence
-		send_telemetry_packet(PC_TELEMETRY_PORT);
+		last_10ms += PC_TELEMETRY_FREQ_MS; // Maintain cadence
+		send_telemetry_packet(PC_TELEMETRY_PORT, PCCOM_TELEMETERY_REQUEST, telemetry_packet_id++);
+	}
+	
+	if((sys_now() - last_1000ms) >= PC_VERSION_FREQ_MS) {
+		last_1000ms += PC_VERSION_FREQ_MS;
+		send_telemetry_packet(PC_TELEMETRY_PORT, PCCOM_VERSION_REQUEST, telemetry_packet_id++);
 	}
 }

@@ -28,6 +28,7 @@
 #define PC_RESPONSE_TYPE_OFFSET	100
 
 #define PC_TELEMETRY_FREQ_MS 10
+#define PC_VERSION_FREQ_MS   1000
 #define PC_TELEMETRY_PORT	 40020
 
 typedef enum packetType
