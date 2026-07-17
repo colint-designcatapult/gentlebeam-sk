@@ -471,17 +471,26 @@ void send_telemetry_packet(u16_t port)
 	uint32_t *crc_val = (uint32_t*)(extra_pc_tx_buffer+output_byte_count-sizeof(uint32_t));
 	*crc_val = crc_32(extra_pc_tx_buffer, output_byte_count-sizeof(uint32_t));
 
-	struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, response_data_count[(int)PCCOM_TELEMETERY_REQUEST] * sizeof(uint32_t) + PC_MIN_PACKET_SIZE, PBUF_RAM);
-	
+	// Allocate a reference pbuf which only allocates the UDP/IP header and references our existing buffers
+	struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, output_byte_count, PBUF_REF);
 	if(p == NULL) {
 		return;
 	}
-	
-	//Copy payload for transmission
-	memcpy(p->payload, extra_pc_tx_buffer, response_data_count[(int)PCCOM_TELEMETERY_REQUEST] * sizeof(uint32_t) + PC_MIN_PACKET_SIZE);
-	
+
+	// Point the payload directly to the static buffer
+	p->payload = extra_pc_tx_buffer;
+
 	upcb = udp_extra_rx_pcb;
-	
 	udp_sendto(upcb, p, IP_ADDR_BROADCAST, port);
 	pbuf_free(p);
+}
+
+void send_telemetry()
+{
+	static u32_t last_10ms = 0;
+	
+	if((sys_now() - last_10ms) >= PC_TELEMETRY_FREQ_MS) {
+		last_10ms += 10; // Maintain 10ms cadence
+		send_telemetry_packet(PC_TELEMETRY_PORT);
+	}
 }
