@@ -549,9 +549,11 @@ RELATIONS:
 UID: SW-H1FWMC-183
 TITLE: PC Ethernet Communication
 STATEMENT: >>>
-The firmware communicates with the PC through an Ethernet interface, using an RMII setup to a transceiver IC. The firmware both receives and transmits data over Ethernet. While the Ethernet interface has independent transmit and receive lines, and the transmit and receive functionality operates independently at a driver level, at an application level the PC Ethernet communication is structured in a command-response setup.
+The firmware communicates with the PC through an Ethernet interface, using an RMII setup to a transceiver IC. The firmware both receives and transmits data over Ethernet. While the Ethernet interface has independent transmit and receive lines, and the transmit and receive functionality operates independently at a driver level, the application-level protocol has separate command-response and periodic telemetry traffic.
 
 Ethernet communication utilizes LWIP middleware libraries to transmit and receive UDP packets over this Ethernet connection. UDP was chosen over TCP as the real-time availability is more important than attempting to continuously resend information. Any missed packets can be re sent at the application level, but routing of packets should not be held up by built-in TCP handshaking.
+
+The firmware transmits system telemetry as unsolicited UDP packets every 10 ms (100 Hz) and in response to a telemetry request from the PC. Commands continue to use the command-response protocol.
 
 Transmission and reception are both performed at a packet level due to the LWIP library handling of the incoming and outgoing UDP packets. While UDP packets have built-in formatting and headers, the application-level payloads, for both transmitted and received packets, also contain custom defined formatting for additional organization and parsing.
 <<<
@@ -975,7 +977,7 @@ RELATIONS:
 UID: SW-H1FWMC-207
 TITLE: System Status (Telemetry)
 STATEMENT: >>>
-The firmware monitors and keeps track of multiple signals and reported values. These signals, statuses, and values are collected in a singular 'system status' array. This system status array serves as the foundation for telemetry reporting back to the PC. It is also used for processing within the rest of the firmware as the 'source of truth' for the monitored parameters. Further details on the system status values can be found in the details for the telemetry response to the PC, located in the appendix section for the PC-Firmware Communication Protocol.
+The firmware monitors and keeps track of multiple signals and reported values. These signals, statuses, and values are collected in a singular 'system status' array. This system status array serves as the source for unsolicited UDP telemetry packets transmitted to the PC every 10 ms (100 Hz). It is also used for processing within the rest of the firmware as the 'source of truth' for the monitored parameters. Further details on the system status values can be found in the telemetry packet details in the appendix section for the PC-Firmware Communication Protocol.
 <<<
 RELATIONS:
 - TYPE: Parent
