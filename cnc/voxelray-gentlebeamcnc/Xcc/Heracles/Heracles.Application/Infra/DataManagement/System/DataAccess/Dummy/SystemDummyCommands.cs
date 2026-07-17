@@ -275,7 +275,6 @@ namespace Heracles.Application.Infra.DataManagement.System.DataAccess.Dummy
                 TreatmentHeadCamEndPoint = new SystemEndPoint("127.0.0.1:50003"),
                 GCBTelemetryEndPoint = new SystemEndPoint(heraclesCoreSettings.GCBTelemetryEndPoint?.Address() ?? "127.0.0.1:50020"),
                 GCBCommandsEndPoint = new SystemEndPoint(heraclesCoreSettings.GCBCommandsEndPoint?.Address() ?? "127.0.0.1:50007"),
-                AcbCommandsEndPoint = new SystemEndPoint(heraclesCoreSettings.AcbCommandsEndPoint?.Address() ?? "127.0.0.1:7000"),
                 QcbCommandsEndPoint = new SystemEndPoint(heraclesCoreSettings.QcbCommandsEndPoint?.Address() ?? "127.0.0.1:8000")
             };
 

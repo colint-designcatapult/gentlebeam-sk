@@ -19,10 +19,7 @@ public class HeraclesExternalSettings(ISettingsReader reader) : Core.Models.IHer
 
 
     #region IHeraclesCoreSettings
-    public ISystemEndPoint AcbCommandsEndPoint { get; set; } =
-        SystemEndPoint.Create(
-            reader.GetOptionalString("AppSettings:EndPoints:AcbCommandsEndPoint", NetworkProperties.AcbCommandsEndPoint));
-
+    
     #region ICoreSettings
     public ISystemEndPoint GCBTelemetryEndPoint { get; set; } =
         SystemEndPoint.Create(
@@ -39,10 +36,6 @@ public class HeraclesExternalSettings(ISettingsReader reader) : Core.Models.IHer
     public ISystemEndPoint DataCommandsEndPoint { set; get; } =
         SystemEndPoint.Create(
             reader.GetOptionalString("AppSettings:EndPoints:DataCommandsEndPoint", NetworkProperties.DataCommandsEndPoint));
-
-    public ISystemEndPoint UpsBroadcastServiceEndPoint { set; get; } =
-        SystemEndPoint.Create(
-            reader.GetOptionalString("AppSettings:EndPoints:UpsBroadcastServiceEndPoint", NetworkProperties.UpsBroadcastServiceEndPoint));
     public int GrpcTimeout { get; } = reader.GetOptionalInt("AppSettings:GrpcTimeout_ms", 5000);
 
     public string StorageRoot { get; } = reader.GetOptionalString("AppSettings:StorageRoot", @"C:\GentleBeam\deep-color-raw-dcm\");

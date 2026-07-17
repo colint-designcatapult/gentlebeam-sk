@@ -24,18 +24,15 @@ namespace Heracles.Application.Models.Supervision
         // Managed connections:
         private IUdpClientConnection gcbTelemetryConnection;
         private IUdpClientConnection gcbCommandConnection;
-        private IUdpClientConnection acbCommConnection;
         private IUdpClientConnection qcbCommConnection;
         private const bool recordTelemetryData = true;
         private const bool recordGcbCommandsData = true;
-        private const bool recordAcbCommandsData = true;
         private const bool recordQcbCommandsData = true;
 
-        // We predefine these values now, as there's an issue with GCB/ACB/QCB network stack,
+        // We predefine these values now, as there's an issue with GCB/QCB network stack,
         // putting them in trouble when a new client connects - they can serve one connection only.
         // So we want to have the same port numbers on app restart,
         // to not mess with the boards with random values assigned by OS
-        private const int AcbCommandClientPort = 22222;
         private const int DebugQcbCommandClientPort = 22223;
 
         public NetworkConnectionSupervisor(
@@ -103,26 +100,6 @@ namespace Heracles.Application.Models.Supervision
                 }
 
                 return gcbCommandConnection;
-            }
-        }
-
-        public IAsyncClientConnection GetAcbCommConnection()
-        {
-            lock (connectionLockObject)
-            {
-                if (acbCommConnection == null && endPointsConfiguration?.AcbCommandsEndPoint != null)
-                {
-                    acbCommConnection = CreateConnection(
-                        endPointsConfiguration.AcbCommandsEndPoint, 
-                        clientPort: AcbCommandClientPort);
-
-                    if (recordAcbCommandsData)
-                    {
-                        acbCommConnection = AddLoggingProxy(acbCommConnection, subfolderName: "AcbCommands");
-                    }
-                }
-
-                return acbCommConnection;
             }
         }
         
@@ -207,12 +184,6 @@ namespace Heracles.Application.Models.Supervision
                 if (gcbCommandConnection is not null && !newConfig.GCBCommandsEndPoint.Equals(oldConfig.GCBCommandsEndPoint))
                 {
                     gcbCommandConnection.SetEndpoint(newConfig.GCBCommandsEndPoint.Ip(), newConfig.GCBCommandsEndPoint.Port.Value);
-                }
-
-                // Update actuator command service endpoint
-                if (acbCommConnection is not null && !newConfig.AcbCommandsEndPoint.Equals(oldConfig.AcbCommandsEndPoint))
-                {
-                    acbCommConnection.SetEndpoint(newConfig.AcbCommandsEndPoint.Ip(), newConfig.AcbCommandsEndPoint.Port.Value);
                 }
 
 

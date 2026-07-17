@@ -16,7 +16,6 @@ namespace Heracles.Application.Models.Settings
             TreatmentHeadCamEndPoint = new SystemEndPoint(configuration.TreatmentHeadCamEndPoint);
             GCBTelemetryEndPoint = new SystemEndPoint(configuration.GCBTelemetryEndPoint);
             GCBCommandsEndPoint = new SystemEndPoint(configuration.GCBCommandsEndPoint);
-            AcbCommandsEndPoint = new SystemEndPoint(configuration.AcbCommandsEndPoint);
             QcbCommandsEndPoint = new SystemEndPoint(configuration.QcbCommandsEndPoint);
 
             AcceptChanges();
@@ -76,16 +75,6 @@ namespace Heracles.Application.Models.Settings
             }
         }
 
-        SystemEndPoint _acbCommandsEndPoint = SystemEndPoint.LocalHost;
-        public SystemEndPoint AcbCommandsEndPoint
-        {
-            get => _acbCommandsEndPoint;
-            set
-            {
-                SetPropertyWithDirtyFlag(ref _acbCommandsEndPoint, value);
-            }
-        }
-
         SystemEndPoint _qcbCommandsEndPoint = SystemEndPoint.LocalHost;
         public SystemEndPoint QcbCommandsEndPoint
         {
@@ -106,7 +95,6 @@ namespace Heracles.Application.Models.Settings
             TreatmentHeadCamEndPoint.AcceptChanges();
             GCBTelemetryEndPoint.AcceptChanges();
             GCBCommandsEndPoint.AcceptChanges();
-            AcbCommandsEndPoint.AcceptChanges();
             QcbCommandsEndPoint.AcceptChanges();
         }
         

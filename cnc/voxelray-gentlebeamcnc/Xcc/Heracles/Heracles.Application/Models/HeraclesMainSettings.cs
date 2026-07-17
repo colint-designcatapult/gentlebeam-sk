@@ -15,11 +15,6 @@ namespace Heracles.Application.Models
         #region IHeraclesMainSetting
 
 
-        public ISystemEndPoint UpsBroadcastServiceEndPoint { set; get; } =
-            SystemEndPoint.Create(
-                reader.GetOptionalString("AppSettings:EndPoints:UpsBroadcastServiceEndPoint", NetworkProperties.UpsBroadcastServiceEndPoint));
-
-
         #region ITextLogSettings
         public string LogFilename { get; } = reader.GetString("AppSettings:LogFilename");
         public int LogPageSize { get; } = reader.GetOptionalInt("AppSettings:LogPageSize", 0);
@@ -28,9 +23,9 @@ namespace Heracles.Application.Models
 
 
         #region IHeraclesCoreSettings
-        public ISystemEndPoint AcbCommandsEndPoint { get; set; } =
+        public ISystemEndPoint QcbCommandsEndPoint { get; set; } =
             SystemEndPoint.Create(
-                reader.GetOptionalString("AppSettings:EndPoints:AcbCommandsEndPoint", NetworkProperties.AcbCommandsEndPoint));
+                reader.GetOptionalString("AppSettings:EndPoints:QcbCommandsEndPoint", NetworkProperties.QcbEndPoint));
 
         #region ICoreSettings
         public ISystemEndPoint GCBTelemetryEndPoint { get; set; } =
@@ -40,10 +35,6 @@ namespace Heracles.Application.Models
         public ISystemEndPoint GCBCommandsEndPoint { get; set; } =
             SystemEndPoint.Create(
                 reader.GetOptionalString("AppSettings:EndPoints:GCBCommandsEndPoint", NetworkProperties.GcbCommandsEndPoint));
-
-        public ISystemEndPoint QcbCommandsEndPoint { get; set; } =
-            SystemEndPoint.Create(
-                reader.GetOptionalString("AppSettings:EndPoints:QcbCommandsEndPoint", NetworkProperties.QcbEndPoint));
 
         public ISystemEndPoint DataCommandsEndPoint { set; get; } =
             SystemEndPoint.Create(

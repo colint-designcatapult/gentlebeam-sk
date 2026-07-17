@@ -54,7 +54,6 @@ using Xcc.Infra.QualityCheck;
 using Xcc.Infra.QualityCheck.Comm;
 using Xcc.Infra.QualityCheck.Comm.Udp.MockServers;
 using Xcc.Infra.Services;
-using Xcc.Infra.Services.UPS;
 using Xcc.Infra.UserSessions.BearerToken;
 using Xcc.Shared.Services;
 using Xcc.Shared.Views;
@@ -159,7 +158,6 @@ namespace Heracles.External
                 containerRegistry.RegisterManySingleton<GcbCommandInterface>();
                 containerRegistry.RegisterManySingleton<DummyMainBoardModel>();
                 containerRegistry.RegisterSingleton<ITelemetryService, DummyTelemetryService>();
-                containerRegistry.RegisterSingleton<IUpsService, DummyUPSService>();
                 //containerRegistry.RegisterSingleton<ILogService, TextLogService>();
                 containerRegistry.RegisterSingleton<MockQcbServer>();
             }
@@ -170,7 +168,6 @@ namespace Heracles.External
                 containerRegistry.RegisterSingleton<IGcbCommandInterface, GcbCommandInterface>();
                 containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
                 containerRegistry.RegisterManySingleton<GcbTelemetryService>();
-                containerRegistry.RegisterSingleton<IUpsService, UpsService>();
                 containerRegistry.RegisterManySingleton<MainBoardModelBase>();
                 #endregion
             }

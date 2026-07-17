@@ -48,7 +48,6 @@ namespace Heracles
             containerRegistry.RegisterSingleton<IAppSettings, AppSettings>();
             containerRegistry.RegisterSingleton<ITelemetryService, AaronTelemetryService>();
             //containerRegistry.RegisterSingleton<ITelemetryService, TelemetryService>();
-            containerRegistry.RegisterSingleton<IUPSService, UPSService>();
             containerRegistry.RegisterSingleton<IGCBCommandsService, GCBCommandsService>();
             containerRegistry.RegisterSingleton<IGCBCommunicationService, GCBCommunicationService>();
             containerRegistry.RegisterSingleton<IXRayService, XRayService>();
@@ -67,7 +66,6 @@ namespace Heracles
             containerRegistry.RegisterSingleton<INotificationsArea, NotificationsArea>();
             containerRegistry.RegisterSingleton<IGCBFaults, GCBFaults>();
             containerRegistry.RegisterSingleton<IGCBInterlocks, GCBInterlocks>();
-            containerRegistry.RegisterSingleton<IUPSTelemetry, UPSTelemetry>();
             containerRegistry.RegisterSingleton<IGCBPushButtons, GCBPushButtons>();
             containerRegistry.RegisterSingleton<ITargetsConfigurationPreset, ActiveTargetsConfigurationPreset>();
             containerRegistry.RegisterSingleton<IMagneticCorrectionMatrices, MagneticCorrectionMatrices>();

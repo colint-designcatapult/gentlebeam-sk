@@ -6,7 +6,6 @@ public interface ICoreSettings
     public ISystemEndPoint GCBCommandsEndPoint { get; set; }
     public ISystemEndPoint QcbCommandsEndPoint { get; set; }
     public ISystemEndPoint DataCommandsEndPoint { get; set; }
-    public ISystemEndPoint UpsBroadcastServiceEndPoint { get; set; }
 
     public int GrpcTimeout { get; }
     public string StorageRoot { get; }
