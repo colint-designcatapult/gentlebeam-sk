@@ -35,7 +35,7 @@ namespace Empyrean.Common.Infra.Networking.Udp
             }
             _udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, clientPort));
         }
-        
+
         public async Task<byte[]> ReceiveAsync(CancellationToken cancellationToken)
         {
             var response = await _udpClient.ReceiveAsync(cancellationToken);

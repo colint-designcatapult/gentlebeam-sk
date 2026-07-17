@@ -16,16 +16,13 @@ namespace Xcc.Infra.GryphonBoard.Comm
         private const int TELEMETRY_EXPIRATION_TIMEOUT = 1500;
         private const int TELEMETRY_SERVICE_INTERVAL = 250;
 
-        public TelemetryServiceMode Mode { get; private set; } = TelemetryServiceMode.None;
         private IGcbXRayCommandOperator GcbXRayCommandOperator { get; }
         public ILogWriter LogWriter { get; }
         private IAsyncClientConnection Connection { get; }
         public ISystemTelemetryChanged SystemTelemetryChangedCallback { get; }
         private Task? ReceiveProcess { get; set; }
-        private Task? RequestProcess { get; set; }
         private CancellationToken GlobalToken { get; }
         private CancellationTokenSource ReceiveProcessCts { get; set; } = new();
-        private CancellationTokenSource RequestProcessCts { get; set; } = new();
         private Timer ExpirationTimer { get; } // telemetry resets when the timer expires
 
         public GcbTelemetryService(
@@ -44,30 +41,14 @@ namespace Xcc.Infra.GryphonBoard.Comm
         }
 
 
-        public void Start(TelemetryServiceMode mode)
+        public void Start()
         {
             StartReceiveProcess();
-            if (mode == TelemetryServiceMode.Active)
-            {
-                StartRequestProcess();
-            }
         }
 
         public void Stop()
         {
-            RequestProcessCts?.Cancel();
             ReceiveProcessCts?.Cancel();
-        }
-
-        private void StartRequestProcess()
-        {
-            if (RequestProcess is not null && !RequestProcess.IsCompleted)
-            {
-                throw new InvalidOperationException("Cannot start Telemetery Service, it is already running");
-            }
-
-            RequestProcessCts = CancellationTokenSource.CreateLinkedTokenSource(GlobalToken);
-            RequestProcess = RequestTelemetryProcess(RequestProcessCts.Token);
         }
 
         private void StartReceiveProcess()
@@ -80,23 +61,6 @@ namespace Xcc.Infra.GryphonBoard.Comm
             ReceiveProcessCts = CancellationTokenSource.CreateLinkedTokenSource(GlobalToken);
             ReceiveProcess = ReceiveTelemetryProcess(ReceiveProcessCts.Token);
         }
-
-        private Task RequestTelemetryProcess(CancellationToken cancellationToken)
-        {
-            return Task.Run(async () =>
-            {
-                byte[] txData = GcbXRayCommandOperator.GenerateTelemetryRequestCmd();
-
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    //wait timeout before send the new request
-                    await Connection.SendAsync(txData);
-
-                    await Task.Delay(TELEMETRY_SERVICE_INTERVAL, cancellationToken);
-                }
-            });
-        }
-
 
         private Task ReceiveTelemetryProcess(CancellationToken cancellationToken)
         {
@@ -156,7 +120,6 @@ namespace Xcc.Infra.GryphonBoard.Comm
                 if (disposing)
                 {
                     ExpirationTimer.Dispose();
-                    RequestProcessCts.Cancel();
                     ReceiveProcessCts.Cancel();
                     Connection.Dispose();
                 }

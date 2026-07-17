@@ -120,7 +120,7 @@ internal class MainModule(IRegionManager regionManager, IDialogService dialogSer
         var networkSupervisor = containerProvider.Resolve<NetworkConnectionSupervisor>();
 
         var telemetryService = containerProvider.Resolve<ITelemetryService>();
-        telemetryService.Start(TelemetryServiceMode.Passive);
+        telemetryService.Start();
     }
 
     private async Task CheckDeviceSerialIdAsync(IContainerProvider containerProvider)

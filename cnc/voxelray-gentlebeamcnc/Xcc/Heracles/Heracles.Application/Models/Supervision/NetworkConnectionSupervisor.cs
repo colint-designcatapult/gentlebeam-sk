@@ -56,22 +56,13 @@ namespace Heracles.Application.Models.Supervision
             {
                 if (gcbTelemetryConnection == null && endPointsConfiguration?.GCBTelemetryEndPoint != null)
                 {
-                    // In general, we need to specify client port equal to the target one,
-                    // as GCB broadcasts the telemetry
-
-                    // We don't want telemetry to raise 'same port' exception on DI resolve on localho  st endpoint,
-                    // as we'll not be able to fix the issue from the indoor then.
-                    // TODO: need to redesign this mechanism.
-
-                    // For now, we just set a local port to some other one
-                    // to stop receiving our own telemetry requests via the loop in case of any error.
-                    // This allows us to see no telemetry and handle the issue providing proper settings
+                    // Since this is a pure listener connection, we do not need to worry about a loop
+                    // Just listen to the telemetry endpoint
 
                     var telemetryEndpoint = endPointsConfiguration.GCBTelemetryEndPoint;
                     int telemetryClientPort = telemetryEndpoint.Port.Value;
                     
-                    gcbTelemetryConnection = CreateConnection(
-                        telemetryEndpoint, clientPort: telemetryClientPort, reusePort: true);
+                    gcbTelemetryConnection = new UdpClientConnection(telemetryEndpoint.Ip(), telemetryClientPort, telemetryClientPort, reusePort: true);
                 }
 
                 if (recordTelemetryData)
