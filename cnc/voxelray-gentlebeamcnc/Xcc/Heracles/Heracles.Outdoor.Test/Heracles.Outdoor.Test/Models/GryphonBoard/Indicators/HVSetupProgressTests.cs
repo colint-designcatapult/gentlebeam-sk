@@ -1,5 +1,4 @@
-﻿using Empyrean.Common.Infra.Networking.Udp;
-using Moq;
+﻿using Moq;
 using NUnit.Framework;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
 using Xcc.Core.Domain.GryphonBoard;
@@ -25,18 +24,13 @@ namespace Heracles.Outdoor.Test.Models.GryphonBoard.Indicators
             return plan;
         }
 
-        private ISystemTelemetry MakeSystemTelemetry(GcbStateNew state, int pointIndex, float kvFeedback)
-        {
-            var packet = new UdpPacket(
-                packetType: (uint)GCBPacketType.TelemetryResponse,
-                packetCounter: 0,
-                payloadLength: (uint)GCBTelemetryResponseField.PayloadFields);
-            packet[(int)GCBTelemetryResponseField.SystemState] = (int)state;
-            packet[(int)GCBTelemetryResponseField.CurrentPoint] = pointIndex;
-            packet[(int)GCBTelemetryResponseField.kVFeedback] = kvFeedback;
-            packet.UpdateCRC();
-            return SystemTelemetry.Parse(packet.Buffer);
-        }
+        private static ISystemTelemetry MakeSystemTelemetry(GcbStateNew state, int pointIndex, float kvFeedback) =>
+            new SystemNormalTelemetry
+            {
+                ControlBoardState = state,
+                CurrentOperationalPoint = pointIndex,
+                KvFeedback = kvFeedback,
+            };
 
         [SetUp]
         public void Setup()

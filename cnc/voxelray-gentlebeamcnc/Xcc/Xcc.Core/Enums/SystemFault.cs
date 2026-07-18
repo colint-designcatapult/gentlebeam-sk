@@ -1,9 +1,9 @@
-﻿
+
 using System.ComponentModel.DataAnnotations;
 
 namespace Xcc.Core.Enums
 {
-    public enum GCBFaultBit : int
+    public enum SystemFault : int
     {
         [Display(Name = "No fault")]
         Reserved = 0,

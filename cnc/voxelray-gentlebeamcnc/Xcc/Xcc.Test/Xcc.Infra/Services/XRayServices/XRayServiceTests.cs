@@ -1,4 +1,4 @@
-﻿using Empyrean.Common.Infra.Networking.Udp;
+using Empyrean.Common.Infra.Networking.Udp;
 using Moq;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
@@ -45,7 +45,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             };
         }
 
-        private static FaultEntry MakeFaultEntry(GCBFaultBit faultType)
+        private static FaultEntry MakeFaultEntry(SystemFault faultType)
         {
             return new FaultEntry()
             {
@@ -251,7 +251,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         public void GetFaultsCommandTest()
         {
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
-                .Returns(Task.FromResult(GcbXRayCmdResponseGenerator.GenerateFaultInfoResponse(0, MakeFaultEntry(GCBFaultBit.FilamentFault))));
+                .Returns(Task.FromResult(GcbXRayCmdResponseGenerator.GenerateFaultInfoResponse(0, MakeFaultEntry(SystemFault.FilamentFault))));
 
             var service = MakeService();
 

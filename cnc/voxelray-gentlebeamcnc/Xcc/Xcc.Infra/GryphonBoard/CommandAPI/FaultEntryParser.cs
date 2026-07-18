@@ -1,4 +1,6 @@
-﻿using Empyrean.Common.Infra.Networking.Udp;
+using System;
+using System.Collections.Generic;
+using Empyrean.Common.Infra.Networking.Udp;
 using System.Linq;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
@@ -21,16 +23,16 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             float measuredParameter = faultPacket[7];
             int measuredParameterSupportingDetail = faultPacket[8];
 
-            if (faultId == (int)GCBFaultBit.InterlockFault)
+            if (faultId == (int)SystemFault.InterlockFault)
             {
                 // Get expected & measured values as int and interpret them as interlock masks:
                 int interlocksExpected = expectedParameterSupportingDetail;
                 int interlocksActual = measuredParameterSupportingDetail;
                 int mismatchMask = ~(interlocksExpected ^ interlocksActual); // 0's are mismatches
                 
-                GcbInterlocksNew expectedInterlockValues = new(interlocksExpected);
-                GcbInterlocksNew actualInterlockValues = new(interlocksActual);
-                GcbInterlocksNew interlockMismatches = new(mismatchMask);
+                RawInterlockMask expectedInterlockValues = new(interlocksExpected);
+                RawInterlockMask actualInterlockValues = new(interlocksActual);
+                RawInterlockMask interlockMismatches = new(mismatchMask);
 
                 // Build a list of expectation-actual mismatches:
                 var failedInterlocksWithValues =
@@ -42,7 +44,7 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 return new InterlockFaultEntry(failedInterlocksWithValues)
                 {
                     FaultId = faultId,
-                    FaultType = (GCBFaultBit)faultId,
+                    FaultType = (SystemFault)faultId,
                     FaultIdSupportingDetails = (GCBFaultDetails)faultIdSupportingDetail,
                     FaultEntryState = faultEntryState,
                     FaultTimeValue = faultTimeValue,
@@ -58,7 +60,7 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 return new FaultEntry
                 {
                     FaultId = faultId,
-                    FaultType = (GCBFaultBit)faultId,
+                    FaultType = (SystemFault)faultId,
                     FaultIdSupportingDetails = (GCBFaultDetails)faultIdSupportingDetail,
                     FaultEntryState = faultEntryState,
                     FaultTimeValue = faultTimeValue,
@@ -69,6 +71,22 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                     MeasuredParameterSupportingDetails = measuredParameterSupportingDetail,
                 };
             }
+        }
+
+        private sealed class RawInterlockMask
+        {
+            private readonly int _flags;
+
+            internal RawInterlockMask(int flags)
+            {
+                _flags = flags;
+            }
+
+            internal bool CheckInterlock(GcbInterlockFlags interlock) =>
+                (_flags & (int)interlock) != 0;
+
+            internal IEnumerable<GcbInterlockFlags> GetOpenInterlocks() =>
+                Enum.GetValues<GcbInterlockFlags>().Where(interlock => !CheckInterlock(interlock));
         }
     }
 }

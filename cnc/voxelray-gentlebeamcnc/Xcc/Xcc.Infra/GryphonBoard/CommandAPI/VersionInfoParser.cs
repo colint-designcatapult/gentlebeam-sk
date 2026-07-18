@@ -1,4 +1,5 @@
-﻿using Empyrean.Common.Infra.Networking.Udp;
+﻿using System;
+using Empyrean.Common.Infra.Networking.Udp;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
 
@@ -8,21 +9,24 @@ public static class VersionInfoParser
 {
     public static VersionInfo Parse(byte[] data)
     {
-        UdpPacketIterator iterator = new(data);
+        return Parse(new UdpPacket(data));
+    }
 
-        int major = iterator.First();
-        int minor = iterator.Next();
-        int level = iterator.Next();
-        int firmwareChecksum = iterator.Next();
-        FirmwareMode mode = (FirmwareMode)(int)iterator.Next();
+    public static VersionInfo Parse(UdpPacket packet)
+    {
+        if (packet.PacketType != (uint)GCBPacketType.VersionInfoResponse
+            || packet.PayloadLength != 5u)
+        {
+            throw new ArgumentException("Invalid VersionInfo packet");
+        }
 
         return new VersionInfo
         {
-            Major = major,
-            Minor = minor,
-            Level = level,
-            FirmwareChecksum = firmwareChecksum,
-            Mode = mode
+            Major = packet[0],
+            Minor = packet[1],
+            Level = packet[2],
+            FirmwareChecksum = packet[3],
+            Mode = (FirmwareMode)(int)packet[4],
         };
     }
 }

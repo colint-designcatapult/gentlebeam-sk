@@ -27,7 +27,7 @@ namespace Xcc.Core.Domain.GryphonBoard
 
     public interface ISystemTelemetryChanged
     {
-        void OnSystemTelemetryChanged(ISystemTelemetry systemTelemetry);
+        void OnSystemTelemetryChanged(ISystemTelemetry? systemTelemetry);
     }
 
     public interface IMainBoardStateManagement : IMainBoardState, ISystemTelemetryChanged

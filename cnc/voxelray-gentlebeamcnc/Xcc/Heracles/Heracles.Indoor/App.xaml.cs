@@ -333,6 +333,7 @@ namespace Heracles.Indoor
             }
             else
             {
+                containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
                 containerRegistry.RegisterSingleton<ITelemetryService, GcbTelemetryService>();
             }
 

@@ -1,4 +1,4 @@
-﻿using Prism.Commands;
+using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Services.Dialogs;
 using Xcc.Core.Constants;
@@ -15,27 +15,27 @@ namespace Heracles.Application.UI.ViewModels
 
             gcbDataStore.PropertyChanged += (s, e) =>
             {
-                if (gcbDataStore.Interlocks is null || gcbDataStore.SystemTelemetry is null)
+                var interlocks = gcbDataStore.SystemTelemetry?.Interlocks;
+                if (interlocks is null)
                 {
                     SystemIsReady = null;
                 }
                 else
                 {
-                    bool systemReady = true;
-                    systemReady &= gcbDataStore.Interlocks.BaseKey;
-                    systemReady &= gcbDataStore.Interlocks.RemoteKey;
-                    systemReady &= gcbDataStore.Interlocks.DoorOpened;
-                    systemReady &= gcbDataStore.Interlocks.BaseEStopEngaged;
-                    systemReady &= gcbDataStore.Interlocks.RemoteEStopEngaged;
-                    systemReady &= gcbDataStore.Interlocks.Timer1Expired;
-                    systemReady &= gcbDataStore.Interlocks.Timer2Expired;
-                    systemReady &= gcbDataStore.Interlocks.WaterLevel;
-                    systemReady &= gcbDataStore.Interlocks.HeadInterfaceBoard;
-                    systemReady &= gcbDataStore.Interlocks.HVPS;
-                    systemReady &= gcbDataStore.Interlocks.CoolerAlarm;
-                    systemReady &= gcbDataStore.Interlocks.Watchdog;
-                    systemReady &= gcbDataStore.Interlocks.IonPumpHV;
-                    SystemIsReady = systemReady;
+                    SystemIsReady =
+                        interlocks.Value.CollimatorOn == true
+                        && interlocks.Value.RemoteKeyOn == true
+                        && interlocks.Value.DoorClosed == true
+                        && interlocks.Value.BaseEStopReleased == true
+                        && interlocks.Value.RemoteEStopReleased == true
+                        && interlocks.Value.Timer1Ready == true
+                        && interlocks.Value.Timer2Ready == true
+                        && interlocks.Value.WaterLevelOk == true
+                        && interlocks.Value.HeadInterfaceBoardReady == true
+                        && interlocks.Value.HvpsReady == true
+                        && interlocks.Value.CoolerReady == true
+                        && interlocks.Value.WatchdogReady == true
+                        && interlocks.Value.IonPumpOk == true;
                 }
             };
         }

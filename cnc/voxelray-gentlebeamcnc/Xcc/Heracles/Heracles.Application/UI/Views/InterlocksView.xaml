@@ -34,7 +34,7 @@
 
         <CheckBox 
             Style="{StaticResource CheckBoxThumbStyle}"
-            IsChecked="{Binding GcbDataStore.Interlocks.HeraclesCollimator, Mode=OneWay}"
+            IsChecked="{Binding GcbDataStore.SystemTelemetry.Interlocks.CollimatorOn, Mode=OneWay}"
             Margin="{StaticResource BlockContentSmallMargin}">
 
             <TextBlock Text="Applicator"/>

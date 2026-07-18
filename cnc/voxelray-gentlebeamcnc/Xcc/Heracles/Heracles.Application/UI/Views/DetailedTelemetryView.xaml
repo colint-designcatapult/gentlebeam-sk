@@ -125,7 +125,7 @@
                             Grid.Row="6" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.FaultFlags, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.Faults.RawFlags, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
                         
 
                         <TextBlock 
@@ -138,7 +138,7 @@
                             Grid.Row="8" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.InterlockFlags, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.Interlocks.RawFlags, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
                     </Grid>
                 </Border>   
                 
@@ -179,7 +179,7 @@
                             Grid.Row="2" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.RingLedState, FallbackValue={StaticResource NotAvailableText}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.RingLedState, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}}"/>
                     
 
                         <TextBlock 
@@ -192,7 +192,7 @@
                             Grid.Row="4" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.BaseLedState, FallbackValue={StaticResource NotAvailableText}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.BaseLedState, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}}"/>
                     
                     
                         <TextBlock 
@@ -206,7 +206,7 @@
                             Grid.Row="6" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.CollimatorId1, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.CollimatorId1, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
                         
 
                         <TextBlock 
@@ -219,7 +219,7 @@
                             Grid.Row="8" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.CollimatorId2, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.CollimatorId2, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
 
 
                         <TextBlock 
@@ -502,6 +502,8 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock 
@@ -532,7 +534,7 @@
                             Grid.Row="4" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.HvpsIOStatus, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.Hvps.RawIoFlags, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
                     
                     
                         <TextBlock 
@@ -546,7 +548,7 @@
                             Grid.Row="6" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.HvpsFlagStatus, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.Hvps.RawStatusFlags, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
 
                         <TextBlock 
                             Grid.Row="8"
@@ -558,7 +560,7 @@
                             Grid.Row="8" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.KvSetpoint, FallbackValue={StaticResource NotAvailableText}, StringFormat={}{0:F}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.KvSetpoint, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}, StringFormat={}{0:F}}"/>
 
                         <TextBlock 
                             Grid.Row="10"
@@ -621,7 +623,7 @@
                             Grid.Row="18" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.EmissionCurrentLimit, FallbackValue={StaticResource NotAvailableText}, StringFormat={}{0:F}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.EmissionCurrentLimit, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}, StringFormat={}{0:F}}"/>
 
                         <TextBlock 
                             Grid.Row="20"
@@ -633,7 +635,7 @@
                             Grid.Row="20" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.HvpsPowerSetpoint, FallbackValue={StaticResource NotAvailableText}, StringFormat={}{0:F}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.HvpsPowerSetpoint, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}, StringFormat={}{0:F}}"/>
 
                         <TextBlock 
                             Grid.Row="22"
@@ -645,7 +647,7 @@
                             Grid.Row="22" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.GridSetpoint, FallbackValue={StaticResource NotAvailableText}, StringFormat={}{0:F}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.GridSetpoint, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}, StringFormat={}{0:F}}"/>
 
                     
                         <TextBlock 
@@ -659,6 +661,17 @@
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
                             Text="{Binding GCBDataStore.SystemTelemetry.GridVoltage, FallbackValue={StaticResource NotAvailableText}, StringFormat={}{0:F}}"/>
+                        <TextBlock
+                            Grid.Row="26"
+                            HorizontalAlignment="Right"
+                            Style="{StaticResource TelemetryTextBlockLegendStyle}"
+                            Text="HVPS Error Flags:"/>
+
+                        <TextBlock
+                            Grid.Row="26" Grid.Column="2"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource ValueTextBlockStyle}"
+                            Text="{Binding GCBDataStore.SystemTelemetry.Hvps.RawErrorFlags, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
                     </Grid>                   
                 </Border>
             </Grid>
@@ -858,7 +871,7 @@
                             Grid.Row="2" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.Mag1[0], FallbackValue={StaticResource NotAvailableText}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.Mag1.X, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}}"/>
 
                     
                         <TextBlock 
@@ -871,7 +884,7 @@
                             Grid.Row="4" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.Mag1[1], FallbackValue={StaticResource NotAvailableText}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.Mag1.Y, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}}"/>
                     
                     
                         <TextBlock 
@@ -884,7 +897,7 @@
                             Grid.Row="6" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.Mag1[2], FallbackValue={StaticResource NotAvailableText}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.Mag1.Z, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}}"/>
                     
 
                         <TextBlock 
@@ -897,7 +910,7 @@
                             Grid.Row="8" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.Mag2[0], FallbackValue={StaticResource NotAvailableText}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.Mag2.X, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}}"/>
 
                     
                         <TextBlock 
@@ -910,7 +923,7 @@
                             Grid.Row="10" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.Mag2[1], FallbackValue={StaticResource NotAvailableText}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.Mag2.Y, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}}"/>
                     
                     
                         <TextBlock 
@@ -923,7 +936,7 @@
                             Grid.Row="12" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.Mag2[2], FallbackValue={StaticResource NotAvailableText}}"/>                    
+                            Text="{Binding GCBDataStore.SystemTelemetry.Mag2.Z, FallbackValue={StaticResource NotAvailableText}, TargetNullValue={StaticResource NotAvailableText}}"/>
                     </Grid>                
                 </Border>                
             </Grid>

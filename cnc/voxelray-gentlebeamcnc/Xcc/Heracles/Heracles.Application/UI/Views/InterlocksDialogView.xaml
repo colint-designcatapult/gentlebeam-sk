@@ -106,6 +106,14 @@
                             <RowDefinition Height="Auto" />                               
                             <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
                             <RowDefinition Height="Auto" />                               
+                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock 
@@ -127,12 +135,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HeraclesCollimator, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.CollimatorOn, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HeraclesCollimator, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.CollimatorOn, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
 
                     
@@ -150,12 +158,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.RemoteKey, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.RemoteKeyOn, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.RemoteKey, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.RemoteKeyOn, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
                     
                     
@@ -174,12 +182,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.DoorOpened, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.DoorClosed, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
 
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.DoorOpened, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.DoorClosed, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
 
 
@@ -197,12 +205,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.BaseEStopEngaged, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.BaseEStopReleased, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.BaseEStopEngaged, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.BaseEStopReleased, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
                     
                     
@@ -220,12 +228,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.RemoteEStopEngaged, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.RemoteEStopReleased, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.RemoteEStopEngaged, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.RemoteEStopReleased, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
                     
                         
@@ -243,12 +251,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Timer1Expired, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.Timer1Ready, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Timer1Expired, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.Timer1Ready, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
 
                         
@@ -266,12 +274,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Timer2Expired, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.Timer2Ready, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Timer2Expired, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.Timer2Ready, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
                         
 
@@ -289,12 +297,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.WaterLevel, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.WaterLevelOk, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.WaterLevel, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.WaterLevelOk, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
 
                         
@@ -312,12 +320,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HeadInterfaceBoard, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.HeadInterfaceBoardReady, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HeadInterfaceBoard, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.HeadInterfaceBoardReady, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
 
                         
@@ -335,12 +343,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HVPS, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.HvpsReady, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HVPS, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.HvpsReady, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
                         
                         
@@ -358,12 +366,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.CoolerAlarm, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.CoolerReady, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.CoolerAlarm, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.CoolerReady, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
                         
                         
@@ -381,12 +389,12 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Watchdog, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.WatchdogReady, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Watchdog, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.WatchdogReady, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
                         </Grid>
                                 
                         
@@ -404,12 +412,51 @@
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.IonPumpHV, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.IonPumpOk, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
             
                             <ContentControl 
                                 Style="{StaticResource InterlocksIndicatorStyle}" 
                                 Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.IonPumpHV, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.IonPumpOk, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                        </Grid>
+                        <TextBlock Grid.Row="34" HorizontalAlignment="Right"
+                                   Style="{StaticResource TelemetryTextBlockLegendStyle}" Text="Drive System:"/>
+                        <Grid Grid.Row="34" Grid.Column="2" HorizontalAlignment="Left">
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbUnknownSvgIcon}"/>
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbDislikeSvgIcon}"
+                                            Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.DriveSystemReady, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}"/>
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbLikeSvgIcon}"
+                                            Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.DriveSystemReady, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}"/>
+                        </Grid>
+
+                        <TextBlock Grid.Row="36" HorizontalAlignment="Right"
+                                   Style="{StaticResource TelemetryTextBlockLegendStyle}" Text="KUKA #1:"/>
+                        <Grid Grid.Row="36" Grid.Column="2" HorizontalAlignment="Left">
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbUnknownSvgIcon}"/>
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbDislikeSvgIcon}"
+                                            Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.Kuka1Ready, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}"/>
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbLikeSvgIcon}"
+                                            Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.Kuka1Ready, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}"/>
+                        </Grid>
+
+                        <TextBlock Grid.Row="38" HorizontalAlignment="Right"
+                                   Style="{StaticResource TelemetryTextBlockLegendStyle}" Text="KUKA #2:"/>
+                        <Grid Grid.Row="38" Grid.Column="2" HorizontalAlignment="Left">
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbUnknownSvgIcon}"/>
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbDislikeSvgIcon}"
+                                            Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.Kuka2Ready, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}"/>
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbLikeSvgIcon}"
+                                            Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.Kuka2Ready, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}"/>
+                        </Grid>
+
+                        <TextBlock Grid.Row="40" HorizontalAlignment="Right"
+                                   Style="{StaticResource TelemetryTextBlockLegendStyle}" Text="TVM Notch:"/>
+                        <Grid Grid.Row="40" Grid.Column="2" HorizontalAlignment="Left">
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbUnknownSvgIcon}"/>
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbDislikeSvgIcon}"
+                                            Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.TvmNotchEngaged, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}"/>
+                            <ContentControl Style="{StaticResource InterlocksIndicatorStyle}" Content="{StaticResource ThumbLikeSvgIcon}"
+                                            Visibility="{Binding GCBDataStore.SystemTelemetry.Interlocks.TvmNotchEngaged, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}"/>
                         </Grid>
                     </Grid>                   
                 </Border>

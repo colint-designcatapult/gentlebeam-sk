@@ -1,4 +1,4 @@
-﻿using Xcc.Core.Domain.GryphonBoard;
+using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
 
 namespace Xcc.Test.Xcc.Core.Models.GryphonBoard
@@ -8,7 +8,7 @@ namespace Xcc.Test.Xcc.Core.Models.GryphonBoard
         [Test]
         public void FaultEntry_GettersSetters(
             [Values(0, 1)] int faultId,
-            [Values(GCBFaultBit.Reserved, GCBFaultBit.InterlockFault)] GCBFaultBit faultType,
+            [Values(SystemFault.Reserved, SystemFault.InterlockFault)] SystemFault faultType,
             [Values(GCBFaultDetails.Reserved, GCBFaultDetails.AcdBusSetupIssue)] GCBFaultDetails faultIdSupportingDetails,
             [Values(2, 3)] int faultEntryState,
             [Values(4, 5)] int faultTimeValue,
@@ -77,7 +77,7 @@ namespace Xcc.Test.Xcc.Core.Models.GryphonBoard
             var sut = new FaultEntry
             {
                 FaultId = 10,
-                FaultType = GCBFaultBit.InterlockFault,
+                FaultType = SystemFault.InterlockFault,
                 FaultIdSupportingDetails = GCBFaultDetails.AcdBusTimeoutIssue,
                 FaultEntryState = 2,
                 FaultTimeValue = 3,

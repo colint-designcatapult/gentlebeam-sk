@@ -850,7 +850,7 @@ namespace Heracles.External.ViewModels
 
                     ValidateCanExecuteCommands();
 
-                    if (SystemTelemetry.IsFaultState(state))
+                    if (state is GcbStateNew.Fault or GcbStateNew.ColdFault or GcbStateNew.WarmupFault)
                     {
                         MainBoardModel.CancelCurrentTask();
                     }

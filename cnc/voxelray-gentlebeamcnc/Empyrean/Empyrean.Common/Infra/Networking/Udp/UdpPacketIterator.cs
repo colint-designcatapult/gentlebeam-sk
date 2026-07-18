@@ -1,37 +1,37 @@
+using System;
+
 namespace Empyrean.Common.Infra.Networking.Udp
 {
-
     /// <summary>
-    /// Helper class to just extract data from the packet payload sequentially, without field indexes
+    /// Helper to extract packet payload fields sequentially.
     /// </summary>
-    public class UdpPacketIterator
+    public struct UdpPacketIterator
     {
-        private int currentIndex = 0;
+        private int _currentIndex;
 
         public UdpPacketIterator(byte[]? data)
         {
             UdpPacket = new UdpPacket(data);
+            _currentIndex = -1;
         }
+
         public UdpPacketIterator(UdpPacket? packet)
         {
             if (packet is null)
-            {
                 throw new ArgumentNullException("UdpPacketIterator error: no data");
-            }
+
             UdpPacket = packet;
+            _currentIndex = -1;
         }
- 
+
         public UdpPacket UdpPacket { get; }
 
         public UdpPacket.Field First()
         {
-            currentIndex = 0;
-            return UdpPacket[currentIndex];
+            _currentIndex = 0;
+            return UdpPacket[_currentIndex];
         }
 
-        public UdpPacket.Field Next()
-        {
-            return UdpPacket[++currentIndex];
-        }
+        public UdpPacket.Field Next() => UdpPacket[++_currentIndex];
     }
 }

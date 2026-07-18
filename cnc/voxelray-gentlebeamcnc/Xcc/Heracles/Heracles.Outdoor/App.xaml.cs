@@ -167,6 +167,7 @@ namespace Heracles.External
                 #region real services
                 containerRegistry.RegisterSingleton<IGcbCommunicationService, GcbCommunicationService>();
                 containerRegistry.RegisterSingleton<IGcbCommandInterface, GcbCommandInterface>();
+                containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
                 containerRegistry.RegisterManySingleton<GcbTelemetryService>();
                 containerRegistry.RegisterSingleton<IUpsService, UpsService>();
                 containerRegistry.RegisterManySingleton<MainBoardModelBase>();

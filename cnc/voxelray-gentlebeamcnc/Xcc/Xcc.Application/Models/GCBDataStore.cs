@@ -24,18 +24,5 @@ namespace Xcc.Application.Models
             }
         }
 
-        private GcbInterlocks? _interlocks;
-        public GcbInterlocks? Interlocks
-        {
-            get => _interlocks;
-            set => SetProperty(ref _interlocks, value);
-        }
-
-        private GcbFaults? _faults;
-        public GcbFaults? Faults
-        {
-            get => _faults;
-            set => SetProperty(ref _faults, value);
-        }
     }
 }

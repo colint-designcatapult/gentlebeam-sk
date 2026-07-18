@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Xcc.Core.Enums;
 
 namespace Xcc.Core.Domain.GryphonBoard
@@ -6,7 +6,7 @@ namespace Xcc.Core.Domain.GryphonBoard
     public class FaultEntry
     {
         public int FaultId { get; set; }
-        public GCBFaultBit FaultType { get; set; }
+        public SystemFault FaultType { get; set; }
         public GCBFaultDetails FaultIdSupportingDetails { get; set; }
         public int FaultEntryState { get; set; }
         public string FaultEntryStateString => ((GcbStateNew)FaultEntryState).ToString();

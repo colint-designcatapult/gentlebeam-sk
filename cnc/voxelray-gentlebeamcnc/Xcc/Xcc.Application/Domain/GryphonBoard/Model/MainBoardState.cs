@@ -74,29 +74,22 @@ namespace Xcc.Application.Domain.GryphonBoard.Model
             CurrentPlan = plan;
         }
 
-        public void OnSystemTelemetryChanged(ISystemTelemetry systemTelemetry)
+        public void OnSystemTelemetryChanged(ISystemTelemetry? systemTelemetry)
         {
             var previousState = State;
             SystemTelemetry = systemTelemetry;
 
-            if (systemTelemetry != null)
+            if (systemTelemetry is not null
+                && previousState != systemTelemetry.ControlBoardState
+                && systemTelemetry.Faults.AnyActive)
             {
-                GcbDataStore.Interlocks = GcbInterlocks.Create(systemTelemetry.InterlockFlags);
-                GcbDataStore.Faults = new GcbFaults(systemTelemetry.FaultFlags);
-                if (previousState != systemTelemetry?.ControlBoardState && systemTelemetry?.FaultFlags != 0)
-                {
-                    var faultList = GcbDataStore.Faults.GetFaults();
-                    var faults = (faultList == null) ? "No data" : string.Join('\n', faultList.Select(x => x.ToString()));
-                    _ = LogWriter.LogAsync($"GCB went into a fault state: {systemTelemetry?.ControlBoardState}.\nReason: {faults}", LogRecordSeverity.Info, LogRecordType.System);
-                }
+                _ = LogWriter.LogAsync(
+                    $"GCB went into a fault state: {systemTelemetry.ControlBoardState}.\nReason: {systemTelemetry.Faults}",
+                    LogRecordSeverity.Info,
+                    LogRecordType.System);
             }
-            else
-            {
-                GcbDataStore.Interlocks = null;
-                GcbDataStore.Faults = null;
-            }
-            GcbDataStore.SystemTelemetry = SystemTelemetry;
 
+            GcbDataStore.SystemTelemetry = systemTelemetry;
         }
 
         public GcbOperationalPoint CurrentPoint()

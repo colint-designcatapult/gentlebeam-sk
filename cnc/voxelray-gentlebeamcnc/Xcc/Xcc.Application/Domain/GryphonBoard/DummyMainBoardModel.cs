@@ -1,4 +1,4 @@
-﻿using Prism.Events;
+using Prism.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,11 +42,9 @@ namespace Xcc.Application.Domain.GryphonBoard
 
             FaultEntry faultEntry = null!;
 
-            //_faultId = (int) GCBFaultBit.InterlockFault;
-            //_faultDetails = (int) GCBFaultDetails.IonRepellerFaultOutOfTolerance;
 
-            var faultType = (GCBFaultBit)_faultId;
-            if (faultType == GCBFaultBit.InterlockFault)
+            var faultType = (SystemFault)_faultId;
+            if (faultType == SystemFault.InterlockFault)
             {
                 faultEntry = new InterlockFaultEntry(
                     [new InterlockState(GcbInterlockFlags.IonPump, true, false),
@@ -240,8 +238,7 @@ namespace Xcc.Application.Domain.GryphonBoard
             var random = new Random();
             if (random.Next(10) < 1)
             {
-                int faultBit = (int)GCBFaultBit.CoilFault;
-                //int faultBit = (int)GCBFaultBit.InterlockFault;
+                int faultBit = (int)SystemFault.CoilFault;
                 _faultId = faultBit;
                 _faultDetails = (int)GCBFaultDetails.KVFaultTargetOutOfTolerance;
                 EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
@@ -281,7 +278,7 @@ namespace Xcc.Application.Domain.GryphonBoard
             var random = new Random();
             if (random.Next(10) < 1)
             {
-                int faultBit = (int)GCBFaultBit.CoilFault;
+                int faultBit = (int)SystemFault.CoilFault;
                 _faultId = faultBit + 1;
                 _faultDetails = (int)GCBFaultDetails.KVFaultTargetOutOfTolerance;
                 EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
@@ -338,7 +335,7 @@ namespace Xcc.Application.Domain.GryphonBoard
             //{
             //    await Task.Delay(2000);
 
-            //    int faultBit = (int)GCBFaultBit.CoilFault;
+            //    int faultBit = (int)SystemFault.CoilFault;
             //    _faultId = faultBit + 1;
             //    _faultDetails = (int)GCBFaultDetails.KVFaultTargetOutOfTolerance;
 
