@@ -173,7 +173,7 @@ namespace Xcc.Application.Domain.GryphonBoard.Service
 
         // Commands that just query the board's state
         #region Board state queries
-        public Task<FaultEntry> GetFaults()
+        public Task<FaultSnapshot> GetFaults()
         {
             return gcbCommandInterface.GetFaults();
         }

@@ -1,6 +1,7 @@
 using Empyrean.Common.Infra.Networking.Udp;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
+using Xcc.Core.Models;
 using Xcc.Infra.GryphonBoard.CommandAPI;
 
 namespace Xcc.Infra.GryphonBoard;
@@ -18,21 +19,31 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
     private static readonly FirmwareVersionSignature CalibrationSignature = new(1, 0, 0, FirmwareMode.Calibration);
 
     private readonly ISystemTelemetryChanged _systemTelemetryChangedCallback;
+    private readonly IGCBDataStore _gcbDataStore;
     private readonly UdpPacket _packet = new();
     private FirmwareVersionSignature? _selectedVersion;
     private NormalTelemetryState? _normalState;
     private CalibrationTelemetryState? _calibrationState;
     private uint? _lastPublishedRuntime;
 
-    public SystemTelemetryProcessor(ISystemTelemetryChanged systemTelemetryChangedCallback)
+    public SystemTelemetryProcessor(
+        ISystemTelemetryChanged systemTelemetryChangedCallback,
+        IGCBDataStore gcbDataStore)
     {
         _systemTelemetryChangedCallback = systemTelemetryChangedCallback;
+        _gcbDataStore = gcbDataStore;
     }
 
     public bool Process(byte[] datagram)
     {
         if (!_packet.TryReset(datagram))
             return false;
+
+        if (_packet.PacketType == (uint)GCBPacketType.FaultInfoResponse)
+        {
+            _gcbDataStore.ApplyFaultUpdate(FaultEntryParser.Parse(_packet));
+            return false;
+        }
 
         if (_packet.PacketType == (uint)GCBPacketType.VersionInfoResponse)
         {

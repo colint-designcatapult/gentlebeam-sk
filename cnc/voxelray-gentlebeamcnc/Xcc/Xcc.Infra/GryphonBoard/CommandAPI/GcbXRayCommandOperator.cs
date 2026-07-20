@@ -27,12 +27,12 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
         /// This command is used to obtain information about the fault which trigger the system to enter into a fault state. 
         /// </summary>
         /// <returns></returns>
-        public byte[] GenerateFaultInfoRequestCmd()
+        public byte[] GenerateFaultInfoRequestCmd(uint index)
         {
             return UdpPacketBuilder.BuildRawPacket(
                 packetType: (uint)GCBPacketType.FaultInfo,
                 packetCounter: ++packetCounter,
-                payload: [0 /* reserved field */]);
+                payload: [index]);
         }
 
         /// <summary>

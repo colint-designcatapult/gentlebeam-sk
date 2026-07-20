@@ -56,8 +56,8 @@ namespace Xcc.Core.Enums
         [Display(Name = "Invalid configuration Fault")]
         InvalidConfigFault,
 
-        [Display(Name = "Fault24")]
-        Reserved24,
+        [Display(Name = "Other Fault")]
+        OtherFault,
 
         [Display(Name = "Fault25")]
         Reserved25,

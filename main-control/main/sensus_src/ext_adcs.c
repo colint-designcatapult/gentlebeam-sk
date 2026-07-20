@@ -80,7 +80,7 @@ void init_ext_adcs()
 	
 	if(adc_setup_retries >= MAX_ADC_SETUP_RETRIES)
 	{
-		report_verbose_fault(FAULT_ADC_BUS, ADC_BUS_FAULT_SETUP, 1, ION_R_ADC_ADDR, 0, 0, MAX_ADC_SETUP_RETRIES);
+		report_typed_fault3(FAULT_ADC_BUS, "ADC setup failed at address %u after %u retries (transfer size: %u bytes).", MAKE_ARG(ION_R_ADC_ADDR), MAKE_ARG(MAX_ADC_SETUP_RETRIES), MAKE_ARG(1));
 	}
 	
 	//Clear interrupt statuses before enabling them for async functionality
@@ -470,7 +470,7 @@ void TWIHS2_Handler()
 		hri_twihs_clear_IMR_reg(ADC_I2C.device.hw, TWIHS_IDR_TXRDY | TWIHS_IDR_TXCOMP | TWIHS_IDR_RXRDY);
 		
 		//Report fault
-		report_verbose_fault(FAULT_ADC_BUS, ADC_BUS_FAULT_NACK, 1, adc_addr, 0, 0, 0);
+		report_typed_fault2(FAULT_ADC_BUS, "ADC at address %u returned NACK (transfer size: %u bytes).", MAKE_ARG(adc_addr), MAKE_ARG(1));
 		
 		//Move to next ADC
 		adc_ch = 100;	//Force ADC device change with arbitrary large channel

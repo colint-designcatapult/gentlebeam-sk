@@ -22,7 +22,7 @@ namespace Xcc.Core.Domain.GryphonBoard
         Task ClearFaults();
         Task ClearPlan();
         Task ResetTimers();
-        Task<FaultEntry> GetFaults();
+        Task<FaultSnapshot> GetFaults();
         Task Conditioning(float conditioningSetpoint);
         Task WarmUp(float warmupSetpoint);
         Task<GcbOperationalPoint> QueryPoint(int pointIndex);

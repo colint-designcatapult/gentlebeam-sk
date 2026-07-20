@@ -2,6 +2,8 @@ using Empyrean.Common.Infra.Networking.Udp;
 using Moq;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
+using Xcc.Core.Models;
+using Xcc.Infra.GryphonBoard.CommandAPI;
 using Xcc.Infra.GryphonBoard;
 
 namespace Xcc.Test.Xcc.Infra.GryphonBoard;
@@ -12,7 +14,7 @@ internal class SystemTelemetryProcessorTests
     public void Process_SuppressesTelemetryBeforeVersionInfo()
     {
         var callback = new Mock<ISystemTelemetryChanged>();
-        var sut = new SystemTelemetryProcessor(callback.Object);
+        var sut = CreateSut(callback.Object);
 
         Assert.That(sut.Process(BuildNormalTelemetry(0)), Is.False);
         callback.Verify(x => x.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()), Times.Never);
@@ -31,7 +33,7 @@ internal class SystemTelemetryProcessorTests
         var callback = new Mock<ISystemTelemetryChanged>();
         callback.Setup(x => x.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()))
             .Callback<ISystemTelemetry?>(value => published = value);
-        var sut = new SystemTelemetryProcessor(callback.Object);
+        var sut = CreateSut(callback.Object);
 
         Assert.That(sut.Process(BuildVersionInfo(major, minor, level, mode)), Is.False);
         var result = mode == FirmwareMode.Normal
@@ -46,7 +48,7 @@ internal class SystemTelemetryProcessorTests
     public void Process_UnsupportedVersionClearsPreviousSelection()
     {
         var callback = new Mock<ISystemTelemetryChanged>();
-        var sut = new SystemTelemetryProcessor(callback.Object);
+        var sut = CreateSut(callback.Object);
         sut.Process(BuildVersionInfo(2, 0, 1, FirmwareMode.Normal));
         Assert.That(sut.Process(BuildNormalTelemetry(0)), Is.True);
 
@@ -62,7 +64,7 @@ internal class SystemTelemetryProcessorTests
         var callback = new Mock<ISystemTelemetryChanged>();
         callback.Setup(x => x.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()))
             .Callback<ISystemTelemetry?>(value => runtimes.Add(value!.SystemRuntime));
-        var sut = new SystemTelemetryProcessor(callback.Object);
+        var sut = CreateSut(callback.Object);
         sut.Process(BuildVersionInfo(2, 0, 1, FirmwareMode.Normal));
 
         foreach (var runtime in new[] { 0, 100, 200, 300 })
@@ -78,7 +80,7 @@ internal class SystemTelemetryProcessorTests
         var callback = new Mock<ISystemTelemetryChanged>();
         callback.Setup(x => x.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()))
             .Callback<ISystemTelemetry?>(value => runtimes.Add(value!.SystemRuntime));
-        var sut = new SystemTelemetryProcessor(callback.Object);
+        var sut = CreateSut(callback.Object);
         var version = BuildVersionInfo(2, 0, 1, FirmwareMode.Normal);
 
         sut.Process(version);
@@ -97,7 +99,7 @@ internal class SystemTelemetryProcessorTests
         var callback = new Mock<ISystemTelemetryChanged>();
         callback.Setup(x => x.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()))
             .Callback<ISystemTelemetry?>(published.Add);
-        var sut = new SystemTelemetryProcessor(callback.Object);
+        var sut = CreateSut(callback.Object);
 
         sut.Process(BuildVersionInfo(2, 0, 1, FirmwareMode.Normal));
         sut.Process(BuildNormalTelemetry(0));
@@ -114,7 +116,7 @@ internal class SystemTelemetryProcessorTests
         var callback = new Mock<ISystemTelemetryChanged>();
         callback.Setup(x => x.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()))
             .Callback<ISystemTelemetry?>(value => published.Add(value!));
-        var sut = new SystemTelemetryProcessor(callback.Object);
+        var sut = CreateSut(callback.Object);
         sut.Process(BuildVersionInfo(2, 0, 1, FirmwareMode.Normal));
 
         sut.Process(BuildNormalTelemetry(0, kvFeedback: 50));
@@ -134,7 +136,7 @@ internal class SystemTelemetryProcessorTests
     public void Process_InvalidPacketsAndWrongLayoutsReturnFalse()
     {
         var callback = new Mock<ISystemTelemetryChanged>();
-        var sut = new SystemTelemetryProcessor(callback.Object);
+        var sut = CreateSut(callback.Object);
         var invalidChecksum = BuildNormalTelemetry(0);
         invalidChecksum[0] ^= 1;
 
@@ -156,7 +158,7 @@ internal class SystemTelemetryProcessorTests
         var callback = new Mock<ISystemTelemetryChanged>();
         callback.Setup(x => x.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()))
             .Callback<ISystemTelemetry?>(value => published = value);
-        var sut = new SystemTelemetryProcessor(callback.Object);
+        var sut = CreateSut(callback.Object);
 
         if (mode == FirmwareMode.Normal)
         {
@@ -244,7 +246,7 @@ internal class SystemTelemetryProcessorTests
     public void Process_SteadyState_DoesNotAllocate()
     {
         var callback = new Mock<ISystemTelemetryChanged>();
-        var sut = new SystemTelemetryProcessor(callback.Object);
+        var sut = CreateSut(callback.Object);
         var version = BuildVersionInfo(2, 0, 1, FirmwareMode.Normal);
         var first = BuildNormalTelemetry(0);
         var suppressed = BuildNormalTelemetry(100);
@@ -263,6 +265,57 @@ internal class SystemTelemetryProcessorTests
         Assert.That(allSucceeded, Is.True);
         Assert.That(allocated, Is.Zero);
     }
+
+    [Test]
+    public void Process_FaultResponseUpdatesStoreWithoutPublishingTelemetry()
+    {
+        const string format = "Telemetry fault.";
+        var entry = new FaultEntry(
+            SystemFault.OtherFault,
+            CrcUtils.ComputeChecksum(System.Text.Encoding.ASCII.GetBytes(format)),
+            GcbStateNew.Ready,
+            123,
+            format,
+            format);
+        var update = new FaultUpdate(7, 0, 1, entry);
+        var callback = new Mock<ISystemTelemetryChanged>();
+        var store = new Mock<IGCBDataStore>();
+        var sut = CreateSut(callback.Object, store.Object);
+
+        bool result = sut.Process(GcbXRayCmdResponseGenerator.GenerateFaultInfoResponse(0, update));
+
+        Assert.That(result, Is.False);
+        store.Verify(value => value.ApplyFaultUpdate(update), Times.Once);
+        callback.Verify(value => value.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()), Times.Never);
+    }
+
+    [Test]
+    public void Process_MalformedFaultResponseDoesNotMutateStore()
+    {
+        const string format = "Malformed telemetry fault.";
+        var entry = new FaultEntry(
+            SystemFault.OtherFault,
+            CrcUtils.ComputeChecksum(System.Text.Encoding.ASCII.GetBytes(format)),
+            GcbStateNew.Ready,
+            123,
+            format,
+            format);
+        var update = new FaultUpdate(7, 0, 1, entry);
+        var malformed = new UdpPacket(GcbXRayCmdResponseGenerator.GenerateFaultInfoResponse(0, update));
+        malformed[1] = entry.FormatHash + 1u;
+        malformed.UpdateCRC();
+        var callback = new Mock<ISystemTelemetryChanged>();
+        var store = new Mock<IGCBDataStore>();
+        var sut = CreateSut(callback.Object, store.Object);
+
+        Assert.That(() => sut.Process(malformed.Buffer), Throws.TypeOf<FormatException>());
+        store.Verify(value => value.ApplyFaultUpdate(It.IsAny<FaultUpdate>()), Times.Never);
+    }
+
+    private static SystemTelemetryProcessor CreateSut(
+        ISystemTelemetryChanged callback,
+        IGCBDataStore? store = null) =>
+        new(callback, store ?? Mock.Of<IGCBDataStore>());
 
     private static byte[] BuildVersionInfo(int major, int minor, int level, FirmwareMode mode)
     {

@@ -79,7 +79,7 @@ static void check_hvps_stability()
 			
 			if(hvps_stability_timer > CONDITIONING_TIMEOUT)
 			{
-				report_verbose_fault(FAULT_FILAMENT, FIL_FAULT_RAMP_TIMEOUT, htr_target, CONDITIONING_TIMEOUT, htr_tolerance, htr_actual, (uint32_t)htr_output);
+				report_typed_fault5(FAULT_FILAMENT, "Did not hit heater target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(htr_target), MAKE_ARG(CONDITIONING_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(htr_tolerance), MAKE_ARG(htr_actual), MAKE_ARG((uint32_t)htr_output));
 			}
 			//Wait for heater to do the initial step ramp
 			else if(hvps_stability_timer >= WARMUP_RUNNING_CHECK)
@@ -87,7 +87,7 @@ static void check_hvps_stability()
 				//If heater is not on after initial ramp period throw a fault
 				if(htr_actual < HEATER_MIN_FEEDBACK)
 				{
-					report_fault(FAULT_FILAMENT, FIL_FAULT_STARTUP, HEATER_MIN_FEEDBACK, 0, htr_actual);
+					report_typed_fault2(FAULT_FILAMENT, "Heater feedback %f did not reach the startup minimum %f.", MAKE_ARG(htr_actual), MAKE_ARG((float)HEATER_MIN_FEEDBACK));
 				}
 				else
 				{
@@ -116,7 +116,7 @@ static void check_hvps_stability()
 			
 			if(hvps_stability_timer > WARMUP_TIMEOUT)
 			{
-				report_verbose_fault(FAULT_FILAMENT, FIL_FAULT_RAMP_TIMEOUT, htr_target, WARMUP_TIMEOUT, htr_tolerance, htr_actual, (uint32_t)htr_output);
+				report_typed_fault5(FAULT_FILAMENT, "Did not hit heater target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(htr_target), MAKE_ARG(WARMUP_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(htr_tolerance), MAKE_ARG(htr_actual), MAKE_ARG((uint32_t)htr_output));
 			}
 			//Wait for heater to do the initial step ramp
 			else if(hvps_stability_timer >= WARMUP_RUNNING_CHECK)
@@ -124,7 +124,7 @@ static void check_hvps_stability()
 				//If heater is not on after initial ramp period throw a fault
 				if(htr_actual < HEATER_MIN_FEEDBACK)
 				{
-					report_fault(FAULT_FILAMENT, FIL_FAULT_STARTUP, HEATER_MIN_FEEDBACK, 0, htr_actual);
+					report_typed_fault2(FAULT_FILAMENT, "Heater feedback %f did not reach the startup minimum %f.", MAKE_ARG(htr_actual), MAKE_ARG((float)HEATER_MIN_FEEDBACK));
 				}
 				else
 				{
@@ -159,15 +159,14 @@ static void check_hvps_stability()
 			{
 				if(!heater_stable)
 				{
-					report_verbose_fault(FAULT_FILAMENT, FIL_FAULT_RAMP_TIMEOUT, htr_target, SETUP_TIMEOUT, htr_tolerance, htr_actual, (uint32_t)htr_output);
+					report_typed_fault5(FAULT_FILAMENT, "Did not hit heater target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(htr_target), MAKE_ARG(SETUP_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(htr_tolerance), MAKE_ARG(htr_actual), MAKE_ARG((uint32_t)htr_output));
 				}
 				if(!kv_stable)
 				{
 #if defined(CALIBRATION_MODE)
-					report_verbose_fault(FAULT_KV, KV_FAULT_RAMP_TIMEOUT, kv_target, SETUP_TIMEOUT, kv_tolerance, kv_actual, 0);
-					//report_verbose_fault(FAULT_KV, KV_FAULT_RAMP_TIMEOUT, kv_target, SETUP_TIMEOUT, kv_tolerance, kv_actual, (uint32_t)kv_output);
+					report_typed_fault4(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f).", MAKE_ARG(kv_target), MAKE_ARG(SETUP_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual));
 #else
-					report_verbose_fault(FAULT_KV, KV_FAULT_RAMP_TIMEOUT, kv_target, SETUP_TIMEOUT, kv_tolerance, kv_actual, (uint32_t)kv_output);
+					report_typed_fault5(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(kv_target), MAKE_ARG(SETUP_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual), MAKE_ARG((uint32_t)kv_output));
 #endif
 				}
 			}
@@ -202,7 +201,7 @@ static void check_hvps_stability()
 			//Make sure we don't timeout trying to reach target
 			if(hvps_stability_timer > LAUNCHING_TIMEOUT)
 			{
-				report_verbose_fault(FAULT_FILAMENT, FIL_FAULT_RAMP_TIMEOUT, htr_target, LAUNCHING_TIMEOUT, htr_tolerance, htr_actual, (uint32_t)htr_output);
+				report_typed_fault5(FAULT_FILAMENT, "Did not hit heater target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(htr_target), MAKE_ARG(LAUNCHING_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(htr_tolerance), MAKE_ARG(htr_actual), MAKE_ARG((uint32_t)htr_output));
 			}
 			else if(heater_stable)
 			{
@@ -229,15 +228,14 @@ static void check_hvps_stability()
 			{
 				if(!heater_stable)
 				{
-					report_verbose_fault(FAULT_FILAMENT, FIL_FAULT_RAMP_TIMEOUT, htr_target, DISCHARGE_TIMEOUT, htr_tolerance, htr_actual, (uint32_t)htr_output);
+					report_typed_fault5(FAULT_FILAMENT, "Did not hit heater target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(htr_target), MAKE_ARG(DISCHARGE_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(htr_tolerance), MAKE_ARG(htr_actual), MAKE_ARG((uint32_t)htr_output));
 				}
 				if(!kv_stable)
 				{
 #if defined(CALIBRATION_MODE)
-					report_verbose_fault(FAULT_KV, KV_FAULT_RAMP_TIMEOUT, kv_target, DISCHARGE_TIMEOUT, kv_tolerance, kv_actual, 0);
-					//report_verbose_fault(FAULT_KV, KV_FAULT_RAMP_TIMEOUT, kv_target, DISCHARGE_TIMEOUT, kv_tolerance, kv_actual, (uint32_t)kv_output);
+					report_typed_fault4(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f).", MAKE_ARG(kv_target), MAKE_ARG(DISCHARGE_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual));
 #else
-					report_verbose_fault(FAULT_KV, KV_FAULT_RAMP_TIMEOUT, kv_target, DISCHARGE_TIMEOUT, kv_tolerance, kv_actual, (uint32_t)kv_output);
+					report_typed_fault5(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(kv_target), MAKE_ARG(DISCHARGE_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual), MAKE_ARG((uint32_t)kv_output));
 #endif
 				}
 			}
@@ -254,15 +252,14 @@ static void check_hvps_stability()
 			{
 				if(!heater_stable)
 				{
-					report_verbose_fault(FAULT_FILAMENT, FIL_FAULT_RAMP_TIMEOUT, htr_target, TERMINATION_TIMEOUT, htr_tolerance, htr_actual, (uint32_t)htr_output);
+					report_typed_fault5(FAULT_FILAMENT, "Did not hit heater target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(htr_target), MAKE_ARG(TERMINATION_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(htr_tolerance), MAKE_ARG(htr_actual), MAKE_ARG((uint32_t)htr_output));
 				}
 				if(!kv_stable)
 				{
 #if defined(CALIBRATION_MODE)
-					report_verbose_fault(FAULT_KV, KV_FAULT_RAMP_TIMEOUT, kv_target, DISCHARGE_TIMEOUT, kv_tolerance, kv_actual, 0);
-					//report_verbose_fault(FAULT_KV, KV_FAULT_RAMP_TIMEOUT, kv_target, DISCHARGE_TIMEOUT, kv_tolerance, kv_actual, (uint32_t)kv_output);
+					report_typed_fault4(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f).", MAKE_ARG(kv_target), MAKE_ARG(DISCHARGE_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual));
 #else
-					report_verbose_fault(FAULT_KV, KV_FAULT_RAMP_TIMEOUT, kv_target, TERMINATION_TIMEOUT, kv_tolerance, kv_actual, (uint32_t)kv_output);
+					report_typed_fault5(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(kv_target), MAKE_ARG(TERMINATION_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual), MAKE_ARG((uint32_t)kv_output));
 #endif
 				}
 			}
@@ -304,7 +301,7 @@ static void check_hvps_kv()
 				hvps_kv_oot_counter++;
 				if(hvps_kv_oot_counter > 20)	// TBD TODO magic number
 				{
-					report_fault(FAULT_KV, KV_FAULT_OOT, target, tolerance, actual);
+					report_typed_fault3(FAULT_KV, "kV feedback %f is outside target %f (tolerance: %f).", MAKE_ARG(actual), MAKE_ARG(target), MAKE_ARG(tolerance));
 				}
 			}
 			else
@@ -321,7 +318,7 @@ static void check_hvps_kv()
 		default:
 			if(actual >= LOW_KV_THRESH /*|| kV present IO from HVPS is active*/)
 			{
-				report_verbose_fault(FAULT_KV, KV_FAULT_UNWANTED_HV, LOW_KV_THRESH, DISCHARGE_TIMEOUT, 0, actual, -1);
+				report_typed_fault3(FAULT_KV, "High voltage remained at %f after %u seconds (allowed threshold: %f).", MAKE_ARG(actual), MAKE_ARG(DISCHARGE_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(LOW_KV_THRESH));
 			}
 			break;
 	}
@@ -340,7 +337,7 @@ static void check_hvps_ma()
 			hvps_uncontrolled_counter++;
 			if(hvps_uncontrolled_counter > MA_UNSTABLE_TIME)
 			{
-				report_verbose_fault(FAULT_MA, MA_FAULT_UNSTABLE, target, MA_UNSTABLE_TIME, tolerance, actual, -1);
+				report_typed_fault3(FAULT_MA, "mA feedback %f did not stabilize at target %f within %u seconds.", MAKE_ARG(actual), MAKE_ARG(target), MAKE_ARG(MA_UNSTABLE_TIME * HVPS_MONITOR_MS / 1000u));
 				hvps_uncontrolled_counter = 0;
 			}
 		}
@@ -356,7 +353,7 @@ static void check_hvps_ma()
 			hvps_ma_thresh++;
 			if(hvps_ma_thresh > MA_UNWANTED_TIME)
 			{
-				report_verbose_fault(FAULT_GRID, MA_GRID_FAULT_UNDESIRED, target, MA_UNWANTED_TIME, tolerance, actual, -1);
+				report_typed_fault5(FAULT_GRID, "Unexpected mA feedback %f exceeded threshold %f for %u seconds (target: %f, tolerance: %f).", MAKE_ARG(actual), MAKE_ARG(DEFAULT_MA_THRESH), MAKE_ARG(MA_UNWANTED_TIME * HVPS_MONITOR_MS / 1000u), MAKE_ARG(target), MAKE_ARG(tolerance));
 			}
 		}
 		else
@@ -371,7 +368,7 @@ static void check_hvps_ma()
 			hvps_ma_thresh++;
 			if(hvps_ma_thresh > MA_UNWANTED_TIME)
 			{
-				report_verbose_fault(FAULT_GRID, MA_GRID_FAULT_UNDESIRED, target, MA_UNWANTED_TIME, tolerance, actual, -1);
+				report_typed_fault5(FAULT_GRID, "Unexpected mA feedback %f exceeded threshold %f for %u seconds (target: %f, tolerance: %f).", MAKE_ARG(actual), MAKE_ARG(DEFAULT_MA_THRESH), MAKE_ARG(MA_UNWANTED_TIME * HVPS_MONITOR_MS / 1000u), MAKE_ARG(target), MAKE_ARG(tolerance));
 			}
 		}
 	}
@@ -390,13 +387,13 @@ static void check_hvps_heater()
 	{
 		set_hvps_heater(0);
 		set_hvps_grid(0);
-		report_fault(FAULT_FILAMENT, FIL_FAULT_OVERCURRENT_FB, HTR_OVERCUR_THRESH, 0, system_status[SS_HEATER_FB].f);
+		report_typed_fault2(FAULT_FILAMENT, "Heater feedback %f exceeds the maximum %f.", MAKE_ARG(system_status[SS_HEATER_FB].f), MAKE_ARG((float)HTR_OVERCUR_THRESH));
 	}
 	else if(system_status[SS_HEATER_SP].f > heater_max)
 	{
 		set_hvps_heater(0);
 		set_hvps_grid(0);
-		report_fault(FAULT_FILAMENT, FIL_FAULT_OVERCURRENT_SP, HTR_OVERCUR_THRESH, 0, system_status[SS_HEATER_FB].f);
+		report_typed_fault3(FAULT_FILAMENT, "Heater setpoint %f exceeds the maximum %f (feedback: %f).", MAKE_ARG(system_status[SS_HEATER_SP].f), MAKE_ARG((float)HTR_OVERCUR_THRESH), MAKE_ARG(system_status[SS_HEATER_FB].f));
 	}
 }
 

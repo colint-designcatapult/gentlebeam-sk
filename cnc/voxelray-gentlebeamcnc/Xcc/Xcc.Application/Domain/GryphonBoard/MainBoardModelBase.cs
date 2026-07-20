@@ -273,11 +273,13 @@ namespace Xcc.Application.Domain.GryphonBoard
                    gcbState == GcbStateNew.NoComm;
         }
 
-        public virtual async Task<FaultEntry> GetFaults()
+        public virtual async Task<FaultSnapshot> GetFaults()
         {
             _ = LogWriter.LogAsync("GetFaults", LogRecordSeverity.Info, LogRecordType.System);
 
-            return await GcbAPI.GetFaults();
+            FaultSnapshot snapshot = await GcbAPI.GetFaults();
+            GcbDataStore.ReplaceFaults(snapshot);
+            return snapshot;
         }
 
         public virtual async Task<VersionInfo> GetVersionInfo()

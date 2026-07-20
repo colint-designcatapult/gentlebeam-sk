@@ -83,8 +83,6 @@ void init_system_parameters()
 	//Clear treatment plan
 	clear_treatment_plan();
 	
-	//Clear fault table
-	memset(fault_information, 0, sizeof(VariableValue) * FAULT_RES_COUNT);
 	
 #if !defined(CALIBRATION_MODE)
 	init_qc_ping_buf();

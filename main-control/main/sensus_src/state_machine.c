@@ -8,6 +8,7 @@
 */
 
 #include <atmel_start.h>
+#include "hal_atomic.h"
 #include "ext_dac.h"
 #include "ext_timers.h"
 #include "faults.h"
@@ -53,6 +54,7 @@ static void goto_discharge_state();
 static void run_discharge_state(EventType ev);
 static void goto_fault_state();
 static void run_fault_state(EventType ev);
+static void transition_to_latched_fault(void);
 
 static void deci_second_timer(const struct timer_task *const timer_task);
 
@@ -137,16 +139,16 @@ static void deci_second_timer(const struct timer_task *const timer_task)
 			int op_idx = system_status[SS_OP_IDX].i;
 			if(op_idx < 0)
 			{
-				report_fault(FAULT_MEMORY, MEMORY_FAULT_OP_IDX, 0, 0, op_idx);
+				report_typed_fault1(FAULT_MEMORY, "Operational-point index %d is negative.", MAKE_ARG(op_idx));
 			}
 			else if(op_idx >= system_status[SS_OP_COUNT].i)
 			{
-				report_fault(FAULT_MEMORY, MEMORY_FAULT_OP_IDX, system_status[SS_OP_COUNT].i, 0, op_idx);
+				report_typed_fault2(FAULT_MEMORY, "Operational-point index %d exceeds the loaded count %d.", MAKE_ARG(op_idx), MAKE_ARG(system_status[SS_OP_COUNT].i));
 				
 			}
 			else if(op_idx >= MAX_OPERATIONAL_POINTS)
 			{
-				report_fault(FAULT_MEMORY, MEMORY_FAULT_OP_IDX, MAX_OPERATIONAL_POINTS, 0, op_idx);
+				report_typed_fault2(FAULT_MEMORY, "Operational-point index %d exceeds the firmware maximum %u.", MAKE_ARG(op_idx), MAKE_ARG(MAX_OPERATIONAL_POINTS));
 			}
 			else
 			{
@@ -185,6 +187,12 @@ void queue_sm_event(EventType ev)
 
 void process_state_machine()
 {
+	if(consume_fault_transition())
+	{
+		transition_to_latched_fault();
+		return;
+	}
+
 	//Dequeue all queued events and run state machine
 	while(event_q_idx != event_q_end)
 	{
@@ -192,7 +200,7 @@ void process_state_machine()
 		{
 			event_q_idx = 0;
 		}
-		
+
 		//Ensure state index is valid
 		if(*state < NUM_SYSTEM_STATES)
 		{
@@ -204,6 +212,42 @@ void process_state_machine()
 		{
 			run_crash_state(event_queue[event_q_idx]);
 		}
+
+		if(consume_fault_transition())
+		{
+			transition_to_latched_fault();
+			return;
+		}
+	}
+}
+
+static void transition_to_latched_fault(void)
+{
+	XState captured_state;
+
+	CRITICAL_SECTION_ENTER()
+	captured_state = *state;
+	event_q_idx = event_q_end;
+	CRITICAL_SECTION_LEAVE()
+
+	switch(captured_state)
+	{
+		case STATE_STARTUP:
+		case STATE_COLD:
+			goto_cold_fault_state();
+			break;
+		case STATE_CONDITIONING:
+		case STATE_WARMUP:
+			goto_warmup_fault_state();
+			break;
+		case STATE_COLD_FAULT:
+		case STATE_WARMUP_FAULT:
+		case STATE_FAULT:
+		case STATE_SYSTEM_CRASH:
+			break;
+		default:
+			goto_fault_state();
+			break;
 	}
 }
 
@@ -492,7 +536,7 @@ static void run_primed_state(EventType ev)
 		else
 		{
 			//Do not continue and report fault if system is not in an ok state
-			report_simple_fault(FAULT_INVALID_CONFIG, 0, 0, 1);
+			report_typed_fault(FAULT_INVALID_CONFIG, "The loaded configuration is invalid.");
 		}
 	}
 }
@@ -597,7 +641,7 @@ static void run_staged_state(EventType ev)
 		else
 		{
 			//Do not continue and report fault if system is not in an ok state
-			report_simple_fault(FAULT_INVALID_CONFIG, 0, 0, 1);
+			report_typed_fault(FAULT_INVALID_CONFIG, "The loaded configuration is invalid.");
 		}
 	}
 }
@@ -818,7 +862,7 @@ static void run_ready_state(EventType ev)
 		else
 		{
 			//Do not continue and report fault if system is not in an ok state
-			report_simple_fault(FAULT_INVALID_CONFIG, 0, 0, 1);
+			report_typed_fault(FAULT_INVALID_CONFIG, "The loaded configuration is invalid.");
 		}
 	}
 }

@@ -102,6 +102,11 @@ namespace Empyrean.Common.Infra.Networking.Udp
         public uint PayloadLength => unchecked((uint)_payloadLength);
         public uint CRC => BinaryPrimitives.ReadUInt32LittleEndian(_buffer.AsSpan(_buffer.Length - sizeof(uint)));
         public byte[] Buffer => _buffer;
+        public ReadOnlySpan<byte> Payload =>
+            _payloadLength == 0
+                ? ReadOnlySpan<byte>.Empty
+                : _buffer.AsSpan(GetPayloadFieldOffsetUnsafe(0), checked(_payloadLength * sizeof(uint)));
+
 
         public Field this[int index]
         {

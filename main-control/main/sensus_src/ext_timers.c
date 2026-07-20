@@ -85,7 +85,7 @@ static void ext_timers_comm_timeout_check(const struct timer_task *const timer_t
 	//Check to see if timer bus is stuck (i.e. slave hold)
 	if(timer_bus_stuck)
 	{
-		report_fault(FAULT_TIMER_COMM, TMR_FAULT_COMM_TIMEOUT, 0, TIMER_COMM_TIMEOUT_MS, 1);
+		report_typed_fault1(FAULT_TIMER_COMM, "No timer response was received within %u ms.", MAKE_ARG(TIMER_COMM_TIMEOUT_MS));
 	}
 	timer_bus_stuck = true;
 }
@@ -167,11 +167,11 @@ static void parse_timer_values(bool primary)
 	{
 		if(primary)
 		{
-			report_fault(FAULT_TIMER_COMM, TMR_FAULT_CHECKSUM_1, (uint32_t)checksum, 0, (uint32_t)time_buf[TIMER_RX_CHECK]);
+			report_typed_fault2(FAULT_TIMER_COMM, "Primary timer checksum was %u; expected %u.", MAKE_ARG((uint32_t)checksum), MAKE_ARG((uint32_t)time_buf[TIMER_RX_CHECK]));
 		}
 		else
 		{
-			report_fault(FAULT_TIMER_COMM, TMR_FAULT_CHECKSUM_2, (uint32_t)checksum, 0, (uint32_t)time_buf[TIMER_RX_CHECK]);
+			report_typed_fault2(FAULT_TIMER_COMM, "Secondary timer checksum was %u; expected %u.", MAKE_ARG((uint32_t)checksum), MAKE_ARG((uint32_t)time_buf[TIMER_RX_CHECK]));
 		}
 	}
 	else
@@ -339,11 +339,11 @@ static void report_timer_nack()
 	//Report fault
 	if(timer_addr == PRIMARY_TIMER_ADDR)
 	{
-		report_fault(FAULT_TIMER_COMM, TMR_FAULT_NACK_1, 0, 0, 1);
+		report_typed_fault(FAULT_TIMER_COMM, "Primary timer returned NACK.");
 	}
 	else
 	{
-		report_fault(FAULT_TIMER_COMM, TMR_FAULT_NACK_2, 0, 0, 1);
+		report_typed_fault(FAULT_TIMER_COMM, "Secondary timer returned NACK.");
 	}
 }
 

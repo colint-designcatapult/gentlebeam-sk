@@ -1,8 +1,11 @@
+using Empyrean.Common.Infra.Networking.Udp;
 using Prism.Events;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
+using System.Text;
 using System.Threading.Tasks;
 using Xcc.Application.Events;
 using Xcc.Core.Domain.GryphonBoard;
@@ -14,8 +17,9 @@ namespace Xcc.Application.Domain.GryphonBoard
 {
     public class DummyMainBoardModel : MainBoardModelBase
     {
-        private int _faultId = 0;
-        private int _faultDetails = 0;
+        private const string DummyFaultFormat = "Dummy heater current %f mA exceeded limit %f mA.";
+        private readonly List<FaultEntry> _faults = [];
+        private uint _faultClearEpoch = 1;
 
         public DummyMainBoardModel(
             IGCBDataStore gcbDataStore,
@@ -36,50 +40,44 @@ namespace Xcc.Application.Domain.GryphonBoard
             return Task.FromResult(true);
         }
 
-        public override Task<FaultEntry> GetFaults()
+        public override Task<FaultSnapshot> GetFaults()
         {
             _ = LogWriter.LogAsync("GetFaults", LogRecordSeverity.Info, LogRecordType.System);
 
-            FaultEntry faultEntry = null!;
+            var snapshot = new FaultSnapshot(
+                _faultClearEpoch,
+                Array.AsReadOnly(_faults.ToArray()));
+            GcbDataStore.ReplaceFaults(snapshot);
+            return Task.FromResult(snapshot);
+        }
 
-
-            var faultType = (SystemFault)_faultId;
-            if (faultType == SystemFault.InterlockFault)
+        private void AddDummyFault(float actual, float limit)
+        {
+            if (_faults.Any(entry => string.Equals(entry.Format, DummyFaultFormat, StringComparison.Ordinal)) ||
+                _faults.Count >= 4)
             {
-                faultEntry = new InterlockFaultEntry(
-                    [new InterlockState(GcbInterlockFlags.IonPump, true, false),
-                    new InterlockState(GcbInterlockFlags.Door, false, true)])
-                {
-                    FaultId = _faultId,
-                    FaultType = faultType,
-                    FaultIdSupportingDetails = (GCBFaultDetails)_faultDetails,
-                    FaultEntryState = (int)SystemTelemetry!.ControlBoardState,
-                    FaultTimeValue = 0,
-                    ExpectedParameter = 1.0f,
-                    ExpectedParameterSupportingDetails = 1,
-                    ParameterTolerance = 2.0f,
-                    MeasuredParameter = 3.0f,
-                    MeasuredParameterSupportingDetails = 4,
-                };
-            }
-            else
-            {
-                faultEntry = new FaultEntry
-                {
-                    FaultId = _faultId,
-                    FaultType = faultType,
-                    FaultIdSupportingDetails = (GCBFaultDetails)_faultDetails,
-                    FaultEntryState = (int)SystemTelemetry!.ControlBoardState,
-                    FaultTimeValue = 0,
-                    ExpectedParameter = 1.0f,
-                    ExpectedParameterSupportingDetails = 1,
-                    ParameterTolerance = 2.0f,
-                    MeasuredParameter = 3.0f,
-                    MeasuredParameterSupportingDetails = 4,
-                };
+                return;
             }
 
-            return Task.FromResult(faultEntry);
+            byte[] formatBytes = Encoding.ASCII.GetBytes(DummyFaultFormat);
+            string message = string.Create(
+                CultureInfo.InvariantCulture,
+                $"Dummy heater current {actual:G9} mA exceeded limit {limit:G9} mA.");
+            var entry = new FaultEntry(
+                SystemFault.OtherFault,
+                CrcUtils.ComputeChecksum(formatBytes),
+                SystemTelemetry?.ControlBoardState ?? GcbStateNew.NoComm,
+                (uint)(SystemTelemetry?.SystemRuntime ?? 0),
+                DummyFaultFormat,
+                message);
+
+            uint index = (uint)_faults.Count;
+            _faults.Add(entry);
+            GcbDataStore.ApplyFaultUpdate(new FaultUpdate(
+                _faultClearEpoch,
+                index,
+                (uint)_faults.Count,
+                entry));
         }
 
         protected override void UpdateCurrentPlanState(ISystemTelemetry? systemTelemetry)
@@ -108,8 +106,9 @@ namespace Xcc.Application.Domain.GryphonBoard
 
         public override Task ClearFaults()
         {
-            _faultId = 0;
-            _faultDetails = 0;
+            _faults.Clear();
+            _faultClearEpoch = unchecked(_faultClearEpoch + 1u);
+            GcbDataStore.ApplyFaultUpdate(new FaultUpdate(_faultClearEpoch, 0, 0, null));
             EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
             {
                 Status = DummyXrayStatus.ClearErrors
@@ -238,9 +237,8 @@ namespace Xcc.Application.Domain.GryphonBoard
             var random = new Random();
             if (random.Next(10) < 1)
             {
-                int faultBit = (int)SystemFault.CoilFault;
-                _faultId = faultBit;
-                _faultDetails = (int)GCBFaultDetails.KVFaultTargetOutOfTolerance;
+                int faultBit = (int)SystemFault.OtherFault;
+                AddDummyFault(heaterCurrentSetpoint + 1.0f, heaterCurrentSetpoint);
                 EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
                 {
                     Status = DummyXrayStatus.SetWarmupFault,
@@ -278,9 +276,8 @@ namespace Xcc.Application.Domain.GryphonBoard
             var random = new Random();
             if (random.Next(10) < 1)
             {
-                int faultBit = (int)SystemFault.CoilFault;
-                _faultId = faultBit + 1;
-                _faultDetails = (int)GCBFaultDetails.KVFaultTargetOutOfTolerance;
+                int faultBit = (int)SystemFault.OtherFault;
+                AddDummyFault(heaterCurrentSetpoint + 2.0f, heaterCurrentSetpoint);
                 EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
                 {
                     Status = DummyXrayStatus.SetWarmupFault,
@@ -330,21 +327,6 @@ namespace Xcc.Application.Domain.GryphonBoard
                     CurrentPlan.UpdatePoint(currentPointValue);
                 }
             }
-            //// Run task to make fault during emission:
-            //Task.Run(async () =>
-            //{
-            //    await Task.Delay(2000);
-
-            //    int faultBit = (int)SystemFault.CoilFault;
-            //    _faultId = faultBit + 1;
-            //    _faultDetails = (int)GCBFaultDetails.KVFaultTargetOutOfTolerance;
-
-            //    EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
-            //    {
-            //        Status = DummyXrayStatus.SetFault,
-            //        Parameter = faultBit
-            //    });
-            //});
 
             if (CurrentPlan == null || CurrentPlan.TotalPoints == 0)
                 return Task.CompletedTask;

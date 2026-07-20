@@ -21,12 +21,19 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
-        public void GcbFaultInfoQuery_PacketCorrectnessTest()
+        public void GcbFaultInfoQuery_EncodesRequestedIndex()
         {
-            var packet = commandOperator.GenerateFaultInfoRequestCmd();
-            var referencePacket = oldCommandOperator.GenerateFaultInfoRequestCmd();
+            const uint requestedIndex = 3;
+            var packet = commandOperator.GenerateFaultInfoRequestCmd(requestedIndex);
+            var referencePacket = oldCommandOperator.GenerateFaultInfoRequestCmd(requestedIndex);
+            var response = new UdpPacket(packet);
 
-            Assert.That(packet, Is.EqualTo(referencePacket));
+            Assert.Multiple(() =>
+            {
+                Assert.That(packet, Is.EqualTo(referencePacket));
+                Assert.That(response.PayloadLength, Is.EqualTo(1));
+                Assert.That((uint)response[0], Is.EqualTo(requestedIndex));
+            });
         }
 
         [Test]
@@ -157,12 +164,12 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         /// This command is used to obtain information about the fault which trigger the system to enter into a fault state. 
         /// </summary>
         /// <returns></returns>
-        public byte[] GenerateFaultInfoRequestCmd()
+        public byte[] GenerateFaultInfoRequestCmd(uint index)
         {
             byte[] bytesToSend = GenerateInitialArrayToSend((byte)GCBPacketType.FaultInfo, 1);
-            bytesToSend = JoinByteArrays(bytesToSend, new byte[] { 0x00, 0x00, 0x00, 0x00 });// reserved
-            byte[] crc = GetCRC(bytesToSend);// calculate CRC
-            return JoinByteArrays(bytesToSend, crc);// add the calculated crc to the buffer.
+            bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(index));
+            byte[] crc = GetCRC(bytesToSend);
+            return JoinByteArrays(bytesToSend, crc);
         }
 
         /// <summary>

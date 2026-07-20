@@ -73,7 +73,7 @@ namespace Xcc.Core.Domain.GryphonBoard
         // Commands that just query the board's state
         #region Board state queries
         Task<VersionInfo> GetVersionInfo();
-        Task<FaultEntry> GetFaults();
+        Task<FaultSnapshot> GetFaults();
         Task<GcbOperationalPoint> QueryPointFromGCB(int index);
         Task UpdatePlanPointFromGCB(int index);
         Task<GcbEmissionPlan> QueryPlanFromGCB();

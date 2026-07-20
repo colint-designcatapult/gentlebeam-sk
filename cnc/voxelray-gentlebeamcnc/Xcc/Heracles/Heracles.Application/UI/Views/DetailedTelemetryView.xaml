@@ -24,6 +24,8 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/TextBlock/TextBlockLegendStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ListViewTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <Style x:Key="BlockHeaderTextBoxStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBlockLegendStyle}">
@@ -54,8 +56,53 @@
                 <ColumnDefinition Width="{StaticResource SystemSignalsBlockMarginLength}" />
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="{StaticResource SystemSignalsBlockMarginLength}"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-            <Grid>
+            <!--Active faults-->
+            <Border Grid.Row="0" Grid.ColumnSpan="5" Style="{StaticResource BorderBlockStyle}">
+                <Grid Margin="{StaticResource BlockContentMargin}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
+                        <RowDefinition Height="240"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Style="{StaticResource BlockHeaderTextBoxStyle}" Text="Active Faults"/>
+
+                    <Grid Grid.Row="2">
+                        <ListView
+                            x:Name="ServiceFaultList"
+                            Style="{StaticResource TableListView}"
+                            ItemsSource="{Binding Faults}"
+                            Tag="{StaticResource SystemFaultListHeaderTemplate}"
+                            ItemTemplate="{StaticResource SystemFaultListItemTemplate}"/>
+
+                        <TextBlock
+                            Text="No active faults."
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="{StaticResource ForegroundPaleBrush}"
+                            IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource TextBlockLegendStyle}">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasItems, ElementName=ServiceFaultList}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="4*" />
                     <RowDefinition Height="{StaticResource SystemSignalsBlockMarginLength}"/>
@@ -288,7 +335,7 @@
                   
             </Grid>            
         
-            <Grid Grid.Column="2">            
+            <Grid Grid.Row="2" Grid.Column="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="4*" />
                     <RowDefinition Height="{StaticResource SystemSignalsBlockMarginLength}"/>
@@ -679,7 +726,7 @@
 
 
 
-            <Grid Grid.Column="4">            
+            <Grid Grid.Row="2" Grid.Column="4">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1.2*" />
                     <RowDefinition Height="{StaticResource SystemSignalsBlockMarginLength}"/>
