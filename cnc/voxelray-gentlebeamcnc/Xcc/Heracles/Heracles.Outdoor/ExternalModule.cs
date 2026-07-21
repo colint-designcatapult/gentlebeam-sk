@@ -69,7 +69,8 @@ namespace Herales.External
                 // Start telemetry service:
                 StartGcbServices(containerProvider);
                 // Start QC board service:
-                StartQcbService(containerProvider);
+                // TODO: Phase 2 - QCB services to be replaced with mock implementations
+                // StartQcbService(containerProvider);
 
                 // Prefetch collimator data to have CollimatorModel ready for use
                 await FetchCollimatorDataAsync(containerProvider);
@@ -215,7 +216,8 @@ namespace Herales.External
             {
                 try
                 {
-                    containerProvider.Resolve<MockQcbServer>().Start(numberOfDiodes: 5, serverPort: heraclesExternalSettings.QcbCommandsEndPoint.Port.Value);
+                    // TODO: Phase 2 - QcbCommandsEndPoint endpoint removed, will use mock service instead
+                    // containerProvider.Resolve<MockQcbServer>().Start(numberOfDiodes: 5, serverPort: heraclesExternalSettings.QcbCommandsEndPoint.Port.Value);
                 }
                 catch (Exception)
                 {

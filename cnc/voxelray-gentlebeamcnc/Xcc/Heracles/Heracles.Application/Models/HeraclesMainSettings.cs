@@ -23,10 +23,6 @@ namespace Heracles.Application.Models
 
 
         #region IHeraclesCoreSettings
-        public ISystemEndPoint QcbCommandsEndPoint { get; set; } =
-            SystemEndPoint.Create(
-                reader.GetOptionalString("AppSettings:EndPoints:QcbCommandsEndPoint", NetworkProperties.QcbEndPoint));
-
         #region ICoreSettings
         public ISystemEndPoint GCBTelemetryEndPoint { get; set; } =
             SystemEndPoint.Create(

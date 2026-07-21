@@ -6,7 +6,6 @@ namespace Heracles.Core.Models
 {
     public interface IHeraclesCoreSettings : ICoreSettings
     {
-        ISystemEndPoint QcbCommandsEndPoint { get; set; }
         ISystemEndPoint DataCommandsEndPoint { get; set; }
         int GrpcTimeout { get; }
         string StorageRoot { get; }

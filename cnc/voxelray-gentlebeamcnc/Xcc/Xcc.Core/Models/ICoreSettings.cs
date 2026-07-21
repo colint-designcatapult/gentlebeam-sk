@@ -4,7 +4,6 @@ public interface ICoreSettings
 {
     public ISystemEndPoint GCBTelemetryEndPoint { get; set; }
     public ISystemEndPoint GCBCommandsEndPoint { get; set; }
-    public ISystemEndPoint QcbCommandsEndPoint { get; set; }
     public ISystemEndPoint DataCommandsEndPoint { get; set; }
 
     public int GrpcTimeout { get; }
