@@ -51,14 +51,11 @@ using Xcc.Infra.GryphonBoard.CommandAPI;
 using Xcc.Infra.Logging;
 using Xcc.Infra.Networking.gRPC.Channels;
 using Xcc.Infra.QualityCheck;
-using Xcc.Infra.QualityCheck.Comm;
-using Xcc.Infra.QualityCheck.Comm.Udp.MockServers;
 using Xcc.Infra.Services;
 using Xcc.Infra.UserSessions.BearerToken;
 using Xcc.Shared.Services;
 using Xcc.Shared.Views;
 using AppGlobals = Heracles.Application.Models.AppGlobals;
-using QcbCommunicationService = Heracles.Application.Services.QcbCommunicationService;
 using SystemConfiguration = Heracles.Application.Models.SystemConfiguration;
 
 
@@ -159,7 +156,6 @@ namespace Heracles.External
                 containerRegistry.RegisterManySingleton<DummyMainBoardModel>();
                 containerRegistry.RegisterSingleton<ITelemetryService, DummyTelemetryService>();
                 //containerRegistry.RegisterSingleton<ILogService, TextLogService>();
-                containerRegistry.RegisterSingleton<MockQcbServer>();
             }
             else
             {
@@ -174,7 +170,6 @@ namespace Heracles.External
 
             containerRegistry.RegisterSingleton<IGcbIndicators, GcbIndicators>();
             containerRegistry.RegisterManySingleton<WarmupService>();
-            containerRegistry.RegisterSingleton<IQcbCommunicationService, QcbCommunicationService>();
             containerRegistry.RegisterSingleton<IQcbService, MockQcbService>();
             containerRegistry.RegisterSingleton<IQcbReadingModel, MockQcbReadingModel>();
 

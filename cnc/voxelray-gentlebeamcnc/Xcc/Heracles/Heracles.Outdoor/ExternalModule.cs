@@ -28,7 +28,6 @@ using Xcc.Core.Enums;
 using Xcc.Core.Logging;
 using Xcc.Core.Services;
 using Xcc.Infra.GryphonBoard.Comm;
-using Xcc.Infra.QualityCheck.Comm.Udp.MockServers;
 using Xcc.Infra.UserSessions;
 
 namespace Herales.External
@@ -68,9 +67,6 @@ namespace Herales.External
 
                 // Start telemetry service:
                 StartGcbServices(containerProvider);
-                // Start QC board service:
-                // TODO: Phase 2 - QCB services to be replaced with mock implementations
-                // StartQcbService(containerProvider);
 
                 // Prefetch collimator data to have CollimatorModel ready for use
                 await FetchCollimatorDataAsync(containerProvider);
@@ -206,36 +202,6 @@ namespace Herales.External
             catch (Exception)
             {
                 dialogService.ReportError("GCB connection error", "Please check GCB connection settings");
-                throw;
-            }
-        }
-
-        private void StartQcbService(IContainerProvider containerProvider)
-        {
-            if (heraclesExternalSettings.UseDummyServices)
-            {
-                try
-                {
-                    // TODO: Phase 2 - QcbCommandsEndPoint endpoint removed, will use mock service instead
-                    // containerProvider.Resolve<MockQcbServer>().Start(numberOfDiodes: 5, serverPort: heraclesExternalSettings.QcbCommandsEndPoint.Port.Value);
-                }
-                catch (Exception)
-                {
-                    dialogService.ReportError("QCB Mock Server error", "Please check QCB connection settings. QC Endpoint may be missing.");
-                    throw;
-                }
-            }
-
-            try
-            {
-                var networkSupervisor = containerProvider.Resolve<NetworkConnectionSupervisor>();
-
-                var qcbCommandService = containerProvider.Resolve<IQcbService>();
-                qcbCommandService.Start();
-            }
-            catch (Exception)
-            {
-                dialogService.ReportError("QCB connection error", "Please check QCB connection settings");
                 throw;
             }
         }
