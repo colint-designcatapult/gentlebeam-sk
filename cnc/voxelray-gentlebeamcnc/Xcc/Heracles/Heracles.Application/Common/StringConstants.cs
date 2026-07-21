@@ -15,6 +15,7 @@ namespace Heracles.Application.Common
             public const string DeleteDialogTitle = "Delete";
             public const string ReloadDialogTitle = "Reload";
             public const string DatabaseErrorTitle = "Database connection error";
+            public const string CalibrationModeServiceRequiredMessage = "The device is operating in calibration mode and needs to be serviced.";
         }
 
         public static class Authentication

@@ -10,20 +10,19 @@ namespace Xcc.Application.UI.Converters
     {       
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values != null && values.Length == 2)
+            if (values is not { Length: 2 or 3 } || values[0] is not bool boolValue)
+                return DependencyProperty.UnsetValue;
+
+            if (values.Length == 3)
             {
-                if (values[0] is bool boolValue)
-                {
-                    if (!boolValue)
-                        return true;
-                    else
-                    {
-                        return values[1].Equals(parameter);
-                    }
-                }
+                if (values[2] is not bool operationAllowed)
+                    return DependencyProperty.UnsetValue;
+                if (!operationAllowed)
+                    return false;
             }
 
-            return DependencyProperty.UnsetValue;
+            return !boolValue || Equals(values[1], parameter);
+
         }
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
