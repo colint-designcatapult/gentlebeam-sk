@@ -117,6 +117,7 @@ namespace Heracles.Application.Models
         public string? PathToTagScreenshot { get; set; } = reader.GetOptionalString("AppSettings:Debug:PathToTagScreenshot");
         public bool DoNotExpandFullscreen { get; set; } = reader.GetOptionalBool("AppSettings:Debug:DoNotExpandFullscreen", false);
         public bool IsUpsActivated { get; } = reader.GetOptionalBool("AppSettings:Debug:IsUpsActivated", false);
+        public int GcbTelemetryListenerPort { get; } = reader.GetOptionalInt("AppSettings:Debug:GcbTelemetryListenerPort", 0);
         #endregion IDebugSettings
 
 

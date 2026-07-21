@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.7.11925.98 stable
+VisualStudioVersion = 18.7.11925.98
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Xcc.Core", "Xcc\Xcc.Core\Xcc.Core.csproj", "{B26C11EB-36D7-46A9-BBE4-5F9C6BABCFB1}"
 EndProject
@@ -78,6 +78,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{674A
 	ProjectSection(SolutionItems) = preProject
 		Scripts\all_deps_actual_commits.txt = Scripts\all_deps_actual_commits.txt
 		Scripts\all_deps_checkout.cmd = Scripts\all_deps_checkout.cmd
+		Scripts\run-local-dual-cnc.ps1 = Scripts\run-local-dual-cnc.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Empyrean", "Empyrean", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
@@ -101,6 +102,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Heracles", "Heracles", "{88C0F7D4-BD8A-C90F-7AB0-032CCF0456F9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Heracles.Indoor.SqliteGrpcServer", "Xcc\Heracles\Heracles.Indoor.SqliteGrpcServer\Heracles.Indoor.SqliteGrpcServer.csproj", "{1BF92378-061B-4BB5-A4D0-C3E187D59477}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GcbTelemetryRelay", "GcbTelemetryRelay\GcbTelemetryRelay.csproj", "{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -376,6 +379,18 @@ Global
 		{1BF92378-061B-4BB5-A4D0-C3E187D59477}.Release|x64.Build.0 = Release|x64
 		{1BF92378-061B-4BB5-A4D0-C3E187D59477}.Release|x86.ActiveCfg = Release|x64
 		{1BF92378-061B-4BB5-A4D0-C3E187D59477}.Release|x86.Build.0 = Release|x64
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Debug|x64.Build.0 = Debug|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Debug|x86.Build.0 = Debug|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Release|x64.ActiveCfg = Release|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Release|x64.Build.0 = Release|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Release|x86.ActiveCfg = Release|Any CPU
+		{79B00C09-33D9-43B5-8DF7-C83DE73A0C79}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
