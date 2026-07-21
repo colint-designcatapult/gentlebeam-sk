@@ -175,8 +175,8 @@ namespace Heracles.External
             containerRegistry.RegisterSingleton<IGcbIndicators, GcbIndicators>();
             containerRegistry.RegisterManySingleton<WarmupService>();
             containerRegistry.RegisterSingleton<IQcbCommunicationService, QcbCommunicationService>();
-            containerRegistry.RegisterSingleton<IQcbService, QcbService>();
-            containerRegistry.RegisterSingleton<IQcbReadingModel, QcbReadingModel>();
+            containerRegistry.RegisterSingleton<IQcbService, MockQcbService>();
+            containerRegistry.RegisterSingleton<IQcbReadingModel, MockQcbReadingModel>();
 
             if (heraclesExternalSettings.UseDummyDatabase)
             {
