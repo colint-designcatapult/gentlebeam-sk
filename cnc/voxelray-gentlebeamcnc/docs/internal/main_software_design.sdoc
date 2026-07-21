@@ -1536,11 +1536,20 @@ RELATIONS:
 UID: SW-H10SG-708
 TITLE: Display System Telemetry
 STATEMENT: >>>
-The application should subscribe to a UDP event from the firmware to get the system telemetry.
+The receive-only GCB telemetry service passes unsolicited device-information, telemetry,
+and fault datagrams to the system telemetry processor. Device information selects the
+normal or calibration parser. Valid packets become immutable semantic snapshots and are
+published through the main-board model and GCB data store; unsupported versions or
+malformed packets do not replace the last valid snapshot. Publication is limited to one
+snapshot every 250 ms, and 1.5 seconds without valid telemetry produces an unavailable
+snapshot.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-54
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-65
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1590,11 +1599,29 @@ RELATIONS:
 UID: SW-H10SG-713
 TITLE: Retrieve System Signals
 STATEMENT: >>>
-The flow for retrieving System Signals should be implemented as described in the following sequence diagram:
+The detailed telemetry view binds to nullable semantic fields on the GCB data store's
+latest immutable telemetry snapshot and renders unavailable firmware-specific fields as
+not available. The fault view binds to the store's latched active-fault list and displays
+each formatted message with its captured state and runtime. Both views consume store
+notifications and do not poll the firmware.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-65
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-714
+TITLE: Calibration Mode Patient Lockout
+STATEMENT: >>>
+The indoor main-tabs view binds the Patients tab enabled state to the immutable telemetry
+firmware mode. Calibration mode disables the tab. A high-z-order overlay inside the tab
+obscures previously rendered patient content and displays the service-required message.
+Unknown or unavailable firmware mode does not lock the tab.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-741
   ROLE: Refines
 
 [[/SECTION]]

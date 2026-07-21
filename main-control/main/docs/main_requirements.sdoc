@@ -131,12 +131,18 @@ UID: RQ-H1FWMC-6
 TYPE: Functional
 TITLE: Fault information
 STATEMENT: >>>
-The firmware shall be able to respond to a request from the PC with information about the
-fault which triggered the transition into fault mode, including:
+The firmware shall retain and report up to four simultaneously active fault records. In
+response to an indexed fault-information request from the PC, the firmware shall report:
 
-- The type of fault occurrence
-- The state in which the fault occurred
-- The expected vs measured conditions which triggered the fault
+- The fault category
+- A printable fault-message format string and its checksum
+- Up to five raw format arguments
+- The system state and runtime captured when the fault was first reported
+- The fault-clear epoch, requested entry index, and total active-fault count
+
+The firmware shall suppress duplicate records for the same fault category and message
+format while the record remains latched. Newly detected distinct records shall also be
+published without a request from the PC.
 <<<
 
 [REQUIREMENT]
@@ -760,7 +766,8 @@ UID: RQ-H1FWMC-78
 TYPE: Functional
 TITLE: Fault information
 STATEMENT: >>>
-The firmware shall be able to clear latched fault flags when requested by the PC.
+The firmware shall clear all latched fault records and category flags when requested by the
+PC. Clearing shall increment the fault-clear epoch and publish an empty active-fault list.
 <<<
 
 [REQUIREMENT]
@@ -768,7 +775,8 @@ UID: RQ-H1FWMC-79
 TYPE: Functional
 TITLE: Fault information
 STATEMENT: >>>
-The firmware shall latch fault condition flags
+The firmware shall latch fault category flags and detailed fault records until they are
+cleared by the PC, even when the condition that caused a record is no longer present.
 <<<
 
 [REQUIREMENT]
@@ -814,14 +822,15 @@ TYPE: Functional
 TITLE: Report telemetry to PC
 STATEMENT: >>>
 The firmware shall transmit monitored system parameter values to the PC as unsolicited UDP
-telemetry packets every 10 ms (100 Hz) and in response to a telemetry request from the PC. Parameter types in each packet include the following:
+telemetry packets every 10 ms (100 Hz) and in response to a telemetry request from the PC.
+The parameter layout shall correspond to the compiled firmware mode (normal or calibration)
+and include the applicable values from the following categories:
 
-- Control board state
-- Current system operational point in treatment plan
-- Total operational points in treatment plan
-- Internal timer value
-- Backup timer values
-- Feedback values
+- Control-board state, runtime, fault flags, interlocks, and indicator state
+- Current and total operational points in the treatment plan
+- Internal and backup timer states and values
+- Applicator, button, coolant, magnetometer, coil, ion-pump, and temperature values
+- HVPS runtime, I/O and status flags, setpoints, feedback values, and power limits
 <<<
 
 [REQUIREMENT]
@@ -866,6 +875,16 @@ STATEMENT: >>>
 The Main Control App FW shall be able to accept QC Diode values from the Head Interface
 FW and process them for output to the PC Application. A QC ping command should also be
 processed when received from the PC application.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWMC-306
+TYPE: Functional
+TITLE: Report device information to PC
+STATEMENT: >>>
+The firmware shall transmit a UDP device-information packet to the PC once per second and
+in response to a device-information request. The packet shall identify the firmware major,
+minor, and level version, application CRC, and firmware mode.
 <<<
 
 [[/SECTION]]
