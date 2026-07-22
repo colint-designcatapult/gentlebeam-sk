@@ -1,3 +1,0 @@
-../SensusSrc/magnetometer.c:26:6:init_magnetometer	8	static
-../SensusSrc/magnetometer.c:94:6:process_magnetometer	32	static
-../SensusSrc/magnetometer.c:180:6:mag_i2c_rx_cb	0	static

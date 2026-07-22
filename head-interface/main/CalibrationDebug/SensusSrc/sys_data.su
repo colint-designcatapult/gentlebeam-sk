@@ -1,6 +1,0 @@
-../SensusSrc/sys_data.c:96:6:update_mag_cal_window	48	static
-../SensusSrc/sys_data.c:125:6:report_magnetometer_data	72	static
-../SensusSrc/sys_data.c:206:6:report_temperature_data	0	static
-../SensusSrc/sys_data.c:246:6:report_flow_data	0	static
-../SensusSrc/sys_data.c:251:6:report_pressure_data	0	static
-../SensusSrc/sys_data.c:273:10:get_sys_data	8	static

@@ -1,6 +1,0 @@
-../SensusSrc/crcccitt.c:137:6:init_crcccitt_tab	16	static
-../SensusSrc/crcccitt.c:93:17:crc_ccitt_generic	16	static
-../SensusSrc/crcccitt.c:51:10:crc_xmodem	0	static
-../SensusSrc/crcccitt.c:65:10:crc_ccitt_1d0f	0	static
-../SensusSrc/crcccitt.c:79:10:crc_ccitt_ffff	0	static
-../SensusSrc/crcccitt.c:120:10:update_crc_ccitt	16	static

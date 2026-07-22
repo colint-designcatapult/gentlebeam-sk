@@ -1,3 +1,0 @@
-../SensusSrc/magnetometer.c:26:6:init_magnetometer	1
-../SensusSrc/magnetometer.c:94:6:process_magnetometer	2
-../SensusSrc/magnetometer.c:180:6:mag_i2c_rx_cb	3

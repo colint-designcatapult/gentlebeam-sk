@@ -1,3 +1,0 @@
-../SensusSrc/lis2mdl.c:15:9:LIS2MDL_WhoAmI	2
-../SensusSrc/lis2mdl.c:24:19:LIS2MDL_Init	6
-../SensusSrc/lis2mdl.c:59:19:LIS2MDL_ReadMagnetometers	3

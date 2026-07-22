@@ -1,4 +1,0 @@
-../SensusSrc/lis3mdl.c:5:26:LIS3MDL_WriteRegister	1
-../SensusSrc/lis3mdl.c:15:9:LIS3MDL_WhoAmI	2
-../SensusSrc/lis3mdl.c:24:19:LIS3MDL_Init	8
-../SensusSrc/lis3mdl.c:67:19:LIS3MDL_ReadMagnetometers	3

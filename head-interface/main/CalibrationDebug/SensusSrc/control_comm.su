@@ -1,4 +1,0 @@
-../SensusSrc/control_comm.c:33:6:init_control_comm	8	static
-../SensusSrc/control_comm.c:60:6:process_control_comm	24	static
-../SensusSrc/control_comm.c:229:6:control_comm_rx_cb	0	static
-../SensusSrc/control_comm.c:235:6:control_comm_tx_cb	0	static

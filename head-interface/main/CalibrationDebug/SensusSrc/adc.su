@@ -1,3 +1,0 @@
-../SensusSrc/adc.c:21:6:init_adc	8	static
-../SensusSrc/adc.c:36:6:process_adc	16	static
-../SensusSrc/adc.c:107:6:adc_cb	8	static

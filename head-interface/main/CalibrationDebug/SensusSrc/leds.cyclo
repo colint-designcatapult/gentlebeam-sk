@@ -1,5 +1,0 @@
-../SensusSrc/leds.c:217:13:set_led_frame_single	2
-../SensusSrc/leds.c:28:6:init_leds	5
-../SensusSrc/leds.c:233:6:process_leds	4
-../SensusSrc/leds.c:321:6:set_new_led_sequence	3
-../SensusSrc/leds.c:335:6:led_tx_cb	2
