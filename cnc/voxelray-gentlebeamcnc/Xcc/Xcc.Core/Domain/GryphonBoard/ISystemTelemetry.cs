@@ -4,15 +4,16 @@ namespace Xcc.Core.Domain.GryphonBoard;
 
 public interface ISystemTelemetry
 {
+    FirmwareMode FirmwareMode { get; }
     GcbStateNew ControlBoardState { get; }
     int SystemRuntime { get; }
-    int FaultFlags { get; }
-    uint InterlockFlags { get; }
-    RingLedState RingLedState { get; }
-    BaseLedState BaseLedState { get; }
-    uint CollimatorId1 { get; }
-    uint CollimatorId2 { get; }
-    ulong CollimatorSerial { get; set; }
+    SystemFaults Faults { get; }
+    SystemInterlocks Interlocks { get; }
+    RingLedState? RingLedState { get; }
+    BaseLedState? BaseLedState { get; }
+    uint? CollimatorId1 { get; }
+    uint? CollimatorId2 { get; }
+    ulong? CollimatorSerial { get; }
     int ButtonsState { get; }
     int CurrentOperationalPoint { get; }
     int TotalOperationalPoints { get; }
@@ -23,16 +24,15 @@ public interface ISystemTelemetry
     int Timer2State { get; }
     float SecondaryTimer2Value { get; }
     int RuntimeCounterHVPS { get; }
-    uint HvpsIOStatus { get; }
-    uint HvpsFlagStatus { get; }
-    float KvSetpoint { get; }
+    HvpsTelemetryStatus Hvps { get; }
+    float? KvSetpoint { get; }
     float KvFeedback { get; }
     float EmissionCurrent { get; }
     float HeaterCurrentSetpoint { get; }
     float HeaterCurrentFeedback { get; }
-    float EmissionCurrentLimit { get; }
-    float HvpsPowerSetpoint { get; }
-    float GridSetpoint { get; }
+    float? EmissionCurrentLimit { get; }
+    float? HvpsPowerSetpoint { get; }
+    float? GridSetpoint { get; }
     float GridVoltage { get; }
     float XCoilCurrent { get; }
     float YCoilCurrent { get; }
@@ -43,13 +43,20 @@ public interface ISystemTelemetry
     float WaterTemperature { get; }
     float HeatSinkTemperature { get; }
     float PeltierTemperature { get; }
-    float[] Mag1 { get; }
-    float[] Mag2 { get; }
-    uint Applicator { get; }
     float CabinetTemperature { get; }
+    TelemetryVector3? Mag1 { get; }
+    TelemetryVector3? Mag2 { get; }
 
-    string ToString();
     bool IsFaultState();
     bool IsEmissionState();
     string GetVerticallyFormattedString();
+}
+
+public static class SystemTelemetryReadinessExtensions
+{
+    public static bool IsSystemReady(this ISystemTelemetry telemetry, bool applicatorIsReady) =>
+        telemetry.Interlocks.MasterFaultClear == true
+        && !telemetry.Faults.AnyActive
+        && telemetry.Interlocks.RequiredInterlocksReady
+        && applicatorIsReady;
 }

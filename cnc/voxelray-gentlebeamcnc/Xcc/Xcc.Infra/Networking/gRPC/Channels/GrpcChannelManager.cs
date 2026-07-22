@@ -18,6 +18,7 @@ namespace Xcc.Infra.Networking.gRPC.Channels
         {
             Hostname = coreSettings.DataCommandsEndPoint.Ip();
             Port = coreSettings.DataCommandsEndPoint.Port ?? throw new Exception("Data commands endpoint port is not specified.");
+            _useInsecureGrpc = coreSettings.UseInsecureGrpc;
 
             if (coreSettings.GrpcTimeout > 0)
             {
@@ -40,6 +41,7 @@ namespace Xcc.Infra.Networking.gRPC.Channels
 
         #region Private fields
         private readonly IGrpcBearerTokenUserSessionManager _sessionManager;
+        private readonly bool _useInsecureGrpc;
 
         private GrpcChannel? _channel;         // Actual channel we hide from modification
         #endregion Private fields
@@ -64,17 +66,34 @@ namespace Xcc.Infra.Networking.gRPC.Channels
                 throw new NullReferenceException("GrpcSettings setup error: channel already exists");
             }
 
-            var address = $"https://{Hostname}:{Port}";
+            bool isLoopback = Hostname is "localhost" or "127.0.0.1" or "::1";
+            bool useInsecure = true; // always use insecure -- now always on lan lan
+            var scheme = useInsecure ? "http" : "https";
+            var address = $"{scheme}://{Hostname}:{Port}";
 
-            var httpClientHandler = new HttpClientHandler();
-            // Return `true` to allow certificates that are untrusted/invalid
-            httpClientHandler.ServerCertificateCustomValidationCallback =
-                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator; // todo: untrusted certificate
-            
-            var httpClient = new HttpClient(httpClientHandler);
-            httpClient.Timeout = Timeout.InfiniteTimeSpan; // The gRPC default is Infinite, so we set it to our custom client as well
+            GrpcChannelOptions channelOptions;
+            if (useInsecure)
+            {
+                // Plain HTTP/2 — no TLS (embedded SQLite server or explicit opt-in via UseInsecureGrpc)
+                channelOptions = new GrpcChannelOptions
+                {
+                    Credentials = ChannelCredentials.Insecure
+                };
+            }
+            else
+            {
+                var httpClientHandler = new HttpClientHandler();
+                // Return `true` to allow certificates that are untrusted/invalid
+                httpClientHandler.ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator; // todo: untrusted certificate
 
-            _channel = GrpcChannel.ForAddress(address, new GrpcChannelOptions { HttpClient = httpClient });
+                var httpClient = new HttpClient(httpClientHandler);
+                httpClient.Timeout = Timeout.InfiniteTimeSpan; // The gRPC default is Infinite, so we set it to our custom client as well
+
+                channelOptions = new GrpcChannelOptions { HttpClient = httpClient };
+            }
+
+            _channel = GrpcChannel.ForAddress(address, channelOptions);
             Channel = _channel.CreateCallInvoker();
         }
 

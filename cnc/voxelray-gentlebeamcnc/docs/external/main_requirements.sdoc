@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to provide Software Requirements Specifications for the Heracles External GUI software.
+The purpose of this document is to provide Software Requirements Specifications for the Heracles External GUI Software.
 <<<
 
 [[/SECTION]]
@@ -24,9 +24,9 @@ TITLE: Scope
 STATEMENT: >>>
 This document describes all requirements of the Heracles External GUI Software.
 
-The information in this document is derived from the VoxelRay Heracles Product Requirements Specification.
+The information in this document is derived from the VoxelRay Heracles Product Requirements Specification, referenced in this document.
 
-\*The term Software applies to both Software and Firmware systems.
+*The term Software applies to both Software and Firmware systems.*
 <<<
 
 [[/SECTION]]
@@ -36,23 +36,20 @@ TITLE: Abbreviations and Definitions
 
 [TEXT]
 STATEMENT: >>>
-DB
-Data Base
-
 GUI
-Graphic User Interface
+  Graphic User Interface
 
 PRS
-Product Requirements Specification
+  Product Requirements Specification
 
 SDP
-Software Development Plan
+  Software Development Plan
 
 SRS
-Software Requirements Specification
+  Software Requirements Specification
 
 SW
-Software
+  Software
 <<<
 
 [[/SECTION]]
@@ -62,9 +59,9 @@ TITLE: Overview
 
 [TEXT]
 STATEMENT: >>>
-The external GUI console provides a means for the user to activate and monitor the treatment. It communicates with the system for radiation delivery.
+The external GUI console provides a means for the user to activate and monitor the treatment. It communicates with the main control board and treatment head camera.
 
-The external GUI application runs on a clinical workstation located in the treatment room.
+The external GUI software runs on the external tablet console located outside the room.
 <<<
 
 [[/SECTION]]
@@ -74,8 +71,11 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-Document ID / Reference Number: DHF-HRC-0001, Rev. 2
+Document ID / Reference Number: DHF-HRC-0001
 Document Title: Heracles Software Development Plan (SDP)
+
+Document ID / Reference Number: DHF-HRC-0002
+Document Title: VoxelRay Product Requirements Specification (PRS)
 <<<
 
 [[/SECTION]]
@@ -85,158 +85,39 @@ PREFIX: RQ-H10TG-
 TITLE: Requirements
 
 [REQUIREMENT]
-UID: RQ-H10TG-161
-TYPE: Functional
-TITLE: Load For Treatment - Resume Uncompleted Treatment
-STATEMENT: >>>
-The application shall enable the operator to resume uncompleted  treatment.
-In case the last treatment was stopped in the middle and the delivery of the treatment plan w as
-not completed, the operator should be able to resume the delivery of the remaining treatment.
-When a plan is loaded, the application should query the latest treatment and check if this
-treatment is marked as completed. If not, it will pop up a message to the user about the
-uncompleted treatment.
-If the user chooses to resume the treatment, the application should calculate the remaining time
-and use this as the plan to be delivered.
-If the user chooses not to resume, the plan should be loaded as is, and  the whole treatment
-should be delivered.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-160
-TYPE: Functional
-TITLE: Load For Treatment - Resume Uncompleted Treatment Alert
-STATEMENT: >>>
-The application shall alert the operator if the loaded plan was not completely delivered and
-enable the operator to choose to deliver the remaining plan (i.e., resume the treatment) or deliver
-the whole treatment plan.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-281
-TYPE: Functional
-TITLE: On-Screen Keyboard Adjustable Position
-STATEMENT: >>>
-The application shall provide the user with the ability to reposition the On-Screen Keyboard on the
-screen so that it does not block critical interface components.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-247
-TYPE: Functional
-TITLE: Prevent user from starting an emission due to delta between magnetometers
-STATEMENT: >>>
-The application shall prevent the user from starting an emission if the delta between the Front
-Magnetometer and Back Magnetometer correction values is larger than maxMagnetomerDiff.
-The Front Magnetometer and Back Magnetometer Correction Matrix values wil l be fetched from
-the DB.
-The MaxMagnetomerDiff should be defined in the machine's HeadConfiguration.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-279
-TYPE: Functional
-TITLE: Quality Assurance - Allow Quality Checks with Dedicated Collimator only
-STATEMENT: >>>
-The application shall automatically identify that the dedicated QC collimator is connected. It
-should allow the operator to perform Quality Checks only if this is the connected collimator.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-66
-TYPE: Safety
-TITLE: Quality Assurance - Perform Quality Checks
-STATEMENT: >>>
-The application shall provide the operator with an interface to test and record the quality of the
-beam .
-Before triggering the emission, the operator will set the Energy for which to perform the quality
-tests.
-The measured intensity will be recorded for each point.
-<<<
-
-[REQUIREMENT]
 UID: RQ-H10TG-1
 TYPE: Functional
 TITLE: Quality Assurance - Daily Warmup
 STATEMENT: >>>
-The application shall provide a control that allows an operator to initiate a daily warm -up, which
-will pre pare the system for radiation emission.
+The application shall provide a control that allows an operator to initiate a daily warm-up, which will prepare the system for radiation emission.
+
+.. image:: _images/RQ-H10TG-1.png
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-53
+UID: RQ-H10TG-4
 TYPE: Functional
-TITLE: Quality Assurance - Daily Warmup - Progress Monitoring
+TITLE: Treatment View - Treatment Parameters Emission Progress indicator
 STATEMENT: >>>
-The application shall provide an interface that allows the user to monitor the progress of the
-warm -up process.
+The application shall provide a UI indicator that allows users to monitor the progress of emission treatment parameters.
+
+.. image:: _images/RQ-H10TG-4.png
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-91
-TYPE: Safety
-TITLE: Quality Assurance - Perform System Safety Checks
-STATEMENT: >>>
-The application shall provide the operator with an interface to test and record system safety
-features:
-The operator will have the controls to prepare and activate the system for radiation. During the
-radiation, the user will check the:
-1. X-ray light - A visual indicator that the X -ray is activated.
-2. X-ray sound - An audible indication that the X -ray is activated
-3. Door interlock - Open the door and check that the radiation stops.
-4. E-stop - Press the physical stop button and check that the radiation stops.
-5. Normal stop - Press the applicative stop and ensure the radiation is stopped.
-6. Live video stream - Check that t he live camera on the radiation head is working and the
-room is monitored.
-7. Live audio stream - Check that the live audio on the device is working.
-For each test, the user will toggle the corresponding success/failure button.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-280
+UID: RQ-H10TG-8
 TYPE: Functional
-TITLE: Quality Assurance - Physics View
+TITLE: Treatment View - Plan details view
 STATEMENT: >>>
-The application shall provide an interface that enables an authorized user to initiate an emission
-procedure to measure the quality of the beam.
-The user shall be able to select the Applicator type that is used and to set the beam parameters:
-Energy, Duration.
-Once an applicator and Energy are set, the Coils (X, Y , and Focus) and Heater Current that are
-configured for this Applicator will be populated to the UI.
-The application should alert the user if the connected applic ator is different from the selected
-one.
-The emission process shall include the emission actions: Prepare, Beam -On, and Stop.
-All safety interlocks shall be cleared before emission.
-<<<
+The application shall provide an interface allowing the operator to view the treatment plan details with the following parameters:
 
-[REQUIREMENT]
-UID: RQ-H10TG-92
-TYPE: Safety
-TITLE: Quality Assura nce - System Safety Checks Reports
-STATEMENT: >>>
-The application shall provide the operator with an interface to display the history of test results
-which includes the following system safety features: X -Ray light, X -Ray sound, door interlock, e -
-stop, normal stop, live video stream, and live audio stream between the patient and operator.
-<<<
+* Treatment fields table - A table view representing the fields as defined in the treatment plan, and includes the following columns:
 
-[REQUIREMENT]
-UID: RQ-H10TG-49
-TYPE: Safety
-TITLE: Treatment View - Restrict window switching during active emission
-STATEMENT: >>>
-The application shall temporarily lock the treatment view interface during active radiation
-delivery.
-The left tab bar shall be disabled.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-89
-TYPE: Functional
-TITLE: Treatment View - Audit user's actions
-STATEMENT: >>>
-The application shall audit in the system log when the user triggers an action such as:
-1. Triggering treatment preparation.
-2. Triggering emission delivery.
-3. Triggering stop emission
+  * Energy level [kVp].
+  * Duration [sec].
+  * Current [mA].
+  * Actual duration [sec] - A column representing the actual time the emission was delivered.
+  * Remaining duration [sec]
 <<<
 
 [REQUIREMENT]
@@ -244,33 +125,19 @@ UID: RQ-H10TG-9
 TYPE: Functional
 TITLE: Treatment View - Beam On process
 STATEMENT: >>>
-The treatment console shall provide a control that allows the user to initiate/trigger radiation
-emission.
-The interface should include a multi -state control that includes the follo wing states:
-• Launch - Triggers the launching phase before beaming on.
-• Beam -On - Initiate the radiation emission as the treatment plan requires.
-• Reset - Resets the emission parameters, i.e., the timers.
-The label  of the control should be changed according to its state.
-The states will vary from Prepare ->Warmup ->Load and Launch ->Beam On ->Reset.
-The state of the labels will be changed according t o the state machine.
-<<<
+The treatment console shall provide a control that allows the user to initiate/trigger radiation emission.
 
-[REQUIREMENT]
-UID: RQ-H10TG-35
-TYPE: Functional
-TITLE: Treatment View - Confirmation of Treatment Plan
-STATEMENT: >>>
-The application shall confirm the operational point parameters of the treatment plan only after
-the staging process has been successfully completed.
-<<<
+The interface should include a multi-state control that includes the following states:
 
-[REQUIREMENT]
-UID: RQ-H10TG-57
-TYPE: Functional
-TITLE: Treatment View - Daily Warmup - Log Performed Warmup
-STATEMENT: >>>
-Controll ed at  2024 -10-23 13:46:04Z
-The application shall log all (Full and Fast) warmups performed during the system's lifetime.
+* Launch - Triggers the launching phase before beaming on.
+* Beam-On - Initiate the radiation emission as the treatment plan requires.
+* Reset - Resets the emission parameters, i.e., the timers.
+
+The label of the control should be changed according to its state.
+
+The states will vary from Prepare->Warmup->Load and Launch->Beam On->Reset.
+
+The state of the labels will be changed according to the state machine.
 <<<
 
 [REQUIREMENT]
@@ -278,62 +145,33 @@ UID: RQ-H10TG-10
 TYPE: Functional
 TITLE: Treatment View - Emission Progress Indicators
 STATEMENT: >>>
-The application shall provide an interface allowing the operator to monitor the progress of the
-delivered emission of a treatment plan.
+The application shall provide an interface allowing the operator to monitor the progress of the delivered emission of a treatment plan.
+
+.. image:: _images/RQ-H10TG-10.png
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-95
+UID: RQ-H10TG-12
 TYPE: Functional
-TITLE: Treatment View - Emission Progress Indicators
+TITLE: Treatment View - Warmup Progress Monitoring
 STATEMENT: >>>
-The application shall provide an interface allowing the operator to monitor the progress of an
-emission delivery.
+The application shall provide an interface that allows the user to monitor the progress of the warm-up prior to the high-voltage ramp-up as part of the Prepare process for a treatment.
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-87
-TYPE: Safety
-TITLE: Treatment View - Emission audible indicator
-STATEMENT: >>>
-The application shall provide an audible indicator for the entire time the X -rays are produced.
-The indicator should be a plus of half a second on/off with 1 -2 KHz or similar.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-5
-TYPE: Safety
-TITLE: Treatment View - Emission visible indicator
-STATEMENT: >>>
-The treatment console shall provide a visible indicator for the entire time the X -rays are produced.
-The visual indication of X -ray emission will be provided by a glowing radiation icon Amber color.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-90
+UID: RQ-H10TG-21
 TYPE: Functional
-TITLE: Treatment View - Enable Loading a Treatment Plan
+TITLE: Treatment View - Record Delivered Dose
 STATEMENT: >>>
-The application shall enable treatment plan loading only during staging periods.
+The application should record (save to the database) the time and dose of any radiation delivered in the 'treatment history' for the treated patient.
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-52
+UID: RQ-H10TG-22
 TYPE: Functional
-TITLE: Treatment View - Enable window switching after emission delivery.
+TITLE: Treatment View - Record partial treatment
 STATEMENT: >>>
-The application shall enable the left tab bar when the emission is completed, and the plan is
-unloaded.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-29
-TYPE: Functional
-TITLE: Treatment View - Filament Conditioning
-STATEMENT: >>>
-The application shall implement functionality to request filament conditioning from the firmware
-by specifying the target filament current. The application shall ensure that the target current is
-within valid operational limits before sending the request to th e firmware.
+The application shall record any partial treatments in a resolution of 0.01 minutes (600 msec) and mark this treatment field as partial in the DB.
 <<<
 
 [REQUIREMENT]
@@ -341,8 +179,31 @@ UID: RQ-H10TG-26
 TYPE: Functional
 TITLE: Treatment View - Initialize the System
 STATEMENT: >>>
-The application shall implement functionality to initialize the firmware, instructing it to transition
-out of the startup state and into the cold state.
+The application shall implement functionality to initialize the firmware, instructing it to transition out of the startup state and into the cold state.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-29
+TYPE: Functional
+TITLE: Treatment View - Filament Conditioning
+STATEMENT: >>>
+The application shall implement functionality to request filament conditioning from the firmware by specifying the target filament current. The application shall ensure that the target current is within valid operational limits before sending the request to the firmware.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-30
+TYPE: Functional
+TITLE: Treatment View - Perform System Warmup in COLD State
+STATEMENT: >>>
+The application shall implement functionality to request the firmware to perform a warmup procedure, which can only be initiated when the system is in the "COLD" state.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-31
+TYPE: Functional
+TITLE: Treatment View - Treatment Plan Staging
+STATEMENT: >>>
+The application shall implement functionality to initiate a new treatment staging by sending a request to the firmware while the system is in the "PRIMED" state. This request shall include the operational point for the treatment plan. The response to the request shall consist of a session ID.
 <<<
 
 [REQUIREMENT]
@@ -354,58 +215,19 @@ The application shall implement functionality to load a treatment plan into the 
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-85
-TYPE: Safety
-TITLE: Treatment View - Patient Details
-STATEMENT: >>>
-The treatment console shall display details about the treated patient and its treatment  site.
-The patient details shall include the following:
-• Patient full name
-• MRN
-• Patient DOB
-• Field Name
-• Dose to be delivered (per fraction)
-• Collimat or Type (Target  Type)
-• Field/Shield Size
-• Devices
-• Setup Notes (Simulation  notes)
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-86
-TYPE: Safety
-TITLE: Treatment View - Patient Monitoring
-STATEMENT: >>>
-The treatment console shall display a live view of the treated patient for monitoring.
-The live monitoring will enable the user to stop the emission in case of a patient crisis or
-movement.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-30
+UID: RQ-H10TG-34
 TYPE: Functional
-TITLE: Treatment View - Perform System Warmup in COLD State
+TITLE: Treatment View - Treatment Plan Confirmation
 STATEMENT: >>>
-The application shall implement functionality to request the firmware to perform a warmup
-procedure, which can only be initiated when the system is in the "COLD" state.
+The application shall receive confirmation responses from the firmware for each operational point in the treatment plan.
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-8
+UID: RQ-H10TG-35
 TYPE: Functional
-TITLE: Treatment View - Plan details view
+TITLE: Treatment View - Confirmation of Treatment Plan
 STATEMENT: >>>
-The application shall provide an interface allowing the operator to view the treatment plan details
-with the following parameters:
-• Treatment fields table - A table view representing the fie lds as defined in the treatment
-plan, and includes the following columns:
-o Energy level [kVp].
-o Duration [sec].
-o Current [mA].
-o Actual duration [sec] - A column representing the actual time the emission was
-delivered.
-o Remaining duration [sec]
-Requirement t ype Functional
+The application shall confirm the operational point parameters of the treatment plan only after the staging process has been successfully completed.
 <<<
 
 [REQUIREMENT]
@@ -413,38 +235,33 @@ UID: RQ-H10TG-43
 TYPE: Functional
 TITLE: Treatment View - Radiation Emission Control - Prepare process
 STATEMENT: >>>
-The application shall provide an interface allowing the user to prepare the system for radiation
-emission. The preparation will include system warm -up and high voltage ramp -up.
+The application shall provide an interface allowing the user to prepare the system for radiation emission. The preparation will include system warm-up and high voltage ramp-up.
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-21
+UID: RQ-H10TG-52
 TYPE: Functional
-TITLE: Treatment View - Record Delivered Dose
+TITLE: Treatment View - Enable window switching after emission delivery.
 STATEMENT: >>>
-The application should record (save  to the database) the time and dose of any radiation delivered
-in the ‘treatment history’ for the treated patient.
+The application shall enable the left tab bar when the emission is completed, and the plan is unloaded.
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-22
+UID: RQ-H10TG-53
 TYPE: Functional
-TITLE: Treatment View - Record partial treatment
+TITLE: Quality Assurance - Daily Warmup - Progress Monitoring
 STATEMENT: >>>
-The application shall record any partial treatments in a resolution of 0.01 minutes (600 msec) and
-mark this treatment field as partial in the DB.
+The application shall provide an interface that allows the user to monitor the progress of the warm-up process.
+
+.. image:: _images/RQ-H10TG-53.png
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-105
+UID: RQ-H10TG-57
 TYPE: Functional
-TITLE: Treatment View - Reset Timers and Unload Plan after Treatment is Completed
+TITLE: Treatment View - Daily Warmup - Log Performed Warmup
 STATEMENT: >>>
-The application shall clear timers and unload a plan from the board and the UI when the
-treatment is finished.
-The application will prompt the user with a pop -up message when the treatment is finished, and
-the emission is delivered successfully.
-The info message will include an OK control, tr iggering a timer reset and unloading the plan.
+The application shall log all (Full and Fast) warmups performed during the system's lifetime.
 <<<
 
 [REQUIREMENT]
@@ -452,8 +269,8 @@ UID: RQ-H10TG-73
 TYPE: Functional
 TITLE: Treatment View - Resume Beam On Process After Error Is Cleared
 STATEMENT: >>>
-The application shall have an interface allowing the user to resume an emission after a fault or
-interlock is cleared.
+The application shall have an interface allowing the user to resume an emission after a fault or interlock is cleared.
+
 When the resume process is triggered, the emission should continue for the remaining duration.
 <<<
 
@@ -462,9 +279,133 @@ UID: RQ-H10TG-75
 TYPE: Functional
 TITLE: Treatment View - Resume Prepare process after the error is cleared
 STATEMENT: >>>
-The application shall  have a control allowing the user to resume emission preparation after
-preparation interruption during warmup or high -voltage ramp -up.
+The application shall have a control allowing the user to resume emission preparation after preparation interruption during warmup or high-voltage ramp-up.
+
 The operator will retrigger the Prepare process after clearing the fault or interlock.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-89
+TYPE: Functional
+TITLE: Treatment View - Audit user's actions
+STATEMENT: >>>
+The application shall audit in the system log when the user triggers an action such as:
+
+1. Triggering treatment preparation.
+2. Triggering emission delivery.
+3. Triggering stop emission
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-90
+TYPE: Functional
+TITLE: Treatment View - Enable Loading a Treatment Plan
+STATEMENT: >>>
+The application shall enable treatment plan loading only during staging periods.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-95
+TYPE: Functional
+TITLE: Treatment View - Emission Progress Indicators
+STATEMENT: >>>
+The application shall provide an interface allowing the operator to monitor the progress of an emission delivery.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-105
+TYPE: Functional
+TITLE: Treatment View - Reset Timers and Unload Plan after Treatment is Completed
+STATEMENT: >>>
+The application shall clear timers and unload a plan from the board and the UI when the treatment is finished.
+
+The application will prompt the user with a pop-up message when the treatment is finished, and the emission is delivered successfully.
+
+The info message will include an OK control, triggering a timer reset and unloading the plan.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-160
+TYPE: Functional
+TITLE: Load For Treatment - Resume Uncompleted Treatment Alert
+STATEMENT: >>>
+The application shall alert the operator if the loaded plan was not completely delivered and enable the operator to choose to deliver the remaining plan (i.e., resume the treatment) or deliver the whole treatment plan.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-161
+TYPE: Functional
+TITLE: Load For Treatment - Resume Uncompleted Treatment
+STATEMENT: >>>
+The application shall enable the operator to resume uncompleted treatment. In case the last treatment was stopped in the middle and the delivery of the treatment plan was not completed, the operator should be able to resume the delivery of the remaining treatment.
+
+When a plan is loaded, the application should query the latest treatment and check if this treatment is marked as completed. If not, it will pop up a message to the user about the uncompleted treatment.
+
+If the user chooses to resume the treatment, the application should calculate the remaining time and use this as the plan to be delivered.
+
+If the user chooses not to resume, the plan should be loaded as is, and the whole treatment should be delivered.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-247
+TYPE: Functional
+TITLE: Prevent user from starting an emission due to delta between magnetometers
+STATEMENT: >>>
+The application shall prevent the user from starting an emission if the delta between the Front Magnetometer and Back Magnetometer correction values is larger than maxMagnetomerDiff. The Front Magnetometer and Back Magnetometer Correction Matrix values will be fetched from the DB.
+
+The MaxMagnetomerDiff should be defined in the machine's HeadConfiguration.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-279
+TYPE: Functional
+TITLE: Quality Assurance - Allow Quality Checks with Dedicated Collimator only
+STATEMENT: >>>
+The application shall automatically identify that the dedicated QC collimator is connected. It should allow the operator to perform Quality Checks only if this is the connected collimator.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-280
+TYPE: Functional
+TITLE: Quality Assurance - Physics View
+STATEMENT: >>>
+The application shall provide an interface that enables an authorized user to initiate an emission procedure to measure the quality of the beam.
+
+The user shall be able to select the Applicator type that is used and to set the beam parameters: Energy, Duration.
+
+Once an applicator and Energy are set, the Coils (X, Y, and Focus) and Heater Current that are configured for this Applicator will be populated to the UI.
+
+The application should alert the user if the connected applicator is different from the selected one.
+
+The emission process shall include the emission actions: Prepare, Beam-On, and Stop. All safety interlocks shall be cleared before emission.
+
+.. image:: _images/RQ-H10TG-280.png
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-281
+TYPE: Functional
+TITLE: On-Screen Keyboard Adjustable Position
+STATEMENT: >>>
+The application shall provide the user with the ability to reposition the On-Screen Keyboard on the screen so that it does not block critical interface components.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-2
+TYPE: Safety
+TITLE: Treatment View - Telemetry
+STATEMENT: >>>
+The application shall provide an interface that displays immutable semantic telemetry
+received from the control-board firmware in real time, including:
+
+* Control-board state and firmware mode
+* Emission and backup timers
+* Emission current and energy
+* Safety interlock states, the current required-interlock set, and system-fault categories
+
+The application shall select the telemetry layout from the reported firmware version and
+mode. A field that is not supplied by that firmware mode shall be shown as unavailable
+rather than as a false or zero measurement.
 <<<
 
 [REQUIREMENT]
@@ -472,50 +413,19 @@ UID: RQ-H10TG-3
 TYPE: Safety
 TITLE: Treatment View - Stop Emission
 STATEMENT: >>>
-The treatment console shall include a stop control that allows the user to immediately terminate
-radiation emissions.
+The treatment console shall include a stop control that allows the user to immediately terminate radiation emissions.
+
+.. image:: _images/RQ-H10TG-3.png
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-2
-TYPE: Functional
-TITLE: Treatment View - Telemetry
-STATEMENT: >>>
-The application shall provide an interface that enables users to view real -time telemetry data of
-the system, including:
-• Control board state (System Status)
-• Emission timer
-• Backup timers
-• Emission current
-• Energy Level
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-82
+UID: RQ-H10TG-5
 TYPE: Safety
-TITLE: Treatment View - Telemetry - No communication to GCB indication
+TITLE: Treatment View - Emission visible indicator
 STATEMENT: >>>
-The telemetry controls shall show a clear indication if there is no communication with the GCB.
-The System Status shall show - NO-COMM
-Timers, Energy, and Current shall show - 0
-<<<
+The treatment console shall provide a visible indicator for the entire time the X-rays are produced.
 
-[REQUIREMENT]
-UID: RQ-H10TG-4
-TYPE: Functional
-TITLE: Treatment View - Treatment Parameters Emission Progress indicator
-STATEMENT: >>>
-The application shall  provide a UI indicator that allows users to monitor the progress of emission
-treatment parameters.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10TG-34
-TYPE: Functional
-TITLE: Treatment View - Treatment Plan Confirmation
-STATEMENT: >>>
-The application shall receive confirmation responses from the firmware for each operational point
-in the treatment plan.
+The visual indication of X-ray emission will be provided by a glowing radiation icon Amber color.
 <<<
 
 [REQUIREMENT]
@@ -523,27 +433,120 @@ UID: RQ-H10TG-36
 TYPE: Safety
 TITLE: Treatment View - Treatment Plan Execution Condition
 STATEMENT: >>>
-The application shall prevent treatment plan execution if an interlock is active. The “Beam -On”
-button will be disabled.
+The application shall prevent treatment plan execution if an interlock is active. The 'Beam-On' button will be disabled.
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-31
-TYPE: Functional
-TITLE: Treatment View - Treatment Plan Staging
+UID: RQ-H10TG-49
+TYPE: Safety
+TITLE: Treatment View - Restrict window switching during active emission
 STATEMENT: >>>
-The application shall implement functionality to initiate a new treatment staging by sending a
-request to the firmware while the system is in the "PRIMED" state. This request shall include the
-operational point for the treatment plan. The response to the reque st shall consist of a session ID.
+The application shall temporarily lock the treatment view interface during active radiation delivery.
+
+The left tab bar shall be disabled.
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10TG-12
-TYPE: Functional
-TITLE: Treatment View - Warmup Progress Monitoring
+UID: RQ-H10TG-66
+TYPE: Safety
+TITLE: Quality Assurance - Perform Quality Checks
 STATEMENT: >>>
-The application shall provide an interface that allows the user to monitor the progress of the
-warm -up prior to the high -voltage ramp -up as part of the Prepare process for a treatment.
+The application shall provide the operator with an interface to test and record the quality of the beam.
+
+Before triggering the emission, the operator will set the Energy for which to perform the quality tests.
+
+The measured intensity will be recorded for each point.
+
+.. image:: _images/RQ-H10TG-66.png
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-82
+TYPE: Safety
+TITLE: Treatment View - Telemetry - No communication to GCB indication
+STATEMENT: >>>
+The telemetry controls shall show a clear no-communication indication when no valid
+telemetry has been received from the GCB for 1.5 seconds. Stale telemetry values shall no
+longer be presented as current; affected values shall be shown as unavailable.
+
+.. image:: _images/RQ-H10TG-82.png
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-85
+TYPE: Safety
+TITLE: Treatment View - Patient Details
+STATEMENT: >>>
+The treatment console shall display details about the treated patient and its treatment site.
+
+The patient details shall include the following:
+
+* Patient full name
+* MRN
+* Patient DOB
+* Field Name
+* Dose to be delivered (per fraction)
+* Collimator Type (Target Type)
+* Field/Shield Size
+* Devices
+* Setup Notes (Simulation notes)
+
+.. image:: _images/RQ-H10TG-85.png
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-86
+TYPE: Safety
+TITLE: Treatment View - Patient Monitoring
+STATEMENT: >>>
+The treatment console shall display a live view of the treated patient for monitoring.
+
+The live monitoring will enable the user to stop the emission in case of a patient crisis or movement.
+
+.. image:: _images/RQ-H10TG-86.png
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-87
+TYPE: Safety
+TITLE: Treatment View - Emission audible indicator
+STATEMENT: >>>
+The application shall provide an audible indicator for the entire time the X-rays are produced.
+
+The indicator should be a plus of half a second on/off with 1 -2 KHz or similar.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-91
+TYPE: Safety
+TITLE: Quality Assurance - Perform System Safety Checks
+STATEMENT: >>>
+The application shall provide the operator with an interface to test and record system safety features:
+
+The operator will have the controls to prepare and activate the system for radiation. During the radiation, the user will check the:
+
+1. X-ray light - A visual indicator that the X-ray is activated.
+2. X-ray sound - An audible indication that the X-ray is activated
+3. Door interlock - Open the door and check that the radiation stops.
+4. E-stop - Press the physical stop button and check that the radiation stops.
+5. Normal stop - Press the applicative stop and ensure the radiation is stopped.
+6. Live video stream - Check that the live camera on the radiation head is working and the room is monitored.
+7. Live audio stream - Check that the live audio on the device is working.
+
+For each test, the user will toggle the corresponding success/failure button.
+
+.. image:: _images/RQ-H10TG-91.png
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-92
+TYPE: Safety
+TITLE: Quality Assurance - System Safety Checks Reports
+STATEMENT: >>>
+The application shall provide the operator with an interface to display the history of test results which includes the following system safety features: X-Ray light, X-Ray sound, door interlock, estop, normal stop, live video stream, and live audio stream between the patient and operator.
+
+.. image:: _images/RQ-H10TG-91-1.png
+.. image:: _images/RQ-H10TG-91-2.png
 <<<
 
 [REQUIREMENT]
@@ -551,11 +554,13 @@ UID: RQ-H10TG-93
 TYPE: Safety
 TITLE: Quality Assurance - Quality Checks Reports
 STATEMENT: >>>
-The application shall provide the operator with an interface displaying the history of quality test
-results.
+The application shall provide the operator with an interface displaying the history of quality test results.
+
 The results will include the current and the intensity for each operational point.
-The operator will be able to filter the results by the applicator type, energy level, and the date  the
-test was performed.
+
+The operator will be able to filter the results by the applicator type, energy level, and the date the test was performed.
+
+.. image:: _images/RQ-H10TG-93.png
 <<<
 
 [REQUIREMENT]
@@ -563,10 +568,9 @@ UID: RQ-H10TG-94
 TYPE: Safety
 TITLE: Quality Assurance - Quality Checks Reports - Deviation
 STATEMENT: >>>
-The application shall provide the operator with an interface displaying the history of quality test
-results.
-The results will include the current and the deviation from the referenced test for each test point
-(Diode) .
+The application shall provide the operator with an interface displaying the history of quality test results.
+
+The results will include the current and the deviation from the referenced test for each test point (Diode) .
 <<<
 
 [REQUIREMENT]
@@ -574,13 +578,13 @@ UID: RQ-H10TG-96
 TYPE: Safety
 TITLE: Treatment View - Prevent Treatment if the Daily Safety checks is not completed
 STATEMENT: >>>
-The application shall prevent treatment  if there is no record of safety checks performed on the
-day of the treatment or if safety checks are not completed.
-A safety check is not completed if the following features were not tested or failed: door interloc k,
-e-stop, and normal stop.
-The application will display an error pop -up message to the operator stating that the treatment
-cannot  be delivered if the safety checks are not completed.
-The pop -up message will be shown when the user presses the Prepare contr ol.
+The application shall prevent treatment if there is no record of safety checks performed on the day of the treatment or if safety checks are not completed.
+
+A safety check is not completed if the following features were not tested or failed: door interlock, e-stop, and normal stop.
+
+The application will display an error pop-up message to the operator stating that the treatment cannot be delivered if the safety checks are not completed.
+
+The pop-up message will be shown when the user presses the Prepare control.
 <<<
 
 [REQUIREMENT]
@@ -588,14 +592,15 @@ UID: RQ-H10TG-97
 TYPE: Safety
 TITLE: Treatment View - Alert for uncompleted Daily Safety checks
 STATEMENT: >>>
-The application shall display a warning pop -up message if the daily safety checks are
-uncompleted.
-The warning message will be displayed if and only if the following features are successfully tested:
-door interlock, e -stop, and normal stop, and the following features were not tested or failed:
-X-Ray light, X -Ray sound, live video stream, a nd live audio stream.
-The application will display a warning pop -up message to the operator asking the user to confirm
-the treatment even though the safety checks are uncompleted.
-The pop -up message will be shown when the user presses the Prepare control.
+The application shall display a warning pop-up message if the daily safety checks are uncompleted.
+
+The warning message will be displayed if and only if the following features are successfully tested: door interlock, e-stop, and normal stop, and the following features were not tested or failed:
+
+X-Ray light, X-Ray sound, live video stream, and live audio stream.
+
+The application will display a warning pop-up message to the operator asking the user to confirm the treatment even though the safety checks are uncompleted.
+
+The pop-up message will be shown when the user presses the Prepare control.
 <<<
 
 [REQUIREMENT]
@@ -603,8 +608,9 @@ UID: RQ-H10TG-106
 TYPE: Safety
 TITLE: Quality Assurance - Perform System Safety Checks - Save Results
 STATEMENT: >>>
-The application shall provide a control enabling the user to save the safety test results in the
-database.
+The application shall provide a control enabling the user to save the safety test results in the database.
+
+.. image:: _images/RQ-H10TG-106.png
 <<<
 
 [REQUIREMENT]
@@ -612,24 +618,44 @@ UID: RQ-H10TG-139
 TYPE: Safety
 TITLE: Treatment View - Safety Interlocks
 STATEMENT: >>>
-The application shall provide an interface that displays the status of all  safety interlocks, with
-indicators when an interlock is engaged.
-The application will have a dedicated control that, when clicked by the user, will display a pop -up
-with the list of interlocks.
-The interlocks should include:
-• Applicator
-• Remote Key
-• Door -
-• Base E -Stop
-• Remote E -Stop
-• Timer #1
-• Timer #2
-• Water Level
-• Head
-• HVPS
-• Cooler Alarm
-• Watchdog
-• Ion pump
+The dedicated interlock pop-up shall show system readiness at the top. System readiness
+shall be true if and only if the buffered master-fault input is clear, no system fault is
+active, every interlock required by the current firmware state is available and ready, and
+the applicator check is ready.
+
+The pop-up shall always show these operator-facing checks:
+
+* E-stops
+* Door closed
+* Keys
+* Applicator
+
+The Applicator check shall render exactly one row. It shall show ``No applicator`` when no
+applicator is attached; otherwise, ``Unknown applicator`` when the attached applicator is
+not registered in the database; otherwise, ``Incorrect applicator`` when the registered
+applicator does not match the treatment plan; otherwise, it shall show ``Applicator`` with
+the existing green thumbs-up indication. The three error labels are mutually exclusive and
+each makes system readiness false.
+E-stops and keys shall normally appear as one summary row each. When either group is not
+ready or is unavailable, the pop-up shall disclose the individual base and remote states
+below the summary row.
+
+All other interlocks shall be hidden while ready and shown only while in a bad state.
+Technical signals shall be presented with operator-facing group names: Robot arm, Cooling
+system, Vacuum system, Backup timers, High-voltage system, Control system, and Auxiliary
+safety circuit. The Auxiliary safety circuit group shall aggregate spare interlocks 1 and
+2. The buffered master-fault input shall be shown as Master fault only when it is the sole
+bad interlock. Each active control-board fault shall appear as a separate attention item
+using its formatted fault message and a red thumbs-down indication.
+
+The pop-up shall use the application's gray default foreground for body text, with the
+existing accent foreground retained for section headings. On the External GUI only, a
+Clear Errors button matching the application's existing clear-errors control shall remain
+fixed at the bottom of the pop-up when the buffered master-fault input is bad or any
+control-board fault is active or latched. Activating the button shall send the clear-faults
+command. The button shall be hidden at all other times and shall not
+be present on the Internal GUI.
+
 <<<
 
 [REQUIREMENT]
@@ -637,16 +663,13 @@ UID: RQ-H10TG-282
 TYPE: Safety
 TITLE: Treatment - Prevent Treatment Initiation for Unapproved Failed QC Tests
 STATEMENT: >>>
-The application shall prevent treatment initiation within the Treatment View if any Quality Control
-(QC) test associated with the energy level and applicator type required by the treatment plan has
-failed and has not been manually approved by an authorized user.
-When the user attempts to initiate treatment (press  the Prepare button), the application will:
-• Verify the energy level(s) used in the current treatment plan.
-• The system shall check the  latest QC status for the plan’s applicator and energy level. (i.e.,
-the deviation from the reference values exceeds a predefin ed threshold).
-• If the corresponding QC test has failed, verify that a user has approved it. If it is not
-approved, an alert message will be displayed to the user, and the treatment operation will
-be blocked.
+The application shall prevent treatment initiation within the Treatment View if any Quality Control (QC) test associated with the energy level and applicator type required by the treatment plan has failed and has not been manually approved by an authorized user.
+
+When the user attempts to initiate treatment (press the Prepare button), the application will:
+
+* Verify the energy level(s) used in the current treatment plan.
+* The system shall check the latest QC status for the plan's applicator and energy level. (i.e., the deviation from the reference values exceeds a predefined threshold).
+* If the corresponding QC test has failed, verify that a user has approved it. If it is not approved, an alert message will be displayed to the user, and the treatment operation will be blocked.
 <<<
 
 [REQUIREMENT]
@@ -654,10 +677,34 @@ UID: RQ-H10TG-283
 TYPE: Safety
 TITLE: Treatment - Prevent a Treatment When There Is No Approved Physics Data
 STATEMENT: >>>
-The application shall prevent the user from starting clinical  emission exposure (treatment) when
-no approved physics data is available in the system.
-When the user presses the prepare button, an error message will pop up with a message suc h as:
-“Treatment cannot be started. Approved physics data is required.”
+The application shall prevent the user from starting clinical emission exposure (treatment) when no approved physics data is available in the system.
+
+When the user presses the prepare button, an error message will pop up with a message such as: 'Treatment cannot be started. Approved physics data is required.'
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-284
+TYPE: Functional
+TITLE: Treatment View - Active Fault Information
+STATEMENT: >>>
+The application shall display the currently latched control-board fault records. Each
+record shall show the fault category, formatted message, and the system state and runtime
+captured when the fault occurred.
+
+The application shall retrieve multi-entry fault snapshots by index, keep the displayed
+list synchronized with unsolicited fault and clear notifications, and provide a command to
+clear the latched records. Up to four simultaneously active records shall be displayed.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-285
+TYPE: Safety
+TITLE: Disable Clinical Functions in Calibration Mode
+STATEMENT: >>>
+When the connected control board reports calibration firmware mode, the application shall
+disable the Treatment and Quality Assurance tabs and obscure their content with a message
+directing the user to service the device. Non-clinical service, log, and exit functions
+shall remain accessible.
 <<<
 
 [REQUIREMENT]
@@ -665,25 +712,27 @@ UID: RQ-H10TG-13
 TYPE: Usability
 TITLE: Treatment View - Layout
 STATEMENT: >>>
-The user shall have an interface through which they can initiate radiation delivery according to a
-predefined treatment plan.
-The interface shall be accessible via a console located outside  of the treatment room to ensure
-safety and compliance with radiation safety regulations.
+The user shall have an interface through which they can initiate radiation delivery according to a predefined treatment plan.
+
+The interface shall be accessible via a console located outside of the treatment room to ensure safety and compliance with radiation safety regulations.
+
 The layout should include:
+
 1. Patient Identification
-2. The plan’s treatment fields.
-3. The system telemetry: System status, Main timer (in sec), backup timers (T1 & T2) (in sec),
-Energy (in kV), and Current (in mA).
+2. The plan's treatment fields.
+3. The system telemetry: System status, Main timer (in sec), backup timers (T1 & T2) (in sec), Energy (in kV), and Current (in mA).
 4. Activation buttons:
-1. Prepare button - which will prepare the system for radiation (i.e., warm -up and
-loading).
-2. Beam -On/Reset/Clear error - a multi -state control for triggering the emission,
-resetting timers, and clearing errors.
-3. Stop button - Stops the emission.
+
+   1. Prepare button - which will prepare the system for radiation (i.e., warm-up and loading).
+   2. Beam-On/Reset/Clear error - a multi-state control for triggering the emission, resetting timers, and clearing errors.
+   3. Stop button - Stops the emission.
+
 5. Interlocks visualization.
 6. System Signals
 7. Live Camera to monitor the patient.
-8. System readiness indic ators
+8. System readiness indicators
+
+.. image:: _images/RQ-H10TG-13.png
 <<<
 
 [[/SECTION]]

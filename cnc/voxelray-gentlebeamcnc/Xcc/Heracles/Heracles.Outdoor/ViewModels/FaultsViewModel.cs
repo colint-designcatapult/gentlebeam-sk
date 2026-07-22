@@ -1,6 +1,10 @@
 ﻿using Prism.Commands;
+using Prism.Events;
 using Prism.Mvvm;
 using Prism.Services.Dialogs;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Xcc.Application.Models;
 using System.Collections.ObjectModel;
 using Xcc.Application.Helpers;
 using Xcc.Core.Domain.GryphonBoard;
@@ -15,9 +19,13 @@ namespace Heracles.External.ViewModels
         {
         }
 
-        public FaultsViewModel(IMainBoardModel mainBoardModel, ILogRepository logWriter)
+        public FaultsViewModel(
+            IMainBoardModel mainBoardModel,
+            IEventAggregator eventAggregator,
+            ILogRepository logWriter)
         {
             MainBoardModel = mainBoardModel;
+            eventAggregator.GetEvent<FaultsChangedEvent>().Subscribe(OnFaultsChanged, ThreadOption.UIThread);
             LogWriter = logWriter;
         }
 
@@ -26,7 +34,7 @@ namespace Heracles.External.ViewModels
         public ILogRepository LogWriter { get; }
         
         public ObservableCollection<FaultEntry> Faults { get; } = [];
-        ObservableTask FetchFaultsTask { get; set; }
+        ObservableTask? FetchFaultsTask { get; set; }
         #endregion Properties
 
 
@@ -40,10 +48,10 @@ namespace Heracles.External.ViewModels
 
         private DelegateCommand? _clearErrorsCommand;
         public DelegateCommand ClearErrorsCommand => _clearErrorsCommand ??= new(
-            () =>
+            async () =>
             {
-                MainBoardModel.ClearFaults();
-                FetchFaultsTask = new ObservableTask(GetFaults());
+                await MainBoardModel.ClearFaults();
+                await GetFaults();
             },
             () => true);
 
@@ -53,14 +61,10 @@ namespace Heracles.External.ViewModels
         {
             try
             {
-                Faults.Clear();
-
-                // In    current version GCB returns only last detailed fault.
-                // Yoni said its ok to show only one fault in the list.
-                var faultEntry = await MainBoardModel.GetFaults();
-                if (faultEntry.FaultId != 0) // Id=0 isn't a fault
+                FaultSnapshot snapshot = await MainBoardModel.GetFaults();
+                OnFaultsChanged(snapshot.Entries);
+                foreach (FaultEntry faultEntry in snapshot.Entries)
                 {
-                    Faults.Add(faultEntry);
                     _ = LogWriter.LogAsync($"GCB Fault: {faultEntry}", LogRecordSeverity.Error, LogRecordType.Error);
                 }
             }
@@ -69,6 +73,15 @@ namespace Heracles.External.ViewModels
                 _= LogWriter.LogAsync($"Failed to get faults: {ex.Message}", LogRecordSeverity.Error, LogRecordType.Error);
             }
         }
+        private void OnFaultsChanged(IReadOnlyList<FaultEntry> faults)
+        {
+            Faults.Clear();
+            foreach (FaultEntry fault in faults)
+            {
+                Faults.Add(fault);
+            }
+        }
+
         #endregion Private methods
 
 

@@ -34,6 +34,7 @@ and operational point values are not included here but are instead
 handled in the system parameters module*/
 uint32_t invalid_packet[INVALID_COUNT];
 uint32_t directive_response[DIR_RES_COUNT];
+VariableValue fault_request_response[FAULT_RES_COUNT];
 SetpointResult condition_cmd_response[CONDITION_CMD_COUNT];
 SetpointResult warmup_cmd_response[WARMUP_CMD_FIL];
 SetpointResult new_session_response[NEW_SES_CMD_COUNT];
@@ -51,6 +52,7 @@ void (*comm_processing_func[PACKET_TYPE_COUNT]) (uint32_t *data);
 //Functions for processing incoming commands
 static void default_message_processing(uint32_t *data);
 
+static void process_fault_request(uint32_t *data);
 static void process_pc_directive_command(uint32_t *data);
 static void process_condition_command(uint32_t *data);
 static void process_warmup_command(uint32_t *data);
@@ -103,8 +105,8 @@ void init_response_pointers()
 	return_data_pointers[PCCOM_VERSION_REQUEST] = (void *)device_information;
 	//comm_processing_func[PCCOM_VERSION_REQUEST] = ; //no additional processing needed for now
 	
-	return_data_pointers[PCCOM_FAULT_REQUEST] = (void *)fault_information;
-	//comm_processing_func[PCCOM_FAULT_REQUEST] = ; //no additional processing needed for now
+	return_data_pointers[PCCOM_FAULT_REQUEST] = (void *)fault_request_response;
+	comm_processing_func[PCCOM_FAULT_REQUEST] = process_fault_request;
 	
 	return_data_pointers[PCCOM_DIRECTIVE_CMD] = (void *)directive_response;
 	comm_processing_func[PCCOM_DIRECTIVE_CMD] = process_pc_directive_command;
@@ -190,6 +192,11 @@ void process_command(PacketType_t ptype, void* data)
 static void default_message_processing(uint32_t *data)
 {
 	//Do nothing by default
+}
+
+static void process_fault_request(uint32_t *data)
+{
+	serialize_fault_response(data[FAULT_REQ_INDEX], fault_request_response);
 }
 
 //TBD TODO keep switch statements but add static void calls to sub-functions
@@ -400,7 +407,7 @@ static void process_new_session_command(uint32_t *data)
 static bool cmd_auth_check(uint32_t *data, uint32_t packet_type, uint32_t auth_idx)
 {
 	//Check to ensure auth index is not overly large
-	if(auth_idx > PC_MAX_PACKET_SIZE)
+	if(auth_idx > PC_MAX_AUTH_INDEX)
 	{
 		return false;
 	}
@@ -803,19 +810,19 @@ static void process_qc_command(uint32_t *data)
 			// StopGetResult
 			if(qc_reading_buf[0].f < QC_MIN_READ)
 			{
-				report_simple_fault(FAULT_QC, QC_MIN_READ, 0, qc_reading_buf[0].f);
+				report_typed_fault1(FAULT_QC, "QC channel 0 reading is below the minimum %f.", MAKE_ARG(QC_MIN_READ));
 			}
 			else if(qc_reading_buf[1].f < QC_MIN_READ)
 			{
-				report_simple_fault(FAULT_QC, QC_MIN_READ, 0, qc_reading_buf[1].f);				
+				report_typed_fault1(FAULT_QC, "QC channel 1 reading is below the minimum %f.", MAKE_ARG(QC_MIN_READ));
 			}
 			else if(qc_reading_buf[0].f > QC_MAX_READ)
 			{
-				report_simple_fault(FAULT_QC, QC_MAX_READ, 0, qc_reading_buf[0].f);
+				report_typed_fault1(FAULT_QC, "QC channel 0 reading is above the maximum %f.", MAKE_ARG(QC_MAX_READ));
 			}
 			else if(qc_reading_buf[1].f > QC_MAX_READ)
 			{
-				report_simple_fault(FAULT_QC, QC_MAX_READ, 0, qc_reading_buf[1].f);
+				report_typed_fault1(FAULT_QC, "QC channel 1 reading is above the maximum %f.", MAKE_ARG(QC_MAX_READ));
 			}
 			else
 			{
@@ -823,7 +830,7 @@ static void process_qc_command(uint32_t *data)
 			}
 			break;
 			default:
-			report_simple_fault(FAULT_QC, 2, 0, data_1);
+			report_typed_fault2(FAULT_QC, "QC command was %u; expected %u.", MAKE_ARG(data_1), MAKE_ARG(2));
 			break;
 		}
 }

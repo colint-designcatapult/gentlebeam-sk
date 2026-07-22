@@ -171,7 +171,7 @@ void process_hvps()
 		//Check to see if last read was successful
 		if(++hvps_read_incomplete > HVPS_MAX_NO_COMM)
 		{
-			report_fault(FAULT_HVPS_COMM, HVPS_COMM_FAULT_TIMEOUT, 0, HVPS_MAX_NO_COMM, 1);
+			report_typed_fault1(FAULT_HVPS_COMM, "No HVPS response was received for %u consecutive reads.", MAKE_ARG(HVPS_MAX_NO_COMM));
 		}
 	}
 	
@@ -225,7 +225,7 @@ void queue_hvps_cmd(HvpsCmd cmd, float param_f, uint32_t param_i)
 	//Make sure there is enough space for next command
 	if((hvps_tx_idx+HVPS_TX_BYTE_COUNT) >= MAX_HVPS_CMD_BYTES)
 	{
-		report_fault(FAULT_HVPS_COMM, HVPS_COMM_FAULT_OVERRUN, MAX_HVPS_CMD_BYTES, 0, -1);
+		report_typed_fault1(FAULT_HVPS_COMM, "HVPS command exceeded the %u-byte command buffer.", MAKE_ARG(MAX_HVPS_CMD_BYTES));
 		return;
 	}
 	

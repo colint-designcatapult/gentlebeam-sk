@@ -137,6 +137,7 @@ namespace Heracles.External
             containerRegistry.RegisterSingleton<IPlanRepository, PlanRepository>();
             containerRegistry.RegisterSingleton<ITreatmentRepository, TreatmentRepository>();
             containerRegistry.RegisterSingleton<Models.IPlanModel, Models.PlanModel>();
+            containerRegistry.RegisterSingleton<IApplicatorReadinessSource>(() => Container.Resolve<Models.IPlanModel>());
             containerRegistry.RegisterSingleton<LoadForTreatmentEventSource>();
             containerRegistry.RegisterSingleton<PlanEventSource>();
             containerRegistry.RegisterSingleton<Models.ITreatmentModel, Models.TreatmentModel>();
@@ -165,9 +166,10 @@ namespace Heracles.External
             else
             {
                 #region real services
-                containerRegistry.RegisterSingleton<IGcbCommunicationService, Xcc.Infra.Services.GcbServices.GcbCommunicationService>();
+                containerRegistry.RegisterSingleton<IGcbCommunicationService, GcbCommunicationService>();
                 containerRegistry.RegisterSingleton<IGcbCommandInterface, GcbCommandInterface>();
-                containerRegistry.RegisterManySingleton<Xcc.Infra.Services.GcbServices.GcbTelemetryService>();
+                containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
+                containerRegistry.RegisterManySingleton<GcbTelemetryService>();
                 containerRegistry.RegisterSingleton<IUpsService, UpsService>();
                 containerRegistry.RegisterManySingleton<MainBoardModelBase>();
                 #endregion

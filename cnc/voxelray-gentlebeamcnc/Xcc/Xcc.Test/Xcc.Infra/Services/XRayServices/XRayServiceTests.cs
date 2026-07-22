@@ -1,4 +1,4 @@
-﻿using Empyrean.Common.Infra.Networking.Udp;
+using Empyrean.Common.Infra.Networking.Udp;
 using Moq;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
@@ -45,21 +45,16 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             };
         }
 
-        private static FaultEntry MakeFaultEntry(GCBFaultBit faultType)
+        private static FaultEntry MakeFaultEntry(SystemFault faultType)
         {
-            return new FaultEntry()
-            {
-                FaultId = (int)faultType,
-                FaultType = faultType,
-                FaultEntryState = (int)GcbStateNew.Warmup,
-                FaultIdSupportingDetails = GCBFaultDetails.FilamentFaultSetpointOvercurrentError,
-                FaultTimeValue = 0x1eadc0de,
-                ExpectedParameter = 2500f,
-                ExpectedParameterSupportingDetails = 1,
-                ParameterTolerance = 2000f,
-                MeasuredParameter = 3000f,
-                MeasuredParameterSupportingDetails = 2
-            };
+            const string format = "Filament fault.";
+            return new FaultEntry(
+                faultType,
+                CrcUtils.ComputeChecksum(System.Text.Encoding.ASCII.GetBytes(format)),
+                GcbStateNew.Warmup,
+                0x1eadc0de,
+                format,
+                format);
         }
 
         [Test]
@@ -250,13 +245,16 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         [Test]
         public void GetFaultsCommandTest()
         {
+            FaultEntry entry = MakeFaultEntry(SystemFault.FilamentFault);
+            var update = new FaultUpdate(1, 0, 1, entry);
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
-                .Returns(Task.FromResult(GcbXRayCmdResponseGenerator.GenerateFaultInfoResponse(0, MakeFaultEntry(GCBFaultBit.FilamentFault))));
+                .Returns(Task.FromResult(GcbXRayCmdResponseGenerator.GenerateFaultInfoResponse(0, update)));
 
             var service = MakeService();
 
-            FaultEntry? faultEntry = null;
-            Assert.DoesNotThrow(() => faultEntry = service.GetFaults().GetAwaiter().GetResult());
+            FaultSnapshot? snapshot = null;
+            Assert.DoesNotThrow(() => snapshot = service.GetFaults().GetAwaiter().GetResult());
+            Assert.That(snapshot!.Entries, Is.EqualTo(new[] { entry }));
         }
 
         [Test]

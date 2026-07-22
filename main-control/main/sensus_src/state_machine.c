@@ -8,12 +8,12 @@
 */
 
 #include <atmel_start.h>
+#include "hal_atomic.h"
 #include "ext_dac.h"
 #include "ext_timers.h"
 #include "faults.h"
 #include "head_board.h"
 #include "hvps.h"
-#include "peltier_cooler.h"
 #include "system_monitoring.h"
 #include "system_parameters.h"
 #include "state_machine.h"
@@ -54,6 +54,7 @@ static void goto_discharge_state();
 static void run_discharge_state(EventType ev);
 static void goto_fault_state();
 static void run_fault_state(EventType ev);
+static void transition_to_latched_fault(void);
 
 static void deci_second_timer(const struct timer_task *const timer_task);
 
@@ -138,16 +139,16 @@ static void deci_second_timer(const struct timer_task *const timer_task)
 			int op_idx = system_status[SS_OP_IDX].i;
 			if(op_idx < 0)
 			{
-				report_fault(FAULT_MEMORY, MEMORY_FAULT_OP_IDX, 0, 0, op_idx);
+				report_typed_fault1(FAULT_MEMORY, "Operational-point index %d is negative.", MAKE_ARG(op_idx));
 			}
 			else if(op_idx >= system_status[SS_OP_COUNT].i)
 			{
-				report_fault(FAULT_MEMORY, MEMORY_FAULT_OP_IDX, system_status[SS_OP_COUNT].i, 0, op_idx);
+				report_typed_fault2(FAULT_MEMORY, "Operational-point index %d exceeds the loaded count %d.", MAKE_ARG(op_idx), MAKE_ARG(system_status[SS_OP_COUNT].i));
 				
 			}
 			else if(op_idx >= MAX_OPERATIONAL_POINTS)
 			{
-				report_fault(FAULT_MEMORY, MEMORY_FAULT_OP_IDX, MAX_OPERATIONAL_POINTS, 0, op_idx);
+				report_typed_fault2(FAULT_MEMORY, "Operational-point index %d exceeds the firmware maximum %u.", MAKE_ARG(op_idx), MAKE_ARG(MAX_OPERATIONAL_POINTS));
 			}
 			else
 			{
@@ -186,6 +187,12 @@ void queue_sm_event(EventType ev)
 
 void process_state_machine()
 {
+	if(consume_fault_transition())
+	{
+		transition_to_latched_fault();
+		return;
+	}
+
 	//Dequeue all queued events and run state machine
 	while(event_q_idx != event_q_end)
 	{
@@ -193,7 +200,7 @@ void process_state_machine()
 		{
 			event_q_idx = 0;
 		}
-		
+
 		//Ensure state index is valid
 		if(*state < NUM_SYSTEM_STATES)
 		{
@@ -205,6 +212,42 @@ void process_state_machine()
 		{
 			run_crash_state(event_queue[event_q_idx]);
 		}
+
+		if(consume_fault_transition())
+		{
+			transition_to_latched_fault();
+			return;
+		}
+	}
+}
+
+static void transition_to_latched_fault(void)
+{
+	XState captured_state;
+
+	CRITICAL_SECTION_ENTER()
+	captured_state = *state;
+	event_q_idx = event_q_end;
+	CRITICAL_SECTION_LEAVE()
+
+	switch(captured_state)
+	{
+		case STATE_STARTUP:
+		case STATE_COLD:
+			goto_cold_fault_state();
+			break;
+		case STATE_CONDITIONING:
+		case STATE_WARMUP:
+			goto_warmup_fault_state();
+			break;
+		case STATE_COLD_FAULT:
+		case STATE_WARMUP_FAULT:
+		case STATE_FAULT:
+		case STATE_SYSTEM_CRASH:
+			break;
+		default:
+			goto_fault_state();
+			break;
 	}
 }
 
@@ -227,8 +270,6 @@ static void run_crash_state(EventType ev)
 	set_coil_voltage(Y_COIL_DAC_CH, 0);
 	set_coil_voltage(F_COIL_DAC_CH, 0);
 	
-	//Stop cooler
-	enable_plt(false);
 	//Stop coolant pump and fan
 	enable_pump(false);
 	//Stop x-ray indicators
@@ -263,8 +304,6 @@ static void goto_cold_state()
 	set_coil_voltage(Y_COIL_DAC_CH, 0);
 	set_coil_voltage(F_COIL_DAC_CH, 0);
 	
-	//Stop cooler
-	enable_plt(false);
 	//Stop coolant pump and fan
 	enable_pump(false);
 	//Stop x-ray indicators
@@ -348,8 +387,6 @@ static void goto_conditioning_state()
 	float htr_val = hvps_config[HVPS_CONF_CONDITION_I];
 	set_hvps_heater(htr_val);
 	
-	//Start cooler
-	enable_plt(true);
 	//Start coolant pump and fan
 	enable_pump(true);
 	
@@ -387,8 +424,6 @@ static void goto_warmup_state()
 	float htr_val = hvps_config[HVPS_CONF_WARMUP_I];
 	set_hvps_heater(htr_val);
 	
-	//Start cooler
-	enable_plt(true);
 	//Start coolant pump and fan
 	enable_pump(true);
 	
@@ -429,9 +464,7 @@ static void goto_warmup_fault_state()
 {	
 	//Ensure source heater voltage is 0
 	set_hvps_heater(0);
-	
-	//Stop cooler
-	enable_plt(false);
+
 	//Stop coolant pump and fan
 	enable_pump(false);
 	
@@ -503,7 +536,7 @@ static void run_primed_state(EventType ev)
 		else
 		{
 			//Do not continue and report fault if system is not in an ok state
-			report_simple_fault(FAULT_INVALID_CONFIG, 0, 0, 1);
+			report_typed_fault(FAULT_INVALID_CONFIG, "The loaded configuration is invalid.");
 		}
 	}
 }
@@ -591,7 +624,7 @@ static void run_staged_state(EventType ev)
 		ok_to_proceed &= verify_collimator_ok();
 		ok_to_proceed &= verify_door_ok();
 #if defined(CALIBRATION_MODE)
-		ok_to_proceed &= verify_drive_ok();
+		ok_to_proceed &= verify_spare_interlock_2_ok();
 #endif
 				
 		//Check to make sure timers are reset before releasing plan
@@ -608,7 +641,7 @@ static void run_staged_state(EventType ev)
 		else
 		{
 			//Do not continue and report fault if system is not in an ok state
-			report_simple_fault(FAULT_INVALID_CONFIG, 0, 0, 1);
+			report_typed_fault(FAULT_INVALID_CONFIG, "The loaded configuration is invalid.");
 		}
 	}
 }
@@ -817,7 +850,7 @@ static void run_ready_state(EventType ev)
 		ok_to_proceed &= verify_collimator_ok();
 		ok_to_proceed &= verify_door_ok();
 #if defined(CALIBRATION_MODE)
-		ok_to_proceed &= verify_drive_ok();
+		ok_to_proceed &= verify_spare_interlock_2_ok();
 #endif
 		
 		//Only proceed if interlocks are ok
@@ -829,7 +862,7 @@ static void run_ready_state(EventType ev)
 		else
 		{
 			//Do not continue and report fault if system is not in an ok state
-			report_simple_fault(FAULT_INVALID_CONFIG, 0, 0, 1);
+			report_typed_fault(FAULT_INVALID_CONFIG, "The loaded configuration is invalid.");
 		}
 	}
 }
@@ -1011,10 +1044,8 @@ static void goto_fault_state()
 	//Turn off coils
 	set_coil_voltage(X_COIL_DAC_CH, 0);
 	set_coil_voltage(Y_COIL_DAC_CH, 0);
-	set_coil_voltage(F_COIL_DAC_CH, 0);
+	set_coil_voltage(F_COIL_DAC_CH, 0);	
 	
-	//Stop cooler
-	enable_plt(false);
 	//Stop coolant pump and fan
 	enable_pump(false);
 	//Stop x-ray indicators

@@ -5,7 +5,7 @@ using System.IO;
 using Empyrean.Common.Infra.Networking;
 using Empyrean.Common.Infra.Networking.Udp;
 using Xcc.Core.Models;
-using Xcc.Infra.Services.GcbServices;
+using Xcc.Infra.GryphonBoard.Comm;
 using Xcc.Core.Logging;
 using Xcc.Infra.Networking.Udp;
 
@@ -13,7 +13,7 @@ namespace Heracles.Application.Models.Supervision
 {
     public class NetworkConnectionSupervisor 
         : IGcbTelemetryConnectionFactory
-        , IGcbCommunicationConnectionFactory
+        , IGcbCommandConnectionFactory
         , IQcbCommConnectionFactory
     {
         private readonly ISystemSettingsStore settingsStore;
@@ -56,22 +56,20 @@ namespace Heracles.Application.Models.Supervision
             {
                 if (gcbTelemetryConnection == null && endPointsConfiguration?.GCBTelemetryEndPoint != null)
                 {
-                    // In general, we need to specify client port equal to the target one,
-                    // as GCB broadcasts the telemetry
-
-                    // We don't want telemetry to raise 'same port' exception on DI resolve on localhost endpoint,
-                    // as we'll not be able to fix the issue from the indoor then.
-                    // TODO: need to redesign this mechanism.
-
-                    // For now, we just set a local port to some other one
-                    // to stop receiving our own telemetry requests via the loop in case of any error.
-                    // This allows us to see no telemetry and handle the issue providing proper settings
+                    // Since this is a pure listener connection, we do not need to worry about a loop
+                    // Just listen to the telemetry endpoint
 
                     var telemetryEndpoint = endPointsConfiguration.GCBTelemetryEndPoint;
-                    int telemetryClientPort = telemetryEndpoint.Port.Value;
-                    
-                    gcbTelemetryConnection = CreateConnection(
-                        telemetryEndpoint, clientPort: telemetryClientPort, reusePort: true);
+                    int configuredListenerPort = _debugSettings.GcbTelemetryListenerPort;
+                    int telemetryClientPort = configuredListenerPort > 0
+                        ? configuredListenerPort
+                        : telemetryEndpoint.Port.Value;
+
+                    gcbTelemetryConnection = new UdpClientConnection(
+                        telemetryEndpoint.Ip(),
+                        telemetryEndpoint.Port.Value,
+                        telemetryClientPort,
+                        reusePort: configuredListenerPort == 0);
                 }
 
                 if (recordTelemetryData)
@@ -87,7 +85,7 @@ namespace Heracles.Application.Models.Supervision
             }
         }
 
-        public IAsyncClientConnection CreateGcbCommandConnection()
+        public IAsyncClientConnection GetGcbCommandConnection()
         {
             lock (connectionLockObject)
             {

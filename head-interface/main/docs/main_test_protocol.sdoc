@@ -284,7 +284,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FHI-20
-TITLE: llumination LEDs 1
+TITLE: Illumination LEDs 1
 STATEMENT: >>>
 When user press and release the laser membrane key several times, verify the head interface firmware should enable / disable the head lasers.
 <<<
@@ -369,7 +369,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FHI-23
-TITLE: Magnetometer s readings
+TITLE: Magnetometers readings
 STATEMENT: >>>
 The service user can view each magnetometer feedback reporting data in the service screen, which has to be non-zero values.
 <<<

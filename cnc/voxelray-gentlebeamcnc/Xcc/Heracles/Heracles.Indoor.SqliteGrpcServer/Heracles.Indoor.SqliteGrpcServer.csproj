@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	<TargetFramework>net8.0-windows7.0</TargetFramework>
+	<Nullable>enable</Nullable>
+	<Platforms>x64</Platforms>
+	<LangVersion>latest</LangVersion>
+	<ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+	<NoWarn>1701;1702;CS0436</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+	<NoWarn>1701;1702;CS0436</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
+	<PackageReference Include="Google.Api.CommonProtos" Version="2.14.0" />
+	<PackageReference Include="Google.Protobuf" Version="3.30.2" />
+	<PackageReference Include="Grpc.Tools" Version="2.71.0">
+	  <PrivateAssets>all</PrivateAssets>
+	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	</PackageReference>
+	<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<!-- Generate both server AND client stubs from the same proto files -->
+	<Protobuf Include="..\..\..\..\protos\com\empyreanmed\heracles\**\*.proto"
+			  GrpcServices="Server"
+			  ProtoRoot="..\..\..\..\protos" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<ProjectReference Include="..\..\Xcc.Infra\Xcc.Infra.csproj" />
+  </ItemGroup>
+
+</Project>

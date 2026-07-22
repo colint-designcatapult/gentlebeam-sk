@@ -8,26 +8,48 @@
 */
 
 #include <atmel_start.h>
+#include <lwip/err.h>
+#include <lwip/sys.h>
 #include <string.h>
+#include "checksum.h"
+#include "hal_atomic.h"
 #include "state_machine.h"
 #include "faults.h"
 
-volatile uint32_t log_time = 0;
+#define FAULT_REPLAY_INTERVAL_MS 1000u
 
-//Information on latest fault
-VariableValue fault_information[FAULT_RES_COUNT];
+typedef struct
+{
+	const char *format;
+	uint8_t format_length;
+	FaultType type;
+	uint32_t format_hash;
+	uint32_t captured_state;
+	uint32_t captured_runtime;
+	uint8_t arg_count;
+	LogArg_t args[MAX_FAULT_ARGS];
+} FaultRecord;
 
-//Queued list of faults
-FaultReport fault_reports[MAX_FAULT_REPORTS];
-volatile uint8_t fault_report_idx = 0;
+static FaultRecord active_faults[MAX_FAULT_REPORTS];
+static uint8_t active_fault_count = 0;
+static uint8_t next_fault_to_publish = 0;
+static uint32_t fault_clear_epoch = 1;
+static bool clear_publish_pending = false;
+static uint32_t last_fault_publication_ms = 0;
+static volatile bool fault_latched = false;
+static volatile bool fault_transition_pending = false;
+volatile uint32_t fault_reports_dropped = 0;
+
+static VariableValue fault_telemetry_snapshot[FAULT_RES_COUNT];
 
 volatile bool fault_clear_pulsing = false;
 static struct timer_task VTIMER_pulse_clear;
 
-uint32_t faults_present = 0;
+static uint32_t faults_present = 0;
 
 static void finalize_clear_pulse(const struct timer_task *const timer_task);
-//static void log_timer_cb(uint32_t status);
+static FaultType normalize_fault_type(FaultType type);
+static bool validate_fault_format(const char *format, uint8_t format_length, uint8_t arg_count);
 
 #if defined(CALIBRATION_MODE)
 //cal
@@ -39,96 +61,196 @@ bool ipum_ok = false;
 bool door_ok = false;
 #endif
 
-void init_faults()
+void init_faults(void)
 {
 	fault_clear_pulsing = false;
-	
-	//Clear fault information
-	memset(fault_information, 0, sizeof(VariableValue) * FAULT_RES_COUNT);
-	
-	/*
-	LOG_TIMER_init();
-	tc_register_callback(TC1, 0, log_timer_cb);
-	start_timer(TC1, 0);*/
 }
 
-//Fault reporting when no "detailed" values need to be sent
-void report_simple_fault(FaultType s_ftype, float s_target, float s_limit, float s_real)
+static FaultType normalize_fault_type(FaultType type)
 {
-	report_verbose_fault(s_ftype, 0, s_target, 0, s_limit, s_real, 0);
-}
-
-//Fault reporting when only the type needs detail
-void report_fault(FaultType ftype, uint32_t type_detail, float target, float limit, float real)
-{
-	report_verbose_fault(ftype, type_detail, target, 0, limit, real, 0);
-}
-
-//Fault reporting can be called from interrupts, keep short
-void report_verbose_fault(FaultType v_ftype, uint32_t v_type_detail, float v_target, uint32_t v_target_detail, float v_limit, float v_real, uint32_t v_real_detail)
-{	
-	if(fault_report_idx >= MAX_FAULT_REPORTS)
+	if(type < FAULT_INTERLOCK || type >= NUM_FAULTS)
 	{
-		//Do nothing if we overrun the fault reports
-		//If this happens something went very wrong
+		return FAULT_OTHER;
+	}
+
+	return type;
+}
+
+void fault_latch(FaultType type)
+{
+	type = normalize_fault_type(type);
+
+	CRITICAL_SECTION_ENTER()
+	if(!fault_latched)
+	{
+		fault_transition_pending = true;
+	}
+	fault_latched = true;
+	faults_present |= 1u << (uint32_t)type;
+	system_status[SS_FAULTS].u = faults_present;
+	CRITICAL_SECTION_LEAVE()
+}
+
+bool consume_fault_transition(void)
+{
+	bool pending;
+
+	CRITICAL_SECTION_ENTER()
+	pending = fault_transition_pending;
+	fault_transition_pending = false;
+	CRITICAL_SECTION_LEAVE()
+
+	return pending;
+}
+
+static bool validate_fault_format(const char *format, uint8_t format_length, uint8_t arg_count)
+{
+	if(format == NULL || format_length >= FAULT_FORMAT_BYTES || arg_count > MAX_FAULT_ARGS)
+	{
+		return false;
+	}
+	if(format[format_length] != '\0')
+	{
+		return false;
+	}
+
+	uint8_t consuming_specifiers = 0;
+	for(uint8_t i = 0; i < format_length; i++)
+	{
+		unsigned char current = (unsigned char)format[i];
+		if(current < 0x20u || current > 0x7Eu)
+		{
+			return false;
+		}
+		if(current != '%')
+		{
+			continue;
+		}
+		if(++i >= format_length)
+		{
+			return false;
+		}
+
+		switch(format[i])
+		{
+			case '%':
+				break;
+			case 'd':
+			case 'u':
+			case 'x':
+			case 'X':
+			case 'f':
+				consuming_specifiers++;
+				break;
+			default:
+				return false;
+		}
+	}
+
+	return consuming_specifiers == arg_count;
+}
+
+void record_fault_internal(FaultType type, const char *format, uint8_t format_length, uint8_t arg_count, const LogArg_t *args)
+{
+	if(args == NULL && arg_count > 0u)
+	{
 		return;
 	}
-	
-	uint32_t fault_bit = 1;
-	fault_bit <<= v_ftype;
-	
-	//If we are already in fault mode and the fault has been reported ignore it
-	if((faults_present & (1<<v_ftype)) && (system_status[SS_STATE].i == STATE_FAULT || system_status[SS_STATE].i == STATE_COLD_FAULT || system_status[SS_STATE].i == STATE_WARMUP_FAULT))
+	if(!validate_fault_format(format, format_length, arg_count))
 	{
 		return;
 	}
-	//Otherwise log the fault
-	else
+
+	type = normalize_fault_type(type);
+	uint32_t format_hash = crc_32((const unsigned char *)format, format_length);
+	bool duplicate = false;
+
+	CRITICAL_SECTION_ENTER()
+	for(uint8_t i = 0; i < active_fault_count; i++)
 	{
-		faults_present |= fault_bit;
+		const FaultRecord *active = &active_faults[i];
+		if(active->format_hash == format_hash &&
+			active->format_length == format_length &&
+			memcmp(active->format, format, format_length) == 0)
+		{
+			duplicate = true;
+			break;
+		}
 	}
-	
-	//Update system status fault bits
-	system_status[SS_FAULTS].i = faults_present;
-	
-	//Log fault details
-	fault_reports[fault_report_idx].id = v_ftype;
-	fault_reports[fault_report_idx].id_detail = v_type_detail;
-	fault_reports[fault_report_idx].entry_state = system_status[SS_STATE].u;
-	fault_reports[fault_report_idx].fault_time = system_status[SS_SYS_RUNTIME].u;
-	fault_reports[fault_report_idx].expected_val = v_target;
-	fault_reports[fault_report_idx].expected_detail = v_target_detail;
-	fault_reports[fault_report_idx].tolerance = v_limit;
-	fault_reports[fault_report_idx].measured_val = v_real;
-	fault_reports[fault_report_idx].measured_detail = v_real_detail;
-	
-	fault_report_idx++;
+
+	if(!duplicate)
+	{
+		if(active_fault_count >= MAX_FAULT_REPORTS)
+		{
+			fault_reports_dropped++;
+		}
+		else
+		{
+			FaultRecord *record = &active_faults[active_fault_count];
+			record->format = format;
+			record->format_length = format_length;
+			record->type = type;
+			record->format_hash = format_hash;
+			record->captured_state = system_status[SS_STATE].u;
+			record->captured_runtime = system_status[SS_SYS_RUNTIME].u;
+			record->arg_count = arg_count;
+			memset(record->args, 0, sizeof(record->args));
+			if(arg_count > 0u)
+			{
+				memcpy(record->args, args, arg_count * sizeof(LogArg_t));
+			}
+			active_fault_count++;
+		}
+	}
+	CRITICAL_SECTION_LEAVE()
 }
 
-
-void clear_faults()
+void serialize_fault_response(uint32_t requested_index, VariableValue response[FAULT_RES_COUNT])
 {
-	/*if(fault_clear_pulsing)
+	memset(response, 0, sizeof(VariableValue) * FAULT_RES_COUNT);
+
+	CRITICAL_SECTION_ENTER()
+	response[FAULT_RES_CLEAR_EPOCH].u = fault_clear_epoch;
+	response[FAULT_RES_ENTRY_INDEX].u = requested_index;
+	response[FAULT_RES_ACTIVE_COUNT].u = active_fault_count;
+
+	if(requested_index < active_fault_count)
 	{
-		return;
-	}*/
-	//Clear existing fault information
-	//Note we are not clearing any faults reported before clear command was received
-	//(aka the fault reports table remains as is, only clear fault information)
-	memset(fault_information, 0, sizeof(VariableValue) * FAULT_RES_COUNT);
-	
-	faults_present = 0;
-	
-	system_status[SS_FAULTS].i = 0;
-	
+		const FaultRecord *record = &active_faults[requested_index];
+		response[FAULT_RES_TYPE].u = (uint32_t)record->type;
+		response[FAULT_RES_FORMAT_HASH].u = record->format_hash;
+		response[FAULT_RES_STATE].u = record->captured_state;
+		response[FAULT_RES_TIME].u = record->captured_runtime;
+		response[FAULT_RES_ARG_COUNT].u = record->arg_count;
+		memcpy((uint8_t *)&response[FAULT_RES_FORMAT_0], record->format, record->format_length);
+		for(uint8_t i = 0; i < record->arg_count; i++)
+		{
+			memcpy(&response[FAULT_RES_ARG_0 + i], &record->args[i], sizeof(LogArg_t));
+		}
+	}
+	CRITICAL_SECTION_LEAVE()
+}
+
+void clear_faults(void)
+{
 	gpio_set_pin_level(IO_LED1, true);
-	
 	pulse_fault_clear();
+
+	CRITICAL_SECTION_ENTER()
+	fault_latched = false;
+	fault_transition_pending = false;
+	active_fault_count = 0;
+	next_fault_to_publish = 0;
+	faults_present = 0;
+	system_status[SS_FAULTS].u = 0;
+	fault_clear_epoch++;
+	clear_publish_pending = true;
+	CRITICAL_SECTION_LEAVE()
 }
 
 //Perform pulsing to unlatch master fault on interlock hardware preventing HV and grid
-void pulse_fault_clear()
-{	
+void pulse_fault_clear(void)
+{
 	if(!fault_clear_pulsing)
 	{
 		gpio_set_pin_level(IO_CLEAR_FAULT, true);
@@ -146,37 +268,79 @@ static void finalize_clear_pulse(const struct timer_task *const timer_task)
 	fault_clear_pulsing = false;
 }
 
-void process_faults()
+void process_faults(void)
 {
-	//Check to see if new faults have been reported
-	if(fault_report_idx > 0)
+	bool publish_clear;
+	bool latched;
+	uint8_t active_count;
+	uint8_t publish_index;
+	uint32_t publish_epoch;
+	uint32_t now = sys_now();
+
+	CRITICAL_SECTION_ENTER()
+	publish_clear = clear_publish_pending;
+	latched = fault_latched;
+	active_count = active_fault_count;
+	publish_index = next_fault_to_publish;
+	publish_epoch = fault_clear_epoch;
+
+	if(!publish_clear &&
+		publish_index >= active_count &&
+		(uint32_t)(now - last_fault_publication_ms) >= FAULT_REPLAY_INTERVAL_MS)
+	{
+		if(active_count > 0u)
+		{
+			next_fault_to_publish = 0;
+			publish_index = 0;
+		}
+		else if(publish_epoch > 1u)
+		{
+			publish_clear = true;
+		}
+	}
+	CRITICAL_SECTION_LEAVE()
+
+	if(latched)
 	{
 		gpio_set_pin_level(IO_LED1, false);
-		
-		// TODO: report fault only if in emission
-		
-		//Report to state machine that a fault is present
-		queue_sm_event(EVENT_FAULT);
-		
-		//For now, do nothing with queued faults beyond the first
-		//Can potentially update in the future to log additional faults
-		
-		//If no other fault is currently reported, report oldest fault to PC
-		if(fault_information[FAULT_RES_ID].i == 0)
+	}
+
+	if(publish_clear)
+	{
+		memset(fault_telemetry_snapshot, 0, sizeof(fault_telemetry_snapshot));
+		fault_telemetry_snapshot[FAULT_RES_CLEAR_EPOCH].u = publish_epoch;
+		if(send_telemetry_packet(PC_TELEMETRY_PORT, PCCOM_FAULT_REQUEST,
+			fault_telemetry_snapshot, FAULT_RES_COUNT) == ERR_OK)
 		{
-			fault_information[FAULT_RES_ID].i = fault_reports[0].id;
-			fault_information[FAULT_RES_ID_DETAIL].u = fault_reports[0].id_detail;
-			fault_information[FAULT_RES_STATE].u = fault_reports[0].entry_state;
-			fault_information[FAULT_RES_TIME].u = fault_reports[0].fault_time;
-			fault_information[FAULT_RES_EXPECTED].f = fault_reports[0].expected_val;
-			fault_information[FAULT_RES_EXPECTED_DETAIL].u = fault_reports[0].expected_detail;
-			fault_information[FAULT_RES_TOLERANCE].f = fault_reports[0].tolerance;
-			fault_information[FAULT_RES_MEASURED].f = fault_reports[0].measured_val;
-			fault_information[FAULT_RES_MEASURED_DETAIL].u = fault_reports[0].measured_detail;
+			last_fault_publication_ms = now;
+			CRITICAL_SECTION_ENTER()
+			if(fault_clear_epoch == publish_epoch)
+			{
+				clear_publish_pending = false;
+			}
+			CRITICAL_SECTION_LEAVE()
 		}
-		
-		//Reset fault report index
-		fault_report_idx = 0;
+		return;
+	}
+
+	serialize_fault_response(publish_index, fault_telemetry_snapshot);
+	if(fault_telemetry_snapshot[FAULT_RES_TYPE].u == 0u)
+	{
+		return;
+	}
+
+	if(send_telemetry_packet(PC_TELEMETRY_PORT, PCCOM_FAULT_REQUEST,
+		fault_telemetry_snapshot, FAULT_RES_COUNT) == ERR_OK)
+	{
+		last_fault_publication_ms = now;
+		CRITICAL_SECTION_ENTER()
+		if(!clear_publish_pending &&
+			fault_clear_epoch == publish_epoch &&
+			next_fault_to_publish == publish_index)
+		{
+			next_fault_to_publish++;
+		}
+		CRITICAL_SECTION_LEAVE()
 	}
 }
 

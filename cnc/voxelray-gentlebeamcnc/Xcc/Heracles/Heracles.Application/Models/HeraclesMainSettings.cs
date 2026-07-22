@@ -100,6 +100,8 @@ namespace Heracles.Application.Models
 
         #region IDebugSettings
         public bool UseDummyDatabase { get; } = reader.GetOptionalBool("AppSettings:Debug:UseDummyDatabase", false);
+        public bool UseSqliteDatabase { get; } = reader.GetOptionalBool("AppSettings:Debug:UseSqliteDatabase", false);
+        public bool UseInsecureGrpc { get; } = reader.GetOptionalBool("AppSettings:Debug:UseInsecureGrpc", false);
         public bool UseDummyServices { get; } = reader.GetOptionalBool("AppSettings:Debug:UseDummyServices", false);
         public bool UseDummyRobot { get; } = reader.GetOptionalBool("AppSettings:Debug:UseDummyRobot", false);
         public bool UseDummyAlignmentEngine { get; } = reader.GetOptionalBool("AppSettings:Debug:UseDummyAlignmentEngine", false);
@@ -115,6 +117,7 @@ namespace Heracles.Application.Models
         public string? PathToTagScreenshot { get; set; } = reader.GetOptionalString("AppSettings:Debug:PathToTagScreenshot");
         public bool DoNotExpandFullscreen { get; set; } = reader.GetOptionalBool("AppSettings:Debug:DoNotExpandFullscreen", false);
         public bool IsUpsActivated { get; } = reader.GetOptionalBool("AppSettings:Debug:IsUpsActivated", false);
+        public int GcbTelemetryListenerPort { get; } = reader.GetOptionalInt("AppSettings:Debug:GcbTelemetryListenerPort", 0);
         #endregion IDebugSettings
 
 

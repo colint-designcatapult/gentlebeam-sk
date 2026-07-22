@@ -1,5 +1,4 @@
-﻿using Empyrean.Common.Infra.Networking.Udp;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Xcc.Application.Domain.GryphonBoard.Model.OperationGuards;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
@@ -41,16 +40,11 @@ namespace Heracles.Outdoor.Test.Models.GryphonBoard.OperationGuards
             Assert.That(Watchdog.CanClearErrors, Is.False);
         }
 
-        private ISystemTelemetry MakeSystemTelemetry(GcbStateNew state, float energy)
-        {
-            var packet = new UdpPacket(
-                packetType: (uint)GCBPacketType.TelemetryResponse,
-                packetCounter: 0,
-                payloadLength: (uint)GCBTelemetryResponseField.PayloadFields);
-            packet[(int)GCBTelemetryResponseField.SystemState] = (int)state;
-            packet[(int)GCBTelemetryResponseField.kVFeedback] = energy;
-            packet.UpdateCRC();
-            return SystemTelemetry.Parse(packet.Buffer);
-        }
+        private static ISystemTelemetry MakeSystemTelemetry(GcbStateNew state, float energy) =>
+            new SystemNormalTelemetry
+            {
+                ControlBoardState = state,
+                KvFeedback = energy,
+            };
     }
 }

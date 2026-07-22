@@ -31,6 +31,19 @@ void update_timers()
 	grid_ms--;
 }
 
+// Toggles the IO_TEST_1 pin every 500 ms as a heartbeat indicator
+void heartbeat()
+{
+	static uint32_t last_toggle_ms = 0;
+
+    if ((runtime_ms - last_toggle_ms) >= 500)
+    {
+        last_toggle_ms = runtime_ms;
+        HAL_GPIO_TogglePin(IO_TEST_1_GPIO_Port, IO_TEST_1_Pin);
+    }
+
+}
+
 void enable_grid_clock()
 {
 	HAL_TIM_Base_Start_IT(&htim7);

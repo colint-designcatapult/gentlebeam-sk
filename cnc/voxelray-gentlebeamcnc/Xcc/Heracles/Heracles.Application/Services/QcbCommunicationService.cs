@@ -1,12 +1,12 @@
 ﻿using System;
 using Xcc.Core.Models;
 using Xcc.Infra.QualityCheck.Comm;
-using Xcc.Infra.Services.GcbServices;
+using Empyrean.Common.Infra.Networking.Udp;
 
 namespace Heracles.Application.Services
 {
     [Obsolete]
-    public class QcbCommunicationService : GcbBaseUdpService, IQcbCommunicationService
+    public class QcbCommunicationService : RawUdpClient, IQcbCommunicationService
     {
         private static readonly int RECEIVE_TIMEOUT = 5000;
 

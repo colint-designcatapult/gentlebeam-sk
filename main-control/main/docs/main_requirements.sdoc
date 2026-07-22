@@ -23,11 +23,11 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes all requirements of the Heracles HVPS Interface Application FW.
+This document describes all requirements of the Heracles Main Control Application FW.
 The information in this document has been derived from the VoxelRay Heracles Product Requirements
-Specification.
+Specification, as referenced in this document.
 
-\*The term Software applies to both Software and Firmware systems.
+*The term Software applies to both Software and Firmware systems.*
 <<<
 
 [[/SECTION]]
@@ -37,32 +37,27 @@ TITLE: Abbreviations and Definitions
 
 [TEXT]
 STATEMENT: >>>
-FW
-  Firmware
-
-HVPS
-  High Voltage Power Supply
-
-LED
-  Light Emitting Diode
-
-MCU
-  Microcontroller Unit
-
-PID
-  Proportional Integral Derivative controller
-
-PRS
-  Product Requirements Specification
-
-SDP
-  Software Development Plan
-
-SRS
-  Software Requirements Specification
-
-SW
-  Software
++-------------------+---------------------------------------------+
+| Abbreviation/Term | Definition                                  |
++===================+=============================================+
+| FW                | Firmware                                    |
++-------------------+---------------------------------------------+
+| HVPS              | High Voltage Power Supply                   |
++-------------------+---------------------------------------------+
+| LED               | Light Emitting Diode                        |
++-------------------+---------------------------------------------+
+| MCU               | Microcontroller Unit                        |
++-------------------+---------------------------------------------+
+| PID               | Proportional Integral Derivative controller |
++-------------------+---------------------------------------------+
+| PRS               | Product Requirements Specification          |
++-------------------+---------------------------------------------+
+| SDP               | Software Development Plan                   |
++-------------------+---------------------------------------------+
+| SRS               | Software Requirements Specification         |
++-------------------+---------------------------------------------+
+| SW                | Software                                    |
++-------------------+---------------------------------------------+
 <<<
 
 [[/SECTION]]
@@ -76,8 +71,7 @@ The main control application firmware serves as the main logical control for sys
 
 The main control application firmware monitors all the inputs from the various connections on the board
 hardware. It can also be used to set and control many of the components that the main control board
-interfaces with. For off the shelf components, the main control application can set/enable the Peltier
-cooler temperature, can set/enable the motor controller drivers for cooling system pump and fans, and
+interfaces with. For off the shelf components, the main control application can set/enable the motor controller drivers for cooling system pump and fans, and
 can enable the ion pump controller.
 
 The main control application firmware runs on the main control MCU of the main control board.
@@ -90,9 +84,13 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-DHF-HRC-0001, Rev.2: Heracles Software Development Plan (SDP)
-
-DHF-HRC-0003, Rev.2: Heracles Software Verification Plan (SVP)
++--------------------------------+-------------------------------------------+
+| Document ID / Reference Number | Document Title                            |
++================================+===========================================+
+| DHF-HRC-0001, Rev.2            | Heracles Software Development Plan (SDP)  |
++--------------------------------+-------------------------------------------+
+| DHF-HRC-0003, Rev.2            | Heracles Software Verification Plan (SVP) |
++--------------------------------+-------------------------------------------+
 <<<
 
 [[/SECTION]]
@@ -131,10 +129,20 @@ fault if no valid communication is received within 0.5 seconds
 [REQUIREMENT]
 UID: RQ-H1FWMC-6
 TYPE: Functional
-TITLE: Emission indicator
+TITLE: Fault information
 STATEMENT: >>>
-The firmware shall enable an external emission indicator during the emission state when
-there is an ongoing emission
+The firmware shall retain and report up to four simultaneously active fault records. In
+response to an indexed fault-information request from the PC, the firmware shall report:
+
+- The fault category
+- A printable fault-message format string and its checksum
+- Up to five raw format arguments
+- The system state and runtime captured when the fault was first reported
+- The fault-clear epoch, requested entry index, and total active-fault count
+
+The firmware shall suppress duplicate records for the same fault category and message
+format while the record remains latched. Newly detected distinct records shall also be
+published without a request from the PC.
 <<<
 
 [REQUIREMENT]
@@ -151,13 +159,18 @@ UID: RQ-H1FWMC-8
 TYPE: Safety
 TITLE: Interlocks
 STATEMENT: >>>
-The firmware shall monitor the status of the system interlocks and throw a fault if any
-interlocks are in an invalid condition. Interlocks include:
--E-stops
--Ion pump HV interlocks
--KUKA robot arm interlocks
--Door interlock
--Coolant level sensor
+The firmware shall monitor every physical Port C interlock input and throw a fault when an
+interlock required by the compiled firmware mode and current system state is not in its
+good condition. Inputs not required in the current state shall remain monitored and
+reported. Interlocks include:
+
+- Door, base e-stop, and remote e-stop
+- KUKA 1 and KUKA 2 readiness
+- Water level, water temperature, ion pump, cooler, and HVPS readiness
+- Backup timer 1, backup timer 2, and watchdog readiness
+- Remote key and base key
+- MCU fault, spare interlocks 1 and 2, and buffered master-fault diagnostic inputs
+
 <<<
 
 [REQUIREMENT]
@@ -208,7 +221,7 @@ during the warmup procedure within a timeout period of 180 seconds
 [REQUIREMENT]
 UID: RQ-H1FWMC-14
 TYPE: Functional
-TITLE: Operation 06 - HVPS Check
+TITLE: Operation 07: Operational point setup
 STATEMENT: >>>
 The firmware shall report a fault if the HVPS has not reached the target kV setpoint during
 the operational point setup processes within a timeout period of 90 seconds
@@ -361,13 +374,14 @@ The firmware shall respond to out of bounds treatment plan operational point
 confirmation parameters from the PC with an error reply indicating out of bounds values
 have been received. Out of bounds values are those which are outside of the range of
 acceptable values. Acceptable values will be:
--Acceleration potential (kV), range 0 to 100 kV
--Emission current (mA), range 0 to 1 mA
--Total delivery time, range 0 to 300 seconds
--Remaining delivery time, range 0 to total delivery time-Beam optic focus adjustment
-values, range 0 to 3A
--Beam optic deflection adjustment values, range -1.5A to +1.5A-Filament current (mA),
-range 0 to 3999 mA
+
+- Acceleration potential (kV), range 0 to 100 kV
+- Emission current (mA), range 0 to 1 mA
+- Total delivery time, range 0 to 300 seconds
+- Remaining delivery time, range 0 to total delivery time
+- Beam optic focus adjustment values, range 0 to 3A
+- Beam optic deflection adjustment values, range -1.5A to +1.5A
+- Filament current (mA), range 0 to 3999 mA
 <<<
 
 [REQUIREMENT]
@@ -378,12 +392,14 @@ STATEMENT: >>>
 The firmware shall acknowledge the receipt of valid treatment plan operational point
 confirmation parameters received from the PC. A valid treatment plan includes the
 following parameters for an operational point:
--Acceleration potential (kV), range 0 to 100 kV-Emission current (mA), range 0 to 1 mA
--Total delivery time, range 0 to 300 seconds
--Remaining delivery time, range 0 to total delivery time-Beam optic focus adjustment
-values, range 0 to 3A
--Beam optic deflection adjustment values, range -1.5A to +1.5A-Filament current (mA),
-range 0 to 3999 mA
+
+- Acceleration potential (kV), range 0 to 100 kV
+- Emission current (mA), range 0 to 1 mA
+- Total delivery time, range 0 to 300 seconds
+- Remaining delivery time, range 0 to total delivery time
+- Beam optic focus adjustment values, range 0 to 3A
+- Beam optic deflection adjustment values, range -1.5A to +1.5A
+- Filament current (mA), range 0 to 3999 mA
 <<<
 
 [REQUIREMENT]
@@ -412,7 +428,7 @@ UID: RQ-H1FWMC-33
 TYPE: Functional
 TITLE: Operation 01: Filament conditioning
 STATEMENT: >>>
-The firmware shall only be able to perform filament conditioning from a “cold” state
+The firmware shall only be able to perform filament conditioning from a 'cold' state
 where there is no filament current present, and shall reply to filament condition requests
 outside of this cold state with an error response
 <<<
@@ -532,7 +548,7 @@ UID: RQ-H1FWMC-46
 TYPE: Functional
 TITLE: PC Ethernet commands
 STATEMENT: >>>
-The firmware shall respond with an “unrecognized message” response when it receives a
+The firmware shall respond with an 'unrecognized message' response when it receives a
 command which is either not formatted properly or not recognized.
 <<<
 
@@ -559,7 +575,7 @@ TYPE: Functional
 TITLE: USB
 STATEMENT: >>>
 The main control application firmware shall be able to receive and process commands
-from PC via the board’s USB connection.
+from PC via the board's USB connection.
 <<<
 
 [REQUIREMENT]
@@ -596,48 +612,12 @@ The firmware shall be able to set the deflection and focus coil setpoint control
 <<<
 
 [REQUIREMENT]
-UID: RQ-H1FWMC-56
-TYPE: Functional
-TITLE: Cooling system
-STATEMENT: >>>
-The firmware shall monitor the Peltier element temperature and report a fault if no
-response is received from the requested temperature read
-<<<
-
-[REQUIREMENT]
-UID: RQ-H1FWMC-57
-TYPE: Functional
-TITLE: Cooling system
-STATEMENT: >>>
-The firmware shall be able to read the Peltier element temperature value from the Peltier
-controller.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H1FWMC-58
-TYPE: Functional
-TITLE: Cooling system
-STATEMENT: >>>
-The firmware shall have the ability to set the Peltier cooling system target setpoint
-temperature.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H1FWMC-59
-TYPE: Functional
-TITLE: Cooling system
-STATEMENT: >>>
-The main control application firmware shall have the ability to enable and disable the
-Peltier cooling system.
-<<<
-
-[REQUIREMENT]
 UID: RQ-H1FWMC-60
 TYPE: Safety
 TITLE: Coolant monitoring
 STATEMENT: >>>
 The firmware shall monitor the reported coolant temperature and report a fault if the
-temperature is above 45C
+temperature is above 35C
 <<<
 
 [REQUIREMENT]
@@ -646,12 +626,12 @@ TYPE: Safety
 TITLE: Coolant monitoring
 STATEMENT: >>>
 The firmware shall monitor the reported coolant system flow rate and report a fault if the
-rate is below 0.6 LPM when the coolant pump is enabled.
+rate is below 2 LPM or above 6 LPM when the coolant pump is enabled.
 <<<
 
 [REQUIREMENT]
 UID: RQ-H1FWMC-62
-TYPE: Safety
+TYPE: Functional
 TITLE: Head Interface
 STATEMENT: >>>
 The firmware shall be able to receive cooling system feedback values from the head
@@ -727,7 +707,7 @@ TYPE: Safety
 TITLE: Undesired emission monitoring
 STATEMENT: >>>
 The firmware shall monitor the cathode current feedback from the HVPS and report a fault
-if the value is above 0.2 mA when the system is not in “Emission” state
+if the value is above 0.2 mA when the system is not in 'Emission' state
 <<<
 
 [REQUIREMENT]
@@ -790,7 +770,8 @@ UID: RQ-H1FWMC-78
 TYPE: Functional
 TITLE: Fault information
 STATEMENT: >>>
-The firmware shall be able to clear latched fault flags when requested by the PC.
+The firmware shall clear all latched fault records and category flags when requested by the
+PC. Clearing shall increment the fault-clear epoch and publish an empty active-fault list.
 <<<
 
 [REQUIREMENT]
@@ -798,7 +779,8 @@ UID: RQ-H1FWMC-79
 TYPE: Functional
 TITLE: Fault information
 STATEMENT: >>>
-The firmware shall latch fault condition flags
+The firmware shall latch fault category flags and detailed fault records until they are
+cleared by the PC, even when the condition that caused a record is no longer present.
 <<<
 
 [REQUIREMENT]
@@ -828,13 +810,14 @@ STATEMENT: >>>
 The firmware shall acknowledge the receipt of valid treatment plan staging parameters
 received from the PC. A valid treatment plan includes the following parameter types for an
 operational point:
--Acceleration potential (kV), range 0 to 100 kV
--Emission current (mA), range 0 to 1 mA
--Total delivery time, range 0 to 300 seconds
--Remaining delivery time, range 0 to total delivery time-Beam optic focus adjustment
-values, range 0 to 3A
--Beam optic deflection adjustment values, range -1.5A to +1.5A-Filament current (mA),
-range 0 to 3999 mA
+
+- Acceleration potential (kV), range 0 to 100 kV
+- Emission current (mA), range 0 to 1 mA
+- Total delivery time, range 0 to 300 seconds
+- Remaining delivery time, range 0 to total delivery time
+- Beam optic focus adjustment values, range 0 to 3A
+- Beam optic deflection adjustment values, range -1.5A to +1.5A
+- Filament current (mA), range 0 to 3999 mA
 <<<
 
 [REQUIREMENT]
@@ -842,14 +825,18 @@ UID: RQ-H1FWMC-83
 TYPE: Functional
 TITLE: Report telemetry to PC
 STATEMENT: >>>
-The firmware shall report monitored system parameter values in response to a telemetry
-request from the PC. Parameter types in the response include the following:
--Control board state
--Current system operational point in treatment plan
--Total operational points in treatment plan
--Internal timer value
--Backup timer values
--Feedback values
+The firmware shall transmit monitored system parameter values to the PC as unsolicited UDP
+telemetry packets every 10 ms (100 Hz) and in response to a telemetry request from the PC.
+The parameter layout shall correspond to the compiled firmware mode (normal or calibration)
+and include the applicable values from the following categories:
+
+- Control-board state, runtime, fault flags, indicator state, and all physical interlock inputs
+- The state-dependent mask identifying which interlock inputs are currently required
+- Current and total operational points in the treatment plan
+- Internal and backup timer states and values
+- Applicator, button, coolant, magnetometer, coil, ion-pump, and temperature values
+- HVPS runtime, I/O and status flags, setpoints, feedback values, and power limits
+
 <<<
 
 [REQUIREMENT]
@@ -857,7 +844,7 @@ UID: RQ-H1FWMC-84
 TYPE: Functional
 TITLE: PC Ethernet commands
 STATEMENT: >>>
-The firmware shall be able to respond to commands received from a PC over Ethernet
+The firmware shall be able to respond to commands received from a PC over Ethernet.
 <<<
 
 [REQUIREMENT]
@@ -894,6 +881,16 @@ STATEMENT: >>>
 The Main Control App FW shall be able to accept QC Diode values from the Head Interface
 FW and process them for output to the PC Application. A QC ping command should also be
 processed when received from the PC application.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWMC-306
+TYPE: Functional
+TITLE: Report device information to PC
+STATEMENT: >>>
+The firmware shall transmit a UDP device-information packet to the PC once per second and
+in response to a device-information request. The packet shall identify the firmware major,
+minor, and level version, application CRC, and firmware mode.
 <<<
 
 [[/SECTION]]

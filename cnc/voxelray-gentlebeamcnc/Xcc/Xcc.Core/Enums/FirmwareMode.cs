@@ -3,7 +3,7 @@
     public enum FirmwareMode
     {
         Normal = 0,
-        Calibration,
+        Calibration = 0x494C4143,
         Demo,
         Test
     }

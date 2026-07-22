@@ -73,14 +73,16 @@ void init_system_parameters()
 	device_information[VERSION_RES_MAJ] = FW_MAJOR_VERSION;
 	device_information[VERSION_RES_MIN] = FW_MINOR_VERSION;
 	device_information[VERSION_RES_LVL] = FW_LEVEL_VERSION;
-	device_information[VERSION_RES_MODE] = 0;
+#if defined(CALIBRATION_MODE)
+	device_information[VERSION_RES_MODE] = FW_CALIBRATION_MODE;
+#else
+	device_information[VERSION_RES_MODE] = FW_NORMAL_MODE;
+#endif
 	device_information[VERSION_RES_CRC] = get_app_crc();
 	
 	//Clear treatment plan
 	clear_treatment_plan();
 	
-	//Clear fault table
-	memset(fault_information, 0, sizeof(VariableValue) * FAULT_RES_COUNT);
 	
 #if !defined(CALIBRATION_MODE)
 	init_qc_ping_buf();
@@ -140,20 +142,6 @@ bool verify_keys_ok()
 	return true;
 }
 
-#if !defined(CALIBRATION_MODE)
-bool verify_tvm_ok()
-{
-	//extract the tvm interlock bit
-	bool tvm_ok = (bool)(system_status[SS_TVM_INTERLOCK].u & 0x01);
-	
-	//Check that the interlock on the TVM notch is engaged
-	if (!tvm_ok)
-	{
-		return false;
-	}
-	return true;
-}
-#endif
 
 bool verify_collimator_ok()
 {
@@ -182,7 +170,7 @@ bool verify_estops_ok()
 	return true;
 }
 
-bool verify_drive_ok()
+bool verify_spare_interlock_2_ok()
 {
 	if(!gpio_get_pin_level(IO_DRIVE_SYS_LOCKED))
 	{

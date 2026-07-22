@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -78,32 +78,28 @@ namespace Xcc.Application.Domain.GryphonBoard
         }
 
 
-        public void OnSystemTelemetryChanged(ISystemTelemetry systemTelemetry)
+        public void OnSystemTelemetryChanged(ISystemTelemetry? systemTelemetry)
         {
             var previousState = State;
             SystemTelemetry = systemTelemetry;
 
-            if (systemTelemetry != null)
+            if (systemTelemetry is not null)
             {
-                GcbDataStore.Interlocks = GcbInterlocks.Create(systemTelemetry.InterlockFlags);
-                GcbDataStore.Faults = new GcbFaults(systemTelemetry.FaultFlags);
-                if (previousState != systemTelemetry?.ControlBoardState && systemTelemetry?.FaultFlags != 0)
+                if (previousState != systemTelemetry.ControlBoardState && systemTelemetry.Faults.AnyActive)
                 {
-                    var faultList = GcbDataStore.Faults?.GetFaults();
-                    var faults = (faultList == null) ? "No data" : string.Join('\n', faultList.Select(x => x.ToString()));
-                    _ = LogWriter.LogAsync($"GCB went into a fault state: {systemTelemetry?.ControlBoardState}.\nReason: {faults}", LogRecordSeverity.Info, LogRecordType.System);
+                    _ = LogWriter.LogAsync(
+                        $"GCB went into a fault state: {systemTelemetry.ControlBoardState}.\nReason: {systemTelemetry.Faults}",
+                        LogRecordSeverity.Info,
+                        LogRecordType.System);
                 }
             }
             else
             {
-                GcbDataStore.Interlocks = null;
-                GcbDataStore.Faults = null;
-
-                var prevTelemetryValues = GcbDataStore.SystemTelemetry;
-                if (prevTelemetryValues is { PrimaryTimerValue: > 0 })
+                var previousTelemetry = GcbDataStore.SystemTelemetry;
+                if (previousTelemetry is { PrimaryTimerValue: > 0 })
                 {
-                    var (primaryTimerValue, secondaryTimer1Value, secondaryTimer2Value) 
-                        = (prevTelemetryValues.PrimaryTimerValue, prevTelemetryValues.SecondaryTimer1Value, prevTelemetryValues.SecondaryTimer2Value);
+                    var (primaryTimerValue, secondaryTimer1Value, secondaryTimer2Value) =
+                        (previousTelemetry.PrimaryTimerValue, previousTelemetry.SecondaryTimer1Value, previousTelemetry.SecondaryTimer2Value);
 
                     _ = LogWriter.LogAsync(
                         $"GCB connection was lost. Last timer values are: {primaryTimerValue:F2}sec, {secondaryTimer1Value:F2}sec, {secondaryTimer2Value:F2}sec",
@@ -111,9 +107,7 @@ namespace Xcc.Application.Domain.GryphonBoard
                 }
             }
 
-            GcbDataStore.SystemTelemetry = SystemTelemetry;
-
-            UpdateCurrentPlanState(systemTelemetry);
+            GcbDataStore.SystemTelemetry = systemTelemetry;
         }
 
         public virtual async Task Initialize()
@@ -279,11 +273,13 @@ namespace Xcc.Application.Domain.GryphonBoard
                    gcbState == GcbStateNew.NoComm;
         }
 
-        public virtual async Task<FaultEntry> GetFaults()
+        public virtual async Task<FaultSnapshot> GetFaults()
         {
             _ = LogWriter.LogAsync("GetFaults", LogRecordSeverity.Info, LogRecordType.System);
 
-            return await GcbAPI.GetFaults();
+            FaultSnapshot snapshot = await GcbAPI.GetFaults();
+            GcbDataStore.ReplaceFaults(snapshot);
+            return snapshot;
         }
 
         public virtual async Task<VersionInfo> GetVersionInfo()
@@ -560,8 +556,8 @@ namespace Xcc.Application.Domain.GryphonBoard
             // First wait for HW key awaiting state:
             await WaitForState(GcbStateNew.WaitForKey, tokenSource.Token);
 
-            // Wait for user to press Base Key
-            while (GcbDataStore.Interlocks?.BaseKey != true)
+            // Wait for the base key used to authorize imaging.
+            while (GcbDataStore.SystemTelemetry?.Interlocks.BaseKeyOn != true)
             {
                 await Task.Delay(50, tokenSource.Token);
             }

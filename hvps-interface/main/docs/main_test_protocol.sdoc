@@ -522,10 +522,6 @@ EXPECTED_BEHAVIOR: >>>
 3. Verify the logs displayed in the middle of screen.
 4. Record the utility log and verify system enters into bootloader mode.
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-15
-  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-32
@@ -553,10 +549,6 @@ EXPECTED_BEHAVIOR: >>>
 4. Record the utility log and verify system enters into bootloader mode.
 5. Verify an area in the USB which was corresponded to application CRC verification area was erased.
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-16
-  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-33

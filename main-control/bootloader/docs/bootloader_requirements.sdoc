@@ -122,7 +122,7 @@ memory, corresponding to the application firmware programming area.
 [REQUIREMENT]
 UID: RQ-H1FWMCBOOT-5
 TYPE: Functional
-TITLE: PC Communication Ping Response
+TITLE: PC communication
 STATEMENT: >>>
 The main control bootloader firmware shall be able to respond to a ping command from the PC,
 indicating that the system is in bootloader mode.

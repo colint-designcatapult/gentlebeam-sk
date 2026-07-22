@@ -180,6 +180,10 @@ namespace Empyrean.Common.Test.Infra.Networking.Udp
             [Random(5, 100, 2)] int payloadLength)
         {
             var packet = new UdpPacket((uint)packetType, (uint)packetCounter, (uint)payloadLength);
+            for (var index = 0; index < 5; index++)
+            {
+                packet[index] = 10 + index;
+            }
             var iterator = new UdpPacketIterator(packet);
 
             Assert.That(iterator.Next().Data, Is.EqualTo(packet[0].Data));
@@ -191,11 +195,19 @@ namespace Empyrean.Common.Test.Infra.Networking.Udp
             iterator.First();
             
             // Repeat after First
-            Assert.That(iterator.Next().Data, Is.EqualTo(packet[0].Data));
             Assert.That(iterator.Next().Data, Is.EqualTo(packet[1].Data));
             Assert.That(iterator.Next().Data, Is.EqualTo(packet[2].Data));
             Assert.That(iterator.Next().Data, Is.EqualTo(packet[3].Data));
             Assert.That(iterator.Next().Data, Is.EqualTo(packet[4].Data));
+        }
+
+        [Test]
+        public void Next_ThrowsAfterLastPayloadField()
+        {
+            var iterator = new UdpPacketIterator(new UdpPacket(1, 2, 1));
+
+            Assert.That(() => iterator.Next(), Throws.Nothing);
+            Assert.That(() => iterator.Next(), Throws.TypeOf<ArgumentOutOfRangeException>());
         }
     }
 }

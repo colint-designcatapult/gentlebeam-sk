@@ -49,13 +49,15 @@ using Xcc.Core.Models;
 using Xcc.Core.Services;
 using Xcc.Infra.GryphonBoard;
 using Xcc.Infra.GryphonBoard.CommandAPI;
+using Xcc.Infra.GryphonBoard.Comm;
 using Xcc.Infra.Logging;
 using Xcc.Infra.Networking.gRPC.Channels;
 using Xcc.Infra.Services;
-using Xcc.Infra.Services.GcbServices;
+using Heracles.Indoor.SqliteGrpcServer;
 using Xcc.Infra.UserSessions.BearerToken;
 using Xcc.Shared.Services;
 using Xcc.Shared.Views;
+using System;
 
 namespace Heracles.Indoor
 {
@@ -111,6 +113,7 @@ namespace Heracles.Indoor
             containerRegistry.RegisterSingleton<ICollimatorModel, CollimatorModel>();
             containerRegistry.RegisterSingleton<ICollimatorRepository, CollimatorRepository>();
             containerRegistry.RegisterSingleton<IPlanModel, PlanModel>();
+            containerRegistry.RegisterSingleton<IApplicatorReadinessSource>(() => Container.Resolve<IPlanModel>());
             containerRegistry.RegisterSingleton<ITreatmentDoseCalculation, TreatmentDoseCalculation>();
             //containerRegistry.RegisterSingleton<IDiagnosisStore, DiagnosisStore>();
             containerRegistry.RegisterSingleton<ITreatmentHistoryModel, TreatmentHistoryModel>();
@@ -157,7 +160,64 @@ namespace Heracles.Indoor
             //    typeof(Application.Services.IXRayService));
             containerRegistry.RegisterSingleton<IGcbXRayCommandOperator, GcbXRayCommandOperator>();
 
-            if (heraclesMainSettings.UseDummyDatabase)
+            if (heraclesMainSettings.UseSqliteDatabase)
+            {
+                // Start the embedded SQLite gRPC server and register a local channel manager
+                var dbPath = Path.Combine(
+                    heraclesMainSettings.StorageRoot,
+                    "heracles.db");
+                var sqliteHost = new SqliteGrpcServerHost(dbPath);
+                sqliteHost.StartAsync().GetAwaiter().GetResult();
+                containerRegistry.RegisterInstance<SqliteGrpcServerHost>(sqliteHost);
+                containerRegistry.RegisterManySingleton<SqliteGrpcChannelManager>();
+
+                // Reuse the same gRPC command registrations as the real server path
+                containerRegistry.RegisterSingleton<IAuthCommands, GrpcAuthCommands>();
+                containerRegistry.RegisterSingleton<ISettingsCommands, GrpcSettingsCommands>();
+
+                containerRegistry.RegisterSingleton<IEmrPatientCommands, GrpcPatientCommands>();
+                containerRegistry.RegisterSingleton<IEmrDiagnosisCommands, GrpcDiagnosisCommands>();
+                containerRegistry.RegisterSingleton<IEmrSimulationCommands, GrpcSimulationCommands>();
+                containerRegistry.RegisterSingleton<IEmrPrescriptionCommands, GrpcPrescriptionCommands>();
+                containerRegistry.RegisterSingleton<IEmrVisitCommands, GrpcVisitCommands>();
+                containerRegistry.RegisterSingleton<IEmrPlanCommands, GrpcPlanCommands>();
+                containerRegistry.RegisterSingleton<ILoadForTreatmentEventStream, GrpcLoadForTreatmentEventStream>();
+                containerRegistry.RegisterSingleton<IPlanEventStream, GrpcPlanEventStream>();
+
+                containerRegistry.RegisterSingleton<IEmrTreatmentDeviceCommands, GrpcTreatmentDeviceCommands>();
+                containerRegistry.RegisterSingleton<IEmrPatientPositionCommands, GrpcPatientPositionCommands>();
+                containerRegistry.RegisterSingleton<IEmrTreatmentFieldCommands, GrpcTreatmentFieldCommands>();
+                containerRegistry.RegisterSingleton<IEmrTreatmentCommands, GrpcTreatmentCommands>();
+                containerRegistry.RegisterSingleton<IEmrActualTreatmentFieldCommands, GrpcActualTreatmentFieldCommands>();
+                containerRegistry.RegisterSingleton<IEmrSeriesCommands, GrpcSeriesCommands>();
+                containerRegistry.RegisterSingleton<IEmrPhotoCommands, GrpcPhotoCommands>();
+
+                containerRegistry.RegisterSingleton<IUserCommands, GrpcUserCommands>();
+                containerRegistry.RegisterManySingleton<GrpcUserRoleMappingCommands>(
+                    typeof(IUserRoleMappingCommands),
+                    typeof(IUserRoleMappingCommandsExt));
+                containerRegistry.RegisterSingleton<IRoleCommands, GrpcRoleCommands>();
+                containerRegistry.RegisterSingleton<IPermissionCommands, GrpcPermissionCommands>();
+
+                containerRegistry.RegisterSingleton<IWarmupCommands, GrpcWarmupCommands>();
+                containerRegistry.RegisterSingleton<ISafetyCheckCommands, GrpcSafetyCheckCommands>();
+                containerRegistry.RegisterSingleton<IQcSampleCommands, GrpcQcSampleCommands>();
+                containerRegistry.RegisterSingleton<IQcSampleFieldCommands, GrpcQcSampleFieldCommands>();
+                containerRegistry.RegisterSingleton<IIntensityCommands, GrpcIntensityCommands>();
+                containerRegistry.RegisterSingleton<IHeadCommands, GrpcHeadCommands>();
+                containerRegistry.RegisterSingleton<ICollimatorCommands, GrpcCollimatorCommands>();
+                containerRegistry.RegisterSingleton<ICollimatorConfigurationCommands, GrpcCollimatorConfigurationCommands>();
+                containerRegistry.RegisterSingleton<ICoilConfigurationCommands, GrpcCoilConfigurationCommands>();
+                containerRegistry.RegisterSingleton<ICorrectionMatrixCommands, GrpcCorrectionMatrixCommands>();
+                containerRegistry.RegisterSingleton<IPresetConfigurationCommands, GrpcPresetConfigurationCommands>();
+                containerRegistry.RegisterSingleton<IReferenceFieldCommands, GrpcReferenceFieldCommands>();
+                containerRegistry.RegisterSingleton<IOutputFactorCommands, GrpcOutputFactorCommands>();
+                containerRegistry.RegisterSingleton<IHeaterCurrentConfigCommands, GrpcHeaterCurrentConfigCommands>();
+                containerRegistry.RegisterSingleton<ILogCommands, GrpcLogCommands>();
+                containerRegistry.RegisterSingleton<IPhotoStreamReader, GrpcPhotoStreamReader>();
+                containerRegistry.RegisterSingleton<ISystemCommands, GrpcSystemCommands>();
+            }
+            else if (heraclesMainSettings.UseDummyDatabase)
             {
                 containerRegistry.RegisterSingleton<IAuthCommands, SystemDummyAuthCommands>();
                 containerRegistry.RegisterSingleton<ISettingsCommands, SystemDummySettingsCommands>();
@@ -259,7 +319,10 @@ namespace Heracles.Indoor
             }
             else
             {
-                containerRegistry.RegisterManySingleton<GrpcChannelManager>();
+                // SqliteGrpcChannelManager is already registered above when UseSqliteDatabase=true;
+                // for real gRPC and SQLite modes register the log+channel manager here.
+                if (!heraclesMainSettings.UseSqliteDatabase)
+                    containerRegistry.RegisterManySingleton<GrpcChannelManager>();
                 containerRegistry.RegisterManySingleton<DbLogRepositoryWithTextBackUp>();
             }
 
@@ -271,6 +334,7 @@ namespace Heracles.Indoor
             }
             else
             {
+                containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
                 containerRegistry.RegisterSingleton<ITelemetryService, GcbTelemetryService>();
             }
 
@@ -305,10 +369,18 @@ namespace Heracles.Indoor
         {
             base.OnExit(e);
 
+            // Stop the embedded SQLite gRPC server if it was started
+            if (Container.IsRegistered<SqliteGrpcServerHost>())
+                Container.Resolve<SqliteGrpcServerHost>().StopAsync().GetAwaiter().GetResult();
+
             if (Container.Resolve<IGrpcChannelManager>() is { } emrGrpcSettings)
                 emrGrpcSettings.ShutdownChannel();
 
             DisposeResources();
+
+            // Force-terminate the process so background threads (e.g. the Kestrel thread pool)
+            // don't keep it alive after the WPF window has closed.
+            Environment.Exit(e.ApplicationExitCode);
         }
 
         protected override void OnStartup(StartupEventArgs e)

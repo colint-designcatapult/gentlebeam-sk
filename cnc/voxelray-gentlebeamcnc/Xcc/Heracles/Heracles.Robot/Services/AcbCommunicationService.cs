@@ -16,11 +16,11 @@ using Heracles.Robot.Models;
 using Heracles.Robot.Models.Enums;
 using Xcc.Core.Logging;
 using Xcc.Core.Models;
-using Xcc.Infra.Services.GcbServices;
+using Empyrean.Common.Infra.Networking.Udp;
 
 namespace Heracles.Robot.Services
 {
-    public class AcbCommunicationServiceNew : GcbBaseUdpService, IAcbCommunicationService
+    public class AcbCommunicationServiceNew : RawUdpClient, IAcbCommunicationService
     {
         // TODO: old AcbCommunicationService waits for AcbPacketId.Actuators response type only
         // Should that be done here as well? Can this cause memory leak in old implementation?
@@ -49,10 +49,6 @@ namespace Heracles.Robot.Services
             await SendMessageAsync(buffer);
 
             return true;
-        }
-        protected override bool IsValidMessage(byte[] bytes)
-        {
-            return AcbMessageConverter.IsValidMessage(bytes);
         }
     }
 

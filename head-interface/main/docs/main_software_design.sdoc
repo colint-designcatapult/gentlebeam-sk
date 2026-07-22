@@ -27,7 +27,7 @@ This document describes the design modules and sub-modules of the Heracles Head 
 The information in this document is derived from the Head Interface FW SRS, referenced in this
 document.
 
-\*The term Software applies to both Software and Firmware components.
+*The term Software applies to both Software and Firmware components.*
 <<<
 
 [[/SECTION]]
@@ -82,7 +82,7 @@ DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
 
 DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
 
-[LINK: DHF-HRC-0023]
+DHF-HRC-0023, Rev. 1: Heracles Head Interface Software Requirements Specification (SRS)
 
 DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
 <<<
@@ -145,25 +145,25 @@ TITLE: Main Modules
 
 [TEXT]
 STATEMENT: >>>
-**Processing Loop** – The main loop processes analog and digital signals and uses them to report Head
+Processing Loop - The main loop processes analog and digital signals and uses them to report Head
 subsystem data back to the Main Control Firmware. Requests from the main control firmware are also
 handled and responded to such as changing the output state of the LED Ring.
 
-**Buttons** – The Head Interface reads 5 GPIO buttons that can change the function for the user.
+Buttons - The Head Interface reads 5 GPIO buttons that can change the function for the user.
 
-**Lasers** – GPIO output controls low power positioning lasers
+Lasers - GPIO output controls low power positioning lasers.
 
-**LED Ring** – RGB LED’s controlled by a UART signal that determines color, brightness, and behavior
+LED Ring - RGB LED's controlled by a UART signal that determines color, brightness, and behavior.
 
-**Analog Sensors** – The Head Interface reads analog signal data from Water Temperature, Pressure, and
+Analog Sensors - The Head Interface reads analog signal data from Water Temperature, Pressure, and
 Flow sensors. This analog data is processed and then reported to the Main Control firmware. Sensors
 can determine limits that may trigger a fault condition.
 
-**Digital Sensors** – The Head Interface reads digital data from Magnetometer IC’s mounted near the
+Digital Sensors - The Head Interface reads digital data from Magnetometer IC's mounted near the
 deflecting coils. This data is processed and then reported to the Main Control firmware. These sensors
 can create responses such as coil level adjustments or possibly fault conditions.
 
-**EEPROM** – Nonvolatile data storage
+EEPROM - Nonvolatile data storage.
 <<<
 
 [[/SECTION]]
@@ -180,11 +180,13 @@ The firmware integrates source code provided by the manufacturer of the microcon
 interface with various peripherals of the microcontroller. These include functions to interface with
 the following peripherals of the microcontroller:
 
--UART serial port
+- UART serial port
 
--I2C serial port
+- I2C serial port
 
--ADC peripheral
+- ADC peripheral
+
+- GPIO
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -230,7 +232,7 @@ can press. These five inputs are debounced by sampling the state of the input si
 processing flag gets set. This processing flag is set every 1 msec. Once an input displays a toggled
 value, the firmware begins a debounce countdown. During this debounce period, any bouncing
 signals are ignored. After the debounce period is over, the firmware checks to see if the input truly
-did toggle or if it was just noise. If the signal indicates a “true” toggle, the firmware updates the
+did toggle or if it was just noise. If the signal indicates a 'true' toggle, the firmware updates the
 changed button input states for processing and reporting to the main control application firmware.
 <<<
 RELATIONS:
@@ -314,7 +316,7 @@ RELATIONS:
 UID: SW-H1FHI-33
 TITLE: Control Communication Interface
 STATEMENT: >>>
-The firmware communicates with the main control board via one of the microcontroller’s serial
+The firmware communicates with the main control board via one of the microcontroller's serial
 UART interfaces. The firmware both receives and transmits data on this UART port. Due to the
 nature of UART having independent transmit and receive lines, the transmit and receive
 functionality operate independently. As the UART baud rate is relatively slow compared to the
@@ -333,7 +335,7 @@ data packet has been received, the firmware sets a flag for further data process
 parsing inside of the interrupt callback.
 
 As transmission on UART is asynchronous both in terms of clock as well as word alignment (within
-a packet), a “sync value” is utilized at the start of each packet to help synchronize communication
+a packet), a 'sync value' is utilized at the start of each packet to help synchronize communication
 in case of any lost or missing bytes.
 <<<
 RELATIONS:
@@ -351,14 +353,17 @@ multiple times in a single data packet, to help the head interface board firmwar
 transmission errors.
 
 The transmitted data to the head interface board are cooling system feedback values monitored at
-the system’s x-ray head, as well as the reported values of other x-ray head peripherals such as the
+the system's x-ray head, as well as the reported values of other x-ray head peripherals such as the
 state of the buttons, and the values from the magnetometers and collimator. All values are reported
-in 4-byte fields separated by delimiters. As the collimator ID value is a 64-bit value, there are two 4-
-byte fields which together represent the 64-bit ID.
+in 4-byte fields separated by delimiters. As the collimator ID value is a 64-bit value, there are two
+4byte fields which together represent the 64-bit ID.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FHI-2
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FHI-8
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -384,11 +389,11 @@ STATEMENT: >>>
 After monitoring for debouncing, the firmware also performs specific actions based on which
 buttons were pressed. The following actions are mapped to specific button presses:
 
--Laser button release results in the laser output signal toggling (alternating between lasers on and
-off)
+- Laser button release results in the laser output signal toggling (alternating between lasers on and
+  off)
 
--LED button release results in the illumination LED output signal toggling (alternating between
-illumination LEDs on and off)
+- LED button release results in the illumination LED output signal toggling (alternating between
+  illumination LEDs on and off)
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -396,17 +401,30 @@ RELATIONS:
   ROLE: Refines
 
 [DESIGN_ITEM]
+UID: SW-H1FHI-37
+TITLE: Indicator LED Interface
+STATEMENT: >>>
+The firmware sends data to two external LED controllers which set the outputs for the indicator
+LEDs. Both LED controllers are the same make and model and are interfaced via a singular I2C bus
+(the two controllers have different I2C addresses). When sending data the firmware alternates
+between sending data to each LED controller. Each LED controller has multiple channels, with each
+channel representing a different color of one octant of the indicator LED ring. Each LED octant has 3
+colors (red, green, and blue). The firmware divides up the channels, so patterns of colors based on
+the red, green, and blue values of each section can be written as needed.
+<<<
+
+[DESIGN_ITEM]
 UID: SW-H1FHI-38
 TITLE: Indicator LED Data
 STATEMENT: >>>
 As the firmware implements an indicator LED interface witch its individual colors for individual
 sections of the indicator LED ring, the data is structured in such a way so that the indicator LEDs
-can display specific “sequences” or “patterns”. These patterns are each structs, which are then all
+can display specific 'sequences' or 'patterns'. These patterns are each structs, which are then all
 organized into an array of such patterns. Each pattern is indexed according to a specific system
 state (that is, each animation pattern is tied to a specific state).
 
-The animation struct contains two components: an integer indicating the number of “frames” in the
-animation, and an array of multiple “frames”. In turn, each “frame” is itself a struct. A frame is
+The animation struct contains two components: an integer indicating the number of 'frames' in the
+animation, and an array of multiple 'frames'. In turn, each 'frame' is itself a struct. A frame is
 comprised of two components: an integer value indicating the millisecond duration of the frame,
 and a two-dimension array indicating the colors of the frame.
 
@@ -419,10 +437,6 @@ current animation pattern to output the current frame. It does so by setting the
 controllers to the specified colors of the frame, for the given duration of the frame. Once the frame
 time has expired, the LED interface moves onto the next frame of the current pattern.
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-6
-  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FHI-39

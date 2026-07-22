@@ -17,6 +17,12 @@
 #include "system_monitoring.h"
 #include "sys_config_defaults.h"
 
+#if defined(CALIBRATION_MODE)
+#define INTERLOCK_FAULT_MASK			0xC3FFFu
+#else
+#define INTERLOCK_FAULT_MASK			0xC3FCDu
+#endif
+
 static struct timer_task VTIMER_param_check_task;
 
 volatile bool system_param_check = false;
@@ -140,7 +146,7 @@ static void check_pc_comm_timeout()
 		//Ignore PC comm timeout in startup state
 		if(system_status[SS_STATE].i != STATE_STARTUP)
 		{
-			report_simple_fault(FAULT_PC_COMM_TIMEOUT, PC_COMM_TIMEOUT_COUNT, 0, -1);
+			report_typed_fault1(FAULT_PC_COMM_TIMEOUT, "PC communication timed out after %u checks.", MAKE_ARG(PC_COMM_TIMEOUT_COUNT));
 		}
 	}
 }
@@ -157,7 +163,7 @@ static void check_system_power()
 		if(++system_monitoring[SMON_3V3_OOT_COUNTER] > 10)
 		{
 			system_monitoring[SMON_3V3_OOT_COUNTER] = 0;
-			report_simple_fault(FAULT_BOARD_VOLTAGE, 3.3, 10, voltage);	
+			report_typed_fault3(FAULT_BOARD_VOLTAGE, "3.3 V supply measured %f V; expected %f V (tolerance: %f percent).", MAKE_ARG(voltage), MAKE_ARG(3.3), MAKE_ARG(10.0f));
 		}
 	}
 	else
@@ -173,7 +179,7 @@ static void check_system_power()
 		if(++system_monitoring[SMON_5V_OOT_COUNTER] > 10)
 		{
 			system_monitoring[SMON_5V_OOT_COUNTER] = 0;
-			report_simple_fault(FAULT_BOARD_VOLTAGE, 5.0, 10, voltage);	
+			report_typed_fault3(FAULT_BOARD_VOLTAGE, "5 V supply measured %f V; expected %f V (tolerance: %f percent).", MAKE_ARG(voltage), MAKE_ARG(5.0), MAKE_ARG(10.0f));
 		}
 	}
 	else
@@ -189,7 +195,7 @@ static void check_system_power()
 		if(++system_monitoring[SMON_12V_OOT_COUNTER] > 10)
 		{
 			system_monitoring[SMON_12V_OOT_COUNTER] = 0;
-			report_simple_fault(FAULT_BOARD_VOLTAGE, 12.0, 10, voltage);
+			report_typed_fault3(FAULT_BOARD_VOLTAGE, "12 V supply measured %f V; expected %f V (tolerance: %f percent).", MAKE_ARG(voltage), MAKE_ARG(12.0), MAKE_ARG(10.0f));
 		}
 	}
 	else
@@ -200,59 +206,49 @@ static void check_system_power()
 
 static void check_interlocks()
 {
-	bool stop_check = false;
-#if defined(CALIBRATION_MODE)
-	volatile uint32_t interlock_mask = 0b11000011111111111111;	
-	//skip (right to left): MCU FAULT, SPARE_INTERLOCK, BUF_MASTER_FAULT, NA
-#else
-	volatile uint32_t interlock_mask = 0b11000011111111001101;	//skip (right to left): MCU FAULT, SPARE_INTERLOCK, NA
-#endif
+	// Publish every physical Port C interlock input except the non-input PC17.
+	const uint32_t interlock_status =
+		gpio_get_port_level(GPIO_PORTC) & INTERLOCK_INPUT_MASK;
+	uint32_t required_interlock_mask = INTERLOCK_FAULT_MASK;
 
-	//Get interlock input states
-	uint32_t interlock_status = gpio_get_port_level(GPIO_PORTC);	
+	system_status[SS_INTERLOCKS].u = interlock_status;
 
-	interlock_status &= interlock_mask;
-	
-	//Save interlock status
-	system_status[SS_INTERLOCKS].i = interlock_status;
-	
-	//Set remote stop led if remote estop is pressed
-	gpio_set_pin_level(IO_REMOTE_LED_1, interlock_status & (1<<IBP_REMOTE_ESTOP));
+	// Set remote stop LED if remote e-stop is pressed.
+	gpio_set_pin_level(IO_REMOTE_LED_1, interlock_status & (1u << IBP_REMOTE_ESTOP));
 
 #if defined(CALIBRATION_MODE)
-	//Report fault if door is open
-	fault_detected(DOOR_FAULT, !(interlock_status & (1<<IBP_DOOR_CLOSED)));
+	// Report fault if door is open.
+	fault_detected(DOOR_FAULT, !(interlock_status & (1u << IBP_DOOR_CLOSED)));
 #endif
-	
-	//Based on the state, remove specific interlocks from creating a fault condition
+
+	// Remove interlocks that are not required in the current state.
 	switch(system_status[SS_STATE].i)
 	{
 		case STATE_STARTUP:
-			//In startup ignore all interlock faults
-			interlock_mask = 0;
+			required_interlock_mask = 0;
 			break;
 		case STATE_COLD:
 		case STATE_COLD_FAULT:
-			interlock_mask &= ~(1<<IBP_DOOR_CLOSED);
+			required_interlock_mask &= ~(1u << IBP_DOOR_CLOSED);
 #if defined(CALIBRATION_MODE)
-			interlock_mask &= ~(1<<IBP_DRIVE_SYS);
+			required_interlock_mask &= ~(1u << IBP_SPARE_INTERLOCK_2);
 #endif
-			interlock_mask &= ~(1<<IBP_REMOTE_KEY);
-			interlock_mask &= ~(1<<IBP_COLLIMATOR_ON);
+			required_interlock_mask &= ~(1u << IBP_REMOTE_KEY);
+			required_interlock_mask &= ~(1u << IBP_BASE_KEY);
 			break;
 		case STATE_CONDITIONING:
 		case STATE_WARMUP:
 			break;
-		case STATE_WARMUP_FAULT:	
+		case STATE_WARMUP_FAULT:
 		case STATE_PRIMED:
 		case STATE_STAGING:
 		case STATE_STAGED:
-			interlock_mask &= ~(1<<IBP_DOOR_CLOSED);
+			required_interlock_mask &= ~(1u << IBP_DOOR_CLOSED);
 #if defined(CALIBRATION_MODE)
-			interlock_mask &= ~(1<<IBP_DRIVE_SYS);
+			required_interlock_mask &= ~(1u << IBP_SPARE_INTERLOCK_2);
 #endif
-			interlock_mask &= ~(1<<IBP_REMOTE_KEY);
-			interlock_mask &= ~(1<<IBP_COLLIMATOR_ON);
+			required_interlock_mask &= ~(1u << IBP_REMOTE_KEY);
+			required_interlock_mask &= ~(1u << IBP_BASE_KEY);
 			break;
 		case STATE_HVPS_CHECK:
 		case STATE_SETUP:
@@ -263,25 +259,29 @@ static void check_interlocks()
 		case STATE_TERMINATION:
 		case STATE_DISCHARGE:
 		case STATE_FAULT:
-			interlock_mask &= ~(1<<IBP_DOOR_CLOSED);
+			required_interlock_mask &= ~(1u << IBP_DOOR_CLOSED);
 #if defined(CALIBRATION_MODE)
-			interlock_mask &= ~(1<<IBP_DRIVE_SYS);
+			required_interlock_mask &= ~(1u << IBP_SPARE_INTERLOCK_2);
 #endif
-			interlock_mask &= ~(1<<IBP_REMOTE_KEY);
-			interlock_mask &= ~(1<<IBP_COLLIMATOR_ON);
+			required_interlock_mask &= ~(1u << IBP_REMOTE_KEY);
+			required_interlock_mask &= ~(1u << IBP_BASE_KEY);
 			break;
 		case STATE_SYSTEM_CRASH:
 		case STATE_UNKNOWN:
 			break;
-		//For all other delivery states, all interlocks should result in a fault
 		default:
 			break;
 	}
-	
-	//Throw a fault if interlocks are not valid
-	if((interlock_status & interlock_mask) != interlock_mask)
+
+	system_status[SS_REQUIRED_INTERLOCKS].u = required_interlock_mask;
+
+	if((interlock_status & required_interlock_mask) != required_interlock_mask)
 	{
-		report_simple_fault(FAULT_INTERLOCK, interlock_mask, 0, interlock_status);
+		report_typed_fault2(
+			FAULT_INTERLOCK,
+			"Interlock status 0x%X does not match required mask 0x%X.",
+			MAKE_ARG(interlock_status),
+			MAKE_ARG(required_interlock_mask));
 	}
 }
 
@@ -292,7 +292,7 @@ static void check_ion_pump_values()
 		if(++system_monitoring[SMON_ION_P_HI_COUNTER] > 10)
 		{
 			system_monitoring[SMON_ION_P_HI_COUNTER] = 0;
-			report_simple_fault(FAULT_ION_PUMP_FB, DEFAULT_ION_P_HI_TH, 0, system_status[SS_IONPUMP_PRESSURE].f);
+			report_typed_fault2(FAULT_ION_PUMP_FB, "Ion-pump pressure %f exceeds the maximum %f.", MAKE_ARG(system_status[SS_IONPUMP_PRESSURE].f), MAKE_ARG((float)DEFAULT_ION_P_HI_TH));
 #if defined(CALIBRATION_MODE)
 			// Stop emission
 			fault_detected(IPUM_FAULT, true);
@@ -314,7 +314,7 @@ static void check_ion_repeller_values()
 		if(++system_monitoring[SMON_ION_R_V_OOT_COUNTER] > 10)
 		{
 			system_monitoring[SMON_ION_R_V_OOT_COUNTER] = 0;
-			report_fault(FAULT_ION_REPELLER, ION_REP_FAULT_OOT, REPELLER_TARGET, 10, internal_voltages[INTERNAL_V_ION_REP]);
+			report_typed_fault3(FAULT_ION_REPELLER, "Ion-repeller voltage %f missed target %f (tolerance: %f percent).", MAKE_ARG(internal_voltages[INTERNAL_V_ION_REP]), MAKE_ARG((float)REPELLER_TARGET), MAKE_ARG(10.0f));
 #if defined(CALIBRATION_MODE)
 			// Stop emission
 			fault_detected(IREP_FAULT, true);
@@ -324,7 +324,7 @@ static void check_ion_repeller_values()
 	else
 	{
 		system_monitoring[SMON_ION_R_V_OOT_COUNTER] = 0;
-#if defined(CALIBREATION_MODE)
+#if defined(CALIBRATION_MODE)
 		fault_detected(IREP_FAULT, false);
 #endif
 	}
@@ -335,7 +335,7 @@ static void check_ion_repeller_values()
 		if(++system_monitoring[SMON_ION_R_A_OOT_COUNTER] > 10)
 		{
 			system_monitoring[SMON_ION_R_A_OOT_COUNTER] = 0;
-			report_fault(FAULT_ION_REPELLER, ION_REP_FAULT_OVERCURRENT, MAX_REPELLER_CURRENT_VAL, 0, internal_voltages[INTERNAL_V_ION_REP_CUR]);
+			report_typed_fault2(FAULT_ION_REPELLER, "Ion repeller current %f exceeded maximum %f.", MAKE_ARG(internal_voltages[INTERNAL_V_ION_REP_CUR]), MAKE_ARG(MAX_REPELLER_CURRENT_VAL));
 		}
 	}
 	*/
@@ -366,7 +366,7 @@ static void check_coolant_pressure()
 			if(++system_monitoring[SMON_CLNT_P_HI_COUNTER] > 200)
 			{
 				system_monitoring[SMON_CLNT_P_HI_COUNTER] = 0;
-				report_fault(FAULT_COOLANT, COOLANT_FAULT_OVERPRESSURE, DEFAULT_WTR_P_HI_ERR, 0, system_status[SS_WATER_PRESSURE].f);
+				report_typed_fault2(FAULT_COOLANT, "Coolant pressure %f exceeds the high limit %f.", MAKE_ARG(system_status[SS_WATER_PRESSURE].f), MAKE_ARG((float)DEFAULT_WTR_P_HI_ERR));
 			}
 		}
 		else
@@ -380,7 +380,7 @@ static void check_coolant_pressure()
 			{
 				system_monitoring[SMON_CLNT_P_LO_COUNTER] = 0;
 				//TODO: add COOLANT_FAULT_UNDERPRESSURE to details
-				report_fault(FAULT_COOLANT, COOLANT_FAULT_OVERPRESSURE, DEFAULT_WTR_P_LO_ERR, 0, system_status[SS_WATER_PRESSURE].f);	
+				report_typed_fault2(FAULT_COOLANT, "Coolant pressure %f is below the low limit %f.", MAKE_ARG(system_status[SS_WATER_PRESSURE].f), MAKE_ARG((float)DEFAULT_WTR_P_LO_ERR));
 			}	
 		}
 		else
@@ -400,7 +400,7 @@ static void check_coolant_flow()
 			if(++system_monitoring[SMON_CLNT_F_LO_COUNTER] > 200)
 			{
 				system_monitoring[SMON_CLNT_F_LO_COUNTER] = 0;
-				report_fault(FAULT_COOLANT, COOLANT_FAULT_LOW_FLOW, DEFAULT_WTR_F_LO_ERR, 0, system_status[SS_WATER_FLOW_RATE].f);
+				report_typed_fault2(FAULT_COOLANT, "Coolant flow %f is below the low limit %f.", MAKE_ARG(system_status[SS_WATER_FLOW_RATE].f), MAKE_ARG((float)DEFAULT_WTR_F_LO_ERR));
 			}
 		}
 		else
@@ -414,7 +414,7 @@ static void check_coolant_flow()
 			{
 				system_monitoring[SMON_CLNT_F_HI_COUNTER] = 0;
 				//TODO: add COOLANT_FAULT_HIGH_FLOW to details
-				report_fault(FAULT_COOLANT, COOLANT_FAULT_LOW_FLOW, DEFAULT_WTR_F_HI_ERR, 0, system_status[SS_WATER_FLOW_RATE].f);
+				report_typed_fault2(FAULT_COOLANT, "Coolant flow %f exceeds the high limit %f.", MAKE_ARG(system_status[SS_WATER_FLOW_RATE].f), MAKE_ARG((float)DEFAULT_WTR_F_HI_ERR));
 			}
 		}
 		else
@@ -432,7 +432,7 @@ static void check_coolant_temp()
 	
 	if(coolant_temp > DEFAULT_WTR_TEMP_ERR)
 	{
-		report_fault(FAULT_COOLANT, COOLANT_FAULT_OVERTEMP, DEFAULT_WTR_TEMP_ERR, 0, coolant_temp);
+		report_typed_fault2(FAULT_COOLANT, "Coolant temperature %f exceeds the high limit %f.", MAKE_ARG(coolant_temp), MAKE_ARG((float)DEFAULT_WTR_TEMP_ERR));
 	}
 }
 
@@ -442,7 +442,7 @@ static void check_heatsink_temp()
 
 	if(heatsink_temp > DEFAULT_HS_TEMP_ERR)
 	{
-		report_simple_fault(FAULT_HEATSINK, DEFAULT_HS_TEMP_ERR, 0, heatsink_temp);
+		report_typed_fault2(FAULT_HEATSINK, "Heatsink temperature %f exceeds the high limit %f.", MAKE_ARG(heatsink_temp), MAKE_ARG((float)DEFAULT_HS_TEMP_ERR));
 	}
 }
 
@@ -452,13 +452,13 @@ static void check_cabinet_temp()
 
 	if(cabinet_temp > DEFAULT_CAB_TEMP_ERR)
 	{
-		report_simple_fault(FAULT_HEATSINK, DEFAULT_CAB_TEMP_ERR, 0, cabinet_temp); //TODO: add fault type for cabinet
+		report_typed_fault2(FAULT_HEATSINK, "Cabinet temperature %f exceeds the high limit %f.", MAKE_ARG(cabinet_temp), MAKE_ARG((float)DEFAULT_CAB_TEMP_ERR));
 	}
 #else
 	//Check for temperature fault
 	if(system_status[SS_WATER_TEMP].f > DEFAULT_WTR_TEMP_ERR)
 	{
-		report_fault(FAULT_COOLANT, COOLANT_FAULT_OVERTEMP, DEFAULT_WTR_TEMP_ERR, 0, system_status[SS_WATER_TEMP].f);
+		report_typed_fault2(FAULT_COOLANT, "Coolant temperature %f exceeds the high limit %f.", MAKE_ARG(system_status[SS_WATER_TEMP].f), MAKE_ARG((float)DEFAULT_WTR_TEMP_ERR));
 	}
 #endif
 }
@@ -695,7 +695,7 @@ static void update_heatsink_fan()
 		}
 		system_monitoring[SMON_LAST_HS_FAN_STATE] = 0;
 		//TBD TODO throw fault
-		report_simple_fault(FAULT_HEATSINK, HEATSINK_ERR_TH, 0, system_status[SS_HEATSINK_TEMP].f);
+		report_typed_fault2(FAULT_HEATSINK, "Heatsink temperature %f exceeds the high limit %f.", MAKE_ARG(system_status[SS_HEATSINK_TEMP].f), MAKE_ARG((float)HEATSINK_ERR_TH));
 	}
 	else if(state_now >= STATE_READY)
 	{
@@ -803,7 +803,7 @@ static void check_x_coil()
 		coil_err_count[0] += 1;
 		if(coil_err_count[0] > 10)
 		{
-			report_fault(FAULT_COIL_CURRENT, COIL_FAULT_X_CURRENT, expected_coil_value[EV_COIL_X_A], DEFAULT_DEFL_I_TOL, actual_value);
+			report_typed_fault3(FAULT_COIL_CURRENT, "X-coil current %f missed target %f (tolerance: %f).", MAKE_ARG(actual_value), MAKE_ARG(expected_coil_value[EV_COIL_X_A]), MAKE_ARG((float)DEFAULT_DEFL_I_TOL));
 		}
 	}
 }
@@ -823,7 +823,7 @@ static void check_y_coil()
 		coil_err_count[1] += 1;
 		if(coil_err_count[1] > 10)
 		{
-			report_fault(FAULT_COIL_CURRENT, COIL_FAULT_Y_CURRENT, expected_coil_value[EV_COIL_Y_A], DEFAULT_DEFL_I_TOL, actual_value);
+			report_typed_fault3(FAULT_COIL_CURRENT, "Y-coil current %f missed target %f (tolerance: %f).", MAKE_ARG(actual_value), MAKE_ARG(expected_coil_value[EV_COIL_Y_A]), MAKE_ARG((float)DEFAULT_DEFL_I_TOL));
 		}
 	}
 }
@@ -843,7 +843,7 @@ static void check_f_coil()
 		coil_err_count[2] += 1;
 		if(coil_err_count[2] > 10)
 		{
-			report_fault(FAULT_COIL_CURRENT, COIL_FAULT_F_CURRENT, expected_coil_value[EV_COIL_F_A], DEFAULT_FOCUS_I_TOL, actual_value);
+			report_typed_fault3(FAULT_COIL_CURRENT, "Focus-coil current %f missed target %f (tolerance: %f).", MAKE_ARG(actual_value), MAKE_ARG(expected_coil_value[EV_COIL_F_A]), MAKE_ARG((float)DEFAULT_FOCUS_I_TOL));
 		}
 	}
 	

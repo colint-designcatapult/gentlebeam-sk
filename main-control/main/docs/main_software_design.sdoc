@@ -12,8 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to outline the design specifications of the Heracles Main Control
-Application Firmware.
+The purpose of this document is to outline the design specifications of the Heracles Main Control Application Firmware.
 <<<
 
 [[/SECTION]]
@@ -23,10 +22,9 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the design modules and sub-modules of the Heracles Main Control Application
-Firmware.
-The information in this document is derived from the Main Control Application FW SRS, referenced in this
-document.
+This document describes the design modules and sub-modules of the Heracles Main Control Application Firmware.
+
+The information in this document is derived from the Main Control Application FW SRS, referenced in this document.
 
 \*The term Software applies to both Software and Firmware components.
 <<<
@@ -66,11 +64,7 @@ TITLE: Overview
 STATEMENT: >>>
 The main control application firmware serves as the main logical control for system operation.
 
-The main control application firmware monitors all the inputs from the various connections on the board
-hardware. It can also be used to set and control many of the components that the main control board
-interfaces with. For off the shelf components, the main control application can set/enable the Peltier
-cooler temperature, can set/enable the motor controller drivers for cooling system pump and fans, and
-can enable the ion pump controller.
+The main control application firmware monitors all the inputs from the various connections on the board hardware. It can also be used to set and control many of the components that the main control board interfaces with. For off the shelf components, the main control application can set/enable the Peltier cooler temperature, can set/enable the motor controller drivers for cooling system pump and fans, and can enable the ion pump controller.
 <<<
 
 [[/SECTION]]
@@ -84,7 +78,7 @@ DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
 
 DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
 
-[LINK: DHF-HRC-0013]
+DHF-HRC-0013, Rev. 2: Heracles Main Control Application Software Requirements Specification (SRS)
 
 DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
 <<<
@@ -321,29 +315,19 @@ TITLE: Main Modules
 
 [TEXT]
 STATEMENT: >>>
-**State Machine** – The routine at the heart of the Main Control Firmware operation. It processes
-queued events from various data sources to change the operating state of the system’s
-functionality.
+State Machine - The routine at the heart of the Main Control Firmware operation. It processes queued events from various data sources to change the operating state of the system's functionality.
 
-**HVPS monitoring** – monitors and controls data to and from the High Voltage Power Supply.
-Headboard communication – monitors and controls data via UART to and from the
-Headboard.
+HVPS monitoring - monitors and controls data to and from the High Voltage Power Supply.
 
-**PC Communication** – Connects to the PC application receive commands and to transmit
-telemetry status data. Utilizes LWIP protocol and connects via Ethernet. Bootloader commands
-are connected by USB
+Headboard communication - monitors and controls data via UART to and from the Headboard.
 
-**Interlocks** – safety switches that must be engaged for the system to operate properly. If any
-interlock is disengaged at any time, then the system will either not start or enter a fault state.
-Emission will also be terminated when disengaged. The user will have to correctly engage the
-interlock and begin again via the PC Application.
+PC Communication - Connects to the PC application receive commands and to transmit telemetry status data. Utilizes LWIP protocol and connects via Ethernet. Bootloader commands are connected by USB
 
-**Timers** – The Main Control has an internal timer and two external timers for redundancy. These
-timers are engaged during X-Ray emissions and are primarily for safety.
+Interlocks - safety switches that must be engaged for the system to operate properly. If any interlock is disengaged at any time, then the system will either not start or enter a fault state. Emission will also be terminated when disengaged. The user will have to correctly engage the interlock and begin again via the PC Application.
 
-**Cooling System Control** – The system utilizes cabinet fans, cooling pump, and a Peltier cooler
-to keep the system temperature from exceeding specified limits. Temperature sensors create
-feedback loop with fan speed adjustment and the system cooling.
+Timers - The Main Control has an internal timer and two external timers for redundancy. These timers are engaged during X-Ray emissions and are primarily for safety.
+
+Cooling System Control - The system utilizes cabinet fans, cooling pump, and a Peltier cooler to keep the system temperature from exceeding specified limits. Temperature sensors create feedback loop with fan speed adjustment and the system cooling.
 <<<
 
 [[/SECTION]]
@@ -356,16 +340,15 @@ TITLE: Design Items
 UID: SW-H1FWMC-173
 TITLE: Manufacturer Hardware Abstraction
 STATEMENT: >>>
-The firmware integrates source code provided by the manufacturer of the microcontroller unit to
-interface with various peripherals of the microcontroller. These include functions to interface with
-the following peripherals of the microcontroller:
--UART serial port
--SPI serial port
--I2C serial port
--GPIO
--Flash memory controller
--Timer peripheral
--Ethernet MAC peripheral
+The firmware integrates source code provided by the manufacturer of the microcontroller unit to interface with various peripherals of the microcontroller. These include functions to interface with the following peripherals of the microcontroller:
+
+- UART serial port
+- SPI serial port
+- I2C serial port
+- GPIO
+- Flash memory controller
+- Timer peripheral
+- Ethernet MAC peripheral
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -376,13 +359,9 @@ RELATIONS:
 UID: SW-H1FWMC-174
 TITLE: LWIP Middleware
 STATEMENT: >>>
-The firmware integrates the source code for a middleware library called LWIP. The version of LWIP
-integrated is version 1.4.1. This middleware serves to help process incoming data from and
-outgoing data to the Ethernet MAC peripheral, which is used to communicate with the PC. The
-specific LWIP functionality utilized is the UDP processing. While LWIP can perform TCP
-communication, only UDP is utilized.
-The configuration for used for LWIP in firmware is a static IP address with a fixed MAC address.
-UDP communication is configured for two fixed ports.
+The firmware integrates the source code for a middleware library called LWIP. The version of LWIP integrated is version 1.4.1. This middleware serves to help process incoming data from and outgoing data to the Ethernet MAC peripheral, which is used to communicate with the PC. The specific LWIP functionality utilized is the UDP processing. While LWIP can perform TCP communication, only UDP is utilized.
+
+The configuration for used for LWIP in firmware is a static IP address with a fixed MAC address. UDP communication is configured for two fixed ports.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -393,18 +372,16 @@ RELATIONS:
 UID: SW-H1FWMC-175
 TITLE: Input Signals
 STATEMENT: >>>
-The firmware monitors various input digital signals for interlock functionality. The interlock signals
-which are monitored are from:
--Backup timers
--KUKA arm controller
--E-stops
--Safety keys
--Door status
--Cooling reservoir status
--Ion pump high voltage status
--Peltier cooler status
--HVPS interface status
--External watchdog IC status
+The firmware applies the SAME70 hardware debounce/glitch filter to every physical Port C
+interlock input and samples:
+
+- Door, base e-stop, and remote e-stop status
+- KUKA 1 and KUKA 2 readiness
+- Water level, ion-pump, timer 1, timer 2, HVPS, cooler, water-temperature, and watchdog status
+- MCU fault, spare interlocks 1 and 2, and buffered master-fault status
+- Remote-key and base-key status
+
+Port C bit 17 is not an interlock input and is excluded from sampling.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -415,15 +392,15 @@ RELATIONS:
 UID: SW-H1FWMC-176
 TITLE: Output Signals
 STATEMENT: >>>
-The firmware controls several digital output signals. The functionality for the output signals are as
-follows:
--LED control for on-board debug LEDs
--Watchdog IC control
--Fault pulse clear signal
--Ion pump enable
--Emission indicator enable
--Timer start signal
--Fan and pump enable signals
+The firmware controls several digital output signals. The functionality for the output signals are as follows:
+
+- LED control for on-board debug LEDs
+- Watchdog IC control
+- Fault pulse clear signal
+- Ion pump enable
+- Emission indicator enable
+- Timer start signal
+- Fan and pump enable signals
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -432,31 +409,18 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWMC-53
   ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-59
-  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWMC-177
 TITLE: External ADC Communication
 STATEMENT: >>>
-The firmware communicates with three external ADC IC chips: two ADS7828 chips and one
-MAX11647 chips. It communicates with all three chips on a singular I2C bus. The external ADC
-module cycles through each channel on each chip one by one, reading in the values sent by the
-chips. These values are “raw ADC” values sent to the system parameter processing for conversion
-to their corresponding physical units.
-The I2C communication with the ADC ICs is performed using the manufacturer provided “HRI”
-library or hardware register interface. This HRI library is used to set up interrupt-based
-communication on the I2C bus instead of having blocking commands wait for completion of writes
-and reads of the I2C bus which are relatively long in duration compared to the processing speed of
-the main microcontroller unit.
-In case anyone external IC does not respond, the I2C bus is monitored for any NACK values
-indicating a non-response. The firmware will report a fault if no response is detected from one of
-the ADC ICs.
-The two ADS7828 chips each have 8 channels, while the MAX11647 has two channels. One
-ADS7828 chip samples the feedback values from the coil control board. The other ADS7828
-samples ion pump feedback, temperature sensors, and onboard power supplies. MAX11647 chip
-samples the ion Repeller monitoring.
+The firmware communicates with three external ADC IC chips: two ADS7828 chips and one MAX11647 chips. It communicates with all three chips on a singular I2C bus. The external ADC module cycles through each channel on each chip one by one, reading in the values sent by the chips. These values are 'raw ADC' values sent to the system parameter processing for conversion to their corresponding physical units.
+
+The I2C communication with the ADC ICs is performed using the manufacturer provided 'HRI' library or hardware register interface. This HRI library is used to set up interrupt-based communication on the I2C bus instead of having blocking commands wait for completion of writes and reads of the I2C bus which are relatively long in duration compared to the processing speed of the main microcontroller unit.
+
+In case anyone external IC does not respond, the I2C bus is monitored for any NACK values indicating a non-response. The firmware will report a fault if no response is detected from one of the ADC ICs.
+
+The two ADS7828 chips each have 8 channels, while the MAX11647 has two channels. One ADS7828 chip samples the feedback values from the coil control board. The other ADS7828 samples ion pump feedback, temperature sensors, and onboard power supplies. MAX11647 chip samples the ion Repeller monitoring.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -476,27 +440,13 @@ RELATIONS:
 UID: SW-H1FWMC-178
 TITLE: External DAC communication
 STATEMENT: >>>
-The firmware communicates with two external DAC IC chips. It communicates with both chips on a
-singular SPI bus, but with independent chip select and load signals for each chip. The external
-DAC module waits for any queued-up requests by the rest of the firmware to write new DAC
-values. In case multiple DAC values are queued up simultaneous or in quick succession, the DAC
-module processes them in FIFO (first in first out) fashion, waiting for the SPI bus to be free until the
-next value is processed.
+The firmware communicates with two external DAC IC chips. It communicates with both chips on a singular SPI bus, but with independent chip select and load signals for each chip. The external DAC module waits for any queued-up requests by the rest of the firmware to write new DAC values. In case multiple DAC values are queued up simultaneous or in quick succession, the DAC module processes them in FIFO (first in first out) fashion, waiting for the SPI bus to be free until the next value is processed.
 
-The DAC module utilizes the manufacturer’s hardware abstraction library to write serial data to the
-SPI bus. The writes to the SPI bus are non-block interrupt-based calls which allows the processor
-to continue operating during the relatively longer SPI transmission (compared to processing
-speed). The DAC module utilizes the SPI interrupt handler to set flags for handling the queued
-DAC requests (indicating bus is free).
+The DAC module utilizes the manufacturer's hardware abstraction library to write serial data to the SPI bus. The writes to the SPI bus are non-block interrupt-based calls which allows the processor to continue operating during the relatively longer SPI transmission (compared to processing speed). The DAC module utilizes the SPI interrupt handler to set flags for handling the queued DAC requests (indicating bus is free).
 
-In addition to sending data over the SPI bus, the DAC module handles the digital chip select and
-load signals. These signals are independent for each chip, so there are a total of 4 digital output
-lines controlled by the DAC via the hardware abstraction library’s provided GPIO control.
+In addition to sending data over the SPI bus, the DAC module handles the digital chip select and load signals. These signals are independent for each chip, so there are a total of 4 digital output lines controlled by the DAC via the hardware abstraction library's provided GPIO control.
 
-Each DAC IC controls four separate channels, although on the board only three channels on each
-DAC IC are utilized. One DAC IC sets the analog voltage for the heatsink fan control, cabinet fan
-control, and coolant pump motor control. The second DAC IC sets the analog voltage for the X-coil
-deflection control, Y-coil deflection control, and focus coil control.
+Each DAC IC controls four separate channels, although on the board only three channels on each DAC IC are utilized. One DAC IC sets the analog voltage for the heatsink fan control, cabinet fan control, and coolant pump motor control. The second DAC IC sets the analog voltage for the X-coil deflection control, Y-coil deflection control, and focus coil control.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -513,22 +463,11 @@ RELATIONS:
 UID: SW-H1FWMC-179
 TITLE: Backup Timer Communication
 STATEMENT: >>>
-The firmware communicates with two external backup timers. It communicates with both timers on
-a singular I2C bus, with the main microcontroller acting as master to the two slave timers. The
-timer module alternates between each timer, continuously communicating with the two timers. As
-the two timers are slave devices, they require the master to initiate communication. The main
-microcontroller will send commands to the timers which include read time, set timer period, pause
-counting, and clear timer period. The timers will always report back their timer counter value in
-response to each command. The “read time” command is simply for the timer to do nothing other
-than report the time back.
-The I2C communication with the timers is performed using the manufacturer provided “HRI” library
-or hardware register interface. This HRI library is used to set up interrupt-based communication on
-the I2C bus instead of having blocking commands wait for completion of writes and reads of the
-I2C bus which are relatively long in duration compared to the processing speed of the main
-microcontroller unit.
-In case anyone external IC does not respond, the I2C bus is monitored for any NACK values
-indicating a non-response. The firmware will report a fault if no response is detected from one of
-the ADC ICs.
+The firmware communicates with two external backup timers. It communicates with both timers on a singular I2C bus, with the main microcontroller acting as master to the two slave timers. The timer module alternates between each timer, continuously communicating with the two timers. As the two timers are slave devices, they require the master to initiate communication. The main microcontroller will send commands to the timers which include read time, set timer period, pause counting, and clear timer period. The timers will always report back their timer counter value in response to each command. The 'read time' command is simply for the timer to do nothing other than report the time back.
+
+The I2C communication with the timers is performed using the manufacturer provided 'HRI' library or hardware register interface. This HRI library is used to set up interrupt-based communication on the I2C bus instead of having blocking commands wait for completion of writes and reads of the I2C bus which are relatively long in duration compared to the processing speed of the main microcontroller unit.
+
+In case anyone external IC does not respond, the I2C bus is monitored for any NACK values indicating a non-response. The firmware will report a fault if no response is detected from one of the ADC ICs.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -545,23 +484,13 @@ RELATIONS:
 UID: SW-H1FWMC-180
 TITLE: Bootloading and Debug Communication
 STATEMENT: >>>
-The firmware communicates with the PC via one of the microcontrollers' serial UART interface. The
-firmware both receives and transmits data on this UART port. Due to the nature of UART having
-independent transmit and receive lines, the transmit and receive functionality operate
-independently. As the UART baud rate is relatively slow compared to the processing speed of the
-microcontroller, both sending and receiving data is performed with non-blocking interrupt callback
-functions.
-Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
-the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
-when transmission is initiated, and clears the flag after transmission is finished, to not create
-transmission conflicts on the transmit line.
-Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
-available. The parsing of the received byte is done to determine whether a complete data packet
-has been received from the PC, as according to the communication protocol. Once a completed
-data packet has been received, the firmware sets a flag for further data processing outside of the
-parsing inside of the interrupt callback.
-The firmware will monitor for a boot load command from the PC. Once received the firmware will
-reset the microcontroller into bootloader mode.
+The firmware communicates with the PC via one of the microcontrollers' serial UART interface. The firmware both receives and transmits data on this UART port. Due to the nature of UART having independent transmit and receive lines, the transmit and receive functionality operate independently. As the UART baud rate is relatively slow compared to the processing speed of the microcontroller, both sending and receiving data is performed with non-blocking interrupt callback functions.
+
+Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag when transmission is initiated, and clears the flag after transmission is finished, to not create transmission conflicts on the transmit line.
+
+Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is available. The parsing of the received byte is done to determine whether a complete data packet has been received from the PC, as according to the communication protocol. Once a completed data packet has been received, the firmware sets a flag for further data processing outside of the parsing inside of the interrupt callback.
+
+The firmware will monitor for a boot load command from the PC. Once received the firmware will reset the microcontroller into bootloader mode.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -578,24 +507,13 @@ RELATIONS:
 UID: SW-H1FWMC-181
 TITLE: Head Interface Board Communication
 STATEMENT: >>>
-The firmware communicates with the external head interface board via one of the microcontroller’s
-serial UART interfaces. The firmware both receives and transmits data on this UART port. Due to
-the nature of UART having independent transmit and receive lines, the transmit and receive
-functionality operate independently. As the UART baud rate is relatively slow compared to the
-processing speed of the microcontroller, both sending and receiving data is performed with nonblocking
-interrupt callback functions.
-Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
-the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
-when transmission is initiated, and clears the flag after transmission is finished, to not create
-transmission conflicts on the transmit line.
-Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
-available. The parsing of the received byte is done to determine whether a complete data packet
-has been received from the PC, as according to the communication protocol. Once a completed
-data packet has been received, the firmware sets a flag for further data processing outside of the
-parsing inside of the interrupt callback.
-As transmission on UART is asynchronous both in terms of clock as well as word alignment (within
-a packet), a “sync value” is utilized at the start of each packet to help synchronize communication
-in case of any lost or missing bytes.
+The firmware communicates with the external head interface board via one of the microcontroller's serial UART interfaces. The firmware both receives and transmits data on this UART port. Due to the nature of UART having independent transmit and receive lines, the transmit and receive functionality operate independently. As the UART baud rate is relatively slow compared to the processing speed of the microcontroller, both sending and receiving data is performed with nonblocking interrupt callback functions.
+
+Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag when transmission is initiated, and clears the flag after transmission is finished, to not create transmission conflicts on the transmit line.
+
+Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is available. The parsing of the received byte is done to determine whether a complete data packet has been received from the PC, as according to the communication protocol. Once a completed data packet has been received, the firmware sets a flag for further data processing outside of the parsing inside of the interrupt callback.
+
+As transmission on UART is asynchronous both in terms of clock as well as word alignment (within a packet), a 'sync value' is utilized at the start of each packet to help synchronize communication in case of any lost or missing bytes.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -612,24 +530,13 @@ RELATIONS:
 UID: SW-H1FWMC-182
 TITLE: HVPS Interface Board Communication
 STATEMENT: >>>
-The firmware communicates with the external HVPS interface board via one of the microcontroller’s
-serial UART interfaces. The firmware both receives and transmits data on this UART port. Due to
-the nature of UART having independent transmit and receive lines, the transmit and receive
-functionality operate independently. As the UART baud rate is relatively slow compared to the
-processing speed of the microcontroller, both sending and receiving data is performed with nonblocking
-interrupt callback functions.
-Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
-the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
-when transmission is initiated, and clears the flag after transmission is finished, to not create
-transmission conflicts on the transmit line.
-Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
-available. The parsing of the received byte is done to determine whether a complete data packet
-has been received from the PC, as according to the communication protocol. Once a completed
-data packet has been received, the firmware sets a flag for further data processing outside of the
-parsing inside of the interrupt callback.
-As transmission on UART is asynchronous both in terms of clock as well as word alignment (within
-a packet), a “sync value” is utilized at the start of each packet to help synchronize communication
-in case of any lost or missing bytes.
+The firmware communicates with the external HVPS interface board via one of the microcontroller's serial UART interfaces. The firmware both receives and transmits data on this UART port. Due to the nature of UART having independent transmit and receive lines, the transmit and receive functionality operate independently. As the UART baud rate is relatively slow compared to the processing speed of the microcontroller, both sending and receiving data is performed with nonblocking interrupt callback functions.
+
+Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag when transmission is initiated, and clears the flag after transmission is finished, to not create transmission conflicts on the transmit line.
+
+Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is available. The parsing of the received byte is done to determine whether a complete data packet has been received from the PC, as according to the communication protocol. Once a completed data packet has been received, the firmware sets a flag for further data processing outside of the parsing inside of the interrupt callback.
+
+As transmission on UART is asynchronous both in terms of clock as well as word alignment (within a packet), a 'sync value' is utilized at the start of each packet to help synchronize communication in case of any lost or missing bytes.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -640,57 +547,43 @@ RELATIONS:
 UID: SW-H1FWMC-183
 TITLE: PC Ethernet Communication
 STATEMENT: >>>
-The firmware communicates with the PC through an Ethernet interface, using an RMII setup to a
-transceiver IC. The firmware both receives and transmits data over Ethernet. While the Ethernet
-interface has independent transmit and receive lines, and the transmit and receive functionality
-operates independently at a driver level, at an application level the PC Ethernet communication is
-structured in a command-response setup.
-Ethernet communication utilizes LWIP middleware libraries to transmit and receive UDP packets
-over this Ethernet connection. UDP was chosen over TCP as the real-time availability is more
-important than attempting to continuously resend information. Any missed packets can be re sent
-at the application level, but routing of packets should not be held up by built-in TCP handshaking.
-Transmission and reception are both performed at a packet level due to the LWIP library handling
-of the incoming and outgoing UDP packets. While UDP packets have built-in formatting and
-headers, the application-level payloads, for both transmitted and received packets, also contain
-custom defined formatting for additional organization and parsing.
+The firmware communicates with the PC through an Ethernet interface using an RMII
+transceiver and the LWIP UDP stack. Application traffic is separated into:
+
+- Commands and their responses
+- Unsolicited 100 Hz system-telemetry packets
+- Unsolicited 1 Hz device-information packets
+- Unsolicited fault-entry and fault-clear notifications
+
+The PC can also request telemetry, device information, and an indexed fault entry. UDP is
+used because timely delivery is more important than retransmitting stale real-time data.
+Application payloads use the PC-Firmware Communication Protocol framing and CRC described
+in the appendix.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWMC-84
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-83
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-306
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWMC-184
 TITLE: Peltier Cooler Communication
 STATEMENT: >>>
-The firmware communicates with the external Peltier controller via one of the microcontroller’s
-serial UART interfaces. The firmware both receives and transmits data on this UART port. Due to
-the nature of UART having independent transmit and receive lines, the transmit and receive
-functionality operate independently. As the UART baud rate is relatively slow compared to the
-processing speed of the microcontroller, both sending and receiving data is performed with nonblocking
-interrupt callback functions.
-Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
-the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
-when transmission is initiated, and clears the flag after transmission is finished, to not create
-transmission conflicts on the transmit line.
-Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
-available. The parsing of the received byte is done to determine whether a complete data packet
-has been received from the PC, as according to the communication protocol. Once a completed
-data packet has been received, the firmware sets a flag for further data processing outside of the
-parsing inside of the interrupt callback.
-The communication protocol is based on the pre-defined protocol defined by the off-the-shelf
-controller TC-48-20-OEM.
+The firmware communicates with the external Peltier controller via one of the microcontroller's serial UART interfaces. The firmware both receives and transmits data on this UART port. Due to the nature of UART having independent transmit and receive lines, the transmit and receive functionality operate independently. As the UART baud rate is relatively slow compared to the processing speed of the microcontroller, both sending and receiving data is performed with nonblocking interrupt callback functions.
+
+Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag when transmission is initiated, and clears the flag after transmission is finished, to not create transmission conflicts on the transmit line.
+
+Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is available. The parsing of the received byte is done to determine whether a complete data packet has been received from the PC, as according to the communication protocol. Once a completed data packet has been received, the firmware sets a flag for further data processing outside of the parsing inside of the interrupt callback.
+
+The communication protocol is based on the pre-defined protocol defined by the off-the-shelf controller TC-48-20-OEM.
 <<<
 RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-56
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-57
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-58
-  ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWMC-64
   ROLE: Refines
@@ -699,19 +592,17 @@ RELATIONS:
 UID: SW-H1FWMC-185
 TITLE: Fault Handling
 STATEMENT: >>>
-The firmware logs faults to provide informational data to the PC as to the cause of a fault. The
-system status telemetry packet has a bitmask of flags indicating the general category of faults
-present. The PC can also obtain a more detailed fault report from the firmware. A fault report
-contains the following information:
--Fault ID: An enumerated value indicating the category of the fault type
--Fault detail: An enumerated value indicating additional details of the fault type
--Entry state: The state in which the fault originally occurred
--Fault time: The time at which the fault occurred
--Expected value: The expected value which the measured parameter or signal was supposed to be
-for a non-fault condition
--Expected detail: Additional information on the expected value
--Tolerance: The tolerance for the measured parameter or signal against the expected value
--Measure value: The measured parameter or signal which resulted in
+The firmware maintains a latched table of at most four active fault records. A record
+contains the fault category, CRC-32 hash of the format string, clear epoch, entry index,
+active count, captured system state, captured runtime, format-argument count, a
+NUL-terminated 128-byte printable ASCII format string, and up to five 32-bit arguments.
+Format specifiers identify unsigned integer, hexadecimal, floating-point, and literal
+percent values so that the CNC can render a human-readable message.
+
+Repeated reports with the same category and format are deduplicated while latched. A new
+distinct record is published without waiting for a request. The PC retrieves a coherent
+snapshot by requesting entries by index and checking the clear epoch and active count.
+An out-of-range index returns an empty entry with the current snapshot metadata.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -722,11 +613,11 @@ RELATIONS:
 UID: SW-H1FWMC-186
 TITLE: PC Ethernet Data
 STATEMENT: >>>
-Each PC Ethernet communication packet is formatted to have a header, data payload, and footer.
-Each communication packet from the PC is a command to the firmware. The packets sent by the
-firmware are responses to each received command, on a 1-to-1 basis. The details of each of these
-commands and responses, as well as the overall structure of each packet, are documented in the
-appendix section PC-Firmware Communication Protocol.
+Each PC Ethernet communication packet contains a synchronization header, packet type,
+packet counter, payload length, payload, and CRC footer. PC commands receive corresponding
+responses. System telemetry, device information, new fault entries, and fault-clear
+updates can also be transmitted without a preceding request. Packet types and payload
+schemas are documented in the appendix section PC-Firmware Communication Protocol.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -740,14 +631,7 @@ RELATIONS:
 UID: SW-H1FWMC-187
 TITLE: State Machine
 STATEMENT: >>>
-The firmware utilizes a state machine to perform the steps required for emission and execution of a
-treatment plan. The state machine relies on a state variable to keep track of the current state and
-utilizes “events” to transition between states. The “events” can be triggered by a variety of
-occurrences in the system, most often commands from the PC, stabilization of values from the
-HVPS, and well as any detected faults. The execution of functionality of the states is performed by
-calling on functions from an array of functions. The value of the state is used as the index to
-determine which function in the array to execute. Additional details on the state machine can be
-seen in the state machine diagram, as well as in the sections pertaining to each individual state.
+The firmware utilizes a state machine to perform the steps required for emission and execution of a treatment plan. The state machine relies on a state variable to keep track of the current state and utilizes 'events' to transition between states. The 'events' can be triggered by a variety of occurrences in the system, most often commands from the PC, stabilization of values from the HVPS, and well as any detected faults. The execution of functionality of the states is performed by calling on functions from an array of functions. The value of the state is used as the index to determine which function in the array to execute. Additional details on the state machine can be seen in the state machine diagram, as well as in the sections pertaining to each individual state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -767,15 +651,11 @@ RELATIONS:
 UID: SW-H1FWMC-188
 TITLE: General System Monitoring: Fan Control
 STATEMENT: >>>
-The firmware will continuously check at periodic intervals, various measured and reported
-temperature feedback signals to adjust output fan speed settings.
-The cabinet fans are adjusted based on the cabinet temperature sensor feedback, with higher
-temperatures corresponding to higher fan speeds. The cabinet temperature change is relatively
-slow, and as such no hysteresis implementation is needed.
-The heatsink fan is adjusted based on the heatsink temperature sensor feedback, with higher
-temperatures corresponding to higher fan speeds. The heatsink temperature change is relatively
-fast, and as such a hysteresis functionality is also implemented in the fan speed adjustment to
-prevent frequent oscillation of the fan speed.
+The firmware will continuously check at periodic intervals, various measured and reported temperature feedback signals to adjust output fan speed settings.
+
+The cabinet fans are adjusted based on the cabinet temperature sensor feedback, with higher temperatures corresponding to higher fan speeds. The cabinet temperature change is relatively slow, and as such no hysteresis implementation is needed.
+
+The heatsink fan is adjusted based on the heatsink temperature sensor feedback, with higher temperatures corresponding to higher fan speeds. The heatsink temperature change is relatively fast, and as such a hysteresis functionality is also implemented in the fan speed adjustment to prevent frequent oscillation of the fan speed.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -789,17 +669,16 @@ RELATIONS:
 UID: SW-H1FWMC-189
 TITLE: General System Monitoring: System Faults
 STATEMENT: >>>
-The firmware will continuously check at periodic intervals, various measured and reported feedback
-signals and statuses of the system to detect faults. If any issues are detected, a fault condition may
-be thrown away. The following are monitored conditions for fault reporting:
--Communication timeout with the PC
--Interlock fault
--Ion Repeller overcurrent and out of tolerance voltage readings
--Cooling system pressure overload
--Cooling system over temperature
--Cooling system inadequate flow
--Heatsink over temperature
--Deflection or focus coil out of tolerance feedback
+The firmware will continuously check at periodic intervals, various measured and reported feedback signals and statuses of the system to detect faults. If any issues are detected, a fault condition may be thrown away. The following are monitored conditions for fault reporting:
+
+- Communication timeout with the PC
+- Interlock fault
+- Ion Repeller overcurrent and out of tolerance voltage readings
+- Cooling system pressure overload
+- Cooling system over temperature
+- Cooling system experiencing insufficient or excessive flow.
+- Heatsink over temperature
+- Deflection or focus coil out of tolerance feedback
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -822,10 +701,7 @@ RELATIONS:
 UID: SW-H1FWMC-190
 TITLE: State: Startup
 STATEMENT: >>>
-The startup state is the initial state of the firmware after device reset. No faults are processed
-during this state, the system can only exit fault state into cold once an ‘initialize’ command is
-received from the PC. The purpose of this state is to allow the PC and other parts of the system,
-which may have longer power on times, initialize before regular system operation commences.
+The startup state is the initial state of the firmware after device reset. No faults are processed during this state, the system can only exit fault state into cold once an 'initialize' command is received from the PC. The purpose of this state is to allow the PC and other parts of the system, which may have longer power on times, initialize before regular system operation commences.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -839,10 +715,7 @@ RELATIONS:
 UID: SW-H1FWMC-191
 TITLE: State: Cold
 STATEMENT: >>>
-The cold state is for when the system has been initialized, but the filament and high voltage are off.
-Any faults which occur transition the system into cold fault mode. From cold state, the system can
-transition to the conditioning state if the PC sends a conditioning command. The firmware can also
-transition into the warmup state if the PC sends a warmup command.
+The cold state is for when the system has been initialized, but the filament and high voltage are off. Any faults which occur transition the system into cold fault mode. From cold state, the system can transition to the conditioning state if the PC sends a conditioning command. The firmware can also transition into the warmup state if the PC sends a warmup command.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -862,9 +735,7 @@ RELATIONS:
 UID: SW-H1FWMC-192
 TITLE: State: Cold Fault
 STATEMENT: >>>
-The cold fault state is for when a system error has occurred, but the system does not have the
-filament running. The firmware can transition out of the cold fault state and into the cold state after
-receiving a reset fault command from the PC.
+The cold fault state is for when a system error has occurred, but the system does not have the filament running. The firmware can transition out of the cold fault state and into the cold state after receiving a reset fault command from the PC.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -875,12 +746,7 @@ RELATIONS:
 UID: SW-H1FWMC-193
 TITLE: State: Conditioning
 STATEMENT: >>>
-The conditioning state is for when the system is slowly ramping up the filament current to
-“condition” the source. Conditioning completes once the reported filament value from the HVPS
-interface board reaches the target filament current. The firmware will transition the system back to
-cold state once that target setpoint has been reached. Alternatively, if the PC sends a stop
-command, the firmware will also transition back to the cold state. If a fault occurs during the
-conditioning state, the system will instead transition to the warmup fault state.
+The conditioning state is for when the system is slowly ramping up the filament current to 'condition' the source. Conditioning completes once the reported filament value from the HVPS interface board reaches the target filament current. The firmware will transition the system back to cold state once that target setpoint has been reached. Alternatively, if the PC sends a stop command, the firmware will also transition back to the cold state. If a fault occurs during the conditioning state, the system will instead transition to the warmup fault state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -903,17 +769,11 @@ RELATIONS:
 UID: SW-H1FWMC-194
 TITLE: State: Warmup
 STATEMENT: >>>
-The warmup state is for when the system is ramping up the filament current to reach a level where
-the filament is at a temperature that can sustain lower levels of emission. Due to the nature of the
-HVPS filament control (constant current) and the system characteristics (increased resistance with
-increased temperature), and the nature of the filament and cathode sensitivity, it is not advisable to
-go to a higher current which could sustain the intended target levels of emission output.
-Warmup completes once the reported filament value from the HVPS interface board stabilizes at
-the target filament current. The firmware will transition to primed state once that target setpoint has
-been reached if no current plan is loaded, otherwise it will transition to the staged state.
-If the PC sends a stop command in the warmup state, the firmware will transition back to the cold
-state. If a fault occurs during the warmup state, the system will instead transition to the warmup
-fault state.
+The warmup state is for when the system is ramping up the filament current to reach a level where the filament is at a temperature that can sustain lower levels of emission. Due to the nature of the HVPS filament control (constant current) and the system characteristics (increased resistance with increased temperature), and the nature of the filament and cathode sensitivity, it is not advisable to go to a higher current which could sustain the intended target levels of emission output.
+
+Warmup completes once the reported filament value from the HVPS interface board stabilizes at the target filament current. The firmware will transition to primed state once that target setpoint has been reached if no current plan is loaded, otherwise it will transition to the staged state.
+
+If the PC sends a stop command in the warmup state, the firmware will transition back to the cold state. If a fault occurs during the warmup state, the system will instead transition to the warmup fault state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -927,9 +787,7 @@ RELATIONS:
 UID: SW-H1FWMC-195
 TITLE: State: Warmup Fault
 STATEMENT: >>>
-The warmup fault state is for when a system error has occurred when warming up the filament
-such as during the conditioning state or the warmup state. The firmware can transition out of the
-warmup fault state and into the cold state after receiving a reset fault command from the PC.
+The warmup fault state is for when a system error has occurred when warming up the filament such as during the conditioning state or the warmup state. The firmware can transition out of the warmup fault state and into the cold state after receiving a reset fault command from the PC.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -943,11 +801,7 @@ RELATIONS:
 UID: SW-H1FWMC-196
 TITLE: State: Primed
 STATEMENT: >>>
-The primed state is for when the filament of the system is at the warmup value, but no plan is
-loaded, nor has any plan loading been initiated. On an error, the system enters fault state. On a
-standby event, which can be initiated by the PC or after a timeout, the firmware transitions from
-primed state to discharge state. If the firmware receives a new session command in primed, it will
-begin a new session and transition the state into the staging state.
+The primed state is for when the filament of the system is at the warmup value, but no plan is loaded, nor has any plan loading been initiated. On an error, the system enters fault state. On a standby event, which can be initiated by the PC or after a timeout, the firmware transitions from primed state to discharge state. If the firmware receives a new session command in primed, it will begin a new session and transition the state into the staging state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -958,12 +812,7 @@ RELATIONS:
 UID: SW-H1FWMC-197
 TITLE: State: Staging
 STATEMENT: >>>
-The staging state is for when the PC is actively loading the parameters for a new treatment plan.
-On an error, the system enters fault state. On a standby event, which can be initiated by the PC or
-after a timeout, the firmware transitions from the staging state to discharge state. If the firmware
-receives a wipe plan command, it will transition the state back to primed. If the PC sends a
-command to finalize the staging of the plan, the firmware will transition the state from staging to
-staged.
+The staging state is for when the PC is actively loading the parameters for a new treatment plan. On an error, the system enters fault state. On a standby event, which can be initiated by the PC or after a timeout, the firmware transitions from the staging state to discharge state. If the firmware receives a wipe plan command, it will transition the state back to primed. If the PC sends a command to finalize the staging of the plan, the firmware will transition the state from staging to staged.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -995,14 +844,9 @@ RELATIONS:
 UID: SW-H1FWMC-198
 TITLE: State: Staged
 STATEMENT: >>>
-The staged state is for when the PC has completed a loading of a plan but has yet to release the
-plan for execution. Before the release of the plan is allowed, the PC must confirm all the
-operational points which have been loaded into the current treatment plan.
-On an error, the system enters fault state. On a standby event, which can be initiated by the PC or
-after a timeout, the firmware transitions from the staged state to discharge state. If the firmware
-receives a wipe plan command, it will transition the state back to primed. If the firmware receives a
-valid plan release command once all the points have been confirmed, the system is transitioned
-into the HVPS check state.
+The staged state is for when the PC has completed a loading of a plan but has yet to release the plan for execution. Before the release of the plan is allowed, the PC must confirm all the operational points which have been loaded into the current treatment plan.
+
+On an error, the system enters fault state. On a standby event, which can be initiated by the PC or after a timeout, the firmware transitions from the staged state to discharge state. If the firmware receives a wipe plan command, it will transition the state back to primed. If the firmware receives a valid plan release command once all the points have been confirmed, the system is transitioned into the HVPS check state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1016,14 +860,9 @@ RELATIONS:
 UID: SW-H1FWMC-199
 TITLE: State: HVPS Check
 STATEMENT: >>>
-The HVPS check state is when the main application firmware performs an interlock check with the
-HVPS interface board. The firmware sends commands to the HVPS interface board indicating that
-it is going to toggle the interlocks and then toggles the interlocks. This process is to have the HVPS
-interface board “unlock” the HVPS functionality to turn on high voltage and control the grid by
-verifying that interlocks function appropriately and can be toggled. The HVPS interface board will
-update its status accordingly on whether the unlock sequence was successful.
-On a successful HVPS check state after toggling the interlocks, the firmware transitions into the
-setup state. On an error, the firmware transitions to the fault state.
+The HVPS check state is when the main application firmware performs an interlock check with the HVPS interface board. The firmware sends commands to the HVPS interface board indicating that it is going to toggle the interlocks and then toggles the interlocks. This process is to have the HVPS interface board 'unlock' the HVPS functionality to turn on high voltage and control the grid by verifying that interlocks function appropriately and can be toggled. The HVPS interface board will update its status accordingly on whether the unlock sequence was successful.
+
+On a successful HVPS check state after toggling the interlocks, the firmware transitions into the setup state. On an error, the firmware transitions to the fault state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1034,11 +873,7 @@ RELATIONS:
 UID: SW-H1FWMC-200
 TITLE: State: Setup
 STATEMENT: >>>
-The setup state is for when the firmware is ramping up the high voltage to the intended setpoint for
-an operational point, as well as setting the backup timers. On an error, the system enters fault
-state. Otherwise, if the system reaches the target high voltage output for the operational point, the
-firmware will transition into the ready state. If the PC sends a stop command, the firmware will
-instead transition to the termination state.
+The setup state is for when the firmware is ramping up the high voltage to the intended setpoint for an operational point, as well as setting the backup timers. On an error, the system enters fault state. Otherwise, if the system reaches the target high voltage output for the operational point, the firmware will transition into the ready state. If the PC sends a stop command, the firmware will instead transition to the termination state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1055,15 +890,9 @@ RELATIONS:
 UID: SW-H1FWMC-201
 TITLE: State: Ready
 STATEMENT: >>>
-The ready state is for when the system has high voltage ramped up to the target setpoint for the
-operational point but has not yet begun emission. On an error the firmware transitions to the fault
-state. If the firmware receives a stop command from the PC, it will transition to the termination
-state. If the firmware receives a standby command, either through the PC or via a timeout, it will
-transition to the discharge state. If the firmware receives a release point command, it will transition
-into the launching state.
-In the ready state if the current operational point is indicated for automatic execution, the firmware
-will self-request a release point command for automatic point execution. Otherwise, the PC must
-send the release point command.
+The ready state is for when the system has high voltage ramped up to the target setpoint for the operational point but has not yet begun emission. On an error the firmware transitions to the fault state. If the firmware receives a stop command from the PC, it will transition to the termination state. If the firmware receives a standby command, either through the PC or via a timeout, it will transition to the discharge state. If the firmware receives a release point command, it will transition into the launching state.
+
+In the ready state if the current operational point is indicated for automatic execution, the firmware will self-request a release point command for automatic point execution. Otherwise, the PC must send the release point command.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1077,11 +906,7 @@ RELATIONS:
 UID: SW-H1FWMC-202
 TITLE: State: Launching
 STATEMENT: >>>
-The launching state is for the system to ramp up the filament current so that the cathode is warm
-enough for targeted emission output. The firmware also sets the deflection and focusing coil
-outputs in this state. If an error occurs, the firmware transitions into fault state. If the PC sends a
-stop command, the firmware transitions to termination state. Otherwise, once the filament current
-has stabilized at the target current, the firmware transitions into the emission state.
+The launching state is for the system to ramp up the filament current so that the cathode is warm enough for targeted emission output. The firmware also sets the deflection and focusing coil outputs in this state. If an error occurs, the firmware transitions into fault state. If the PC sends a stop command, the firmware transitions to termination state. Otherwise, once the filament current has stabilized at the target current, the firmware transitions into the emission state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1095,13 +920,9 @@ RELATIONS:
 UID: SW-H1FWMC-203
 TITLE: State: Emission
 STATEMENT: >>>
-The emission state is when the system is performing radiation emission output. On an error, the
-system enters fault state. If the PC sends a stop command, the firmware will transition to the
-termination state.
-If the system completes the execution of the operational point without interruption, which is marked
-by the expiration of the operational point’s target treatment time, then the firmware will either go to
-the termination state if it is the last operational point in the treatment plan, or it will go to the setup
-state to prepare for the next operational point in the treatment plan.
+The emission state is when the system is performing radiation emission output. On an error, the system enters fault state. If the PC sends a stop command, the firmware will transition to the termination state.
+
+If the system completes the execution of the operational point without interruption, which is marked by the expiration of the operational point's target treatment time, then the firmware will either go to the termination state if it is the last operational point in the treatment plan, or it will go to the setup state to prepare for the next operational point in the treatment plan.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1127,12 +948,7 @@ RELATIONS:
 UID: SW-H1FWMC-204
 TITLE: State: Termination
 STATEMENT: >>>
-The termination state is for the system to ramp down high voltage and turn off the coil outputs after
-the termination of a treatment plan or operational point. The termination state, however, maintains
-the filament current value at the targeted warmup setpoint. On an error, the system enters fault
-state. Otherwise, once termination of the high voltage is completed, the firmware transitions to the
-staged state. The firmware transitions to this state as a plan still loaded, even if the loaded
-treatment plan has already been fully completed.
+The termination state is for the system to ramp down high voltage and turn off the coil outputs after the termination of a treatment plan or operational point. The termination state, however, maintains the filament current value at the targeted warmup setpoint. On an error, the system enters fault state. Otherwise, once termination of the high voltage is completed, the firmware transitions to the staged state. The firmware transitions to this state as a plan still loaded, even if the loaded treatment plan has already been fully completed.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1146,9 +962,7 @@ RELATIONS:
 UID: SW-H1FWMC-205
 TITLE: State: Discharge
 STATEMENT: >>>
-The discharge state is for the system to turn off both the high voltage and the filament current. On
-an error, the system enters fault state. On completion of the discharge, the firmware transitions to
-cold state.
+The discharge state is for the system to turn off both the high voltage and the filament current. On an error, the system enters fault state. On completion of the discharge, the firmware transitions to cold state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1162,9 +976,7 @@ RELATIONS:
 UID: SW-H1FWMC-206
 TITLE: State: Fault
 STATEMENT: >>>
-The fault state is for when a system error has occurred while the filament was already running at or
-above the target warmup setpoint. The firmware can transition out of the fault state and into
-warmup state after receiving a reset fault command from the PC.
+The fault state is for when a system error has occurred while the filament was already running at or above the target warmup setpoint. The firmware can transition out of the fault state and into warmup state after receiving a reset fault command from the PC.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1178,12 +990,13 @@ RELATIONS:
 UID: SW-H1FWMC-207
 TITLE: System Status (Telemetry)
 STATEMENT: >>>
-The firmware monitors and keeps track of multiple signals and reported values. These signals,
-statuses, and values are collected in a singular “system status” array. This system status array
-serves as the foundation for telemetry reporting back to the PC. It is also used for processing within
-the rest of the firmware as the “source of truth” for the monitored parameters. Further details on the
-system status values can be found in the details for the telemetry response to the PC, located in
-the appendix section for the PC-Firmware Communication Protocol.
+The firmware collects monitored values in a system-status array used as the source of truth
+for firmware decisions and telemetry serialization. Every 10 ms, it serializes the array
+using the normal or calibration layout selected at compile time and sends it to the CNC.
+The normal and calibration telemetry layouts append the raw state-dependent required-interlock
+mask and publish the complete physical interlock-input mask. The normal layout includes a
+reserved word between the second magnetometer vector and setpoint fields so its established
+payload count and field positions remain unchanged. Telemetry requests use the same serializers.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1194,15 +1007,9 @@ RELATIONS:
 UID: SW-H1FWMC-208
 TITLE: Treatment Plan (Operational Points)
 STATEMENT: >>>
-Each treatment plan is stored in memory as an array of operational points. The firmware will
-execute each operational point in the sequence in which they are stored in the array. The
-operational points are stored based on the index value provided when the PC sends over the
-operational point data.
-Each operational point is a collection of fields representing the emission. These fields are the
-operational point index within the treatment plan, the total treatment time of the point, the remaining
-treatment time of the point, the high voltage kV of the point, the target emission current mA of the
-point, the initial filament current of the point, the X, Y and focus coil current values of the point, and
-whether or not the point should be auto-executed by firmware.
+Each treatment plan is stored in memory as an array of operational points. The firmware will execute each operational point in the sequence in which they are stored in the array. The operational points are stored based on the index value provided when the PC sends over the operational point data.
+
+Each operational point is a collection of fields representing the emission. These fields are the operational point index within the treatment plan, the total treatment time of the point, the remaining treatment time of the point, the high voltage kV of the point, the target emission current mA of the point, the initial filament current of the point, the X, Y and focus coil current values of the point, and whether or not the point should be auto-executed by firmware.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1231,18 +1038,11 @@ RELATIONS:
 UID: SW-H1FWMC-209
 TITLE: Backup Timer Data
 STATEMENT: >>>
-The communication data sent by the main control application firmware are commands which are
-timer related tasks. These commands are setting the target time, pausing the timer counting and
-resetting the timer (including the interlock IO used to terminate emissions), as well as a report time
-request. There is no start command, as start is performed via hardware IO. This is due to the two
-timer MCUs sharing a single serial communication bus. To ensure that the timer counts are as
-synchronized as possible, the trigger to start is instead done via a digital signal rather than
-sequential serial commands. This signal only starts with the count of the timers and cannot stop
-them.
-The communication data from the timers are the reported time value being counted, as well as the
-state of the timer.
-Both received and sent messages use a simple checksum value to check the validity of the
-message payloads.
+The communication data sent by the main control application firmware are commands which are timer related tasks. These commands are setting the target time, pausing the timer counting and resetting the timer (including the interlock IO used to terminate emissions), as well as a report time request. There is no start command, as start is performed via hardware IO. This is due to the two timer MCUs sharing a single serial communication bus. To ensure that the timer counts are as synchronized as possible, the trigger to start is instead done via a digital signal rather than sequential serial commands. This signal only starts with the count of the timers and cannot stop them.
+
+The communication data from the timers are the reported time value being counted, as well as the state of the timer.
+
+Both received and sent messages use a simple checksum value to check the validity of the message payloads.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1256,13 +1056,13 @@ RELATIONS:
 UID: SW-H1FWMC-210
 TITLE: Interlock Monitoring
 STATEMENT: >>>
-The firmware periodically monitors the state of the interlock inputs. Due to the microcontroller
-having a built in debounce and glitch filter peripheral, no software debouncing has been
-implemented. The monitoring of the interlocks occurs by comparing the current read values of the
-inputs to an expected value. The expected value is a bitmask of which specific interlocks are
-expected to be in a “good” state. The exact value of the expected bitmask is dependent on the
-current state of the system within the state machine.
-If the current input values do not correspond to the expected value, then a fault is thrown.
+The firmware samples and publishes every physical interlock input without applying the
+fault mask to the reported status. It derives a separate required-interlock mask from the
+compiled firmware mode and current state, publishes that mask in system telemetry, and
+compares only those required bits with the sampled input status. A mismatch records an
+interlock fault and initiates the existing latched-fault transition. Inputs omitted from
+the required mask remain visible for diagnostics but do not independently create an
+interlock fault in that state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1276,37 +1076,18 @@ RELATIONS:
 UID: SW-H1FWMC-294
 TITLE: Head Interface Board Data
 STATEMENT: >>>
-The transmitted data to the head interface board is the desired indicator LED output, representing
-the current state of the system. As this is a simple single byte value, it is sent multiple times in a
-single data packet, to help the head interface board firmware to detect any transmission errors.
-The received data from the head interface board are cooling system feedback values monitored at
-the system’s x-ray head, as well as the reported values of other x-ray head peripherals such as the
-state of the buttons, and the values from the magnetometers and collimator. All values are reported
-in 4-byte fields separated by delimiters. As the collimator ID value is a 64-bit value, there are two 4-
-byte fields which together represent the 64-bit ID.
+The transmitted data to the head interface board is the desired indicator LED output, representing the current state of the system. As this is a simple single byte value, it is sent multiple times in a single data packet, to help the head interface board firmware to detect any transmission errors.
+
+The received data from the head interface board are cooling system feedback values monitored at the system's x-ray head, as well as the reported values of other x-ray head peripherals such as the state of the buttons, and the values from the magnetometers and collimator. All values are reported in 4-byte fields separated by delimiters. As the collimator ID value is a 64-bit value, there are two 4byte fields which together represent the 64-bit ID.
 <<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-2
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-3
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-62
-  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWMC-295
 TITLE: HVPS Interface Board Data
 STATEMENT: >>>
-The transmitted data to the HVPS interface board are commands to set various output control
-parameters including grid voltage, filament current, high voltage, and output power. There are also
-commands to initiate the process to test the high voltage and grid interlocks that the main control
-board provides to the HVPS interlock board.
-The data received from the HVPS interface board are the target setpoint values for, as well as the
-monitored feedback values from, the HVPS. Additionally, status flags and IO values are reported
-from the HVPS interface board.
+The transmitted data to the HVPS interface board are commands to set various output control parameters including grid voltage, filament current, high voltage, and output power. There are also commands to initiate the process to test the high voltage and grid interlocks that the main control board provides to the HVPS interlock board.
+
+The data received from the HVPS interface board are the target setpoint values for, as well as the monitored feedback values from, the HVPS. Additionally, status flags and IO values are reported from the HVPS interface board.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1323,15 +1104,14 @@ RELATIONS:
 UID: SW-H1FWMC-296
 TITLE: HVPS Monitoring: Faults
 STATEMENT: >>>
-The firmware will continuously check at periodic intervals, various measured and reported HVPS
-feedback signals to monitor for faults. If any issues are detected, a fault condition may emerge. The
-following are monitored conditions for fault reporting:
--kV present when no kV should be present
--kV out of tolerance when kV should be present
--mA present when no mA should be present
--mA out of tolerance when mA should be present
--Filament overcurrent
--Occurrence of timeouts when waiting for HVPS values to stabilize
+The firmware will continuously check at periodic intervals, various measured and reported HVPS feedback signals to monitor for faults. If any issues are detected, a fault condition may emerge. The following are monitored conditions for fault reporting:
+
+- kV present when no kV should be present
+- kV out of tolerance when kV should be present
+- mA present when no mA should be present
+- mA out of tolerance when mA should be present
+- Filament overcurrent
+- Occurrence of timeouts when waiting for HVPS values to stabilize
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1345,16 +1125,14 @@ RELATIONS:
 UID: SW-H1FWMC-297
 TITLE: HVPS Monitoring: Stabilization
 STATEMENT: >>>
-The firmware will continuously check at periodic intervals, various measured and reported HVPS
-feedback signals to determine if the HVPS is stable at certain states. This determination of stability
-allows the progression of the state machine in the following states under the following conditions:
--Completion of the conditioning state by having the filament current reach the target filament
-current
--Completion of the warmup state by having the filament current reach the target filament current
--Completion of the setup state by having the high voltage reach the target kV
--Completion of the launching state by having the high voltage reach the target filament current
--Completion of the discharge state by having low high voltage and filament current
--Completion of the termination state by having low high voltage
+The firmware will continuously check at periodic intervals, various measured and reported HVPS feedback signals to determine if the HVPS is stable at certain states. This determination of stability allows the progression of the state machine in the following states under the following conditions:
+
+- Completion of the conditioning state by having the filament current reach the target filament current
+- Completion of the warmup state by having the filament current reach the target filament current
+- Completion of the setup state by having the high voltage reach the target kV
+- Completion of the launching state by having the high voltage reach the target filament current
+- Completion of the discharge state by having low high voltage and filament current
+- Completion of the termination state by having low high voltage
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1368,11 +1146,13 @@ RELATIONS:
 UID: SW-H1FWMC-298
 TITLE: Fault Clearing
 STATEMENT: >>>
-The main control board has hardware which latches fault conditions and disables interlocks so that
-emission is safely terminated and cannot be resumed until action is taken by the firmware. To do
-this, the firmware is able to send a pulse signal on a digital output in order to unlatch fault
-conditions. The firmware cannot override hardware fault conditions and any remaining hardware
-faults will re-latch the interlocks in a disabled emission state.
+The main control board has hardware which latches fault conditions and disables interlocks
+so that emission is safely terminated and cannot be resumed until action is taken by the
+firmware. On a PC clear-fault request, the firmware pulses the hardware clear output,
+increments the software clear epoch, empties the latched fault-record table, clears the
+software category flags, and publishes an empty fault update. The firmware cannot override
+an active hardware fault; any remaining condition re-latches the interlocks and can create
+a new software fault record.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1386,9 +1166,7 @@ RELATIONS:
 UID: SW-H1FWMC-299
 TITLE: External Watchdog
 STATEMENT: >>>
-The main control board contains an external watchdog IC which can terminate emission. The
-firmware must send a periodically toggle digital output signal and reset the watchdog IC at least
-once per second, or the watchdog IC will terminate the emission.
+The main control board contains an external watchdog IC which can terminate emission. The firmware must send a periodically toggle digital output signal and reset the watchdog IC at least once per second, or the watchdog IC will terminate the emission.
 <<<
 RELATIONS:
 - TYPE: Parent

@@ -1,5 +1,3 @@
-﻿using Empyrean.Common.Infra.Networking.Udp;
-
 using Prism.Events;
 
 using System;
@@ -20,16 +18,6 @@ using Xcc.Infra.GryphonBoard;
 
 namespace Heracles.Application.Services
 {
-    public class TelemetryPacket : UdpPacket
-    {
-        public TelemetryPacket(GcbStateNew state, uint packetId = 0)
-            : base(packetType: (uint)GCBPacketType.TelemetryResponse,
-                  packetCounter: packetId,
-                  payloadLength: (uint)GCBTelemetryResponseField.PayloadFields)
-        {
-            Set((int)GCBTelemetryResponseField.SystemState, (int)state);
-        }
-    }
 
     public class DummyTelemetryService : ITelemetryService
     {
@@ -84,14 +72,13 @@ namespace Heracles.Application.Services
         public IEventAggregator EventAggregator { get; }
         public ISystemTelemetryChanged SystemTelemetryChangedCallback { get; }
         public IDebugSettings DebugSettings { get; }
-        public TelemetryServiceMode Mode { get; private set; } = TelemetryServiceMode.None;
 
         private int _currentOperationalPoint = 0;
         private int _totalOperationPoints = 0;
         private float _energy = 0;
         private float _currentTimerValue = 0.0f;
         private ulong _serial = 0x1234567890ABCDEF;//0;
-        private GCBFaultBit _faultBit = GCBFaultBit.Reserved;
+        private SystemFault _faultBit = SystemFault.Reserved;
         private IList<GcbOperationalPoint> _emissionSteps;
 
         private CancellationTokenSource _cancellationTokenSource;
@@ -109,9 +96,8 @@ namespace Heracles.Application.Services
 
         #region ITelemetryService
         
-        public void Start(TelemetryServiceMode mode)
+        public void Start()
         {
-            Mode = mode;
         }
 
         public void Stop()
@@ -169,7 +155,7 @@ namespace Heracles.Application.Services
                         break;
                     case DummyXrayStatus.ClearErrors:
                         CancellationTokenSource = new CancellationTokenSource();
-                        _faultBit = GCBFaultBit.Reserved;
+                        _faultBit = SystemFault.Reserved;
                         GenerateClearErrorsTelemetry();
                         break;
                     case DummyXrayStatus.WarmingUp:
@@ -209,12 +195,12 @@ namespace Heracles.Application.Services
                         GenerateTelemetry((int)_state);
                         break;
                     case DummyXrayStatus.SetWarmupFault:
-                        _faultBit = (GCBFaultBit)Convert.ToInt32(args.Parameter);
+                        _faultBit = (SystemFault)Convert.ToInt32(args.Parameter);
                         // Send one telemetry step
                         SetGCBState(GcbStateNew.WarmupFault);
                         break;
                     case DummyXrayStatus.SetFault:
-                        _faultBit = (GCBFaultBit)Convert.ToInt32(args.Parameter);
+                        _faultBit = (SystemFault)Convert.ToInt32(args.Parameter);
                         // Send one telemetry step
                         GenerateTelemetry((int)_state);
                         CancellationTokenSource = new CancellationTokenSource();
@@ -268,33 +254,66 @@ namespace Heracles.Application.Services
 
                     float currentValue = i++ * (3750f / stepsCount);
 
-                    var telemetryResponse = BuildBasicTelemetryPackage();
-                    telemetryResponse.Set((int)GCBTelemetryResponseField.FilamentSetpoint, 3750f);
-                    telemetryResponse.Set((int)GCBTelemetryResponseField.FilamentFeedback, currentValue);
-                    telemetryResponse.UpdateCRC();
-                    SetTelemetry(SystemTelemetry.Parse(telemetryResponse.Buffer));
+                    SetTelemetry(BuildBasicTelemetry(
+                        heaterCurrentSetpoint: 3750f,
+                        heaterCurrentFeedback: currentValue));
                 }
                 SetGCBState(finalState);
             },
             AppGlobals.AppCancellationTokenSource.Token);
         }
 
-        private UdpPacket BuildBasicTelemetryPackage()
+        private SystemNormalTelemetry BuildBasicTelemetry(
+            GcbStateNew? state = null,
+            int? currentOperationalPoint = null,
+            float? primaryTimerValue = null,
+            float? secondaryTimer1Value = null,
+            float? secondaryTimer2Value = null,
+            float? kvFeedback = null,
+            float? heaterCurrentSetpoint = null,
+            float? heaterCurrentFeedback = null)
         {
-            int interlocks = (int)GcbInterlockFlags.BaseKey;
-            var builder = new TelemetryPacket(_state)
-                .Set((int)GCBTelemetryResponseField.SystemFaultFlags, 1 << (int)_faultBit)
-                .Set((int)GCBTelemetryResponseField.Collimator1, (int)(_serial & 0xffffffff))
-                .Set((int)GCBTelemetryResponseField.Collimator2, (int)(_serial >> 32))
-                .Set((int)GCBTelemetryResponseField.CurrentPoint, _currentOperationalPoint)
-                .Set((int)GCBTelemetryResponseField.TotalPoints, _totalOperationPoints)
-                .Set((int)GCBTelemetryResponseField.InternalTimerValue, _currentTimerValue)
-                .Set((int)GCBTelemetryResponseField.Timer1Value, _currentTimerValue)
-                .Set((int)GCBTelemetryResponseField.Timer2Value, Math.Max(0, _currentTimerValue))
-                .Set((int)GCBTelemetryResponseField.kVFeedback, _energy)
-                .Set((int)GCBTelemetryResponseField.InterlockFlags, interlocks);
+            const ulong availableFaults = (1UL << 24) - 2;
+            const ulong availableInterlocks = (uint)GcbInterlockFlags.All;
 
-            return builder;
+            var rawFaults = _faultBit == SystemFault.Reserved ? 0u : 1u << (int)_faultBit;
+            var activeFaults = _faultBit == SystemFault.Reserved ? 0UL : 1UL << (int)_faultBit;
+            const uint rawInterlocks = 1u << 19;
+            const uint rawRequiredInterlocks = rawInterlocks;
+            const ulong activeInterlocks = 1UL << (int)SystemInterlock.BaseKeyOn;
+            const ulong requiredInterlocks = activeInterlocks;
+
+            return new SystemNormalTelemetry
+            {
+                ControlBoardState = state ?? _state,
+                Faults = new SystemFaults(rawFaults, null, activeFaults, availableFaults),
+                Interlocks = new SystemInterlocks(
+                    rawInterlocks,
+                    rawRequiredInterlocks,
+                    activeInterlocks,
+                    availableInterlocks,
+                    requiredInterlocks),
+                RingLedState = RingLedState.TBD,
+                BaseLedState = BaseLedState.TBD,
+                CollimatorId1 = (uint)(_serial & 0xffffffff),
+                CollimatorId2 = (uint)(_serial >> 32),
+                CollimatorSerial = _serial,
+                CurrentOperationalPoint = currentOperationalPoint ?? _currentOperationalPoint,
+                TotalOperationalPoints = _totalOperationPoints,
+                PrimaryTimerValue = primaryTimerValue ?? _currentTimerValue,
+                SecondaryTimer1Value = secondaryTimer1Value ?? _currentTimerValue,
+                SecondaryTimer2Value = secondaryTimer2Value ?? Math.Max(0, _currentTimerValue),
+                Hvps = new HvpsTelemetryStatus(0, 0, null),
+                KvSetpoint = 0,
+                KvFeedback = kvFeedback ?? _energy,
+                HeaterCurrentSetpoint = heaterCurrentSetpoint ?? 0,
+                HeaterCurrentFeedback = heaterCurrentFeedback ?? 0,
+                EmissionCurrentLimit = 0,
+                HvpsPowerSetpoint = 0,
+                GridSetpoint = 0,
+                Mag1 = new TelemetryVector3(),
+                Mag2 = new TelemetryVector3(),
+            };
         }
 
         private void GenerateLoadingTelemetry(float energy, int stepCount)
@@ -311,13 +330,10 @@ namespace Heracles.Application.Services
 
                     await Task.Delay(2000 / stepCount, tokenSource.Token);
 
-                    var packet = BuildBasicTelemetryPackage();
                     float kvs = (energy * i) / stepCount;
-                    packet.Set((int)GCBTelemetryResponseField.SystemState, (int)_state);
-                    packet.Set((int)GCBTelemetryResponseField.kVFeedback, kvs);
-                    packet.UpdateCRC();
-
-                    SetTelemetry(SystemTelemetry.Parse(packet.Buffer));
+                    SetTelemetry(BuildBasicTelemetry(
+                        state: _state,
+                        kvFeedback: kvs));
                 }
 
                 SetGCBState(GcbStateNew.Ready);
@@ -340,15 +356,10 @@ namespace Heracles.Application.Services
 
                     float current = initialCurrent + (targetHeaterCurrent - initialCurrent) * i / steps;
 
-                    var packet = BuildBasicTelemetryPackage();
-                    packet.Set((int)GCBTelemetryResponseField.SystemState, (int)_state);
-                    // TODO: if launching progress will be the same as the warmup's, with constant setpoint:
-                    //packet.Set((int)GCBTelemetryResponseField.FilamentSetpoint, targetHeaterCurrent);
-                    packet.Set((int)GCBTelemetryResponseField.FilamentSetpoint, current);
-                    packet.Set((int)GCBTelemetryResponseField.FilamentFeedback, current);
-                    packet.UpdateCRC();
-
-                    SetTelemetry(SystemTelemetry.Parse(packet.Buffer));
+                    SetTelemetry(BuildBasicTelemetry(
+                        state: _state,
+                        heaterCurrentSetpoint: current,
+                        heaterCurrentFeedback: current));
 
                     //Debug.WriteLine($"DebugTelemetry: Launching point={_currentOperationalPoint} time={_currentTimerValue}");
 
@@ -366,7 +377,7 @@ namespace Heracles.Application.Services
             var tokenSource = CancellationTokenSource;
             if (emissionSteps == null)
             {
-                _faultBit = GCBFaultBit.FilamentFault;
+                _faultBit = SystemFault.FilamentFault;
                 SetGCBState(GcbStateNew.Fault);
                 return;
             }
@@ -418,11 +429,6 @@ namespace Heracles.Application.Services
 
                         energyDeflection = calculateEnergyDeflection(_currentTimerValue);
                         
-                        //for debug: generate Interlock fault
-                        //_faultBit = GCBFaultBit.InterlockFault;
-                        //GcbStateNew st = GcbStateNew.Fault;
-                        //SetGCBState(st);
-                        //return;
 
                         GenerateEmissionTelemetry(1.23f + _currentTimerValue / 100.0f, _energy + energyDeflection);
 
@@ -485,20 +491,16 @@ namespace Heracles.Application.Services
 
             await Task.Delay(3000);
 
-            var packet = BuildBasicTelemetryPackage();
-            packet.Set((int)GCBTelemetryResponseField.SystemState, (int)GcbStateNew.Startup);
-            packet.Set((int) GCBTelemetryResponseField.InternalTimerValue, (float) 0.0f);
-            packet.Set((int) GCBTelemetryResponseField.Timer1Value, (float) 0.0f);
-            packet.Set((int) GCBTelemetryResponseField.Timer2Value, (float) 0.0f);
-            
-            packet.UpdateCRC();
-
-            SetTelemetry(SystemTelemetry.Parse(packet.Buffer));
+            SetTelemetry(BuildBasicTelemetry(
+                state: GcbStateNew.Startup,
+                primaryTimerValue: 0,
+                secondaryTimer1Value: 0,
+                secondaryTimer2Value: 0));
         }
 
         private async Task GenerateFaultDischargingTelemetry()
         {
-            _faultBit = GCBFaultBit.CoolantFault;
+            _faultBit = SystemFault.CoolantFault;
             SetGCBState(GcbStateNew.Fault);
 
             int steps = 50;
@@ -602,11 +604,6 @@ namespace Heracles.Application.Services
 
         private void SetTelemetry(ISystemTelemetry? telemetry)
         {
-            if (telemetry != null)
-            {
-                telemetry.CollimatorSerial = _serial;
-            }
-
             SystemTelemetryChangedCallback.OnSystemTelemetryChanged(telemetry);
         }
 
@@ -614,45 +611,27 @@ namespace Heracles.Application.Services
         {
             _prevState = _state;
             _state = state;
-            int faultFlags = (_faultBit == 0) ? 0 : 1 << (int)_faultBit;
-
-            var packet = BuildBasicTelemetryPackage();
-            packet.Set((int)GCBTelemetryResponseField.SystemFaultFlags, faultFlags);
-            packet.UpdateCRC();
-
-            SetTelemetry(SystemTelemetry.Parse(packet.Buffer));
+            SetTelemetry(BuildBasicTelemetry(state: state));
         }
 
         private void GenerateTelemetry(int gcbState)
         {
-            var packet = BuildBasicTelemetryPackage();
-            packet.Set((int)GCBTelemetryResponseField.SystemState, gcbState);
-            packet.UpdateCRC();
-
-            SetTelemetry(SystemTelemetry.Parse(packet.Buffer));
+            SetTelemetry(BuildBasicTelemetry(state: (GcbStateNew)gcbState));
         }
 
         private void GenerateEmissionTelemetry(float emissionCurrent, float energy)
         {
-            var packet = BuildBasicTelemetryPackage();
-            packet.Set((int)GCBTelemetryResponseField.SystemState, (int)GcbStateNew.Emission);
-            packet.Set((int)GCBTelemetryResponseField.FilamentFeedback, emissionCurrent);
-            packet.Set((int)GCBTelemetryResponseField.kVFeedback, energy);
-
-            packet.UpdateCRC();
-            //Debug.WriteLine($"DebugTelemetry: Emission point={_currentOperationalPoint} time={_currentTimerValue}");
-
-            SetTelemetry(SystemTelemetry.Parse(packet.Buffer));
+            SetTelemetry(BuildBasicTelemetry(
+                state: GcbStateNew.Emission,
+                kvFeedback: energy,
+                heaterCurrentFeedback: emissionCurrent));
         }
 
         private void GenerateAfterEmissionTelemetry(int gcbState, int nextPointIndex)
         {
-            var packet = BuildBasicTelemetryPackage();
-            packet.Set((int)GCBTelemetryResponseField.SystemState, gcbState);
-            packet.Set((int)GCBTelemetryResponseField.CurrentPoint, nextPointIndex);
-            packet.UpdateCRC();
-
-            SetTelemetry(SystemTelemetry.Parse(packet.Buffer));
+            SetTelemetry(BuildBasicTelemetry(
+                state: (GcbStateNew)gcbState,
+                currentOperationalPoint: nextPointIndex));
             //Debug.WriteLine($"DebugTelemetry: Emission point={_currentOperationalPoint} time={_currentTimerValue}");
         }
 

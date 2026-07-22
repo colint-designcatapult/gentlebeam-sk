@@ -6,23 +6,24 @@
 #include "monitoring.h"
 #include "timers.h"
 
-uint32_t adc_int[NUM_INT_ADC];
+uint16_t adc_int[NUM_INT_ADC];
 uint32_t adc_int_sums[NUM_INT_ADC];
 uint32_t adc_int_buf[NUM_INT_ADC][16];	//TBD TODO magic number
 
 void setup_adc()
 {
-	int i = 0;
-	hadc1.Instance->CR2 |= ADC_CR2_CAL;
-	/*do
+	HAL_StatusTypeDef status;
+
+	status = HAL_ADCEx_Calibration_Start(&hadc1);
+
+	if (status != HAL_OK)
 	{
-		i++;
-	} while(hadc1.Instance->CR2 & ADC_CR2_CAL);*/
-	for(i = 0; i < 100000;)
-	{
-		i++;
+	    // Calibration failed
 	}
-	HAL_ADC_Start_DMA(&hadc1, adc_int, NUM_INT_ADC);
+
+	HAL_Delay(10);
+
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_int, NUM_INT_ADC);
 	int_adc_ms = 5;	//TBD TODO placeholder/magic number
 }
 
@@ -32,13 +33,10 @@ void process_adc()
 {
 	if(int_adc_ms <= 0)
 	{
-		//TBD TODO check completion flag if needed
-
 		//Report ADC values
 		report_int_adc_vals(adc_int);
 
 		//Restart ADC DMA
-		HAL_ADC_Start_DMA(&hadc1, adc_int, NUM_INT_ADC);
 		int_adc_ms = 5;	//TBD TODO placeholder/magic number
 	}
 }

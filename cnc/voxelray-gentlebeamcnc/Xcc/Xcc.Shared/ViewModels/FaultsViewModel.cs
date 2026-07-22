@@ -3,6 +3,7 @@ using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Services.Dialogs;
 
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Xcc.Application.Helpers;
@@ -11,30 +12,37 @@ using Xcc.Core.Enums;
 using Xcc.Core.Logging;
 using Prism.Events;
 using Xcc.Application.Models;
+using Xcc.Core.Models;
 
 namespace Xcc.Shared.ViewModels
 {
     class FaultsViewModel : BindableBase, IDialogAware
     {
-        public FaultsViewModel()
+        public FaultsViewModel(
+            IEventAggregator eventAggregator,
+            ILogRepository logWriter,
+            IGCBDataStore gcbDataStore)
         {
-            throw new Exception("Design-only constructor");
+            LogWriter = logWriter;
+            GcbDataStore = gcbDataStore;
+            eventAggregator.GetEvent<FaultsChangedEvent>().Subscribe(OnFaultsChanged, ThreadOption.UIThread);
         }
 
         public FaultsViewModel(
-            IMainBoardModel mainBoardModel, 
+            IMainBoardModel mainBoardModel,
             IEventAggregator eventAggregator,
-            ILogRepository logWriter)
+            ILogRepository logWriter,
+            IGCBDataStore gcbDataStore)
+            : this(eventAggregator, logWriter, gcbDataStore)
         {
             MainBoardModel = mainBoardModel;
-            eventAggregator.GetEvent<SystemTelemetryChangedEvent>().Subscribe(OnSystemTelemetryChanged);
-            LogWriter = logWriter;
         }
 
 
         #region Properties
-        public IMainBoardModel MainBoardModel { get; }
+        public IMainBoardModel? MainBoardModel { get; }
         public ILogRepository LogWriter { get; }
+        private IGCBDataStore GcbDataStore { get; }
         
         public ObservableCollection<FaultEntry> Faults { get; } = [];
         ObservableTask? FetchFaultsTask { get; set; }
@@ -68,11 +76,11 @@ namespace Xcc.Shared.ViewModels
             {
                 try
                 {
-                    IsClearErrorsRunning = true;
-                    await MainBoardModel.ClearFaults();
-                    Faults.Clear();
-
-                    ScheduleFaultUpdate();
+                    if (MainBoardModel is not null)
+                    {
+                        await MainBoardModel.ClearFaults();
+                        await GetFaults();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -86,7 +94,7 @@ namespace Xcc.Shared.ViewModels
                     IsClearErrorsRunning = false;
                 }
             },
-            () => true);//!IsClearErrorsRunning);
+            () => MainBoardModel is not null);
         #endregion Commands
 
 
@@ -100,32 +108,30 @@ namespace Xcc.Shared.ViewModels
         {
             try
             {
-                await System.Windows.Application.Current.Dispatcher.Invoke(async () =>
+                if (MainBoardModel is null)
                 {
-                    // In current version GCB returns only last detailed fault.
-                    // Yoni said its ok to show only one fault in the list.
-                    var faultEntry = await MainBoardModel.GetFaults();
-                    // We could wait long enough to have race condition here,
-                    // so clear the view just in case:
-                    Faults.Clear();
-                    if (faultEntry.FaultId != 0) // Id=0 isn't a fault
-                    {
-                        Faults.Add(faultEntry);
-                        _= LogWriter.LogAsync($"GCB Fault: {faultEntry}", LogRecordSeverity.Error, LogRecordType.Error);
-                    }
-                });
+                    OnFaultsChanged(GcbDataStore.ActiveFaults);
+                    return;
+                }
+
+                FaultSnapshot snapshot = await MainBoardModel.GetFaults();
+                OnFaultsChanged(snapshot.Entries);
+                foreach (FaultEntry faultEntry in snapshot.Entries)
+                {
+                    _ = LogWriter.LogAsync($"GCB Fault: {faultEntry}", LogRecordSeverity.Error, LogRecordType.Error);
+                }
             }
             catch (Exception ex)
             {
                 LogWriter.Log($"Failed to get faults: {ex.Message}", LogRecordSeverity.Error, LogRecordType.Error);
             }
         }
-        private void OnSystemTelemetryChanged(ISystemTelemetry? telemetry)
+        private void OnFaultsChanged(IReadOnlyList<FaultEntry> faults)
         {
-            if (telemetry?.IsFaultState() == true 
-                && Faults?.Count == 0)
+            Faults.Clear();
+            foreach (FaultEntry fault in faults)
             {
-                ScheduleFaultUpdate();
+                Faults.Add(fault);
             }
         }
 

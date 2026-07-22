@@ -197,7 +197,7 @@ namespace Herales.External
                 var networkSupervisor = containerProvider.Resolve<NetworkConnectionSupervisor>();
 
                 var telemetryService = containerProvider.Resolve<ITelemetryService>();
-                telemetryService.Start(TelemetryServiceMode.Active);
+                telemetryService.Start();
 
                 var gcbCommandService = containerProvider.Resolve<IGcbCommunicationService>();
                 gcbCommandService.Start();

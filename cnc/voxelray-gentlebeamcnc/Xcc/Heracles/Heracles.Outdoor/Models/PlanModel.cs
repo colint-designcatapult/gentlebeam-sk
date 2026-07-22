@@ -14,7 +14,7 @@ using Xcc.Core.Domain.GryphonBoard;
 
 namespace Heracles.External.Models
 {
-    public interface IPlanModel : INotifyPropertyChanged
+    public interface IPlanModel : INotifyPropertyChanged, IApplicatorReadinessSource
     {
         IPrescription Prescription { get; }
         IPlan Plan { get; }
@@ -23,7 +23,6 @@ namespace Heracles.External.Models
         double TotalDuration { get; }
         IDiagnosis Diagnosis { get; set; }
         ISimulation Simulation { get; set; }
-        ICollimatorConfiguration CollimatorConfiguration { get; }
         Task<bool> UnloadFromTreatmentAsync();
         Task TreatmentLoadAcknowledgeAsync();
         void SetPlan(ITreatmentInfoStore store);
@@ -61,6 +60,7 @@ namespace Heracles.External.Models
                     {
                         TreatmentFields.Clear();
                         TotalDuration = 0.0;
+                        CollimatorConfiguration = null;
                     }
                 }
             }
@@ -104,7 +104,12 @@ namespace Heracles.External.Models
 
         // TODO: do we need it here? 
         // We use it only to retreive its ActualDose for TF updates or its Id for Qc check
-        public ICollimatorConfiguration CollimatorConfiguration { get; private set; }
+        private ICollimatorConfiguration? _collimatorConfiguration;
+        public ICollimatorConfiguration? CollimatorConfiguration
+        {
+            get => _collimatorConfiguration;
+            private set => SetProperty(ref _collimatorConfiguration, value);
+        }
         #endregion
 
         #region Public methods

@@ -625,7 +625,7 @@
                             <ColumnDefinition Width="8" SharedSizeGroup="LeftMargin"/>
                             <ColumnDefinition Width="1*"/>
                             <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="3*"/>
                             <ColumnDefinition Width="1*"/>
                             <ColumnDefinition Width="8" SharedSizeGroup="RightMargin"/>
                         </Grid.ColumnDefinitions>
@@ -643,8 +643,8 @@
 
             <TextBlock Grid.Column="1" Text="Type"/>
             <TextBlock Grid.Column="2" Text="State"/>
-            <TextBlock Grid.Column="3" Text="Expected"/>
-            <TextBlock Grid.Column="4" Text="Measured"/>
+            <TextBlock Grid.Column="3" Text="Message"/>
+            <TextBlock Grid.Column="4" Text="Runtime"/>
         </ItemsControl>
     </DataTemplate>
 
@@ -655,9 +655,9 @@
             </ItemsControl.Resources>
 
             <TextBlock Grid.Column="1" Text="{Binding FaultType, Converter={convx:EnumValueToDisplayNameConverter}}"/>
-            <TextBlock Grid.Column="2" Text="{Binding FaultEntryStateString}"/>
-            <TextBlock Grid.Column="3" Text="{Binding ExpectedParameter}"/>
-            <TextBlock Grid.Column="4" Text="{Binding MeasuredParameter}"/>
+            <TextBlock Grid.Column="2" Text="{Binding CapturedState}"/>
+            <TextBlock Grid.Column="3" Text="{Binding Message}" TextWrapping="Wrap" ToolTip="{Binding Message}"/>
+            <TextBlock Grid.Column="4" Text="{Binding CapturedRuntime}"/>
         </ItemsControl>
 
         <DataTemplate.Triggers>

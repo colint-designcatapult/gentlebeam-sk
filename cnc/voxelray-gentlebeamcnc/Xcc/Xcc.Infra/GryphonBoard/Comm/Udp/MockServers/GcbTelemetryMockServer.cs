@@ -12,9 +12,9 @@ namespace Xcc.Infra.GryphonBoard.Comm.Udp.MockServers
         public TelemetryPacket(GcbStateNew state, uint packetId = 0)
             : base(packetType: (uint)GCBPacketType.TelemetryResponse,
                   packetCounter: packetId,
-                  payloadLength: (uint)GCBTelemetryResponseField.PayloadFields)
+                  payloadLength: (uint)NormalTelemetryField.PayloadFields)
         {
-            Set((int)GCBTelemetryResponseField.SystemState, (int)state);
+            Set((int)NormalTelemetryField.SystemState, (int)state);
             UpdateCRC();
         }
     }

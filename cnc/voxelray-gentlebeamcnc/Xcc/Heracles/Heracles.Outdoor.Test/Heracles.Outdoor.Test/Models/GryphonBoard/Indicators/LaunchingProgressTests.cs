@@ -1,5 +1,4 @@
-﻿using Empyrean.Common.Infra.Networking.Udp;
-using Moq;
+﻿using Moq;
 using NUnit.Framework;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
 using Xcc.Core.Domain.GryphonBoard;
@@ -26,18 +25,13 @@ namespace Heracles.Outdoor.Test.Models.GryphonBoard.Indicators
             return plan;
         }
 
-        private ISystemTelemetry MakeSystemTelemetry(GcbStateNew state, int pointIndex, float filamentSetpoint)
-        {
-            var packet = new UdpPacket(
-                packetType: (uint)GCBPacketType.TelemetryResponse,
-                packetCounter: 0,
-                payloadLength: (uint)GCBTelemetryResponseField.PayloadFields);
-            packet[(int)GCBTelemetryResponseField.SystemState] = (int)state;
-            packet[(int)GCBTelemetryResponseField.CurrentPoint] = pointIndex;
-            packet[(int)GCBTelemetryResponseField.FilamentSetpoint] = filamentSetpoint;
-            packet.UpdateCRC();
-            return SystemTelemetry.Parse(packet.Buffer);
-        }
+        private static ISystemTelemetry MakeSystemTelemetry(GcbStateNew state, int pointIndex, float filamentFeedback) =>
+            new SystemNormalTelemetry
+            {
+                ControlBoardState = state,
+                CurrentOperationalPoint = pointIndex,
+                HeaterCurrentFeedback = filamentFeedback,
+            };
 
         [SetUp]
         public void Setup()
@@ -81,7 +75,7 @@ namespace Heracles.Outdoor.Test.Models.GryphonBoard.Indicators
         }
 
         [Test]
-        public void ResetAfterLaunchingTest()
+        public void RetainsCompletedProgressThroughTerminationTest()
         {
             float initialSetpoint = 2500;
 
@@ -93,9 +87,9 @@ namespace Heracles.Outdoor.Test.Models.GryphonBoard.Indicators
             LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Emission, 0, initialSetpoint + 100));
             Assert.That(LaunchingProgress.Value, Is.EqualTo(100));
 
-            // Gets reset in non-emission states
+            // Termination preserves completed progress while hardware discharges
             LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Termination, 0, initialSetpoint + 100));
-            Assert.That(LaunchingProgress.Value, Is.EqualTo(0));
+            Assert.That(LaunchingProgress.Value, Is.EqualTo(100));
 
         }
 

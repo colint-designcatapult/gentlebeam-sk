@@ -36,23 +36,16 @@ TITLE: Abbreviations and Definitions
 
 [TEXT]
 STATEMENT: >>>
-DB
-Data Base
-
-GUI
-Graphic User Interface
-
-PRS
-Product Requirements Specification
-
-SDP
-Software Development Plan
-
-SRS
-Software Requirements Specification
-
-SW
-Software
+===================  =====================================
+Abbreviation/Term    Definition
+===================  =====================================
+DB                   Data Base
+GUI                  Graphic User Interface
+PRS                  Product Requirements Specification
+SDP                  Software Development Plan
+SRS                  Software Requirements Specification
+SW                   Software
+===================  =====================================
 <<<
 
 [[/SECTION]]
@@ -62,9 +55,9 @@ TITLE: Overview
 
 [TEXT]
 STATEMENT: >>>
-The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans, and perform imaging. It communicates with the record and verify component, flange camera stream and imaging component.
+The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans. It communicates with the record and verify component, and flange camera stream.
 
-The internal GUI software runs on an industrial PC located at the base of the system.
+The internal GUI software runs on an all-in-one touchscreen PC.
 <<<
 
 [[/SECTION]]
@@ -74,8 +67,11 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-Document ID / Reference Number: DHF-HRC-0001, Rev.2
-Document Title: Heracles Software Development Plan (SDP)
+================================  ==========================================
+Document ID / Reference Number    Document Title
+================================  ==========================================
+DHF-HRC-0001, Rev.2               Heracles Software Development Plan (SDP)
+================================  ==========================================
 <<<
 
 [[/SECTION]]
@@ -94,6 +90,8 @@ The application shall allow users to load an uncompleted plan into the external 
 The user will have an action button that sends the plan to the external app. Once this action is triggered, the user should be alerted that the last treatment was not completed and asked to send the remaining plan or the complete plan.
 
 The external app will be triggered that the plan is pending for load and will recalculate the time according to the latest treatment completion status.
+
+.. image:: _images/RQ-H10SG-422.png
 <<<
 
 [REQUIREMENT]
@@ -101,7 +99,11 @@ UID: RQ-H10SG-54
 TYPE: Functional
 TITLE: Main View - System Status
 STATEMENT: >>>
-The application shall present the user with the current system status. This status shall include system errors, emission parameters, battery status, energy level, and emission time (in case the system irradiates). This information should always be visible to the user.
+The application shall present the user with the current immutable system status. This
+status shall include the firmware mode, communication availability, system errors, emission
+parameters, battery status, energy level, and emission time while the system irradiates.
+Firmware-specific values that are not supplied shall be shown as unavailable rather than
+as false or zero. This information should always be visible to the user.
 <<<
 
 [REQUIREMENT]
@@ -110,12 +112,14 @@ TYPE: Functional
 TITLE: Patient - Plan View - Auto-calculate the ICDCode
 STATEMENT: >>>
 The application shall have an interface presenting the operator with the ICD Code based on the Site Location and pathology.
+
+.. image:: _images/RQ-H10SG-345.png
 <<<
 
 [REQUIREMENT]
 UID: RQ-H10SG-377
 TYPE: Functional
-TITLE: Patient - Visits Management
+TITLE: Patient - Visits ManagementsPatient - Visits Management
 STATEMENT: >>>
 The application shall create a visit entity for each simulation or treatment created for a patient per day.
 
@@ -124,10 +128,12 @@ If the operator creates multiple simulations/treatments on the same day (e.g. fo
 
 [REQUIREMENT]
 UID: RQ-H10SG-83
-TYPE: Data
+TYPE: Functional
 TITLE: Patients - Edit Patient Demographic Data
 STATEMENT: >>>
-The application shall allow a user to edit all the fields of an existing patient. It should have an Edit button, which will open a view with all the patient's data, and all fields should be editable.
+RQ-H10SG-83The application shall allow a user to edit all the fields of an existing patient. It should have an Edit button, which will open a view with all the patient's data, and all fields should be editable.
+
+.. image:: _images/RQ-H10SG-83.png
 <<<
 
 [REQUIREMENT]
@@ -135,11 +141,13 @@ UID: RQ-H10SG-82
 TYPE: Functional
 TITLE: Patients - Patient Search
 STATEMENT: >>>
-The application shall provide a user interface to search patients.
+RQ-H10SG-83The application shall provide a user interface to search patients.
 
 There shall be an input field where users can enter a patient's first, middle, or last name, DOB, MRN, or ID. This field should support partial inputs for broader search capabilities.
 
 The search results should be highlighted.
+
+.. image:: _images/RQ-H10SG-82.png
 <<<
 
 [REQUIREMENT]
@@ -151,77 +159,13 @@ The application shall maintain logs of all changes made to patient data, includi
 <<<
 
 [REQUIREMENT]
-UID: RQ-H10SG-103
-TYPE: Functional
-TITLE: Patients - Image Acquisition
-STATEMENT: >>>
-The Application shall have an interface that enables the user to acquire Imaging. This functionality should enable real-time imaging and visualization to assist in accurately targeting and monitoring the treatment area. Imaging shall be part of the planning workflow.
-
-The Layout should include the following parts:
-
-1. Identification of the patient.
-2. DICOM viewer - 3 frames of image visualization for the three orthogonal directions XY, XZ, YZ
-3. Action buttons:
-
-   - Acquire - The image acquisitions shall run according to the configured parameters.
-   - Stop - An acquisition shall be forced to terminate.
-   - Back - The view shall be closed and returned to the Plan view.
-
-4. Setting - Shall open a collapse/expand view to enable the user to configure the imaging settings.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10SG-375
-TYPE: Functional
-TITLE: Patients - Image Acquisition - Measure Lesion Depth
-STATEMENT: >>>
-The application shall have a control that enables the operator to measure the lesion depth from the acquired image sagittal view.
-
-The operator will mark the lesion on the image using a scale bar, representing the length at the magnification of the image.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10SG-376
-TYPE: Functional
-TITLE: Patients - Image Acquisition - Populate Lesion Depth into Simulation
-STATEMENT: >>>
-The application shall automatically populate the measured lesion depth into the simulation. When the operator closes the image acquisition view, the lesion depth is populated into the simulation. This depth is updated only if it is empty in the current simulation.
-
-If the simulation data is entered and not saved yet, then the depth should be populated into the edit box and will be saved when the user presses the save button.
-
-The lesion depth should also be saved on the series record created in the DB.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10SG-97
-TYPE: Functional
-TITLE: Patients - Images - Display Acquired Images
-STATEMENT: >>>
-The application shall provide the user with an interface for viewing all images created for the patient. The images shall be presented in one of two ways: a List view or a Thumbnails view.
-
-The list view will have a list of all the images captured for this patient and will include the following information:
-- Creation - The creation date of the image
-- Site - The image site name
-- Type - The type of the image
-- Description - the image description
-
-The view will include buttons that shall enable the user to switch between the views.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H10SG-76
-TYPE: Functional
-TITLE: Patients - Images View - Storage
-STATEMENT: >>>
-The application should provide a user interface to view the images (pictures) captured by the device camera filtered by the visit it was captured.
-<<<
-
-[REQUIREMENT]
 UID: RQ-H10SG-37
 TYPE: Functional
 TITLE: Patients - Patient List View - Open Patient's Clinical view
 STATEMENT: >>>
-The patient list shall have a control that allows users to click and open the patient's clinical view (i.e., prescriptions, plans, images, etc.).
+The patient list shall have a control that allows users to click and open the patient's clinical view (i.e., prescriptions, plans, etc.).
+
+.. image:: _images/RQ-H10SG-37.png
 <<<
 
 [REQUIREMENT]
@@ -240,6 +184,7 @@ STATEMENT: >>>
 The application shall provide an interface to view all patients registered.
 
 The patient list view should display key pieces of patient information:
+
 1. MRN - patient medical record number.
 2. First name
 3. Middle name
@@ -247,6 +192,8 @@ The patient list view should display key pieces of patient information:
 5. Sex
 6. DOB - Date of birth
 7. Last visit date
+
+.. image:: _images/RQ-H10SG-40.png
 <<<
 
 [REQUIREMENT]
@@ -275,6 +222,7 @@ STATEMENT: >>>
 The application shall provide a form where users can input all necessary demographic data for new patients.
 
 The form shall include:
+
 - First Name
 - Middle Name
 - Last name
@@ -282,6 +230,8 @@ The form shall include:
 - MRN/ID (SSN or other)
 - Sex
 - Zip
+
+.. image:: _images/RQ-H10SG-86.png
 <<<
 
 [REQUIREMENT]
@@ -324,9 +274,12 @@ STATEMENT: >>>
 The form shall ensure data integrity by using dedicated controls for different input data types and validation rules when dedicated controls are not applicable.
 
 Dedicated controls are:
+
 - Date of birth - DateTime control
 - ID/MRN - (SSN or other) - Numbers only input control
 - Sex - drop-down list
+
+.. image:: _images/RQ-H10SG-52.png
 <<<
 
 [REQUIREMENT]
@@ -338,7 +291,8 @@ The form should clearly distinguish which fields are mandatory and which are opt
 
 Mandatory fields should be marked with an asterisk.
 
-Mandatory fields are:
+[These fields are mandatory because they determine the identification of the user] Mandatory fields are:
+
 - First Name
 - Last name
 - Date of birth
@@ -366,9 +320,9 @@ STATEMENT: >>>
 A treatment plan shall be set with Energy, Duration, current, and Actual Dose.
 
 The Actual Dose should be auto-calculate from the duration using the following function:
+
 [Dose Rate cGy/min] \* Duration / 60
 
-Example:
 320 \* 18 / 60 = 96 cGy
 <<<
 
@@ -405,6 +359,8 @@ TYPE: Functional
 TITLE: Patients - Plan View - Alert for unsaved data
 STATEMENT: >>>
 The user shall be alerted to unsaved data when exiting the plan view (e.g., pressing the scan or capture buttons, which opens a different view) without saving edited data.
+
+.. image:: _images/RQ-H10SG-382.png
 <<<
 
 [REQUIREMENT]
@@ -415,13 +371,20 @@ STATEMENT: >>>
 When adding/editing a simulation, the application shall automatically calculate the Field Size based on the set Lesion size and Margin size.
 
 The calculation shall use the following method:
+
 Field Size X [cm] = Lesion Size X + 2 \* Margin Size X [cm]
+
 Field Size Y [cm] = Lesion Size Y + 2 \* Margin Size Y [cm]
 
-Example:
+For example:
+
 Lesion Size = 1.0 x 1.0
+
 Margin Size = 0.5 x 0.5
+
 Field Size = 2.0 x 2.0
+
+.. image:: _images/RQ-H10SG-740.png
 <<<
 
 [REQUIREMENT]
@@ -480,7 +443,7 @@ TITLE: Patients - Plan View - Disable Treatment when the Patient's Plan is Incon
 STATEMENT: >>>
 The application shall not enable treatment delivery if the plan's applicator type differs from the actual applicator type.
 
-The application shall present an error message when the user tries to load the plan into the external application (i.e. presses the LoadForTreatment).
+The application shall present an error message when the user tries to load the plan into the external application (i.e. presses the LoadForTreatemt).
 <<<
 
 [REQUIREMENT]
@@ -499,16 +462,20 @@ STATEMENT: >>>
 A treatment plan shall be set with Energy, Duration, Current, and Actual Dose.
 
 The Current should be auto calculated as the quotient of Power[W] divided by Energy Level[kV]:
+
 Emission Current[mA] = Power[W] / Voltage[kV]
 
 The device shall operate at a constant power of 50W.
 
 Here are the calculated values as a dependency on Energy Level:
 
-Power[W] | Voltage[kV] | Emission Current[mA]
-50       | 1           | 50
-50       | 70          | 0.71
-50       | 100         | 0.5
+========  ===========  =====================
+Power[W]  Voltage[kV]  Emission Current[mA]
+========  ===========  =====================
+50        50           1
+50        70           0.71
+50        100          0.5
+========  ===========  =====================
 <<<
 
 [REQUIREMENT]
@@ -519,6 +486,7 @@ STATEMENT: >>>
 The application shall provide a user interface to enable users to manage patients' clinical data.
 
 The view will include:
+
 1. The patient demographic data section for the identification of the user
 2. The Sites list
 3. Simulation Details:
@@ -542,14 +510,15 @@ The view will include:
    - Duration
    - Actual Dose
 
-5. Image/Pictures Gallery - multi-tab gallery
-6. Treatment history
-7. Images lists
+5. Treatment history
 
-   - The UI Layout shall be implemented as a master-detail view within a multi-tab control. 
 
-The master view shall present a list of the sites, and the details view shall present the clinical data 
-(simulation, prescription, and plan details). 
+   - The UI Layout shall be implemented as a master-detail view within a multi-tab control.
+
+The master view shall present a list of the sites, and the details view shall present the clinical data
+(simulation, prescription, and plan details).
+
+.. image:: _images/RQ-H10SG-81.png
 <<<
 
 [REQUIREMENT]
@@ -670,6 +639,8 @@ The application shall provide a user interface that enables users to add a recor
 4. Subcell - A Dropdown control for selecting the Subcell. The display list is dependent on the selected pathology
 5. Description - A Dropdown control for selecting pathology description
 6. Referring provider. - The Referring doctor.
+
+.. image:: _images/RQ-H10SG-388.png
 <<<
 
 [REQUIREMENT]
@@ -679,13 +650,16 @@ TITLE: Patients - Plan view - Create Site (Field) - Pathology
 STATEMENT: >>>
 The application shall provide a dropdown control that enables users to select Pathology when creating a new site (field), which can be one of the following Enum:
 
-Name              | Number | Description (UI Label)
-UNSPECIFIED       | 0      | 
-BCC               | 1      | BCC
-SCC               | 2      | SCC
-SCC-IS            | 3      | SCC-IS
-Keloid            | 4      | Keloid
-Basosquamous      | 5      | Basosquamous
+=================== ======== ========================
+Name                Number   Description (UI Label)
+=================== ======== ========================
+UNSPECIFIED         0
+BCC                 1        BCC
+SCC                 2        SCC
+SCC-IS              3        SCC-IS
+Keloid              4        Keloid
+Basosquamous        5        Basosquamous
+=================== ======== ========================
 <<<
 
 [REQUIREMENT]
@@ -695,17 +669,20 @@ TITLE: Patients - Plan view - Create Site (Field) - Pathology Description
 STATEMENT: >>>
 The application shall provide a dropdown control that enables users to select the Pathology Description of the field created. Description when creating a new site (field), which can be one of the following Enum:
 
-Name                             | Number | Description (UI Label)
-UNSPECIFIED                      | 0      | 
-Infundibulo_cytic                | 1      | Infundibulo-cytic
-Ulcerated_long_standing          | 2      | Ulcerated long-standing
-Adenosquamous                    | 3      | Adenosquamous
-Desmoplastic_Metaplastic         | 4      | Desmoplastic/Metaplastic
-Recurrent_Lesion_post_surgery    | 5      | Recurrent Lesion post-surgery
-Large_Lesion                     | 6      | Large Lesion
-Deep_Lesion                      | 7      | Deep Lesion
-Rapid_growth                     | 8      | Rapid growth
-Extension_into_hair_follicle     | 9      | Extension into hair follicle
+================================== ======== =================================
+Name                               Number   Description (UI Label)
+================================== ======== =================================
+UNSPECIFIED                        0
+Infundibulo_cytic                  1        Infundibulo-cytic
+Ulcerated_long_standing            2        Ulcerated long-standing
+Adenosquamous                      3        Adenosquamous
+Desmoplastic_Metaplastic           4        Desmoplastic/Metaplastic
+Recurrent_Lesion_post_surgery      5        Recurrent Lesion post-surgery
+Large_Lesion                       6        Large Lesion
+Deep_Lesion                        7        Deep Lesion
+Rapid_growth                       8        Rapid growth
+Extension_into_hair_follicle       9        Extension into hair follicle
+================================== ======== =================================
 <<<
 
 [REQUIREMENT]
@@ -715,35 +692,38 @@ TITLE: Patients - Plan view - Create Site (Field) - Site Location
 STATEMENT: >>>
 The application shall provide a dropdown control that enables users to select the location of the field (site) when creating a new field, which can be one of the following Enum:
 
-Name              | Number | Description (UI)
-UNSPECIFIED       | 0      | 
-Breast            | 1      | Breast
-LeftEar           | 2      | Ear (Left)
-RightEar          | 3      | Ear (Right)
-Forehead          | 4      | Forehead
-Temple            | 5      | Temple
-Zygoma            | 6      | Zygoma
-PreAuricular      | 7      | Pre-Auricular
-Cheek             | 8      | Cheek
-Chin              | 9      | Chin
-Jaw               | 10     | Jaw
-Lip               | 11     | Lip
-Neck              | 12     | Neck
-Nose              | 13     | Nose
-Scalp             | 14     | Scalp
-PostAuricular     | 15     | Post Auricular
-Trunk             | 16     | Trunk
-Chest             | 17     | Chest
-Abdomen           | 18     | Abdomen
-Back              | 19     | Back
-LeftLowerLimb     | 20     | Lower Limb (Left)
-RightLowerLimb    | 21     | Lower Limb (Right)
-LeftUpperLimb     | 22     | Upper Limb (Left)
-RightUpperLimb    | 23     | Upper Limb (Right)
-RightUpperEyelid  | 24     | Eyelid (Right Upper)
-RightLowerEyelid  | 25     | Eyelid (Right Lower)
-LeftUpperEyelid   | 26     | Eyelid (Left Upper)
-LeftLowerEyelid   | 27     | Eyelid (Left Lower)
+=================== ======== ===================
+Name                Number   Description (UI)
+=================== ======== ===================
+UNSPECIFIED         0
+Breast              1        Breast
+LeftEar             2        Ear (Left)
+RightEar            3        Ear (Right)
+Forehead            4        Forehead
+Temple              5        Temple
+Zygoma              6        Zygoma
+PreAuricular        7        Pre-Auricular
+Cheek               8        Cheek
+Chin                9        Chin
+Jaw                 10       Jaw
+Lip                 11       Lip
+Neck                12       Neck
+Nose                13       Nose
+Scalp               14       Scalp
+PostAuricular       15       Post Auricular
+Trunk               16       Trunk
+Chest               17       Chest
+Abdomen             18       Abdomen
+Back                19       Back
+LeftLowerLimb       20       Lower Limb (Left)
+RightLowerLimb      21       Lower Limb (Right)
+LeftUpperLimb       22       Upper Limb (Left)
+RightUpperLimb      23       Upper Limb (Right)
+RightUpperEyelid    24       Eyelid (Right Upper)
+RightLowerEyelid    25       Eyelid (Right Lower)
+LeftUpperEyelid     26       Eyelid (Left Upper)
+LeftLowerEyelid     27       Eyelid (Left Lower)
+=================== ======== ===================
 <<<
 
 [REQUIREMENT]
@@ -755,19 +735,24 @@ The application shall provide a dropdown control that enables users to select th
 
 The dropdown will show a list of possible subcells depending on the selected Pathology as follows: if there are no corresponding subtypes, the dropdown should be disabled.
 
-Cell Type: Basal Cell Carcinoma
+**Basal Cell Carcinoma**
+
 Subtypes: Aberrant, Adenoid, Atypical Basaloid Proliferation, Basosquamous (Metatypical), Adnexal Differentiation, Squamous Differentiation, Clear Ring, Cystic Cell Carcinoma, Fibroepithelioma of Pinkus, Infiltrative, Keratotic, Micro Nodular, Mixed Pattern, Morphoeic/Sclerosing/Fibrosing, Nodular (Classic Basal-Cell), Nodulocystic, Pigmented, Pleomorphic, Polypoid, Pore-like, Rodent Ulcer (Jacobi Ulcer), Superficial (Multicentric), Other
 
-Cell Type: Squamous Cell Carcinoma
+**Squamous Cell Carcinoma**
+
 Subtypes: Acantholytic, Adenoid/Pseudoglandular, Atypical Squamous Proliferation, Basaloid, Clear-cell, Erythroplasia, Intraepidermal, Invasive, Keratoacanthoma, Large Cell Keratinizing, Large Cell Non-Keratinizing, Metaplasia, Mixed Pattern, Moderately Differentiated, Poorly differentiated, Papillary Carcinoma, Signet-ring cell, Small Cell Keratinizing, Superficial, Spindle Cell, Verrucous, Well-Differentiated, Superficially Invasive, Other
 
-Cell Type: Basosquamous Cell Carcinoma
+**Basosquamous Cell Carcinoma**
+
 Subtypes: No Subtypes
 
-Cell Type: Keloid
+**Keloid**
+
 Subtypes: No Subtypes
 
-Cell Type: Squamous Cell Carcinoma In-Situ
+**Squamous Cell Carcinoma In-Situ**
+
 Subtypes: No Subtypes
 <<<
 
@@ -787,6 +772,8 @@ STATEMENT: >>>
 The application shall provide a user interface for the user to view the patient's prescription.
 
 The prescription displayed should be the one created for the selected simulation.
+
+.. image:: _images/RQ-H10SG-24.png
 <<<
 
 [REQUIREMENT]
@@ -799,6 +786,7 @@ The application shall have an interface that enables the user to observe the pat
 The treatment fields shall be a collapse-expand-like view and should be visible when the user presses the Details button of the selected treatment
 
 The treatment data should include the following information:
+
 - Actual duration - The actual duration of the delivery of emissions.
 - Actual Dose - The actual dose delivered in this field.
 - The current - the emission current.
@@ -823,15 +811,18 @@ The details view should include:
 
 3. A table listing all the treatments delivered (fractions), including the following information:
 
-Column Name         | Description
-FX                  | The fraction number
-Date                | The date of the treatment.
-Lesion depth        | The Lesion depth measured during that visit
-Energy              | The energy delivered in kV
-Daily Dose          | The delivered dose in cGy
-Cumulative Dose     | Cumulative Dose in cGy
-Performed by        | The user who performed this treatment
-Details             | A link field shall open the details of the delivered treatment.
+===================== ======================================================================
+Column Name           Description
+===================== ======================================================================
+FX                    The fraction number
+Date                  The date of the treatment.
+Lesion depth          The Lesion depth measured during that visit
+Energy                The energy delivered in kV
+Daily Dose            The delivered dose in cGy
+Cumulative Dose       Cumulative Dose in cGy
+Performed by          The user who performed this treatment
+Details               A link field shall open the details of the delivered treatment.
+===================== ======================================================================
 <<<
 
 [REQUIREMENT]
@@ -889,6 +880,8 @@ The interface layout shall include:
 2. A dropdown box for the applicator type.
 3. A dropdown box for the applicator Energy Level.
 4. A multi-panel view for each configuration: Magnetometer, Heater Current, Coils and Dose Rate of the selected applicator
+
+.. image:: _images/RQ-H10SG-120.png
 <<<
 
 [REQUIREMENT]
@@ -903,7 +896,7 @@ The parameters include the Correction Matrix and the Reference Fields for the ba
 
 [REQUIREMENT]
 UID: RQ-H10SG-119
-TYPE: Data
+TYPE: Functional
 TITLE: Physics - Save Data
 STATEMENT: >>>
 The user shall be able to save physics data. The save button shall be disabled when no new data is to be saved or when there is an error in one of the inputs and enabled when a change is made.
@@ -954,52 +947,109 @@ UID: RQ-H10SG-65
 TYPE: Functional
 TITLE: Service - System's Signals
 STATEMENT: >>>
-The application shall have a user interface allowing the user (service engineer) to view the real-time system signals read from the board telemetry.
+The application shall have a user interface allowing the service engineer to view semantic
+real-time system signals decoded from the board telemetry according to the reported
+firmware version and mode.
 
 The System Signals to be presented are:
 
-Type                  | Field                         | Unit
-Coils                 | Y coil current                | [mA]
-Coils                 | X coil current                | [mA]
-Coils                 | Focus current                 | [mA]
-Ion Pump              | Ion pump voltage              | [V]
-Magnetometer          | Mag 1 X                       | [µT]
-Magnetometer          | Mag 1 Y                       | [µT]
-Magnetometer          | Mag 1 Z                       | [µT]
-Magnetometer          | Mag 2 X                       | [µT]
-Magnetometer          | Mag 2 Y                       | [µT]
-Magnetometer          | Mag 2 Z                       | [µT]
-Cooling system        | Water pressure                | [psi]
-Cooling system        | Water Flow                    | [lpm]
-Cooling system        | Water temperature             | [°C]
-Cooling system        | HeadSink temperature          | [°C]
-Cooling system        | Peltier temperature           | [°C]
-Cooling system        | Cabinet temperature           | [°C]
-HVPS                  | HVPS Runtime                  | [ms]
-HVPS                  | HVPS IO                       | [Raw]
-HVPS                  | HVPS Status Flags             | [Raw]
-HVPS                  | kV Feedback                   | [kV]
-HVPS                  | Filament setpoint             | [mA]
-HVPS                  | Filament feedback             | [mA]
-HVPS                  | Grid feedback                 | [V]
-HVPS                  | Grid setpoint                 | [V]
-System                | System state                  | 
-System                | System runtime                | [ms]
-System                | System Fault Flags            | [raw]
-System                | Interlock Flags               | [raw]
-General               | Ring LED State                | 
-General               | Base LED State                | 
-General               | Applicator ID (1)             | [Raw]
-General               | Applicator ID (2)             | [Raw]
-General               | Buttons                       | [Raw]
-Operational Points    | Current Point                 | 
-Operational Points    | Total Points                  | 
-Timers                | Internal Timer Value          | [sec]
-Timers                | Internal Timer State          | 
-Timers                | Timer 1 State                 | 
-Timers                | Timer 1 Value                 | [sec]
-Timers                | Timer 2 State                 | 
-Timers                | Timer 2 Value                 | [sec]
++--------------------+-------------------------+-------+
+| Type               | Field                   | Unit  |
++====================+=========================+=======+
+| Coils              | Y coil current          | [mA]  |
++--------------------+-------------------------+-------+
+| Coils              | X coil current          | [mA]  |
++--------------------+-------------------------+-------+
+| Coils              | Focus current           | [mA]  |
++--------------------+-------------------------+-------+
+| Ion Pump           | Ion pump voltage        | [V]   |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 1 X                 | [µT]  |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 1 Y                 | [µT]  |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 1 Z                 | [µT]  |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 2 X                 | [µT]  |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 2 Y                 | [µT]  |
++--------------------+-------------------------+-------+
+| Magnetometer       | Mag 2 Z                 | [µT]  |
++--------------------+-------------------------+-------+
+| Cooling system     | Water pressure          | [psi] |
++--------------------+-------------------------+-------+
+| Cooling system     | Water Flow              | [lpm] |
++--------------------+-------------------------+-------+
+| Cooling system     | Water temperature       | [˚ C] |
++--------------------+-------------------------+-------+
+| Cooling system     | HeadSink temperature    | [˚ C] |
++--------------------+-------------------------+-------+
+| Cooling system     | Peltier temperature     | [˚ C] |
++--------------------+-------------------------+-------+
+| Cooling system     | Cabinet temperature     | [˚ C] |
++--------------------+-------------------------+-------+
+| HVPS               | HVPS Runtime            | [ms]  |
++--------------------+-------------------------+-------+
+| HVPS               | HVPS IO                 | [Raw] |
++--------------------+-------------------------+-------+
+| HVPS               | HVPS Status Flags       | [Raw] |
++--------------------+-------------------------+-------+
+| HVPS               | kV Feedback             | [kV]  |
++--------------------+-------------------------+-------+
+| HVPS               | Filament setpoint       | [mA]  |
++--------------------+-------------------------+-------+
+| HVPS               | Filament feedback       | [mA]  |
++--------------------+-------------------------+-------+
+| HVPS               | Grid feedback           | [V]   |
++--------------------+-------------------------+-------+
+| HVPS               | Grid setpoint           | [V]   |
++--------------------+-------------------------+-------+
+| System             | Firmware mode           |       |
++--------------------+-------------------------+-------+
+| System             | System state            |       |
++--------------------+-------------------------+-------+
+| System             | System runtime          | [ms]  |
++--------------------+-------------------------+-------+
+| System             | Fault category flags    |       |
++--------------------+-------------------------+-------+
+| System             | Interlock states        |       |
++--------------------+-------------------------+-------+
+| System             | Raw interlock flags     | [Raw] |
++--------------------+-------------------------+-------+
+| System             | Required interlocks     | [Raw] |
++--------------------+-------------------------+-------+
+| General            | Ring LED State          |       |
++--------------------+-------------------------+-------+
+| General            | Base LED State          |       |
++--------------------+-------------------------+-------+
+| General            | Applicator ID (1)       | [Raw] |
++--------------------+-------------------------+-------+
+| General            | Applicator ID (2) [Raw] | [Raw] |
++--------------------+-------------------------+-------+
+| General            | Buttons                 | [Raw] |
++--------------------+-------------------------+-------+
+| Operational Points | Current Point           |       |
++--------------------+-------------------------+-------+
+| Operational Points | Total Points            |       |
++--------------------+-------------------------+-------+
+| Timers             | Internal Timer State    |       |
++--------------------+-------------------------+-------+
+| Timers             | Internal Timer Value    | [sec] |
++--------------------+-------------------------+-------+
+| Timers             | Timer 1 State           |       |
++--------------------+-------------------------+-------+
+| Timers             | Timer 1 Value           | [sec] |
++--------------------+-------------------------+-------+
+| Timers             | Timer 2 State           |       |
++--------------------+-------------------------+-------+
+| Timers             | Timer 2 Value           | [sec] |
++--------------------+-------------------------+-------+
+
+Fields not supplied by the selected firmware mode shall be shown as unavailable. The
+service interface shall also show the current latched fault records with each record's
+category, formatted message, captured system state, and captured runtime.
+
+.. image:: _images/RQ-H10SG-65.png
 <<<
 
 [REQUIREMENT]
@@ -1008,6 +1058,8 @@ TYPE: Cybersecurity
 TITLE: Settings - Users Authorization Management - Create New Role
 STATEMENT: >>>
 The application shall provide an authorized user the ability to add new roles to the system and assign specific permissions to these roles.
+
+.. image:: _images/RQ-H10SG-619.png
 <<<
 
 [REQUIREMENT]
@@ -1019,7 +1071,11 @@ The application shall provide a super user the ability to manage the users' acce
 
 The user will be able to set or unset the permissions to the predefined roles: RTT, Physicist, Service, and Administrator.
 
-With the following permissions: Patient's Clinical Data, Patient's Treatment, System Calibration, Quality Assurance, System Settings, User Management, and Services
+**With the following permissions:**
+
+Patient's Clinical Data, Patient's Treatment, System Calibration, Quality Assurance, System Settings, User Management, and Services
+
+.. image:: _images/RQ-H10SG-618.png
 <<<
 
 [REQUIREMENT]
@@ -1047,6 +1103,8 @@ The applicator serial will be identified automatically by the firmware, and the 
 2. Energy - The applicator supported energy - A drop-down control that lists all support energy levels.
 3. SSD - The collimator source to skin distance. [30,50] (optional)
 4. Active - The collimator will be created active by default.
+
+.. image:: _images/RQ-H10SG-127.png
 <<<
 
 [REQUIREMENT]
@@ -1055,6 +1113,8 @@ TYPE: Functional
 TITLE: System Setting View - Applicators Management - Layout
 STATEMENT: >>>
 The application shall have a user interface that allows users (role-based) to manage the system applicators. The user shall be able to view the currently registered applicators, add a new applicator definition, edit the data of an existing one, and deactivate an applicator if it is no longer in use.
+
+.. image:: _images/RQ-H10SG-126.png
 <<<
 
 [REQUIREMENT]
@@ -1067,10 +1127,13 @@ The New Applicators form should clearly distinguish which fields are mandatory a
 Mandatory fields should be marked with an asterisk.
 
 Mandatory fields are:
+
 - Serial
 - Type
 - Energy
 - SSD
+
+.. image:: _images/RQ-H10SG-321.png
 <<<
 
 [REQUIREMENT]
@@ -1100,6 +1163,8 @@ The application shall have an interface (pop-up) allowing the user to enter the 
 The pop-up should be visible when the application is started, and no device ID is defined.
 
 The Device ID should be saved to the database. The cloud application will use it to identify the device from which the data is synced.
+
+.. image:: _images/RQ-H10SG-249.png
 <<<
 
 [REQUIREMENT]
@@ -1108,6 +1173,8 @@ TYPE: Functional
 TITLE: System Setting View - Endpoint configuration
 STATEMENT: >>>
 The application shall have a user interface that allows users (role-based) to configure the system endpoints to enable communication between system components.
+
+.. image:: _images/RQ-H10SG-124.png
 <<<
 
 [REQUIREMENT]
@@ -1118,6 +1185,8 @@ STATEMENT: >>>
 The application shall have a user interface that allows admin users to manage the system users.
 
 The admin should be able to add, edit, or delete users.
+
+.. image:: _images/RQ-H10SG-125.png
 <<<
 
 [REQUIREMENT]
@@ -1155,7 +1224,11 @@ The application shall have a control that allows the user to view or hide the ty
 
 Default view - The password is hidden.
 
+.. image:: _images/RQ-H10SG-648-1.png
+
 When clicking on the icon - The password is shown.
+
+.. image:: _images/RQ-H10SG-648-2.png
 <<<
 
 [REQUIREMENT]
@@ -1164,6 +1237,16 @@ TYPE: Functional
 TITLE: User Profile Management
 STATEMENT: >>>
 The application should have a user interface to enable a super user to view, assign, and update user's roles.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10SG-741
+TYPE: Safety
+TITLE: Disable Patient Functions in Calibration Mode
+STATEMENT: >>>
+When the connected control board reports calibration firmware mode, the indoor application
+shall disable the Patients tab and obscure its content with a message directing the user to
+service the device. Non-patient service functions shall remain accessible.
 <<<
 
 [[/SECTION]]

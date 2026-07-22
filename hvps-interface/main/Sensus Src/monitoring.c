@@ -49,7 +49,6 @@ static void process_fil_ramp();
 static void update_kv_ramp();
 static void get_fil_ramp();
 static void run_grid_ctrl();
-static void check_kv_stability();
 
 void setup_system_monitoring()
 {
@@ -60,10 +59,12 @@ void setup_system_monitoring()
     config_vals[SYS_CONFIG_RUN_PID] = 1;
 #else
     config_vals[SYS_CONFIG_MAX_PWR] = 400;
-    config_vals[SYS_CONFIG_MIN_GRID] = 200;
+    config_vals[SYS_CONFIG_MIN_GRID] = 100;
 
     config_vals[SYS_CONFIG_RUN_PID] = 0;
 #endif
+
+	config_vals[SYS_CONFIG_MAX_GRID] = 600;
 
 	config_vals[SYS_CONFIG_MIN_KV] = 2;
 	config_vals[SYS_CONFIG_MAX_KV] = 100;
@@ -118,7 +119,7 @@ void clear_sys_bit(uint8_t bitpos)
 	}
 }
 
-void report_int_adc_vals(uint32_t *vals)
+void report_int_adc_vals(uint16_t *vals)
 {
 #ifndef CALIBRATION_MODE
 	float fil_scale = 0.9102222;
@@ -397,23 +398,31 @@ void process_monitoring()
     else
     {
 #endif
+#ifndef CALIBRATION_MODE
         if(sys_stat_check(SYS_WARMING))
         {
+#endif
             if(fil_ramp_ms <= 0)
             {
                 fil_ramp_ms = 1000;	//Ramp heater every 1000ms
                 process_fil_ramp();
             }
+#ifndef CALIBRATION_MODE
         }
+#endif
 
+#ifndef CALIBRATION_MODE
         if(sys_stat_check(SYS_KV_RAMPING))
         {
+#endif
             if(kv_ramp_ms <= 0)
             {
                 kv_ramp_ms = 1000;	//Ramp kV every 1000ms
                 process_kv_ramp();
             }
+#ifndef CALIBRATION_MODE
         }
+#endif
 #ifndef CALIBRATION_MODE
     }
 #endif
@@ -647,7 +656,6 @@ static void run_grid_ctrl()
 
 	float error = setpoints[SP_MA] - fb_vals[FB_MA];
 	float grid_adj = error;
-	float fil_adj = 20 * error;
 
 	if(setpoints[SP_KV] == 50)
 	{
@@ -666,6 +674,17 @@ static void run_grid_ctrl()
 		return;
 	}
 
+#if defined (CALIBRATION_MODE)
+	/* Clamp grid_adj to stay within -GRID_MAX_STEP and GRID_MAX_STEP */
+	if (grid_adj > GRID_MAX_STEP) 
+	{
+		grid_adj = GRID_MAX_STEP;
+	} else if (grid_adj < -GRID_MAX_STEP) 
+	{
+		grid_adj = -GRID_MAX_STEP;
+	}
+#endif
+
 	grid_out += grid_adj;
 
 	if(grid_out <= config_vals[SYS_CONFIG_MIN_GRID])
@@ -680,35 +699,4 @@ static void run_grid_ctrl()
 	}
 
 	write_grid(grid_out);
-
-	if(grid_ctrl_count >= 2 && grid_ms <= 0)
-	{
-#ifdef CALIBRATION_MODE
-		grid_ctrl_count++;
-#else
-        grid_ctrl_count = 0;
-#endif
-
-		if(error > 0)
-		{
-			grid_ms = 300;
-		}
-		else
-		{
-			grid_ms = 150;
-		}
-
-		fil_out += fil_adj;
-
-		if(fil_out <= config_vals[SYS_CONFIG_FIL_LOW])
-		{
-			fil_out = config_vals[SYS_CONFIG_FIL_LOW];
-		}
-		else if(fil_out >= config_vals[SYS_CONFIG_FIL_LIM])
-		{
-			fil_out = config_vals[SYS_CONFIG_FIL_LIM];
-		}
-
-		write_fil_a(fil_out);
-	}
 }

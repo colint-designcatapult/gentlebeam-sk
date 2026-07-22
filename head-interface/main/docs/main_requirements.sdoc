@@ -1,5 +1,5 @@
 [DOCUMENT]
-TITLE: Heracles Software Requirements Specification for Head Interface Board Application
+TITLE: Heracles Head Interface FW Software Requirements Specification
 UID: DHF-HRC-0023
 METADATA:
   COMPONENT: head-interface/main
@@ -97,7 +97,7 @@ UID: RQ-H1FHI-1
 TYPE: Functional
 TITLE: Cooling system temperature
 STATEMENT: >>>
-The head interface firmware shall be able to read and convert a feedback signal for the system’s
+The head interface firmware shall be able to read and convert a feedback signal for the system's
 cooling water temperature
 <<<
 
@@ -168,7 +168,7 @@ UID: RQ-H1FHI-12
 TYPE: Functional
 TITLE: Cooling system flow
 STATEMENT: >>>
-The head interface firmware shall be able to read and report a feedback signal for the system’s
+The head interface firmware shall be able to read and report a feedback signal for the system's
 cooling water flow rate
 <<<
 
@@ -177,7 +177,7 @@ UID: RQ-H1FHI-13
 TYPE: Functional
 TITLE: Cooling system pressure
 STATEMENT: >>>
-The head interface firmware shall be able to read and report a feedback signal for the system’s
+The head interface firmware shall be able to read and report a feedback signal for the system's
 cooling water pressure
 <<<
 
@@ -188,6 +188,15 @@ TITLE: QC Read
 STATEMENT: >>>
 The head interface firmware shall be able to read and report x-ray sensor data from two diodes
 when a quality check collimator is mounted
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FHI-55
+TYPE: Safety
+TITLE: Robot Hand Guidance Button
+STATEMENT: >>>
+The head interface firmware shall monitor the activity state of the hand guidance button and pass
+it to the robotic arm controller.
 <<<
 
 [[/SECTION]]

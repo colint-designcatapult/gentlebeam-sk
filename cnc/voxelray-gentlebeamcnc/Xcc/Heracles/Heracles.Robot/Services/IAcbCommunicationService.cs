@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Empyrean.Common.Infra.Networking;
-using Xcc.Infra.Services.GcbServices;
+using Empyrean.Common.Infra.Networking.Udp;
 
 namespace Heracles.Robot.Services
 {
@@ -10,7 +10,7 @@ namespace Heracles.Robot.Services
         IAsyncClientConnection GetAcbCommConnection();
     }
 
-    public interface IAcbCommunicationService : IUdpClientRaw
+    public interface IAcbCommunicationService : IRawUdpClient
     {
         [Obsolete]
         void StopListening(); // Use Stop() instead

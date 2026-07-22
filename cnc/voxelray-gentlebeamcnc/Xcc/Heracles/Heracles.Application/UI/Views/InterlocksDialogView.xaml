@@ -1,419 +1,241 @@
-﻿<ContentControl 
+<ContentControl
     x:Class="Heracles.Application.UI.Views.InterlocksDialogView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:prism="http://prismlibrary.com/"
-    prism:ViewModelLocator.AutoWireViewModel="True"
-    
     xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
     xmlns:viewModels="clr-namespace:Heracles.Application.UI.ViewModels"
-
+    prism:ViewModelLocator.AutoWireViewModel="True"
     mc:Ignorable="d"
-    d:DesignWidth="600" d:DesignHeight="860" 
-    d:DataContext="{d:DesignInstance {x:Type viewModels:InterlocksDialogViewModel}, IsDesignTimeCreatable=True}">
-    
+    d:DesignWidth="650"
+    d:DesignHeight="820"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:InterlocksDialogViewModel}, IsDesignTimeCreatable=False}">
+
     <ContentControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/InterlockIcons.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            
-            <Style x:Key="BlockHeaderTextBoxStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBlockLegendStyle}">
-                <Setter Property="FontSize" Value="{StaticResource HugeFontSize}"/>
-                <Setter Property="Foreground" Value="{StaticResource AccentForegroundColor}"/>
-                <Setter Property="HorizontalAlignment" Value="Center"/>
+
+            <Style x:Key="InterlocksIndicatorStyle" TargetType="ContentControl">
+                <Setter Property="Width" Value="24" />
+                <Setter Property="Height" Value="24" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
 
-            <Style x:Key="TelemetryTextBlockLegendStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBlockLegendStyle}">
-                <Setter Property="FontSize" Value="{StaticResource LargeFontSize}"/>
-            </Style>
-            
-            <Style x:Key="InterlocksIndicatorStyle" TargetType="ContentControl" >
-                <Setter Property="Margin" Value="0"/>
-                <Setter Property="Height" Value="22"/>
-                <Setter Property="Width" Value="22"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="HorizontalAlignment" Value="Center"/>
-            </Style>            
+            <DataTemplate x:Key="InterlockDetailTemplate" DataType="{x:Type viewModels:InterlockStatusItem}">
+                <Border
+                    Margin="28,0,8,0"
+                    Padding="14,7"
+                    BorderBrush="{StaticResource BlockBorderColor1}"
+                    BorderThickness="2,0,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="44" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="{StaticResource LargeFontSize}"
+                            TextWrapping="Wrap"
+                            Text="{Binding DisplayName}" />
+
+                        <Grid Grid.Column="1">
+                            <ContentControl
+                                Style="{StaticResource InterlocksIndicatorStyle}"
+                                Content="{StaticResource ThumbUnknownSvgIcon}" />
+                            <ContentControl
+                                Style="{StaticResource InterlocksIndicatorStyle}"
+                                Content="{StaticResource ThumbDislikeSvgIcon}"
+                                Visibility="{Binding State, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                            <ContentControl
+                                Style="{StaticResource InterlocksIndicatorStyle}"
+                                Content="{StaticResource ThumbLikeSvgIcon}"
+                                Visibility="{Binding State, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                        </Grid>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+
+            <DataTemplate x:Key="InterlockGroupTemplate" DataType="{x:Type viewModels:InterlockGroupStatusItem}">
+                <StackPanel>
+                    <Border
+                        Margin="8,0"
+                        Padding="14,10"
+                        BorderBrush="{StaticResource BlockBorderColor1}"
+                        BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="44" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="{StaticResource LargeFontSize}"
+                                FontWeight="SemiBold"
+                                TextWrapping="Wrap"
+                                Text="{Binding DisplayName}" />
+
+                            <Grid Grid.Column="1">
+                                <ContentControl
+                                    Style="{StaticResource InterlocksIndicatorStyle}"
+                                    Content="{StaticResource ThumbUnknownSvgIcon}" />
+                                <ContentControl
+                                    Style="{StaticResource InterlocksIndicatorStyle}"
+                                    Content="{StaticResource ThumbDislikeSvgIcon}"
+                                    Visibility="{Binding State, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                <ContentControl
+                                    Style="{StaticResource InterlocksIndicatorStyle}"
+                                    Content="{StaticResource ThumbLikeSvgIcon}"
+                                    Visibility="{Binding State, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <ItemsControl
+                        Margin="0,0,0,8"
+                        ItemTemplate="{StaticResource InterlockDetailTemplate}"
+                        ItemsSource="{Binding Details}"
+                        Visibility="{Binding ShowDetails, Converter={convx:BooleanToVisibilityConverter}}" />
+                </StackPanel>
+            </DataTemplate>
         </ResourceDictionary>
     </ContentControl.Resources>
 
     <prism:Dialog.WindowStyle>
         <Style TargetType="Window">
-            <Setter Property="prism:Dialog.WindowStartupLocation" Value="CenterScreen"/>
-            <Setter Property="Width" Value="600"/>
-            <Setter Property="Height" Value="860"/>
-            <Setter Property="ResizeMode" Value="NoResize"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="WindowStyle" Value="None"/>
-            <Setter Property="AllowsTransparency" Value="True"/>
+            <Setter Property="prism:Dialog.WindowStartupLocation" Value="CenterScreen" />
+            <Setter Property="Width" Value="650" />
+            <Setter Property="Height" Value="820" />
+            <Setter Property="ResizeMode" Value="NoResize" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="WindowStyle" Value="None" />
+            <Setter Property="AllowsTransparency" Value="True" />
         </Style>
     </prism:Dialog.WindowStyle>
 
-    <Border BorderBrush="{StaticResource BlockBorderColor1}" BorderThickness="1" Style="{StaticResource BorderBlockStyle}" Background="{StaticResource BlockBackgroundColor}">
+    <Border
+        TextElement.Foreground="{StaticResource ForegroundDefaultBrush}"
+        Background="{StaticResource BlockBackgroundColor}"
+        BorderBrush="{StaticResource BlockBorderColor1}"
+        BorderThickness="1"
+        Style="{StaticResource BorderBlockStyle}">
         <DockPanel Margin="10">
-            <Button 
+            <Button
                 DockPanel.Dock="Top"
                 HorizontalAlignment="Right"
                 Command="{Binding CloseDialogCommand}"
-                Style="{StaticResource ButtonCloseStyle}"/>
+                Style="{StaticResource ButtonCloseStyle}" />
+            <Button
+                x:Name="ButtonClearErrors"
+                DockPanel.Dock="Bottom"
+                Height="{StaticResource ButtonHeight}"
+                Margin="8,12,8,8"
+                HorizontalAlignment="Center"
+                Command="{Binding ClearFaultsCommand}"
+                Visibility="{Binding ShowClearFaultsButton, Converter={convx:BooleanToVisibilityConverter}}">
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <Grid>
+                        <Path
+                            Width="24"
+                            Height="24"
+                            Data="{StaticResource RefreshIcon3}"
+                            Style="{StaticResource XRayButtonsIconStyle}" />
+                        <Path
+                            Height="8"
+                            Margin="0"
+                            Data="{StaticResource CancelIconPath}"
+                            Stroke="Red"
+                            StrokeEndLineCap="Square"
+                            StrokeStartLineCap="Square"
+                            StrokeThickness="2"
+                            Style="{StaticResource XRayButtonsIconStyle}" />
+                    </Grid>
+                    <TextBlock Text="Clear Errors" Style="{StaticResource TextBlockButtonStyle}" />
+                </StackPanel>
+            </Button>
 
-            <Grid Margin="{StaticResource BlockContentMargin}">
-                <!--Interlocks-->
-                <Border Grid.Row="0" Style="{StaticResource BorderBlockStyle}">
-                    <Grid Margin="{StaticResource BlockContentMargin}" VerticalAlignment="Center">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.3*"/>
-                            <ColumnDefinition Width="{StaticResource  BlockContentSmallMarginLength}" />
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
 
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />   
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />                               
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />                               
-                        </Grid.RowDefinitions>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="{StaticResource BlockContentMargin}">
+                    <Border
+                        Margin="8,0,8,26"
+                        Padding="18,14"
+                        BorderBrush="{StaticResource AccentForegroundColor}"
+                        BorderThickness="1"
+                        CornerRadius="3">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="52" />
+                            </Grid.ColumnDefinitions>
 
-                        <TextBlock 
-                            Grid.ColumnSpan="3" 
-                            Style="{StaticResource BlockHeaderTextBoxStyle}" 
-                            Text="Interlocks"/>
+                            <StackPanel>
+                                <TextBlock
+                                    FontSize="{StaticResource HugeFontSize}"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource AccentForegroundColor}"
+                                    Text="System readiness" />
+                                <TextBlock
+                                    Margin="0,4,0,0"
+                                    FontSize="{StaticResource LargeFontSize}"
+                                    Text="{Binding SystemReadinessText}" />
+                            </StackPanel>
 
-                        <TextBlock 
-                            Grid.Row="2"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Applicator:"/>
-                    
-                        <Grid Grid.Row="2" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HeraclesCollimator, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HeraclesCollimator, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                            <Grid Grid.Column="1">
+                                <ContentControl
+                                    Width="30"
+                                    Height="30"
+                                    Content="{StaticResource ThumbUnknownSvgIcon}" />
+                                <ContentControl
+                                    Width="30"
+                                    Height="30"
+                                    Content="{StaticResource ThumbDislikeSvgIcon}"
+                                    Visibility="{Binding SystemIsReady, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                                <ContentControl
+                                    Width="30"
+                                    Height="30"
+                                    Content="{StaticResource ThumbLikeSvgIcon}"
+                                    Visibility="{Binding SystemIsReady, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
+                            </Grid>
                         </Grid>
+                    </Border>
 
-                    
-                        <TextBlock 
-                            Grid.Row="4"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Remote Key:"/>
-                    
-                        <Grid Grid.Row="4" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.RemoteKey, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.RemoteKey, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-                    
-                    
-                        <TextBlock 
-                            Grid.Row="6"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Door Interlock:"/>
+                    <TextBlock
+                        Margin="8,0,8,6"
+                        FontSize="{StaticResource LargeFontSize}"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource AccentForegroundColor}"
+                        Text="OPERATOR CHECKS" />
+                    <ItemsControl
+                        ItemTemplate="{StaticResource InterlockGroupTemplate}"
+                        ItemsSource="{Binding OperatorInterlocks}" />
 
-
-                        <Grid Grid.Row="6" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.DoorOpened, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.DoorOpened, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-
-
-                        <TextBlock 
-                            Grid.Row="10"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Base E-Stop:"/>
-                    
-                        <Grid Grid.Row="10" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.BaseEStopEngaged, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.BaseEStopEngaged, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-                    
-                    
-                        <TextBlock 
-                            Grid.Row="12"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Remote E-Stop:"/>
-                    
-                        <Grid Grid.Row="12" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.RemoteEStopEngaged, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.RemoteEStopEngaged, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-                    
-                        
-                        <TextBlock 
-                            Grid.Row="18"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Timer #1:"/>
-
-                        <Grid Grid.Row="18" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Timer1Expired, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Timer1Expired, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-
-                        
-                        <TextBlock 
-                            Grid.Row="20"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Timer #2:"/>
-
-                        <Grid Grid.Row="20" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Timer2Expired, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Timer2Expired, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-                        
-
-                        <TextBlock 
-                            Grid.Row="22"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Water Level:"/>
-
-                        <Grid Grid.Row="22" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.WaterLevel, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.WaterLevel, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-
-                        
-                        <TextBlock 
-                            Grid.Row="24"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Head:"/>
-
-                        <Grid Grid.Row="24" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HeadInterfaceBoard, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HeadInterfaceBoard, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-
-                        
-                        <TextBlock 
-                            Grid.Row="26"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="HVPS:"/>
-
-                        <Grid Grid.Row="26" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HVPS, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.HVPS, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-                        
-                        
-                        <TextBlock 
-                            Grid.Row="28"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Cooler Alarm:"/>
-
-                        <Grid Grid.Row="28" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.CoolerAlarm, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.CoolerAlarm, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-                        
-                        
-                        <TextBlock 
-                            Grid.Row="30"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Watchdog:"/>
-
-                        <Grid Grid.Row="30" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Watchdog, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.Watchdog, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-                                
-                        
-                        <TextBlock 
-                            Grid.Row="32"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Ion Pump:"/>
-                        
-                        <Grid Grid.Row="32" Grid.Column="2" HorizontalAlignment="Left">
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}"
-                                Content="{StaticResource ThumbUnknownSvgIcon}"/>
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbDislikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.IonPumpHV, Converter={convx:BooleanToInvisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-            
-                            <ContentControl 
-                                Style="{StaticResource InterlocksIndicatorStyle}" 
-                                Content="{StaticResource ThumbLikeSvgIcon}" 
-                                Visibility="{Binding GCBDataStore.Interlocks.IonPumpHV, Converter={convx:BooleanToVisibilityConverter}, FallbackValue={x:Static Visibility.Hidden}}" />
-                        </Grid>
-                    </Grid>                   
-                </Border>
-            </Grid>
+                    <StackPanel
+                        Margin="0,26,0,0"
+                        Visibility="{Binding HasAttentionItems, Converter={convx:BooleanToVisibilityConverter}}">
+                        <TextBlock
+                            Margin="8,0,8,6"
+                            FontSize="{StaticResource LargeFontSize}"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource AccentForegroundColor}"
+                            Text="ITEMS REQUIRING ATTENTION" />
+                        <ItemsControl
+                            ItemTemplate="{StaticResource InterlockGroupTemplate}"
+                            ItemsSource="{Binding AttentionItems}" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </DockPanel>
     </Border>
 </ContentControl>

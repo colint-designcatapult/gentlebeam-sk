@@ -1,3 +1,4 @@
 [component]
 name = "cnc/voxelray-gentlebeamcnc/internal"
 include_docs = ["*.sdoc"]
+resources = ["_images/"]
