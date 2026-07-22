@@ -1014,6 +1014,10 @@ The System Signals to be presented are:
 +--------------------+-------------------------+-------+
 | System             | Interlock states        |       |
 +--------------------+-------------------------+-------+
+| System             | Raw interlock flags     | [Raw] |
++--------------------+-------------------------+-------+
+| System             | Required interlocks     | [Raw] |
++--------------------+-------------------------+-------+
 | General            | Ring LED State          |       |
 +--------------------+-------------------------+-------+
 | General            | Base LED State          |       |

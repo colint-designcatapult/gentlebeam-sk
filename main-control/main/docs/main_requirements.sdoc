@@ -159,14 +159,18 @@ UID: RQ-H1FWMC-8
 TYPE: Safety
 TITLE: Interlocks
 STATEMENT: >>>
-The firmware shall monitor the status of the system interlocks and throw a fault if any
-interlocks are in an invalid condition. Interlocks include:
+The firmware shall monitor every physical Port C interlock input and throw a fault when an
+interlock required by the compiled firmware mode and current system state is not in its
+good condition. Inputs not required in the current state shall remain monitored and
+reported. Interlocks include:
 
-- E-stops
-- Ion pump HV interlocks
-- KUKA robot arm interlocks
-- Door interlock
-- Coolant level sensor
+- Door, base e-stop, and remote e-stop
+- KUKA 1 and KUKA 2 readiness
+- Water level, water temperature, ion pump, cooler, and HVPS readiness
+- Backup timer 1, backup timer 2, and watchdog readiness
+- Remote key and base key
+- MCU fault, spare interlocks 1 and 2, and buffered master-fault diagnostic inputs
+
 <<<
 
 [REQUIREMENT]
@@ -826,11 +830,13 @@ telemetry packets every 10 ms (100 Hz) and in response to a telemetry request fr
 The parameter layout shall correspond to the compiled firmware mode (normal or calibration)
 and include the applicable values from the following categories:
 
-- Control-board state, runtime, fault flags, interlocks, and indicator state
+- Control-board state, runtime, fault flags, indicator state, and all physical interlock inputs
+- The state-dependent mask identifying which interlock inputs are currently required
 - Current and total operational points in the treatment plan
 - Internal and backup timer states and values
 - Applicator, button, coolant, magnetometer, coil, ion-pump, and temperature values
 - HVPS runtime, I/O and status flags, setpoints, feedback values, and power limits
+
 <<<
 
 [REQUIREMENT]

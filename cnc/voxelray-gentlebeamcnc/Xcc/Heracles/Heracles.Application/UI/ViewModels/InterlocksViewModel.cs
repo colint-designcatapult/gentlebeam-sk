@@ -2,6 +2,7 @@ using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Services.Dialogs;
 using Xcc.Core.Constants;
+using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Models;
 
 namespace Heracles.Application.UI.ViewModels
@@ -13,32 +14,13 @@ namespace Heracles.Application.UI.ViewModels
             GcbDataStore = gcbDataStore;
             DialogService = dialogService;
 
+            UpdateSystemReadiness(gcbDataStore.SystemTelemetry);
             gcbDataStore.PropertyChanged += (s, e) =>
-            {
-                var interlocks = gcbDataStore.SystemTelemetry?.Interlocks;
-                if (interlocks is null)
-                {
-                    SystemIsReady = null;
-                }
-                else
-                {
-                    SystemIsReady =
-                        interlocks.Value.CollimatorOn == true
-                        && interlocks.Value.RemoteKeyOn == true
-                        && interlocks.Value.DoorClosed == true
-                        && interlocks.Value.BaseEStopReleased == true
-                        && interlocks.Value.RemoteEStopReleased == true
-                        && interlocks.Value.Timer1Ready == true
-                        && interlocks.Value.Timer2Ready == true
-                        && interlocks.Value.WaterLevelOk == true
-                        && interlocks.Value.HeadInterfaceBoardReady == true
-                        && interlocks.Value.HvpsReady == true
-                        && interlocks.Value.CoolerReady == true
-                        && interlocks.Value.WatchdogReady == true
-                        && interlocks.Value.IonPumpOk == true;
-                }
-            };
+                UpdateSystemReadiness(gcbDataStore.SystemTelemetry);
         }
+
+        private void UpdateSystemReadiness(ISystemTelemetry? telemetry) =>
+            SystemIsReady = telemetry?.IsSystemReady();
 
         public IGCBDataStore GcbDataStore { get; }
         public IDialogService DialogService { get; }

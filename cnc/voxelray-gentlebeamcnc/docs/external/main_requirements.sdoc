@@ -401,7 +401,7 @@ received from the control-board firmware in real time, including:
 * Control-board state and firmware mode
 * Emission and backup timers
 * Emission current and energy
-* Safety interlocks and system-fault categories
+* Safety interlock states, the current required-interlock set, and system-fault categories
 
 The application shall select the telemetry layout from the reported firmware version and
 mode. A field that is not supplied by that firmware mode shall be shown as unavailable
@@ -618,28 +618,36 @@ UID: RQ-H10TG-139
 TYPE: Safety
 TITLE: Treatment View - Safety Interlocks
 STATEMENT: >>>
-The application shall provide an interface that displays the semantic state of all safety
-interlocks. An available interlock shall indicate ready or active; an interlock not supplied
-by the selected firmware mode shall indicate unavailable.
+The dedicated interlock pop-up shall show system readiness at the top. System readiness
+shall be true if and only if the buffered master-fault input is clear, no system fault is
+active, and every interlock required by the current firmware state is available and ready.
 
-The application will have a dedicated control that, when clicked by the user, will display
-a pop-up with the list of interlocks.
+The pop-up shall always show these operator-facing checks:
 
-The interlocks should include:
+* E-stops
+* Door closed
+* Keys
 
-* Applicator
-* Remote Key
-* Door -
-* Base E-Stop
-* Remote E-Stop
-* Timer #1
-* Timer #2
-* Water Level
-* Head
-* HVPS
-* Cooler Alarm
-* Watchdog
-* Ion pump
+E-stops and keys shall normally appear as one summary row each. When either group is not
+ready or is unavailable, the pop-up shall disclose the individual base and remote states
+below the summary row.
+
+All other interlocks shall be hidden while ready and shown only while in a bad state.
+Technical signals shall be presented with operator-facing group names: Robot arm, Cooling
+system, Vacuum system, Backup timers, High-voltage system, Control system, and Auxiliary
+safety circuit. The Auxiliary safety circuit group shall aggregate spare interlocks 1 and
+2. The buffered master-fault input shall be shown as Master fault only when it is the sole
+bad interlock. Each active control-board fault shall appear as a separate attention item
+using its formatted fault message and a red thumbs-down indication.
+
+The pop-up shall use the application's gray default foreground for body text, with the
+existing accent foreground retained for section headings. On the External GUI only, a
+Clear Errors button matching the application's existing clear-errors control shall remain
+fixed at the bottom of the pop-up when the buffered master-fault input is bad or any
+control-board fault is active or latched. Activating the button shall send the clear-faults
+command. The button shall be hidden at all other times and shall not
+be present on the Internal GUI.
+
 <<<
 
 [REQUIREMENT]

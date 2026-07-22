@@ -556,8 +556,8 @@ namespace Xcc.Application.Domain.GryphonBoard
             // First wait for HW key awaiting state:
             await WaitForState(GcbStateNew.WaitForKey, tokenSource.Token);
 
-            // Wait for the semantic collimator-ready input.
-            while (GcbDataStore.SystemTelemetry?.Interlocks.CollimatorOn != true)
+            // Wait for the base key used to authorize imaging.
+            while (GcbDataStore.SystemTelemetry?.Interlocks.BaseKeyOn != true)
             {
                 await Task.Delay(50, tokenSource.Token);
             }

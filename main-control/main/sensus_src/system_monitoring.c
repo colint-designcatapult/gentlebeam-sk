@@ -17,6 +17,12 @@
 #include "system_monitoring.h"
 #include "sys_config_defaults.h"
 
+#if defined(CALIBRATION_MODE)
+#define INTERLOCK_FAULT_MASK			0xC3FFFu
+#else
+#define INTERLOCK_FAULT_MASK			0xC3FCDu
+#endif
+
 static struct timer_task VTIMER_param_check_task;
 
 volatile bool system_param_check = false;
@@ -200,59 +206,49 @@ static void check_system_power()
 
 static void check_interlocks()
 {
-	bool stop_check = false;
-#if defined(CALIBRATION_MODE)
-	volatile uint32_t interlock_mask = 0b11000011111111111111;	
-	//skip (right to left): MCU FAULT, SPARE_INTERLOCK, BUF_MASTER_FAULT, NA
-#else
-	volatile uint32_t interlock_mask = 0b11000011111111001101;	//skip (right to left): MCU FAULT, SPARE_INTERLOCK, NA
-#endif
+	// Publish every physical Port C interlock input except the non-input PC17.
+	const uint32_t interlock_status =
+		gpio_get_port_level(GPIO_PORTC) & INTERLOCK_INPUT_MASK;
+	uint32_t required_interlock_mask = INTERLOCK_FAULT_MASK;
 
-	//Get interlock input states
-	uint32_t interlock_status = gpio_get_port_level(GPIO_PORTC);	
+	system_status[SS_INTERLOCKS].u = interlock_status;
 
-	interlock_status &= interlock_mask;
-	
-	//Save interlock status
-	system_status[SS_INTERLOCKS].i = interlock_status;
-	
-	//Set remote stop led if remote estop is pressed
-	gpio_set_pin_level(IO_REMOTE_LED_1, interlock_status & (1<<IBP_REMOTE_ESTOP));
+	// Set remote stop LED if remote e-stop is pressed.
+	gpio_set_pin_level(IO_REMOTE_LED_1, interlock_status & (1u << IBP_REMOTE_ESTOP));
 
 #if defined(CALIBRATION_MODE)
-	//Report fault if door is open
-	fault_detected(DOOR_FAULT, !(interlock_status & (1<<IBP_DOOR_CLOSED)));
+	// Report fault if door is open.
+	fault_detected(DOOR_FAULT, !(interlock_status & (1u << IBP_DOOR_CLOSED)));
 #endif
-	
-	//Based on the state, remove specific interlocks from creating a fault condition
+
+	// Remove interlocks that are not required in the current state.
 	switch(system_status[SS_STATE].i)
 	{
 		case STATE_STARTUP:
-			//In startup ignore all interlock faults
-			interlock_mask = 0;
+			required_interlock_mask = 0;
 			break;
 		case STATE_COLD:
 		case STATE_COLD_FAULT:
-			interlock_mask &= ~(1<<IBP_DOOR_CLOSED);
+			required_interlock_mask &= ~(1u << IBP_DOOR_CLOSED);
 #if defined(CALIBRATION_MODE)
-			interlock_mask &= ~(1<<IBP_DRIVE_SYS);
+			required_interlock_mask &= ~(1u << IBP_SPARE_INTERLOCK_2);
 #endif
-			interlock_mask &= ~(1<<IBP_REMOTE_KEY);
-			interlock_mask &= ~(1<<IBP_COLLIMATOR_ON);
+			required_interlock_mask &= ~(1u << IBP_REMOTE_KEY);
+			required_interlock_mask &= ~(1u << IBP_BASE_KEY);
 			break;
 		case STATE_CONDITIONING:
 		case STATE_WARMUP:
 			break;
-		case STATE_WARMUP_FAULT:	
+		case STATE_WARMUP_FAULT:
 		case STATE_PRIMED:
 		case STATE_STAGING:
 		case STATE_STAGED:
-			interlock_mask &= ~(1<<IBP_DOOR_CLOSED);
+			required_interlock_mask &= ~(1u << IBP_DOOR_CLOSED);
 #if defined(CALIBRATION_MODE)
-			interlock_mask &= ~(1<<IBP_DRIVE_SYS);
+			required_interlock_mask &= ~(1u << IBP_SPARE_INTERLOCK_2);
 #endif
-			interlock_mask &= ~(1<<IBP_REMOTE_KEY);
-			interlock_mask &= ~(1<<IBP_COLLIMATOR_ON);
+			required_interlock_mask &= ~(1u << IBP_REMOTE_KEY);
+			required_interlock_mask &= ~(1u << IBP_BASE_KEY);
 			break;
 		case STATE_HVPS_CHECK:
 		case STATE_SETUP:
@@ -263,25 +259,29 @@ static void check_interlocks()
 		case STATE_TERMINATION:
 		case STATE_DISCHARGE:
 		case STATE_FAULT:
-			interlock_mask &= ~(1<<IBP_DOOR_CLOSED);
+			required_interlock_mask &= ~(1u << IBP_DOOR_CLOSED);
 #if defined(CALIBRATION_MODE)
-			interlock_mask &= ~(1<<IBP_DRIVE_SYS);
+			required_interlock_mask &= ~(1u << IBP_SPARE_INTERLOCK_2);
 #endif
-			interlock_mask &= ~(1<<IBP_REMOTE_KEY);
-			interlock_mask &= ~(1<<IBP_COLLIMATOR_ON);
+			required_interlock_mask &= ~(1u << IBP_REMOTE_KEY);
+			required_interlock_mask &= ~(1u << IBP_BASE_KEY);
 			break;
 		case STATE_SYSTEM_CRASH:
 		case STATE_UNKNOWN:
 			break;
-		//For all other delivery states, all interlocks should result in a fault
 		default:
 			break;
 	}
-	
-	//Throw a fault if interlocks are not valid
-	if((interlock_status & interlock_mask) != interlock_mask)
+
+	system_status[SS_REQUIRED_INTERLOCKS].u = required_interlock_mask;
+
+	if((interlock_status & required_interlock_mask) != required_interlock_mask)
 	{
-		report_typed_fault2(FAULT_INTERLOCK, "Interlock status 0x%X does not match required mask 0x%X.", MAKE_ARG(interlock_status), MAKE_ARG(interlock_mask));
+		report_typed_fault2(
+			FAULT_INTERLOCK,
+			"Interlock status 0x%X does not match required mask 0x%X.",
+			MAKE_ARG(interlock_status),
+			MAKE_ARG(required_interlock_mask));
 	}
 }
 

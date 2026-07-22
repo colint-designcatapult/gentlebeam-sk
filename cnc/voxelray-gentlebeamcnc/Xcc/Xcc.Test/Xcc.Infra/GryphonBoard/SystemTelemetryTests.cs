@@ -10,14 +10,11 @@ internal class SystemTelemetryTests
     [Test]
     public void NormalParser_MapsAllPublishedFieldsAndSemanticValues()
     {
-        var packet = NewTelemetryPacket(46);
+        var packet = NewTelemetryPacket((uint)NormalTelemetryField.PayloadFields);
         packet[(int)NormalTelemetryField.SystemState] = (int)GcbStateNew.Emission;
         packet[(int)NormalTelemetryField.SystemRuntime] = 101;
         packet[(int)NormalTelemetryField.SystemFaultFlags] = (1u << 3) | (1u << 23);
-        packet[(int)NormalTelemetryField.InterlockFlags] =
-            (1u << 0) | (1u << 2) | (1u << 3) | (1u << 6) | (1u << 7)
-            | (1u << 8) | (1u << 9) | (1u << 10) | (1u << 11) | (1u << 12)
-            | (1u << 13) | (1u << 18) | (1u << 19);
+        packet[(int)NormalTelemetryField.InterlockFlags] = 0xDFFFFu;
         packet[(int)NormalTelemetryField.RingLedState] = (int)RingLedState.TBD2;
         packet[(int)NormalTelemetryField.BaseLedState] = (int)BaseLedState.TBD2;
         packet[(int)NormalTelemetryField.Collimator1] = 0x89ABCDEFu;
@@ -56,10 +53,11 @@ internal class SystemTelemetryTests
         packet[(int)NormalTelemetryField.Mag2X] = 139.5f;
         packet[(int)NormalTelemetryField.Mag2Y] = 140.5f;
         packet[(int)NormalTelemetryField.Mag2Z] = 141.5f;
-        packet[(int)NormalTelemetryField.TvmInterlock] = 5u;
+        packet[(int)NormalTelemetryField.Reserved1] = 5u;
         packet[(int)NormalTelemetryField.KvSetpoint] = 143.5f;
         packet[(int)NormalTelemetryField.EmissionCurrentLimit] = 144.5f;
         packet[(int)NormalTelemetryField.HvpsPowerSetpoint] = 145.5f;
+        packet[(int)NormalTelemetryField.RequiredInterlockFlags] = (1u << 0) | (1u << 4);
 
         var telemetry = SystemNormalTelemetry.Parse(packet.UpdateCRC().Buffer);
 
@@ -73,13 +71,18 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.Faults.GetState(SystemFault.VoltageFault), Is.True);
             Assert.That(telemetry.Faults.GetState(SystemFault.InvalidConfigFault), Is.True);
             Assert.That(telemetry.Faults.GetState(SystemFault.CurrentFault), Is.False);
-            Assert.That(telemetry.Interlocks.RawFlags, Is.EqualTo(0xC3FCDu));
-            Assert.That(telemetry.Interlocks.RawTvmFlags, Is.EqualTo(5u));
+            Assert.That(telemetry.Interlocks.RawFlags, Is.EqualTo(0xDFFFFu));
+            Assert.That(telemetry.Interlocks.RawRequiredFlags, Is.EqualTo((1u << 0) | (1u << 4)));
             Assert.That(telemetry.Interlocks.DoorClosed, Is.True);
-            Assert.That(telemetry.Interlocks.CollimatorOn, Is.True);
-            Assert.That(telemetry.Interlocks.TvmNotchEngaged, Is.True);
-            Assert.That(telemetry.Interlocks.DriveSystemReady, Is.Null);
-            Assert.That(telemetry.Interlocks.Kuka1Ready, Is.Null);
+            Assert.That(telemetry.Interlocks.SpareInterlock2, Is.True);
+            Assert.That(telemetry.Interlocks.Kuka1Ready, Is.True);
+            Assert.That(telemetry.Interlocks.McuFaultClear, Is.True);
+            Assert.That(telemetry.Interlocks.SpareInterlock1, Is.True);
+            Assert.That(telemetry.Interlocks.MasterFaultClear, Is.True);
+            Assert.That(telemetry.Interlocks.BaseKeyOn, Is.True);
+            Assert.That(telemetry.Interlocks.IsRequired(SystemInterlock.DoorClosed), Is.True);
+            Assert.That(telemetry.Interlocks.IsRequired(SystemInterlock.Kuka1Ready), Is.True);
+            Assert.That(telemetry.Interlocks.IsRequired(SystemInterlock.BaseKeyOn), Is.False);
             Assert.That(telemetry.RingLedState, Is.EqualTo(RingLedState.TBD2));
             Assert.That(telemetry.BaseLedState, Is.EqualTo(BaseLedState.TBD2));
             Assert.That(telemetry.CollimatorId1, Is.EqualTo(0x89ABCDEFu));
@@ -123,33 +126,9 @@ internal class SystemTelemetryTests
         });
     }
 
-    [TestCase(43, null, null, null)]
-    [TestCase(44, 43f, null, null)]
-    [TestCase(45, 43f, 44f, null)]
-    [TestCase(46, 43f, 44f, 45f)]
-    public void NormalParser_PreservesOptionalTailCompatibility(
-        int fieldCount,
-        float? expectedKv,
-        float? expectedCurrent,
-        float? expectedPower)
-    {
-        var packet = NewTelemetryPacket((uint)fieldCount);
-        if (fieldCount > 43) packet[43] = 43f;
-        if (fieldCount > 44) packet[44] = 44f;
-        if (fieldCount > 45) packet[45] = 45f;
 
-        var telemetry = SystemNormalTelemetry.Parse(packet.UpdateCRC().Buffer);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(telemetry.KvSetpoint, Is.EqualTo(expectedKv));
-            Assert.That(telemetry.EmissionCurrentLimit, Is.EqualTo(expectedCurrent));
-            Assert.That(telemetry.HvpsPowerSetpoint, Is.EqualTo(expectedPower));
-        });
-    }
-
-    [TestCase(42)]
-    [TestCase(47)]
+    [TestCase(46)]
+    [TestCase(48)]
     public void NormalParser_RejectsInvalidFieldCounts(int fieldCount)
     {
         var packet = NewTelemetryPacket((uint)fieldCount).UpdateCRC();
@@ -159,7 +138,7 @@ internal class SystemTelemetryTests
     [Test]
     public void CalibrationParser_MapsAuthoritativeLayoutAndUnavailableValues()
     {
-        var packet = NewTelemetryPacket(47);
+        var packet = NewTelemetryPacket(48);
         packet[1] = (int)GcbStateNew.WarmupFault;
         packet[2] = 102;
         packet[3] = 103;
@@ -171,7 +150,7 @@ internal class SystemTelemetryTests
         packet[11] = 111;
         packet[12] = (1u << 5) | (1u << 22);
         packet[13] = 0xA5A5A5A5u;
-        packet[14] = 0xC3FFFu;
+        packet[14] = 0xDFFFFu;
         packet[15] = 0x80010182u;
         packet[16] = 0x80000209u;
         packet[17] = 0xDEADBEEFu;
@@ -193,6 +172,7 @@ internal class SystemTelemetryTests
         packet[41] = 141.5f;
         packet[42] = 142.5f;
         packet[43] = 143.5f;
+        packet[47] = 0xC3FFFu;
 
         var telemetry = SystemCalibrationTelemetry.Parse(packet.UpdateCRC().Buffer);
 
@@ -212,12 +192,16 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.Faults.RawCommunicationFlags, Is.EqualTo(0xA5A5A5A5u));
             Assert.That(telemetry.Faults.GetState(SystemFault.FilamentFault), Is.True);
             Assert.That(telemetry.Faults.GetState(SystemFault.MemoryFault), Is.True);
-            Assert.That(telemetry.Interlocks.RawFlags, Is.EqualTo(0xC3FFFu));
-            Assert.That(telemetry.Interlocks.RawTvmFlags, Is.Null);
-            Assert.That(telemetry.Interlocks.DriveSystemReady, Is.True);
+            Assert.That(telemetry.Interlocks.RawFlags, Is.EqualTo(0xDFFFFu));
+            Assert.That(telemetry.Interlocks.RawRequiredFlags, Is.EqualTo(0xC3FFFu));
+            Assert.That(telemetry.Interlocks.SpareInterlock2, Is.True);
             Assert.That(telemetry.Interlocks.Kuka1Ready, Is.True);
             Assert.That(telemetry.Interlocks.Kuka2Ready, Is.True);
-            Assert.That(telemetry.Interlocks.TvmNotchEngaged, Is.Null);
+            Assert.That(telemetry.Interlocks.McuFaultClear, Is.True);
+            Assert.That(telemetry.Interlocks.SpareInterlock1, Is.True);
+            Assert.That(telemetry.Interlocks.MasterFaultClear, Is.True);
+            Assert.That(telemetry.Interlocks.IsRequired(SystemInterlock.SpareInterlock2), Is.True);
+            Assert.That(telemetry.Interlocks.IsRequired(SystemInterlock.McuFaultClear), Is.False);
             Assert.That(telemetry.Hvps.RawIoFlags, Is.EqualTo(0x80010182u));
             Assert.That(telemetry.Hvps.RawStatusFlags, Is.EqualTo(0x80000209u));
             Assert.That(telemetry.Hvps.RawErrorFlags, Is.EqualTo(0xDEADBEEFu));
@@ -254,9 +238,9 @@ internal class SystemTelemetryTests
         });
     }
 
-    [TestCase(46)]
-    [TestCase(48)]
-    public void CalibrationParser_RequiresExactlyFortySevenFields(int fieldCount)
+    [TestCase(47)]
+    [TestCase(49)]
+    public void CalibrationParser_RequiresExactlyFortyEightFields(int fieldCount)
     {
         var packet = NewTelemetryPacket((uint)fieldCount).UpdateCRC();
         Assert.That(() => SystemCalibrationTelemetry.Parse(packet.Buffer), Throws.ArgumentException);

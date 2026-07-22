@@ -264,7 +264,6 @@ static void extract_hb_rx_data()
 		//Save button data
 		memcpy(&u_data_val,hb_rx_processing_buf+(HB_RX_IO*HB_FIELD_SIZE), sizeof(uint32_t));
 		system_status[SS_BUTTONS].u = u_data_val & 0xFFFF;
-		system_status[SS_TVM_INTERLOCK].u = (u_data_val >> 16) & 0x1;
 		
 		//Save collimator data
 		memcpy(&u_data_val,hb_rx_processing_buf+(HB_RX_COL_LOW*HB_FIELD_SIZE), sizeof(uint32_t));

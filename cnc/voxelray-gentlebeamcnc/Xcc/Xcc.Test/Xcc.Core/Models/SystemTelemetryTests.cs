@@ -26,13 +26,49 @@ internal class SystemTelemetryTests
     }
 
     [Test]
+    public void IsSystemReady_RequiresClearMasterFaultNoFaultsAndReadyRequiredInterlocks()
+    {
+        var doorMask = 1UL << (int)SystemInterlock.DoorClosed;
+        var masterFaultMask = 1UL << (int)SystemInterlock.MasterFaultClear;
+        var availableInterlocks = doorMask | masterFaultMask;
+        var readyInterlocks = new SystemInterlocks(
+            0,
+            (uint)doorMask,
+            availableInterlocks,
+            availableInterlocks,
+            doorMask);
+        var masterFaultActive = new SystemInterlocks(
+            0,
+            (uint)doorMask,
+            doorMask,
+            availableInterlocks,
+            doorMask);
+        var requiredInterlockOpen = new SystemInterlocks(
+            0,
+            (uint)doorMask,
+            masterFaultMask,
+            availableInterlocks,
+            doorMask);
+        var noFaults = new SystemFaults(0, null, 0, ulong.MaxValue);
+        var activeFaults = new SystemFaults(0, null, 1, ulong.MaxValue);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(new SystemNormalTelemetry { Interlocks = readyInterlocks, Faults = noFaults }.IsSystemReady(), Is.True);
+            Assert.That(new SystemNormalTelemetry { Interlocks = masterFaultActive, Faults = noFaults }.IsSystemReady(), Is.False);
+            Assert.That(new SystemNormalTelemetry { Interlocks = readyInterlocks, Faults = activeFaults }.IsSystemReady(), Is.False);
+            Assert.That(new SystemNormalTelemetry { Interlocks = requiredInterlockOpen, Faults = noFaults }.IsSystemReady(), Is.False);
+        });
+    }
+
+    [Test]
     public void Formatting_UsesSemanticTelemetryContract()
     {
         ISystemTelemetry telemetry = new SystemCalibrationTelemetry
         {
             ControlBoardState = GcbStateNew.Ready,
             Faults = new SystemFaults(0x12, 0x34, 0, ulong.MaxValue),
-            Interlocks = new SystemInterlocks(0x56, null, 0, 0),
+            Interlocks = new SystemInterlocks(0x56, 0, 0, 0, 0),
             Hvps = new HvpsTelemetryStatus(0x78, 0x9A, 0xBC),
             KvFeedback = 1.25f,
         };

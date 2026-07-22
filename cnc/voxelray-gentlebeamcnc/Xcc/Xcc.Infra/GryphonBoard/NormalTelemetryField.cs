@@ -45,10 +45,11 @@ namespace Xcc.Infra.GryphonBoard
         Mag2X,
         Mag2Y,
         Mag2Z,
-        TvmInterlock,
+        Reserved1,
         KvSetpoint,
         EmissionCurrentLimit,
         HvpsPowerSetpoint,
+        RequiredInterlockFlags,
         PayloadFields, // number of fields in total
     }
 }

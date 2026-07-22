@@ -130,6 +130,8 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.ColumnSpan="3" Style="{StaticResource BlockHeaderTextBoxStyle}" Text="System"/>
@@ -186,6 +188,18 @@
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
                             Text="{Binding GCBDataStore.SystemTelemetry.Interlocks.RawFlags, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
+
+                        <TextBlock
+                            Grid.Row="10"
+                            HorizontalAlignment="Right"
+                            Style="{StaticResource TelemetryTextBlockLegendStyle}"
+                            Text="Required Interlock Flags:"/>
+
+                        <TextBlock
+                            Grid.Row="10" Grid.Column="2"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource ValueTextBlockStyle}"
+                            Text="{Binding GCBDataStore.SystemTelemetry.Interlocks.RawRequiredFlags, FallbackValue={StaticResource NotAvailableText}, StringFormat={}0x{0:X}}"/>
                     </Grid>
                 </Border>   
                 

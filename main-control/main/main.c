@@ -64,24 +64,8 @@ static inline void process_peripherals()
 
 static void finalize_setup()
 {	
-	//Set up interlock HW debouncing
-	uint32_t interlock_mask = 0;
-	interlock_mask |= (1<<IBP_DOOR_CLOSED);
-	interlock_mask |= (1<<IBP_DRIVE_SYS);
-	interlock_mask |= (1<<IBP_BASE_ESTOP);
-	interlock_mask |= (1<<IBP_REMOTE_ESTOP);
-	interlock_mask |= (1<<IBP_KUKA_FAULT_1);
-	interlock_mask |= (1<<IBP_KUKA_FAULT_2);	
-	interlock_mask |= (1<<IBP_WATER_LEVEL);
-	interlock_mask |= (1<<IBP_ION_PUMP_ON);
-	interlock_mask |= (1<<IBP_TIMER_FAULT_1);
-	interlock_mask |= (1<<IBP_TIMER_FAULT_2);
-	interlock_mask |= (1<<IBP_HVPS_FAULT);
-	interlock_mask |= (1<<IBP_COOLER_FAULT);
-	interlock_mask |= (1<<IBP_HEADBOARD_FAULT);
-	interlock_mask |= (1<<IBP_WD_FAULT);
-	interlock_mask |= (1<<IBP_REMOTE_KEY);
-	interlock_mask |= (1<<IBP_COLLIMATOR_ON);
+	// Enable hardware debouncing for every physical Port C interlock input.
+	uint32_t interlock_mask = INTERLOCK_INPUT_MASK;
 	
 	//Enable debouncing with MCU hardware peripheral (no SW debounce needed)
 	((Pio *)PIOC)->PIO_SCDR = 100;

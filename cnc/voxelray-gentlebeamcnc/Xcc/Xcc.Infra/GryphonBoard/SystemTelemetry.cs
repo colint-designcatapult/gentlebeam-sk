@@ -136,6 +136,15 @@ public sealed class SystemCalibrationTelemetry : ISystemTelemetry
         GcbStateNew.Emission or GcbStateNew.Imaging;
 }
 
+internal static class SystemInterlockTranslator
+{
+    private const uint PhysicalInputMask = (uint)GcbInterlockFlags.All;
+
+    internal const ulong AvailablePhysicalInterlocks = PhysicalInputMask;
+
+    internal static ulong Translate(uint rawFlags) => rawFlags & PhysicalInputMask;
+}
+
 internal sealed class NormalTelemetryState
 {
     private const ulong AvailableFaults =
@@ -163,21 +172,6 @@ internal sealed class NormalTelemetryState
         | (1UL << (int)SystemFault.MemoryFault)
         | (1UL << (int)SystemFault.InvalidConfigFault);
 
-    private const ulong AvailableInterlocks =
-        (1UL << (int)SystemInterlock.DoorClosed)
-        | (1UL << (int)SystemInterlock.BaseEStopReleased)
-        | (1UL << (int)SystemInterlock.RemoteEStopReleased)
-        | (1UL << (int)SystemInterlock.WaterLevelOk)
-        | (1UL << (int)SystemInterlock.IonPumpOk)
-        | (1UL << (int)SystemInterlock.Timer1Ready)
-        | (1UL << (int)SystemInterlock.Timer2Ready)
-        | (1UL << (int)SystemInterlock.HvpsReady)
-        | (1UL << (int)SystemInterlock.CoolerReady)
-        | (1UL << (int)SystemInterlock.HeadInterfaceBoardReady)
-        | (1UL << (int)SystemInterlock.WatchdogReady)
-        | (1UL << (int)SystemInterlock.RemoteKeyOn)
-        | (1UL << (int)SystemInterlock.CollimatorOn)
-        | (1UL << (int)SystemInterlock.TvmNotchEngaged);
 
     private GcbStateNew _controlBoardState;
     private int _systemRuntime;
@@ -226,8 +220,7 @@ internal sealed class NormalTelemetryState
     internal void Update(UdpPacket packet)
     {
         if (packet.PacketType != (uint)GCBPacketType.TelemetryResponse
-            || packet.PayloadLength < 43u
-            || packet.PayloadLength > (uint)NormalTelemetryField.PayloadFields)
+            || packet.PayloadLength != (uint)NormalTelemetryField.PayloadFields)
         {
             throw new ArgumentException("Invalid normal telemetry packet");
         }
@@ -236,13 +229,14 @@ internal sealed class NormalTelemetryState
         _systemRuntime = packet[(int)NormalTelemetryField.SystemRuntime];
         var rawFaults = (uint)packet[(int)NormalTelemetryField.SystemFaultFlags];
         var rawInterlocks = (uint)packet[(int)NormalTelemetryField.InterlockFlags];
-        var rawTvmInterlock = (uint)packet[(int)NormalTelemetryField.TvmInterlock];
+        var rawRequiredInterlocks = (uint)packet[(int)NormalTelemetryField.RequiredInterlockFlags];
         _faults = new SystemFaults(rawFaults, null, TranslateFaults(rawFaults), AvailableFaults);
         _interlocks = new SystemInterlocks(
             rawInterlocks,
-            rawTvmInterlock,
-            TranslateInterlocks(rawInterlocks, rawTvmInterlock),
-            AvailableInterlocks);
+            rawRequiredInterlocks,
+            SystemInterlockTranslator.Translate(rawInterlocks),
+            SystemInterlockTranslator.AvailablePhysicalInterlocks,
+            SystemInterlockTranslator.Translate(rawRequiredInterlocks));
         _ringLedState = (RingLedState)(int)packet[(int)NormalTelemetryField.RingLedState];
         _baseLedState = (BaseLedState)(int)packet[(int)NormalTelemetryField.BaseLedState];
         _collimatorId1 = packet[(int)NormalTelemetryField.Collimator1];
@@ -286,15 +280,9 @@ internal sealed class NormalTelemetryState
             packet[(int)NormalTelemetryField.Mag2X],
             packet[(int)NormalTelemetryField.Mag2Y],
             packet[(int)NormalTelemetryField.Mag2Z]);
-        _kvSetpoint = packet.PayloadLength > (uint)NormalTelemetryField.KvSetpoint
-            ? (float)packet[(int)NormalTelemetryField.KvSetpoint]
-            : null;
-        _emissionCurrentLimit = packet.PayloadLength > (uint)NormalTelemetryField.EmissionCurrentLimit
-            ? (float)packet[(int)NormalTelemetryField.EmissionCurrentLimit]
-            : null;
-        _hvpsPowerSetpoint = packet.PayloadLength > (uint)NormalTelemetryField.HvpsPowerSetpoint
-            ? (float)packet[(int)NormalTelemetryField.HvpsPowerSetpoint]
-            : null;
+        _kvSetpoint = packet[(int)NormalTelemetryField.KvSetpoint];
+        _emissionCurrentLimit = packet[(int)NormalTelemetryField.EmissionCurrentLimit];
+        _hvpsPowerSetpoint = packet[(int)NormalTelemetryField.HvpsPowerSetpoint];
     }
 
     internal SystemNormalTelemetry Snapshot() => new()
@@ -371,25 +359,6 @@ internal sealed class NormalTelemetryState
         return active;
     }
 
-    private static ulong TranslateInterlocks(uint rawFlags, uint rawTvmFlags)
-    {
-        ulong active = 0;
-        MapInterlock(rawFlags, 0, SystemInterlock.DoorClosed, ref active);
-        MapInterlock(rawFlags, 2, SystemInterlock.BaseEStopReleased, ref active);
-        MapInterlock(rawFlags, 3, SystemInterlock.RemoteEStopReleased, ref active);
-        MapInterlock(rawFlags, 6, SystemInterlock.WaterLevelOk, ref active);
-        MapInterlock(rawFlags, 7, SystemInterlock.IonPumpOk, ref active);
-        MapInterlock(rawFlags, 8, SystemInterlock.Timer1Ready, ref active);
-        MapInterlock(rawFlags, 9, SystemInterlock.Timer2Ready, ref active);
-        MapInterlock(rawFlags, 10, SystemInterlock.HvpsReady, ref active);
-        MapInterlock(rawFlags, 11, SystemInterlock.CoolerReady, ref active);
-        MapInterlock(rawFlags, 12, SystemInterlock.HeadInterfaceBoardReady, ref active);
-        MapInterlock(rawFlags, 13, SystemInterlock.WatchdogReady, ref active);
-        MapInterlock(rawFlags, 18, SystemInterlock.RemoteKeyOn, ref active);
-        MapInterlock(rawFlags, 19, SystemInterlock.CollimatorOn, ref active);
-        MapInterlock(rawTvmFlags, 0, SystemInterlock.TvmNotchEngaged, ref active);
-        return active;
-    }
 
     private static void MapFault(uint raw, int rawBit, SystemFault fault, ref ulong active)
     {
@@ -397,11 +366,6 @@ internal sealed class NormalTelemetryState
             active |= 1UL << (int)fault;
     }
 
-    private static void MapInterlock(uint raw, int rawBit, SystemInterlock interlock, ref ulong active)
-    {
-        if ((raw & (1u << rawBit)) != 0)
-            active |= 1UL << (int)interlock;
-    }
 }
 
 internal sealed class CalibrationTelemetryState
@@ -431,23 +395,6 @@ internal sealed class CalibrationTelemetryState
         | (1UL << (int)SystemFault.MemoryFault)
         | (1UL << (int)SystemFault.InvalidConfigFault);
 
-    private const ulong AvailableInterlocks =
-        (1UL << (int)SystemInterlock.DoorClosed)
-        | (1UL << (int)SystemInterlock.DriveSystemReady)
-        | (1UL << (int)SystemInterlock.BaseEStopReleased)
-        | (1UL << (int)SystemInterlock.RemoteEStopReleased)
-        | (1UL << (int)SystemInterlock.Kuka1Ready)
-        | (1UL << (int)SystemInterlock.Kuka2Ready)
-        | (1UL << (int)SystemInterlock.WaterLevelOk)
-        | (1UL << (int)SystemInterlock.IonPumpOk)
-        | (1UL << (int)SystemInterlock.Timer1Ready)
-        | (1UL << (int)SystemInterlock.Timer2Ready)
-        | (1UL << (int)SystemInterlock.HvpsReady)
-        | (1UL << (int)SystemInterlock.CoolerReady)
-        | (1UL << (int)SystemInterlock.HeadInterfaceBoardReady)
-        | (1UL << (int)SystemInterlock.WatchdogReady)
-        | (1UL << (int)SystemInterlock.RemoteKeyOn)
-        | (1UL << (int)SystemInterlock.CollimatorOn);
 
     private GcbStateNew _controlBoardState;
     private int _systemRuntime;
@@ -484,7 +431,7 @@ internal sealed class CalibrationTelemetryState
 
     internal void Update(UdpPacket packet)
     {
-        if (packet.PacketType != (uint)GCBPacketType.TelemetryResponse || packet.PayloadLength != 47u)
+        if (packet.PacketType != (uint)GCBPacketType.TelemetryResponse || packet.PayloadLength != 48u)
             throw new ArgumentException("Invalid calibration telemetry packet");
 
         _controlBoardState = (GcbStateNew)(int)packet[1];
@@ -499,6 +446,7 @@ internal sealed class CalibrationTelemetryState
         var rawFaults = (uint)packet[12];
         var rawCommunicationFaults = (uint)packet[13];
         var rawInterlocks = (uint)packet[14];
+        var rawRequiredInterlocks = (uint)packet[47];
         _faults = new SystemFaults(
             rawFaults,
             rawCommunicationFaults,
@@ -506,9 +454,10 @@ internal sealed class CalibrationTelemetryState
             AvailableFaults);
         _interlocks = new SystemInterlocks(
             rawInterlocks,
-            null,
-            TranslateInterlocks(rawInterlocks),
-            AvailableInterlocks);
+            rawRequiredInterlocks,
+            SystemInterlockTranslator.Translate(rawInterlocks),
+            SystemInterlockTranslator.AvailablePhysicalInterlocks,
+            SystemInterlockTranslator.Translate(rawRequiredInterlocks));
         _hvps = new HvpsTelemetryStatus(
             RawStatusFlags: packet[16],
             RawIoFlags: packet[15],
@@ -596,27 +545,6 @@ internal sealed class CalibrationTelemetryState
         return active;
     }
 
-    private static ulong TranslateInterlocks(uint rawFlags)
-    {
-        ulong active = 0;
-        MapInterlock(rawFlags, 0, SystemInterlock.DoorClosed, ref active);
-        MapInterlock(rawFlags, 1, SystemInterlock.DriveSystemReady, ref active);
-        MapInterlock(rawFlags, 2, SystemInterlock.BaseEStopReleased, ref active);
-        MapInterlock(rawFlags, 3, SystemInterlock.RemoteEStopReleased, ref active);
-        MapInterlock(rawFlags, 4, SystemInterlock.Kuka1Ready, ref active);
-        MapInterlock(rawFlags, 5, SystemInterlock.Kuka2Ready, ref active);
-        MapInterlock(rawFlags, 6, SystemInterlock.WaterLevelOk, ref active);
-        MapInterlock(rawFlags, 7, SystemInterlock.IonPumpOk, ref active);
-        MapInterlock(rawFlags, 8, SystemInterlock.Timer1Ready, ref active);
-        MapInterlock(rawFlags, 9, SystemInterlock.Timer2Ready, ref active);
-        MapInterlock(rawFlags, 10, SystemInterlock.HvpsReady, ref active);
-        MapInterlock(rawFlags, 11, SystemInterlock.CoolerReady, ref active);
-        MapInterlock(rawFlags, 12, SystemInterlock.HeadInterfaceBoardReady, ref active);
-        MapInterlock(rawFlags, 13, SystemInterlock.WatchdogReady, ref active);
-        MapInterlock(rawFlags, 18, SystemInterlock.RemoteKeyOn, ref active);
-        MapInterlock(rawFlags, 19, SystemInterlock.CollimatorOn, ref active);
-        return active;
-    }
 
     private static void MapFault(uint raw, int rawBit, SystemFault fault, ref ulong active)
     {
@@ -624,11 +552,6 @@ internal sealed class CalibrationTelemetryState
             active |= 1UL << (int)fault;
     }
 
-    private static void MapInterlock(uint raw, int rawBit, SystemInterlock interlock, ref ulong active)
-    {
-        if ((raw & (1u << rawBit)) != 0)
-            active |= 1UL << (int)interlock;
-    }
 }
 
 internal static class TelemetryFormatter
