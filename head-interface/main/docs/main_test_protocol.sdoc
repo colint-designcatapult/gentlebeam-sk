@@ -161,6 +161,10 @@ EXPECTED_BEHAVIOR: >>>
 6. Verify the fault is created.
 7. Verify it is blinking Red.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWT-3
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FHI-16
@@ -472,38 +476,6 @@ EXPECTED_BEHAVIOR: >>>
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FHI-53
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FHI-56
-TITLE: Robot Hand Guidance Button Test
-STATEMENT: >>>
-Service user should verify that the robot arm moves in manually guided positions when the button is pressed down and holds its position upon release.
-<<<
-PREREQUISITES: >>>
-1. The user should be service user
-2. The system should be powered on
-3. The robot arm should be ready and in a safe, reachable position to move
-<<<
-STEPS: >>>
-1. Check the system is powered on
-2. Check the robot status LED and robot controller to ensure arm is ready for hand guidance
-3. If the button is not safely reachable, use the GUI to change the arm to the “Treatment” position
-4. With one hand holding the opposite side of the treatment hand, and the other holding the bar with the manual guidance button, press and hold the button down
-5. Gently push the robot arm in all 6 directions: forward, backward, left, right, up, and down, within comfortable reach
-6. Release the robot hand guidance button
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. The system should appear in normal operation with no interlocks or errors tripped.
-2. The system should be on, and the robot arm LED should be flashing blue
-3. The robot arm moves to the treatment position with no issues. The head can be reached.
-4. The robot arm should have a relay that produces an audible click once the button is engaged. The LEDs on the robot arm should change color. The robot arm should respond to the button press in under 1 second.
-5. The robot arm should move in all directions smoothly without interruption.
-6. The robot arm relay should produce an audible click again. The LEDs on the robot arm should return to the ready state color. The robot arm should hold its position within 1 second of the button’s release. The robot arm should be immovable with the same pressure applied in Step 5.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-55
   ROLE: Verifies
 
 [[/SECTION]]

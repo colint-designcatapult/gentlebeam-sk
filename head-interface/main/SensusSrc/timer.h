@@ -2,6 +2,7 @@
 #define SENSUSSRC_TIMER_H_
 
 #include <stdbool.h>
+#include "main.h"
 #include "stm32f4xx_hal.h"
 
 

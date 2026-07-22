@@ -115,6 +115,8 @@ void Error_Handler(void);
 #define IO_LED_AMBER_GPIO_Port GPIOC
 #define IO_LED_BLUE_Pin GPIO_PIN_11
 #define IO_LED_BLUE_GPIO_Port GPIOC
+#define IO_Ready_Pin GPIO_PIN_12
+#define IO_Ready_GPIO_Port GPIOC
 #define IO_CAP_SDA_Pin GPIO_PIN_3
 #define IO_CAP_SDA_GPIO_Port GPIOB
 #define IO_LED_RST_Pin GPIO_PIN_5
@@ -129,6 +131,14 @@ void Error_Handler(void);
 #define IO_LED_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+
+//#defined CALIBRATION_MODE
+
+typedef enum
+{
+    IO_READY_STATE_NOT_READY = 0,
+    IO_READY_STATE_READY     = 1
+} IO_ReadyState_t;
 
 /* USER CODE END Private defines */
 

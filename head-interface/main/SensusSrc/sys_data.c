@@ -177,15 +177,29 @@ void report_magnetometer_data(int16_t *raw_mag_data, int mag_idx)
 
 //For normal operation
 #else
+#if defined(USE_LIS2MDL)
 	if(mag_idx == 1 || mag_idx == 2)
 	{
 		for(int i = 0; i < NUM_MAG_AXIS; i++)
 		{
 			//Save magnetometer values for system reporting.
-			//NOTE:	for ±12 gauss max. the raw value must be divided by 2281 for Gauss, then multiply 100 for uT.
+			/* NOTE:	for LIS2MDL, range is ±50 gauss max. Sensitivity is 1.5 mgauss/LSB.
+			the raw value must be multiplied by 1.5 for mGauss, then multiply 0.1 for uT.
+			*/
+			sys_data_magnetometer[mag_idx-1][i] = ((float)raw_mag_data[i]) * 0.15;
+		}
+	}
+#elif defined (USE_LIS3MDL)
+	if(mag_idx == 1 || mag_idx == 2)
+	{
+		for(int i = 0; i < NUM_MAG_AXIS; i++)
+		{
+			//Save magnetometer values for system reporting.
+			/* NOTE:	for ±12 gauss max. the raw value must be divided by 2281 for Gauss, then multiply 100 for uT. */
 			sys_data_magnetometer[mag_idx-1][i] = ((float)raw_mag_data[i]) * 0.0438404209; //KMX62: 0.03662109375;
 		}
 	}
+#endif
 #endif
 }
 

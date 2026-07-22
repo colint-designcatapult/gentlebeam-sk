@@ -80,7 +80,9 @@ static uint32_t check_1_wire_present()
 	{
 		memset(col_rom_buf, 0, 8);
 
+#if !defined(CALIBRATION_MODE)
 		report_collimator(col_rom_buf);
+#endif
 
 		collim_ms = 100;
 
@@ -113,7 +115,9 @@ static uint32_t save_1_wire_byte()
 	//If 8 bytes have been received (64-bit ROM), report the value
 	if(col_rom_idx >= 8)
 	{
+#if !defined(CALIBRATION_MODE)
 		report_collimator(col_rom_buf);
+#endif
 
 		col_rom_idx = 0;
 		collim_ms = 100;
@@ -147,7 +151,9 @@ void process_collimator()
 	//}
 
 	collimator_test_val[7] = 0;
+#if !defined(CALIBRATION_MODE)
 	report_collimator(collimator_test_val);
+#endif
 
 	/*
 

@@ -3,6 +3,7 @@
 #include "stm32f4xx_hal.h"
 #include "main.h"
 #include "lis3mdl.h"
+#include "lis2mdl.h"
 
 #include "magnetometer.h"
 #include "timer.h"
@@ -24,9 +25,15 @@ bool bus_3_toggle = false;
 
 void init_magnetometer()
 {
+#if defined (USE_LIS2MDL)
+	if (LIS2MDL_Init(&hi2c3) == HAL_OK) {
+		// Sensor initialized
+	}
+#elif defined (USE_LIS3MDL)
     if (LIS3MDL_Init(&hi2c3) == HAL_OK) {
         // Sensor initialized
     }
+#endif
 
 	//Reset buffer and request RX
 	memset(magnetometer_rx_0, 0, NUM_MAG_FIELDS*sizeof(int16_t));
@@ -86,8 +93,16 @@ void init_magnetometer()
 
 void process_magnetometer()
 {
+#if defined (USE_LIS2MDL)
+    LIS2MDL_Data_t mag;
+
+    if (LIS2MDL_ReadMagnetometers(&hi2c3, &mag) == HAL_OK)
+#elif defined (USE_LIS3MDL)
     LIS3MDL_Data_t mag;
-    if (LIS3MDL_ReadMagnetometers(&hi2c3, &mag) == HAL_OK) {
+
+    if (LIS3MDL_ReadMagnetometers(&hi2c3, &mag) == HAL_OK)
+#endif
+    {
         // Use mag.x, mag.y, mag.z
     	magnetometer_rx_0[0] = mag.x0;
     	magnetometer_rx_0[1] = mag.y0;

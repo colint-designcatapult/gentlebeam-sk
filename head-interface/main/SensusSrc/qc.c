@@ -32,11 +32,12 @@ static volatile uint8_t error_count = 0;
 static volatile bool reset_i2c1 = false;
 static volatile bool reset_i2c2 = false;
 
+#define DEBOUNCE_TIME_MS 				100
 
-// Start asynchronous conversion read
+/* Start asynchronous conversion read */
 HAL_StatusTypeDef Read_ADC121C021_Conversion_IT(uint8_t devAddr)
 {
-	if (hi2c1.State != HAL_I2C_STATE_READY) {
+	if (hi2c1.State != HAL_I2C_STATE_READY || HAL_GPIO_ReadPin(IO_Ready_GPIO_Port, IO_Ready_Pin) != IO_READY_STATE_READY) {
 	    return HAL_BUSY;
 	}
 
@@ -48,9 +49,47 @@ HAL_StatusTypeDef Read_ADC121C021_Conversion_IT(uint8_t devAddr)
     return HAL_I2C_Master_Transmit_IT(&hi2c1, devAddr, &cmd, 1);
 }
 
-// Process function: kick off new reads if bus is free
+/* Edge detection function for pin IO_Ready */
+static void IO_Ready_Edge_Detect(void)
+{
+	static IO_ReadyState_t last_stable = IO_READY_STATE_NOT_READY;
+	static IO_ReadyState_t last_sample = IO_READY_STATE_NOT_READY;
+	static uint32_t last_change_time = 0;
+
+	IO_ReadyState_t current = HAL_GPIO_ReadPin(IO_Ready_GPIO_Port, IO_Ready_Pin);
+	uint32_t now = HAL_GetTick();
+
+	// Detect change in raw signal
+	if (current != last_sample) {
+		last_change_time = now;
+		last_sample = current;
+	}
+
+	// If stable long enough → accept new state
+	if ((now - last_change_time) >= DEBOUNCE_TIME_MS) {
+		if (last_stable != current) {
+			// Edge detected
+			if (current == IO_READY_STATE_READY) {
+//				HAL_UART_Transmit_IT(&huart6,
+//					(uint8_t*)"IO_READY_RISING_EDGE\n",
+//					strlen("IO_READY_RISING_EDGE\n"));
+				// Reset I2C1 peripheral
+				reset_i2c1 = true;
+			} else {
+//				HAL_UART_Transmit_IT(&huart6,
+//					(uint8_t*)"IO_READY_FALLING_EDGE\n",
+//					strlen("IO_READY_FALLING_EDGE\n"));
+			}
+			last_stable = current;
+		}
+	}
+}
+
+/* Process function: kick off new reads if bus is free */
 void process_qc(void)
 {
+	IO_Ready_Edge_Detect();
+
 	//Check if the i2c bus is stuck first
 	//static uint32_t i2c_stuck_counter = 0;
 
@@ -241,7 +280,7 @@ void I2C_ForceBusRecovery(I2C_HandleTypeDef *hi2c)
 
 
 
-// Called when TX completes (register pointer sent)
+/* Called when TX completes (register pointer sent) */
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
@@ -254,7 +293,7 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
     }
 }
 
-// Called when RX completes (data received)
+/* Called when RX completes (data received) */
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
