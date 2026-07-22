@@ -1,3 +1,4 @@
+using Heracles.Application.AppLayer.Collimators;
 using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Services.Dialogs;
@@ -9,18 +10,41 @@ namespace Heracles.Application.UI.ViewModels
 {
     public class InterlocksViewModel : BindableBase
     {
-        public InterlocksViewModel(IGCBDataStore gcbDataStore, IDialogService dialogService)
+        private readonly ICollimatorModel _collimatorModel;
+        private readonly IApplicatorReadinessSource _applicatorReadinessSource;
+
+        public InterlocksViewModel(
+            ICollimatorModel collimatorModel,
+            IApplicatorReadinessSource applicatorReadinessSource,
+            IGCBDataStore gcbDataStore,
+            IDialogService dialogService)
         {
+            _collimatorModel = collimatorModel;
+            _applicatorReadinessSource = applicatorReadinessSource;
             GcbDataStore = gcbDataStore;
             DialogService = dialogService;
 
             UpdateSystemReadiness(gcbDataStore.SystemTelemetry);
-            gcbDataStore.PropertyChanged += (s, e) =>
-                UpdateSystemReadiness(gcbDataStore.SystemTelemetry);
+            gcbDataStore.PropertyChanged += (_, _) => UpdateSystemReadiness(gcbDataStore.SystemTelemetry);
+            _collimatorModel.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName is nameof(ICollimatorModel.ActiveCollimator) or nameof(ICollimatorModel.Collimators))
+                    UpdateSystemReadiness(GcbDataStore.SystemTelemetry);
+            };
+            _applicatorReadinessSource.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(IApplicatorReadinessSource.CollimatorConfiguration))
+                    UpdateSystemReadiness(GcbDataStore.SystemTelemetry);
+            };
         }
 
-        private void UpdateSystemReadiness(ISystemTelemetry? telemetry) =>
-            SystemIsReady = telemetry?.IsSystemReady();
+        private void UpdateSystemReadiness(ISystemTelemetry? telemetry)
+        {
+            var applicatorReadiness = ApplicatorReadinessEvaluator.Evaluate(
+                _collimatorModel,
+                _applicatorReadinessSource.CollimatorConfiguration);
+            SystemIsReady = telemetry?.IsSystemReady(applicatorReadiness == ApplicatorReadiness.Ready);
+        }
 
         public IGCBDataStore GcbDataStore { get; }
         public IDialogService DialogService { get; }

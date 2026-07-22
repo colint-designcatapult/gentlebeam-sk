@@ -54,8 +54,9 @@ public interface ISystemTelemetry
 
 public static class SystemTelemetryReadinessExtensions
 {
-    public static bool IsSystemReady(this ISystemTelemetry telemetry) =>
+    public static bool IsSystemReady(this ISystemTelemetry telemetry, bool applicatorIsReady) =>
         telemetry.Interlocks.MasterFaultClear == true
         && !telemetry.Faults.AnyActive
-        && telemetry.Interlocks.RequiredInterlocksReady;
+        && telemetry.Interlocks.RequiredInterlocksReady
+        && applicatorIsReady;
 }

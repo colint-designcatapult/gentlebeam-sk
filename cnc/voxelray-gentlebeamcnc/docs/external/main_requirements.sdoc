@@ -620,14 +620,22 @@ TITLE: Treatment View - Safety Interlocks
 STATEMENT: >>>
 The dedicated interlock pop-up shall show system readiness at the top. System readiness
 shall be true if and only if the buffered master-fault input is clear, no system fault is
-active, and every interlock required by the current firmware state is available and ready.
+active, every interlock required by the current firmware state is available and ready, and
+the applicator check is ready.
 
 The pop-up shall always show these operator-facing checks:
 
 * E-stops
 * Door closed
 * Keys
+* Applicator
 
+The Applicator check shall render exactly one row. It shall show ``No applicator`` when no
+applicator is attached; otherwise, ``Unknown applicator`` when the attached applicator is
+not registered in the database; otherwise, ``Incorrect applicator`` when the registered
+applicator does not match the treatment plan; otherwise, it shall show ``Applicator`` with
+the existing green thumbs-up indication. The three error labels are mutually exclusive and
+each makes system readiness false.
 E-stops and keys shall normally appear as one summary row each. When either group is not
 ready or is unavailable, the pop-up shall disclose the individual base and remote states
 below the summary row.

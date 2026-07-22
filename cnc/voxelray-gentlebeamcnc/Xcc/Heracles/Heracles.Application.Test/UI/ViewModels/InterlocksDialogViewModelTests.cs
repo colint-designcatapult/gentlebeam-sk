@@ -1,5 +1,9 @@
 using Heracles.Core.Models;
 using Heracles.Application.UI.ViewModels;
+using Heracles.Application.AppLayer.Collimators;
+using Heracles.Application.Domain.DataManagement.System.Collimators;
+using Heracles.Application.Models;
+using Heracles.Core.Enums;
 using Moq;
 using Prism.Events;
 using Prism.Ioc;
@@ -7,6 +11,7 @@ using Xcc.Application.Models;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
 using Xcc.Core.Models;
+using System.Collections.ObjectModel;
 using Xcc.Core.Services;
 using Xcc.Infra.GryphonBoard;
 
@@ -33,6 +38,8 @@ internal class InterlocksDialogViewModelTests
             store.SetupGet(value => value.ActiveFaults).Returns(Array.Empty<FaultEntry>());
             var eventAggregator = new EventAggregator();
             var viewModel = new InterlocksDialogViewModel(
+                CreateReadyCollimatorModel(),
+                Mock.Of<IPlanModel>(),
                 store.Object,
                 eventAggregator,
                 Mock.Of<IHeraclesExternalSettings>(),
@@ -44,7 +51,7 @@ internal class InterlocksDialogViewModelTests
                 Assert.That(viewModel.SystemIsReady, Is.True);
                 Assert.That(viewModel.SystemReadinessText, Is.EqualTo("Ready"));
                 Assert.That(viewModel.OperatorInterlocks.Select(item => item.DisplayName),
-                    Is.EqualTo(new[] { "E-stops", "Door closed", "Keys" }));
+                    Is.EqualTo(new[] { "E-stops", "Door closed", "Keys", "Applicator" }));
                 Assert.That(viewModel.EStops.State, Is.True);
                 Assert.That(viewModel.EStops.ShowDetails, Is.False);
                 Assert.That(viewModel.Keys.State, Is.True);
@@ -180,6 +187,8 @@ internal class InterlocksDialogViewModelTests
 
             var containerProvider = new Mock<IContainerProvider>(MockBehavior.Strict);
             var viewModel = new InterlocksDialogViewModel(
+                CreateReadyCollimatorModel(),
+                Mock.Of<IPlanModel>(),
                 store.Object,
                 new EventAggregator(),
                 Mock.Of<IHeraclesCoreSettings>(),
@@ -217,6 +226,8 @@ internal class InterlocksDialogViewModelTests
                 .Returns(CreateTelemetry(AvailableInterlocks, 0));
             store.SetupGet(value => value.ActiveFaults).Returns(Array.Empty<FaultEntry>());
             var viewModel = new InterlocksDialogViewModel(
+                CreateReadyCollimatorModel(),
+                Mock.Of<IPlanModel>(),
                 store.Object,
                 new EventAggregator(),
                 Mock.Of<IHeraclesExternalSettings>(),
@@ -234,6 +245,49 @@ internal class InterlocksDialogViewModelTests
         }
     }
 
+    [TestCase(ApplicatorReadiness.NoApplicator, "No applicator", false)]
+    [TestCase(ApplicatorReadiness.UnknownApplicator, "Unknown applicator", false)]
+    [TestCase(ApplicatorReadiness.IncorrectApplicator, "Incorrect applicator", false)]
+    [TestCase(ApplicatorReadiness.Ready, "Applicator", true)]
+    public void ApplicatorCheck_UsesExclusiveStatusAndGatesSystemReadiness(
+        ApplicatorReadiness expectedReadiness,
+        string expectedDisplayName,
+        bool expectedSystemIsReady)
+    {
+        var previousContext = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new ImmediateSynchronizationContext());
+
+        try
+        {
+            var (collimatorModel, planModel) = CreateApplicatorModels(expectedReadiness);
+            var store = new Mock<IGCBDataStore>();
+            store.SetupGet(value => value.SystemTelemetry).Returns(CreateTelemetry(AvailableInterlocks, 0));
+            store.SetupGet(value => value.ActiveFaults).Returns(Array.Empty<FaultEntry>());
+
+            var viewModel = new InterlocksDialogViewModel(
+                collimatorModel,
+                planModel,
+                store.Object,
+                new EventAggregator(),
+                Mock.Of<IHeraclesExternalSettings>(),
+                CreateContainer(Mock.Of<IMainBoardAPI>()),
+                Mock.Of<IPopUpService>());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(viewModel.OperatorInterlocks, Has.Count.EqualTo(4));
+                Assert.That(viewModel.OperatorInterlocks.Count(item => item == viewModel.Applicator), Is.EqualTo(1));
+                Assert.That(viewModel.Applicator.DisplayName, Is.EqualTo(expectedDisplayName));
+                Assert.That(viewModel.Applicator.State, Is.EqualTo(expectedReadiness == ApplicatorReadiness.Ready));
+                Assert.That(viewModel.SystemIsReady, Is.EqualTo(expectedSystemIsReady));
+            });
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previousContext);
+        }
+    }
+
     private static IContainerProvider CreateContainer(IMainBoardAPI mainBoardApi)
     {
         var containerProvider = new Mock<IContainerProvider>();
@@ -241,6 +295,40 @@ internal class InterlocksDialogViewModelTests
             .Setup(provider => provider.Resolve(typeof(IMainBoardAPI)))
             .Returns(mainBoardApi);
         return containerProvider.Object;
+    }
+
+    private static ICollimatorModel CreateReadyCollimatorModel() =>
+        CreateApplicatorModels(ApplicatorReadiness.Ready).collimatorModel;
+
+    private static (ICollimatorModel collimatorModel, IPlanModel planModel) CreateApplicatorModels(
+        ApplicatorReadiness readiness)
+    {
+        var matchingConfiguration = new CollimatorConfiguration
+        {
+            Type = TargetType.TargetType_50mm_SSD_13_Fields,
+            Energy = Energy.Energy_50,
+        };
+        var plannedConfiguration = readiness == ApplicatorReadiness.Ready
+            ? matchingConfiguration
+            : new CollimatorConfiguration
+            {
+                Type = TargetType.TargetType_50mm_SSD_15mm_Field,
+                Energy = Energy.Energy_50,
+            };
+        var attachedApplicator = readiness == ApplicatorReadiness.NoApplicator
+            ? null
+            : new Collimator { Serial = "AttachedApplicator", Configuration = matchingConfiguration };
+        var registeredApplicators = readiness is ApplicatorReadiness.UnknownApplicator or ApplicatorReadiness.NoApplicator
+            ? Array.Empty<ICollimator>()
+            : new ICollimator[] { attachedApplicator! };
+        var collimatorModel = new Mock<ICollimatorModel>();
+        collimatorModel.SetupGet(model => model.ActiveCollimator).Returns(attachedApplicator);
+        collimatorModel.SetupGet(model => model.Collimators)
+            .Returns(new ObservableCollection<ICollimator>(registeredApplicators));
+        var planModel = new Mock<IPlanModel>();
+        planModel.SetupGet(model => model.CollimatorConfiguration).Returns(plannedConfiguration);
+
+        return (collimatorModel.Object, planModel.Object);
     }
 
     private static SystemNormalTelemetry CreateTelemetry(

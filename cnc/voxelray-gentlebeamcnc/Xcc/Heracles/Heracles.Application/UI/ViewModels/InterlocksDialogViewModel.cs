@@ -1,4 +1,5 @@
 ﻿using Heracles.Core.Models;
+using Heracles.Application.AppLayer.Collimators;
 using Prism.Commands;
 using System;
 using System.Collections.ObjectModel;
@@ -21,13 +22,18 @@ public sealed class InterlocksDialogViewModel : DialogViewModelBase
     private readonly InterlockGroupStatusItem[] _technicalGroups;
     private readonly InterlockGroupStatusItem _masterFault;
     private readonly List<InterlockGroupStatusItem> _faultItems = [];
+    private readonly ICollimatorModel _collimatorModel;
+    private readonly IApplicatorReadinessSource _applicatorReadinessSource;
     private SystemInterlocks? _currentInterlocks;
+    private ISystemTelemetry? _currentTelemetry;
     private readonly bool _isExternalApplication;
     private readonly IMainBoardAPI? _mainBoardApi;
     private readonly IPopUpService _popUpService;
     private bool _hasSystemFault;
 
     public InterlocksDialogViewModel(
+        ICollimatorModel collimatorModel,
+        IApplicatorReadinessSource applicatorReadinessSource,
         IGCBDataStore gcbDataStore,
         IEventAggregator eventAggregator,
         IHeraclesCoreSettings heraclesSettings,
@@ -39,6 +45,8 @@ public sealed class InterlocksDialogViewModel : DialogViewModelBase
             ? containerProvider.Resolve<IMainBoardAPI>()
             : null;
         _popUpService = popUpService;
+        _collimatorModel = collimatorModel;
+        _applicatorReadinessSource = applicatorReadinessSource;
         EStops = new InterlockGroupStatusItem(
             "E-stops",
             showDetailsWhenNotReady: true,
@@ -53,7 +61,8 @@ public sealed class InterlocksDialogViewModel : DialogViewModelBase
             showDetailsWhenNotReady: true,
             new InterlockStatusItem(SystemInterlock.BaseKeyOn, "Base key"),
             new InterlockStatusItem(SystemInterlock.RemoteKeyOn, "Remote key"));
-        OperatorInterlocks = [EStops, Door, Keys];
+        Applicator = new InterlockGroupStatusItem("Applicator", showDetailsWhenNotReady: false);
+        OperatorInterlocks = [EStops, Door, Keys, Applicator];
 
         _technicalGroups =
         [
@@ -105,11 +114,22 @@ public sealed class InterlocksDialogViewModel : DialogViewModelBase
         eventAggregator
             .GetEvent<FaultsChangedEvent>()
             .Subscribe(UpdateFaults, ThreadOption.UIThread);
+        _collimatorModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName is nameof(ICollimatorModel.ActiveCollimator) or nameof(ICollimatorModel.Collimators))
+                UpdateApplicatorReadiness();
+        };
+        _applicatorReadinessSource.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(IApplicatorReadinessSource.CollimatorConfiguration))
+                UpdateApplicatorReadiness();
+        };
     }
 
     public InterlockGroupStatusItem EStops { get; }
     public InterlockGroupStatusItem Door { get; }
     public InterlockGroupStatusItem Keys { get; }
+    public InterlockGroupStatusItem Applicator { get; }
     public IReadOnlyList<InterlockGroupStatusItem> OperatorInterlocks { get; }
     public ObservableCollection<InterlockGroupStatusItem> AttentionItems { get; } = [];
     public bool HasAttentionItems => AttentionItems.Count != 0;
@@ -156,17 +176,38 @@ public sealed class InterlocksDialogViewModel : DialogViewModelBase
 
     private void UpdateInterlocks(ISystemTelemetry? telemetry)
     {
-        SystemIsReady = telemetry?.IsSystemReady();
+        _currentTelemetry = telemetry;
         _hasSystemFault = telemetry?.Faults.AnyActive == true;
         _currentInterlocks = telemetry?.Interlocks;
 
         foreach (var item in OperatorInterlocks)
-            item.Update(_currentInterlocks);
+        {
+            if (item != Applicator)
+                item.Update(_currentInterlocks);
+        }
         foreach (var item in _technicalGroups)
             item.Update(_currentInterlocks);
         _masterFault.Update(_currentInterlocks);
 
+        UpdateApplicatorReadiness();
         RefreshAttentionItems();
+    }
+
+    private void UpdateApplicatorReadiness()
+    {
+        var status = ApplicatorReadinessEvaluator.Evaluate(
+            _collimatorModel,
+            _applicatorReadinessSource.CollimatorConfiguration);
+        Applicator.Update(
+            status switch
+            {
+                ApplicatorReadiness.NoApplicator => "No applicator",
+                ApplicatorReadiness.UnknownApplicator => "Unknown applicator",
+                ApplicatorReadiness.IncorrectApplicator => "Incorrect applicator",
+                _ => "Applicator",
+            },
+            status == ApplicatorReadiness.Ready);
+        SystemIsReady = _currentTelemetry?.IsSystemReady(Applicator.State == true);
     }
 
     private void UpdateFaults(IReadOnlyList<FaultEntry> faults)
@@ -226,15 +267,21 @@ public sealed class InterlockGroupStatusItem : BindableBase
         bool showDetailsWhenNotReady,
         params InterlockStatusItem[] details)
     {
+        _displayName = displayName;
         DisplayName = displayName;
         _showDetailsWhenNotReady = showDetailsWhenNotReady;
         Details = details;
     }
 
-    public string DisplayName { get; }
+    public string DisplayName
+    {
+        get => _displayName;
+        private set => SetProperty(ref _displayName, value);
+    }
     public IReadOnlyList<InterlockStatusItem> Details { get; }
     public bool ShowDetails => _showDetailsWhenNotReady && State != true;
 
+    private string _displayName;
     public bool? State
     {
         get => _state;
@@ -260,6 +307,12 @@ public sealed class InterlockGroupStatusItem : BindableBase
     }
 
     internal void Update(bool? state) => State = state;
+
+    internal void Update(string displayName, bool? state)
+    {
+        DisplayName = displayName;
+        State = state;
+    }
 }
 
 public sealed class InterlockStatusItem(SystemInterlock interlock, string displayName) : BindableBase

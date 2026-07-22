@@ -533,11 +533,20 @@ UID: SW-H10TG-277
 TITLE: Get Interlocks state
 STATEMENT: >>>
 The interlock dialog view model derives ``SystemIsReady`` from the latest immutable
-telemetry snapshot. Readiness requires a clear buffered master-fault input, no active
-system fault, and every required interlock to be available and active.
+telemetry snapshot, the attached applicator, the registered applicator collection, and the
+treatment-plan applicator configuration. Readiness requires a clear buffered master-fault
+input, no active system fault, every required interlock to be available and active, and a
+ready applicator check.
 
-The view model always publishes three operator-facing groups: E-stops, Door closed, and
-Keys. E-stop and key groups aggregate their base and remote inputs and disclose their
+The view model publishes four operator-facing groups: E-stops, Door closed, Keys, and one
+Applicator row. It first treats a missing attached applicator as ``No applicator``; then an
+attached serial absent from the registered collection as ``Unknown applicator``; then a
+registered applicator whose configuration differs from the treatment plan as ``Incorrect
+applicator``. Otherwise the row is ``Applicator`` with the existing green thumbs-up state.
+This ordered evaluation is shared by both interlock view models, so any error makes
+``SystemIsReady`` false and exactly one applicator row is displayed.
+
+E-stop and key groups aggregate their base and remote inputs and disclose their
 individual child rows only while the group is not ready or is unavailable.
 
 Other physical inputs are aggregated into operator-facing subsystem names. The Auxiliary

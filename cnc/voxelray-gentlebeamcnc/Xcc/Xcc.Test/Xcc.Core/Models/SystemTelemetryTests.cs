@@ -54,10 +54,11 @@ internal class SystemTelemetryTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(new SystemNormalTelemetry { Interlocks = readyInterlocks, Faults = noFaults }.IsSystemReady(), Is.True);
-            Assert.That(new SystemNormalTelemetry { Interlocks = masterFaultActive, Faults = noFaults }.IsSystemReady(), Is.False);
-            Assert.That(new SystemNormalTelemetry { Interlocks = readyInterlocks, Faults = activeFaults }.IsSystemReady(), Is.False);
-            Assert.That(new SystemNormalTelemetry { Interlocks = requiredInterlockOpen, Faults = noFaults }.IsSystemReady(), Is.False);
+            Assert.That(new SystemNormalTelemetry { Interlocks = readyInterlocks, Faults = noFaults }.IsSystemReady(applicatorIsReady: true), Is.True);
+            Assert.That(new SystemNormalTelemetry { Interlocks = readyInterlocks, Faults = noFaults }.IsSystemReady(applicatorIsReady: false), Is.False);
+            Assert.That(new SystemNormalTelemetry { Interlocks = masterFaultActive, Faults = noFaults }.IsSystemReady(applicatorIsReady: true), Is.False);
+            Assert.That(new SystemNormalTelemetry { Interlocks = readyInterlocks, Faults = activeFaults }.IsSystemReady(applicatorIsReady: true), Is.False);
+            Assert.That(new SystemNormalTelemetry { Interlocks = requiredInterlockOpen, Faults = noFaults }.IsSystemReady(applicatorIsReady: true), Is.False);
         });
     }
 

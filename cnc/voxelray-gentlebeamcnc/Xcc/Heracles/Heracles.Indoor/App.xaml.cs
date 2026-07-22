@@ -113,6 +113,7 @@ namespace Heracles.Indoor
             containerRegistry.RegisterSingleton<ICollimatorModel, CollimatorModel>();
             containerRegistry.RegisterSingleton<ICollimatorRepository, CollimatorRepository>();
             containerRegistry.RegisterSingleton<IPlanModel, PlanModel>();
+            containerRegistry.RegisterSingleton<IApplicatorReadinessSource>(() => Container.Resolve<IPlanModel>());
             containerRegistry.RegisterSingleton<ITreatmentDoseCalculation, TreatmentDoseCalculation>();
             //containerRegistry.RegisterSingleton<IDiagnosisStore, DiagnosisStore>();
             containerRegistry.RegisterSingleton<ITreatmentHistoryModel, TreatmentHistoryModel>();
