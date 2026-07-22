@@ -274,22 +274,25 @@ namespace Heracles.Application.Services
             float? heaterCurrentFeedback = null)
         {
             const ulong availableFaults = (1UL << 24) - 2;
-            const ulong availableInterlocks =
-                ((1UL << 17) - 1)
-                & ~(1UL << (int)SystemInterlock.DriveSystemReady)
-                & ~(1UL << (int)SystemInterlock.Kuka1Ready)
-                & ~(1UL << (int)SystemInterlock.Kuka2Ready);
+            const ulong availableInterlocks = (uint)GcbInterlockFlags.All;
 
             var rawFaults = _faultBit == SystemFault.Reserved ? 0u : 1u << (int)_faultBit;
             var activeFaults = _faultBit == SystemFault.Reserved ? 0UL : 1UL << (int)_faultBit;
             const uint rawInterlocks = 1u << 19;
-            var activeInterlocks = 1UL << (int)SystemInterlock.CollimatorOn;
+            const uint rawRequiredInterlocks = rawInterlocks;
+            const ulong activeInterlocks = 1UL << (int)SystemInterlock.BaseKeyOn;
+            const ulong requiredInterlocks = activeInterlocks;
 
             return new SystemNormalTelemetry
             {
                 ControlBoardState = state ?? _state,
                 Faults = new SystemFaults(rawFaults, null, activeFaults, availableFaults),
-                Interlocks = new SystemInterlocks(rawInterlocks, 0u, activeInterlocks, availableInterlocks),
+                Interlocks = new SystemInterlocks(
+                    rawInterlocks,
+                    rawRequiredInterlocks,
+                    activeInterlocks,
+                    availableInterlocks,
+                    requiredInterlocks),
                 RingLedState = RingLedState.TBD,
                 BaseLedState = BaseLedState.TBD,
                 CollimatorId1 = (uint)(_serial & 0xffffffff),

@@ -104,6 +104,24 @@ namespace Heracles.External.ViewModels
                 DialogService.ShowDialog("LoginView");
             });
 
+        private DelegateCommand? _clearFaultsCommand;
+        public DelegateCommand ClearFaultsCommand => _clearFaultsCommand ??= new DelegateCommand(
+            async () =>
+            {
+                try
+                {
+                    await MainBoardApi.ClearFaults();
+                }
+                catch (Exception ex)
+                {
+                    PopUpService.LogAndShowError(
+                        StringConstants.TreatmentConsole.ClearErrorsTitle,
+                        StringConstants.TreatmentConsole.ClearErrorsErrorMessage,
+                        ex);
+                }
+            });
+
+
         private DelegateCommand? _aboutCommand;
         public DelegateCommand AboutCommand => _aboutCommand ??= new DelegateCommand(
             async () =>

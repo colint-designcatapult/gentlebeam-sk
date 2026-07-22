@@ -56,8 +56,7 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
 
         if (_selectedVersion == NormalSignature)
         {
-            if (_packet.PayloadLength < 43u
-                || _packet.PayloadLength > (uint)NormalTelemetryField.PayloadFields)
+            if (_packet.PayloadLength != (uint)NormalTelemetryField.PayloadFields)
             {
                 return false;
             }
@@ -69,7 +68,7 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
 
         if (_selectedVersion == CalibrationSignature)
         {
-            if (_packet.PayloadLength != 47u)
+            if (_packet.PayloadLength != 48u)
                 return false;
 
             _calibrationState!.Update(_packet);

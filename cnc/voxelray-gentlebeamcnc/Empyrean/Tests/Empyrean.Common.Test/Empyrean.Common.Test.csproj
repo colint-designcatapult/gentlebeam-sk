@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Empyrean.Common\Empyrean.Common.csproj" />
+    <ProjectReference Include="..\..\..\GcbTelemetryRelay\GcbTelemetryRelay.csproj" />
   </ItemGroup>
 
   <ItemGroup>

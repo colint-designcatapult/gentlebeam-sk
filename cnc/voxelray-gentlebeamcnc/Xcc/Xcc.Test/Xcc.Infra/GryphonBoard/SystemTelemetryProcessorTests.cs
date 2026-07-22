@@ -147,7 +147,7 @@ internal class SystemTelemetryProcessorTests
         });
 
         sut.Process(BuildVersionInfo(1, 0, 0, FirmwareMode.Calibration));
-        Assert.That(sut.Process(BuildPacket(GCBPacketType.TelemetryResponse, 46)), Is.False);
+        Assert.That(sut.Process(BuildPacket(GCBPacketType.TelemetryResponse, 47)), Is.False);
     }
 
     [TestCase(FirmwareMode.Normal)]
@@ -167,8 +167,8 @@ internal class SystemTelemetryProcessorTests
                 0,
                 state: GcbStateNew.Ready,
                 faultFlags: 1u << (int)SystemFault.VoltageFault,
-                interlockFlags: 1u,
-                tvmFlags: 1u,
+                interlockFlags: 0b11u,
+                requiredInterlockFlags: 1u,
                 statusFlags: 0x80000209,
                 ioFlags: 0x80010182,
                 kvFeedback: 51.5f));
@@ -181,6 +181,7 @@ internal class SystemTelemetryProcessorTests
                 state: GcbStateNew.Ready,
                 faultFlags: 1u << (int)SystemFault.VoltageFault,
                 interlockFlags: 0b11u,
+                requiredInterlockFlags: 1u,
                 statusFlags: 0x80000209,
                 ioFlags: 0x80010182,
                 errorFlags: 0xDEADBEEF,
@@ -197,12 +198,9 @@ internal class SystemTelemetryProcessorTests
             Assert.That(telemetry.KvFeedback, Is.EqualTo(51.5f));
             Assert.That(telemetry.Faults.GetState(SystemFault.VoltageFault), Is.True);
             Assert.That(telemetry.Interlocks.DoorClosed, Is.True);
-            Assert.That(mode == FirmwareMode.Normal
-                ? telemetry.Interlocks.TvmNotchEngaged
-                : telemetry.Interlocks.DriveSystemReady, Is.True);
-            Assert.That(mode == FirmwareMode.Normal
-                ? telemetry.Interlocks.DriveSystemReady
-                : telemetry.Interlocks.TvmNotchEngaged, Is.Null);
+            Assert.That(telemetry.Interlocks.SpareInterlock2, Is.True);
+            Assert.That(telemetry.Interlocks.IsRequired(SystemInterlock.DoorClosed), Is.True);
+            Assert.That(telemetry.Interlocks.RequiredInterlocksReady, Is.True);
             Assert.That(mode == FirmwareMode.Normal
                 ? telemetry.CollimatorSerial is not null
                 : telemetry.KvSetpoint is null, Is.True);
@@ -333,17 +331,21 @@ internal class SystemTelemetryProcessorTests
         GcbStateNew state = GcbStateNew.Startup,
         uint faultFlags = 0,
         uint interlockFlags = 0,
-        uint tvmFlags = 0,
+        uint requiredInterlockFlags = 0,
         uint statusFlags = 0,
         uint ioFlags = 0,
         float kvFeedback = 0)
     {
-        var packet = new UdpPacket((uint)GCBPacketType.TelemetryResponse, 0, 46);
+        var packet = new UdpPacket(
+            (uint)GCBPacketType.TelemetryResponse,
+            0,
+            (uint)NormalTelemetryField.PayloadFields);
         packet[(int)NormalTelemetryField.SystemState] = (int)state;
         packet[(int)NormalTelemetryField.SystemRuntime] = runtime;
         packet[(int)NormalTelemetryField.SystemFaultFlags] = faultFlags;
         packet[(int)NormalTelemetryField.InterlockFlags] = interlockFlags;
-        packet[(int)NormalTelemetryField.TvmInterlock] = tvmFlags;
+        packet[(int)NormalTelemetryField.Reserved1] = 1u;
+        packet[(int)NormalTelemetryField.RequiredInterlockFlags] = requiredInterlockFlags;
         packet[(int)NormalTelemetryField.HvpsStatusFlags] = statusFlags;
         packet[(int)NormalTelemetryField.HvpsIO] = ioFlags;
         packet[(int)NormalTelemetryField.KvFeedback] = kvFeedback;
@@ -355,16 +357,18 @@ internal class SystemTelemetryProcessorTests
         GcbStateNew state = GcbStateNew.Startup,
         uint faultFlags = 0,
         uint interlockFlags = 0,
+        uint requiredInterlockFlags = 0,
         uint statusFlags = 0,
         uint ioFlags = 0,
         uint errorFlags = 0,
         float kvFeedback = 0)
     {
-        var packet = new UdpPacket((uint)GCBPacketType.TelemetryResponse, 0, 47);
+        var packet = new UdpPacket((uint)GCBPacketType.TelemetryResponse, 0, 48);
         packet[1] = (int)state;
         packet[7] = runtime;
         packet[12] = faultFlags;
         packet[14] = interlockFlags;
+        packet[47] = requiredInterlockFlags;
         packet[15] = ioFlags;
         packet[16] = statusFlags;
         packet[17] = errorFlags;

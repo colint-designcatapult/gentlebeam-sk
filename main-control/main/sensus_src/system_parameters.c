@@ -142,20 +142,6 @@ bool verify_keys_ok()
 	return true;
 }
 
-#if !defined(CALIBRATION_MODE)
-bool verify_tvm_ok()
-{
-	//extract the tvm interlock bit
-	bool tvm_ok = (bool)(system_status[SS_TVM_INTERLOCK].u & 0x01);
-	
-	//Check that the interlock on the TVM notch is engaged
-	if (!tvm_ok)
-	{
-		return false;
-	}
-	return true;
-}
-#endif
 
 bool verify_collimator_ok()
 {
@@ -184,7 +170,7 @@ bool verify_estops_ok()
 	return true;
 }
 
-bool verify_drive_ok()
+bool verify_spare_interlock_2_ok()
 {
 	if(!gpio_get_pin_level(IO_DRIVE_SYS_LOCKED))
 	{

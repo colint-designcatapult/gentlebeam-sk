@@ -624,7 +624,7 @@ static void run_staged_state(EventType ev)
 		ok_to_proceed &= verify_collimator_ok();
 		ok_to_proceed &= verify_door_ok();
 #if defined(CALIBRATION_MODE)
-		ok_to_proceed &= verify_drive_ok();
+		ok_to_proceed &= verify_spare_interlock_2_ok();
 #endif
 				
 		//Check to make sure timers are reset before releasing plan
@@ -850,7 +850,7 @@ static void run_ready_state(EventType ev)
 		ok_to_proceed &= verify_collimator_ok();
 		ok_to_proceed &= verify_door_ok();
 #if defined(CALIBRATION_MODE)
-		ok_to_proceed &= verify_drive_ok();
+		ok_to_proceed &= verify_spare_interlock_2_ok();
 #endif
 		
 		//Only proceed if interlocks are ok

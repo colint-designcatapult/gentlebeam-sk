@@ -1,43 +1,49 @@
+using Heracles.Application.AppLayer.Collimators;
 using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Services.Dialogs;
 using Xcc.Core.Constants;
+using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Models;
 
 namespace Heracles.Application.UI.ViewModels
 {
     public class InterlocksViewModel : BindableBase
     {
-        public InterlocksViewModel(IGCBDataStore gcbDataStore, IDialogService dialogService)
+        private readonly ICollimatorModel _collimatorModel;
+        private readonly IApplicatorReadinessSource _applicatorReadinessSource;
+
+        public InterlocksViewModel(
+            ICollimatorModel collimatorModel,
+            IApplicatorReadinessSource applicatorReadinessSource,
+            IGCBDataStore gcbDataStore,
+            IDialogService dialogService)
         {
+            _collimatorModel = collimatorModel;
+            _applicatorReadinessSource = applicatorReadinessSource;
             GcbDataStore = gcbDataStore;
             DialogService = dialogService;
 
-            gcbDataStore.PropertyChanged += (s, e) =>
+            UpdateSystemReadiness(gcbDataStore.SystemTelemetry);
+            gcbDataStore.PropertyChanged += (_, _) => UpdateSystemReadiness(gcbDataStore.SystemTelemetry);
+            _collimatorModel.PropertyChanged += (_, args) =>
             {
-                var interlocks = gcbDataStore.SystemTelemetry?.Interlocks;
-                if (interlocks is null)
-                {
-                    SystemIsReady = null;
-                }
-                else
-                {
-                    SystemIsReady =
-                        interlocks.Value.CollimatorOn == true
-                        && interlocks.Value.RemoteKeyOn == true
-                        && interlocks.Value.DoorClosed == true
-                        && interlocks.Value.BaseEStopReleased == true
-                        && interlocks.Value.RemoteEStopReleased == true
-                        && interlocks.Value.Timer1Ready == true
-                        && interlocks.Value.Timer2Ready == true
-                        && interlocks.Value.WaterLevelOk == true
-                        && interlocks.Value.HeadInterfaceBoardReady == true
-                        && interlocks.Value.HvpsReady == true
-                        && interlocks.Value.CoolerReady == true
-                        && interlocks.Value.WatchdogReady == true
-                        && interlocks.Value.IonPumpOk == true;
-                }
+                if (args.PropertyName is nameof(ICollimatorModel.ActiveCollimator) or nameof(ICollimatorModel.Collimators))
+                    UpdateSystemReadiness(GcbDataStore.SystemTelemetry);
             };
+            _applicatorReadinessSource.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(IApplicatorReadinessSource.CollimatorConfiguration))
+                    UpdateSystemReadiness(GcbDataStore.SystemTelemetry);
+            };
+        }
+
+        private void UpdateSystemReadiness(ISystemTelemetry? telemetry)
+        {
+            var applicatorReadiness = ApplicatorReadinessEvaluator.Evaluate(
+                _collimatorModel,
+                _applicatorReadinessSource.CollimatorConfiguration);
+            SystemIsReady = telemetry?.IsSystemReady(applicatorReadiness == ApplicatorReadiness.Ready);
         }
 
         public IGCBDataStore GcbDataStore { get; }

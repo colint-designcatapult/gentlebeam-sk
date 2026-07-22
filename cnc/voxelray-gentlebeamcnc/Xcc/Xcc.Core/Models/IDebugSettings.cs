@@ -35,5 +35,9 @@ public interface IDebugSettings
     /// Specifies that the window will not be maximized to full screen.
     /// </summary>
     bool DoNotExpandFullscreen { get; }
+    /// <summary>
+    /// Overrides the local GCB telemetry listener port for local development. Zero uses the configured GCB endpoint port.
+    /// </summary>
+    int GcbTelemetryListenerPort { get; }
     bool IsUpsActivated { get; }
 }

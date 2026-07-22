@@ -137,6 +137,7 @@ namespace Heracles.External
             containerRegistry.RegisterSingleton<IPlanRepository, PlanRepository>();
             containerRegistry.RegisterSingleton<ITreatmentRepository, TreatmentRepository>();
             containerRegistry.RegisterSingleton<Models.IPlanModel, Models.PlanModel>();
+            containerRegistry.RegisterSingleton<IApplicatorReadinessSource>(() => Container.Resolve<Models.IPlanModel>());
             containerRegistry.RegisterSingleton<LoadForTreatmentEventSource>();
             containerRegistry.RegisterSingleton<PlanEventSource>();
             containerRegistry.RegisterSingleton<Models.ITreatmentModel, Models.TreatmentModel>();

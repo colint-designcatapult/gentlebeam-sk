@@ -109,6 +109,7 @@ enum systemStatusFields
 	SS_3P3V, //SS_3V3_SUPPLY
 	SS_5V, //SS_5V_SUPPLY
 	SS_12V, //SS_12V_SUPPLY
+	SS_REQUIRED_INTERLOCKS,
 	SS_COUNT
 };
 
@@ -193,10 +194,11 @@ enum systemStatusFields
 	SS_MAG_X2,
 	SS_MAG_Y2,
 	SS_MAG_Z2,
-	SS_TVM_INTERLOCK,	
+	SS_RESERVED_1,
 	SS_KV_SP,
 	SS_MA_LIM_SP,
 	SS_PWR_SP,
+	SS_REQUIRED_INTERLOCKS,
 	SS_COUNT
 };
 #endif
@@ -227,7 +229,7 @@ enum hvpsConfig
 enum interlockBP
 {
 	IBP_DOOR_CLOSED = 0,
-	IBP_DRIVE_SYS,
+	IBP_SPARE_INTERLOCK_2,
 	IBP_BASE_ESTOP,
 	IBP_REMOTE_ESTOP,
 	IBP_KUKA_FAULT_1,		//4
@@ -238,15 +240,18 @@ enum interlockBP
 	IBP_TIMER_FAULT_2,
 	IBP_HVPS_FAULT,
 	IBP_COOLER_FAULT,
-	IBP_HEADBOARD_FAULT,	//12	
+	IBP_WATER_TEMP_FAULT,	//12	
 	IBP_WD_FAULT,
 	IBP_MCU_FAULT,
-	IBP_SPARE_INTERLOCK,
+	IBP_SPARE_INTERLOCK_1,
 	IBP_BUF_MASTER_FAULT,	//16
 	IBP_NA,
 	IBP_REMOTE_KEY,
-	IBP_COLLIMATOR_ON
+	IBP_BASE_KEY
 };
+
+#define INTERLOCK_INPUT_MASK \
+	(((1u << (IBP_BASE_KEY + 1)) - 1u) & ~(1u << IBP_NA))
 
 enum planInfo
 {
@@ -310,13 +315,10 @@ void report_peltier_temp(float temperature);
 void report_hvps_data(VariableValue *hvps_data);
 
 bool verify_keys_ok();
-#if !defined(CALIBRATION_MODE)
-bool verify_tvm_ok();
-#endif
 bool verify_collimator_ok();
 bool verify_door_ok();
 bool verify_estops_ok();
-bool verify_drive_ok();
+bool verify_spare_interlock_2_ok();
 
 void report_ext_adc_f_coil_v(float voltage);
 void report_ext_adc_x_coil_v(float voltage);

@@ -60,9 +60,16 @@ namespace Heracles.Application.Models.Supervision
                     // Just listen to the telemetry endpoint
 
                     var telemetryEndpoint = endPointsConfiguration.GCBTelemetryEndPoint;
-                    int telemetryClientPort = telemetryEndpoint.Port.Value;
-                    
-                    gcbTelemetryConnection = new UdpClientConnection(telemetryEndpoint.Ip(), telemetryClientPort, telemetryClientPort, reusePort: true);
+                    int configuredListenerPort = _debugSettings.GcbTelemetryListenerPort;
+                    int telemetryClientPort = configuredListenerPort > 0
+                        ? configuredListenerPort
+                        : telemetryEndpoint.Port.Value;
+
+                    gcbTelemetryConnection = new UdpClientConnection(
+                        telemetryEndpoint.Ip(),
+                        telemetryEndpoint.Port.Value,
+                        telemetryClientPort,
+                        reusePort: configuredListenerPort == 0);
                 }
 
                 if (recordTelemetryData)

@@ -1538,11 +1538,14 @@ TITLE: Display System Telemetry
 STATEMENT: >>>
 The receive-only GCB telemetry service passes unsolicited device-information, telemetry,
 and fault datagrams to the system telemetry processor. Device information selects the
-normal or calibration parser. Valid packets become immutable semantic snapshots and are
-published through the main-board model and GCB data store; unsupported versions or
-malformed packets do not replace the last valid snapshot. Publication is limited to one
-snapshot every 250 ms, and 1.5 seconds without valid telemetry produces an unavailable
-snapshot.
+corresponding normal or calibration parser. The selected parser translates the complete
+physical interlock status and required-interlock masks into ``SystemInterlocks`` while
+retaining both raw masks for service diagnostics. Valid immutable snapshots are published
+through the main-board model and GCB data store; unsupported versions or malformed packets
+do not replace the last valid snapshot. Publication is limited to one snapshot every
+250 ms, and 1.5 seconds without valid telemetry produces an unavailable snapshot.
+System readiness requires a clear buffered master-fault input, no active system fault,
+and all required interlocks to be available and active.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1601,9 +1604,10 @@ TITLE: Retrieve System Signals
 STATEMENT: >>>
 The detailed telemetry view binds to nullable semantic fields on the GCB data store's
 latest immutable telemetry snapshot and renders unavailable firmware-specific fields as
-not available. The fault view binds to the store's latched active-fault list and displays
-each formatted message with its captured state and runtime. Both views consume store
-notifications and do not poll the firmware.
+not available. Its System section displays the raw interlock-input and required-interlock
+masks for service diagnosis. The fault view binds to the store's latched active-fault list
+and displays each formatted message with its captured state and runtime. Both views consume
+store notifications and do not poll the firmware.
 <<<
 RELATIONS:
 - TYPE: Parent

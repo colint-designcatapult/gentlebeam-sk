@@ -372,18 +372,16 @@ RELATIONS:
 UID: SW-H1FWMC-175
 TITLE: Input Signals
 STATEMENT: >>>
-The firmware monitors various input digital signals for interlock functionality. The interlock signals which are monitored are from:
+The firmware applies the SAME70 hardware debounce/glitch filter to every physical Port C
+interlock input and samples:
 
-- Backup timers
-- KUKA arm controller
-- E-stops
-- Safety keys
-- Door status
-- Cooling reservoir status
-- Ion pump high voltage status
-- Peltier cooler status
-- HVPS interface status
-- External watchdog IC status
+- Door, base e-stop, and remote e-stop status
+- KUKA 1 and KUKA 2 readiness
+- Water level, ion-pump, timer 1, timer 2, HVPS, cooler, water-temperature, and watchdog status
+- MCU fault, spare interlocks 1 and 2, and buffered master-fault status
+- Remote-key and base-key status
+
+Port C bit 17 is not an interlock input and is excluded from sampling.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -995,9 +993,10 @@ STATEMENT: >>>
 The firmware collects monitored values in a system-status array used as the source of truth
 for firmware decisions and telemetry serialization. Every 10 ms, it serializes the array
 using the normal or calibration layout selected at compile time and sends it to the CNC.
-Normal mode includes treatment, interlock, fault, HVPS, coolant, magnetometer, timer, and
-operational-point data. Calibration mode publishes the calibration-specific subset.
-Telemetry requests use the same serializer and packet layouts.
+The normal and calibration telemetry layouts append the raw state-dependent required-interlock
+mask and publish the complete physical interlock-input mask. The normal layout includes a
+reserved word between the second magnetometer vector and setpoint fields so its established
+payload count and field positions remain unchanged. Telemetry requests use the same serializers.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1057,9 +1056,13 @@ RELATIONS:
 UID: SW-H1FWMC-210
 TITLE: Interlock Monitoring
 STATEMENT: >>>
-The firmware periodically monitors the state of the interlock inputs. Due to the microcontroller having a built in debounce and glitch filter peripheral, no software debouncing has been implemented. The monitoring of the interlocks occurs by comparing the current read values of the inputs to an expected value. The expected value is a bitmask of which specific interlocks are expected to be in a 'good' state. The exact value of the expected bitmask is dependent on the current state of the system within the state machine.
-
-If the current input values do not correspond to the expected value, then a fault is thrown.
+The firmware samples and publishes every physical interlock input without applying the
+fault mask to the reported status. It derives a separate required-interlock mask from the
+compiled firmware mode and current state, publishes that mask in system telemetry, and
+compares only those required bits with the sampled input status. A mismatch records an
+interlock fault and initiates the existing latched-fault transition. Inputs omitted from
+the required mask remain visible for diagnostics but do not independently create an
+interlock fault in that state.
 <<<
 RELATIONS:
 - TYPE: Parent

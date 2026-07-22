@@ -51,3 +51,12 @@ public interface ISystemTelemetry
     bool IsEmissionState();
     string GetVerticallyFormattedString();
 }
+
+public static class SystemTelemetryReadinessExtensions
+{
+    public static bool IsSystemReady(this ISystemTelemetry telemetry, bool applicatorIsReady) =>
+        telemetry.Interlocks.MasterFaultClear == true
+        && !telemetry.Faults.AnyActive
+        && telemetry.Interlocks.RequiredInterlocksReady
+        && applicatorIsReady;
+}

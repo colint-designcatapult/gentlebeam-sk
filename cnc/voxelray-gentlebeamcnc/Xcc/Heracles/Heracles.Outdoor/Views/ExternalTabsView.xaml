@@ -172,7 +172,20 @@
                 </TabItem.Header>
 
                 <Border Style="{StaticResource BorderOutlineStyle}">
-                    <views:DetailedTelemetryView IsTabStop="False"/>
+                    <Grid>
+                        <views:DetailedTelemetryView IsTabStop="False"/>
+
+                        <Button
+                            Width="{StaticResource ButtonWidth}"
+                            Height="{StaticResource ButtonHeight}"
+                            Margin="{StaticResource ViewMargin}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Panel.ZIndex="1"
+                            Command="{Binding ClearFaultsCommand}">
+                            <TextBlock Text="Clear Faults" Style="{StaticResource TextBlockButtonStyle}"/>
+                        </Button>
+                    </Grid>
                 </Border>
             </TabItem>            
             

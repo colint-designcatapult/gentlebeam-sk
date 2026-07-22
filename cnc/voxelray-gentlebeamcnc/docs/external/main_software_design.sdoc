@@ -120,7 +120,9 @@ STATEMENT: >>>
 The GCB data store maintains an immutable list of the currently latched fault records and
 publishes a fault-changed event whenever the list changes. The fault view renders each
 record's category, formatted message, captured control-board state, and captured runtime.
-General fault-category flags continue to drive the system-fault indication.
+The interlock pop-up also maps each record's formatted message to a false-state attention
+row, which renders the red thumbs-down indicator. General fault-category flags continue
+to drive the system-fault indication.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -354,13 +356,14 @@ TITLE: Display System Telemetry
 STATEMENT: >>>
 The receive-only telemetry service listens for unsolicited GCB datagrams. Device-information
 packets identify the firmware version and mode; the system telemetry processor selects the
-matching normal or calibration parser. Unsupported versions and malformed packets are
-rejected without replacing the last valid state.
+corresponding parser. Unsupported layouts and malformed packets are rejected without
+replacing the last valid state.
 
-Valid telemetry is converted to an immutable semantic snapshot. Firmware-specific fields
-are represented as unavailable when absent. Snapshots are published at most every 250 ms,
-while device information continues to refresh the selected parser. If no valid telemetry
-is received for 1.5 seconds, the processor publishes an unavailable snapshot.
+Each parser translates the physical interlock bits once into the shared ``SystemInterlock``
+identity space. ``SystemInterlocks`` retains the raw status and required masks for service
+diagnostics and exposes semantic availability, state, and required-state queries to the
+application. Valid immutable snapshots are published at most every 250 ms. If no valid
+telemetry is received for 1.5 seconds, the processor publishes an unavailable snapshot.
 
 .. raw:: html
 
@@ -529,34 +532,57 @@ RELATIONS:
 UID: SW-H10TG-277
 TITLE: Get Interlocks state
 STATEMENT: >>>
-The interlocks view model reads semantic interlock values from the latest immutable
-telemetry snapshot. Each interlock is represented as ready, active, or unavailable so that
-fields omitted by calibration firmware are not presented as healthy.
+The interlock dialog view model derives ``SystemIsReady`` from the latest immutable
+telemetry snapshot, the attached applicator, the registered applicator collection, and the
+treatment-plan applicator configuration. Readiness requires a clear buffered master-fault
+input, no active system fault, every required interlock to be available and active, and a
+ready applicator check.
+
+The view model publishes four operator-facing groups: E-stops, Door closed, Keys, and one
+Applicator row. It first treats a missing attached applicator as ``No applicator``; then an
+attached serial absent from the registered collection as ``Unknown applicator``; then a
+registered applicator whose configuration differs from the treatment plan as ``Incorrect
+applicator``. Otherwise the row is ``Applicator`` with the existing green thumbs-up state.
+This ordered evaluation is shared by both interlock view models, so any error makes
+``SystemIsReady`` false and exactly one applicator row is displayed.
+
+E-stop and key groups aggregate their base and remote inputs and disclose their
+individual child rows only while the group is not ready or is unavailable.
+
+Other physical inputs are aggregated into operator-facing subsystem names. The Auxiliary
+safety circuit group contains spare interlocks 1 and 2. Only groups with a false state
+enter the attention collection. The buffered master-fault state enters that collection
+as Master fault only when it is false and every other available interlock is ready.
+Unavailable technical signals are not reported as bad.
+
+``FaultsChangedEvent`` snapshots rebuild one false-state attention row per active
+``FaultEntry.Message``. The inherited ``ForegroundDefaultBrush`` on the pop-up root keeps
+body and row text consistent with the prior gray interlock-dialog styling while section
+headings retain ``AccentForegroundColor``. ``ShowClearFaultsButton`` additionally checks
+``IHeraclesExternalSettings`` and becomes true when the buffered master-fault input is bad,
+the telemetry fault mask is nonzero, or the active fault list is nonempty. The fixed
+bottom Clear Errors button reuses the existing refresh-plus-cancel icon treatment, invokes
+``IMainBoardAPI.ClearFaults``, and reports command failures through
+``IPopUpService``. The same button remains collapsed in the Internal GUI.
 
 .. raw:: html
 
     <pre class="mermaid">
     sequenceDiagram
-        participant InterlocksView
-        participant InterlocksViewModel
+        participant InterlocksDialog
+        participant InterlocksDialogViewModel
         participant GCBDataStore
-        participant MainBoardModel
+        participant SystemInterlocks
+        participant MainBoardAPI
 
-        activate InterlocksView
-        InterlocksView->>InterlocksViewModel: Show interlocks
-        activate InterlocksViewModel
-        
-        MainBoardModel->>GCBDataStore: Set SystemTelemetry
-        activate GCBDataStore
-        GCBDataStore->>GCBDataStore: Notify SystemTelemetry changed
-        deactivate GCBDataStore
-        
-        InterlocksViewModel->>GCBDataStore: Read SystemTelemetry.Interlocks
-        GCBDataStore-->>InterlocksViewModel: Return tri-state interlocks
-        
-        InterlocksViewModel-->>InterlocksView: Render available interlocks
-        deactivate InterlocksViewModel
-        deactivate InterlocksView
+        GCBDataStore-->>InterlocksDialogViewModel: SystemTelemetryChangedEvent
+        GCBDataStore-->>InterlocksDialogViewModel: FaultsChangedEvent
+        InterlocksDialogViewModel->>SystemInterlocks: derive readiness and grouped states
+        SystemInterlocks-->>InterlocksDialogViewModel: tri-state semantic values
+        InterlocksDialogViewModel-->>InterlocksDialog: readiness, operator checks, bad groups, fault messages, clear visibility
+        InterlocksDialog-->>InterlocksDialog: disclose failed e-stop and key children
+        InterlocksDialog->>InterlocksDialogViewModel: ClearFaultsCommand [External GUI only]
+        InterlocksDialogViewModel->>MainBoardAPI: ClearFaults
     </pre>
 <<<
 RELATIONS:

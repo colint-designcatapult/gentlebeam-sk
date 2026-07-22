@@ -39,10 +39,9 @@ namespace Heracles.Application.Models
         bool IsDone { get; set; }
     }
 
-    public interface IPlanModel : IDirtyFlaggedBindableBase
+    public interface IPlanModel : IDirtyFlaggedBindableBase, IApplicatorReadinessSource
     {
         IPrescription Prescription { get; }
-        ICollimatorConfiguration? CollimatorConfiguration { get; }
         IPlan Plan { get; }
         TreatmentFieldEntryObservableCollection TreatmentFields { get; }
         ITreatmentFieldEntry TreatmentField { get; }
@@ -170,11 +169,16 @@ namespace Heracles.Application.Models
         private IPrescription _prescription;
         private ISimulation _simulation;
         private TreatmentFieldEntryObservableCollection _treatmentFields = new();
+        private ICollimatorConfiguration? _collimatorConfiguration;
         private IDictionary<int, TreatmentFieldName> _fieldNameMapping = null;
         private CancellationTokenSource _cancellationTokenSource = null;
 
         // A configuration matching current energy/applicator size
-        public ICollimatorConfiguration? CollimatorConfiguration { get; set; }
+        public ICollimatorConfiguration? CollimatorConfiguration
+        {
+            get => _collimatorConfiguration;
+            set => SetProperty(ref _collimatorConfiguration, value);
+        }
 
         public IPrescription Prescription { get => _prescription; private set => SetProperty(ref _prescription, value); }
         public ISimulation Simulation { get => _simulation; private set => SetProperty(ref _simulation, value); }
@@ -189,6 +193,7 @@ namespace Heracles.Application.Models
                     if (_plan == null)
                     {
                         _fieldNameMapping = null;
+                        CollimatorConfiguration = null;
                     }
                     else
                     {
