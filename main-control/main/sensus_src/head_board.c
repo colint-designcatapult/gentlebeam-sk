@@ -101,7 +101,7 @@ static void hb_timeout_check(const struct timer_task *const timer_task)
 	//TBD TODO magic number
 	if(++hb_no_comm > 2)
 	{
-		report_fault(FAULT_HEADBOARD_COMM, HEAD_BRD_FAULT_TIMEOUT, 0, HB_COMM_TIMEOUT_MS, 1);
+		report_typed_fault1(FAULT_HEADBOARD_COMM, "No head-board response was received within %u ms.", MAKE_ARG(HB_COMM_TIMEOUT_MS));
 	}
 #endif
 }
@@ -229,7 +229,7 @@ static bool hb_rx_packet_check()
 	if(system_status[SS_STATE].i == STATE_WARMUP)
 	{
 		crc_calc = 0x00;
-		report_fault(FAULT_HEADBOARD_COMM, HEAD_BRD_FAULT_TIMEOUT, 0, HB_COMM_TIMEOUT_MS, 1);
+		report_typed_fault1(FAULT_HEADBOARD_COMM, "No head-board response was received within %u ms.", MAKE_ARG(HB_COMM_TIMEOUT_MS));
 	}
 #endif
 #endif

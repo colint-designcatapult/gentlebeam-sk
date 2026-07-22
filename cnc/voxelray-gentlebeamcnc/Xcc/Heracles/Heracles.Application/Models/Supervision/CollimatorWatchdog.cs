@@ -62,7 +62,9 @@ namespace Heracles.Application.Models.Supervision
             }
             else
             {
-                newSerialValue = (telemetry.CollimatorSerial != 0) ? telemetry.CollimatorSerial.ToString("X") : null;
+                newSerialValue = telemetry.CollimatorSerial is ulong serial and not 0
+                    ? serial.ToString("X")
+                    : null;
             }
 
             if (newSerialValue != _telemetryCollimatorSerial)

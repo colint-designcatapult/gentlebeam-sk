@@ -1,9 +1,12 @@
+using System;
+using System.Buffers.Binary;
+
 namespace Empyrean.Common.Infra.Networking.Udp
 {
     public enum UdpPacketHeaderField : int
     {
-        Sync1 = 0, 
-        Sync2 = 1, 
+        Sync1 = 0,
+        Sync2 = 1,
         PacketType = 2,
         PacketCounter = 3,
         PayloadLength = 4,
@@ -12,144 +15,120 @@ namespace Empyrean.Common.Infra.Networking.Udp
 
     public class UdpPacket
     {
-        public struct Field {
-            public byte[] Data { get; private set; }
+        public readonly struct Field
+        {
+            private readonly uint _value;
+
             public Field(byte[] value)
             {
-                if (value.Length == 4)
-                {
-                    Data = value;
-                }
-                else
-                {
+                if (value.Length != sizeof(uint))
                     throw new ArgumentException("UdpPacket error: invalid input field data size");
-                }
-            }
-            public Field(int value)
-            {
-                Data = BitConverter.GetBytes(value);
-            }
-            public Field(uint value)
-            {
-                Data = BitConverter.GetBytes(value);
-            }
-            public Field(float value)
-            {
-                Data = BitConverter.GetBytes(value);
+
+                _value = BinaryPrimitives.ReadUInt32LittleEndian(value);
             }
 
-            public static implicit operator float(Field value) => BitConverter.ToSingle(value.Data);
-            public static implicit operator int(Field value) => BitConverter.ToInt32(value.Data);
-            public static implicit operator uint(Field value) => BitConverter.ToUInt32(value.Data);
+            public Field(int value) => _value = unchecked((uint)value);
+            public Field(uint value) => _value = value;
+            public Field(float value) => _value = BitConverter.SingleToUInt32Bits(value);
+
+            public byte[] Data
+            {
+                get
+                {
+                    var data = new byte[sizeof(uint)];
+                    BinaryPrimitives.WriteUInt32LittleEndian(data, _value);
+                    return data;
+                }
+            }
+
+            public static implicit operator float(Field value) => BitConverter.UInt32BitsToSingle(value._value);
+            public static implicit operator int(Field value) => unchecked((int)value._value);
+            public static implicit operator uint(Field value) => value._value;
             public static implicit operator byte[](Field value) => value.Data;
-            public static implicit operator Field(float value) => new Field(value);
-            public static implicit operator Field(uint value) => new Field(value);
-            public static implicit operator Field(int value) => new Field(value);
-            public static implicit operator Field(byte[] value) => new Field(value);
+            public static implicit operator Field(float value) => new(value);
+            public static implicit operator Field(uint value) => new(value);
+            public static implicit operator Field(int value) => new(value);
+            public static implicit operator Field(byte[] value) => new(value);
         }
 
-        private readonly byte[] SYNC = BitConverter.GetBytes(0xffffffff);
+        private const uint HeaderFields = (uint)UdpPacketHeaderField.HeaderFields;
+        private const int MinimumPacketSize = ((int)UdpPacketHeaderField.HeaderFields + 1) * sizeof(uint);
+        private byte[] _buffer;
+        private int _payloadLength;
 
-        private const uint HEADER_FIELDS = (uint)UdpPacketHeaderField.HeaderFields;
-        private static readonly uint MIN_PACKET_SIZE = CalculatePacketSize();
+        public UdpPacket()
+        {
+            _buffer = Array.Empty<byte>();
+        }
 
-        private byte[] buffer;
-
-        private int payloadLength;
-
-        #region Constructors
         public UdpPacket(uint packetType, uint packetCounter, uint payloadLength = 0)
         {
-            // header + payload + footer (CRC field):
-            uint totalPacketSize = (HEADER_FIELDS + payloadLength + 1) * 4;
-            this.payloadLength = (int)payloadLength;
-            buffer = new byte[totalPacketSize];
+            var totalPacketSize = checked((int)CalculatePacketSize(payloadLength));
+            _payloadLength = checked((int)payloadLength);
+            _buffer = new byte[totalPacketSize];
 
-            SetHeaderField(UdpPacketHeaderField.Sync1, SYNC);
-            SetHeaderField(UdpPacketHeaderField.Sync2, SYNC);
+            SetHeaderField(UdpPacketHeaderField.Sync1, uint.MaxValue);
+            SetHeaderField(UdpPacketHeaderField.Sync2, uint.MaxValue);
             SetHeaderField(UdpPacketHeaderField.PacketType, packetType);
             SetHeaderField(UdpPacketHeaderField.PacketCounter, packetCounter);
             SetHeaderField(UdpPacketHeaderField.PayloadLength, payloadLength);
-            // We can determine crc already:
             if (payloadLength == 0)
-            {
                 UpdateCRC();
-            }
         }
 
         public UdpPacket(byte[]? buffer)
         {
-            if (buffer == null)
+            _buffer = Array.Empty<byte>();
+            var reason = Validate(buffer, out var payloadLength);
+            if (reason == ValidationFailure.None)
             {
-                throw new ArgumentNullException("UdpPacket parse error: no data");
-            }
-            if (buffer.Length < MIN_PACKET_SIZE)
-            {
-                throw new ArgumentException("UdpPacket parse error: packet size is too small");
-            }
-
-            this.buffer = buffer;
-            
-            // Get and verify specified field number from header:
-            uint specifiedPayloadFields = GetHeaderField(UdpPacketHeaderField.PayloadLength);
-            this.payloadLength = (int)specifiedPayloadFields;
-
-            uint expectedPacketSize = CalculatePacketSize(specifiedPayloadFields);
-            if (expectedPacketSize != buffer.Length)
-            {
-                throw new ArgumentException("UdpPacket parse error: invalid packet payload size");
+                _buffer = buffer!;
+                _payloadLength = payloadLength;
+                return;
             }
 
-            // Check CRC:
-            uint packetCRC = CRC;
-            uint calculatedCRC = CalculateCRC(
-                GetPayloadFieldOffsetUnsafe(this.payloadLength)); // get block size up to the checksum
-            if (packetCRC != calculatedCRC)
+            throw reason switch
             {
-                throw new ArgumentException("UdpPacket parse error: invalid checksum value");
-            }
-        }
-        #endregion Constructors
-
-        #region Properties
-        public uint PacketType
-        {
-            get => GetHeaderField(UdpPacketHeaderField.PacketType);
+                ValidationFailure.Null => new ArgumentNullException("UdpPacket parse error: no data"),
+                ValidationFailure.TooSmall => new ArgumentException("UdpPacket parse error: packet size is too small"),
+                ValidationFailure.LengthMismatch => new ArgumentException("UdpPacket parse error: invalid packet payload size"),
+                ValidationFailure.ChecksumMismatch => new ArgumentException("UdpPacket parse error: invalid checksum value"),
+                _ => new InvalidOperationException("Unexpected UDP packet validation result"),
+            };
         }
 
-        public uint PacketCounter
-        {
-            get => GetHeaderField(UdpPacketHeaderField.PacketCounter);
-        }
+        public uint PacketType => GetHeaderField(UdpPacketHeaderField.PacketType);
+        public uint PacketCounter => GetHeaderField(UdpPacketHeaderField.PacketCounter);
+        public uint PayloadLength => unchecked((uint)_payloadLength);
+        public uint CRC => BinaryPrimitives.ReadUInt32LittleEndian(_buffer.AsSpan(_buffer.Length - sizeof(uint)));
+        public byte[] Buffer => _buffer;
+        public ReadOnlySpan<byte> Payload =>
+            _payloadLength == 0
+                ? ReadOnlySpan<byte>.Empty
+                : _buffer.AsSpan(GetPayloadFieldOffsetUnsafe(0), checked(_payloadLength * sizeof(uint)));
 
-        public uint PayloadLength
-        {
-            get => GetHeaderField(UdpPacketHeaderField.PayloadLength);
-        }
 
-        public uint CRC
-        {
-            get => new Field(buffer.TakeLast(4).ToArray());
-        }
-
-        public byte[] Buffer { get => buffer; }
-        #endregion Properties
-
-        #region Pulbic methods
-        /// <summary>
-        /// Payload indexer, starting with 0
-        /// </summary>
-        /// <param name="index"> defines offset within the payload block in 32bit fields</param>
-        /// <returns>Byte representation of a payload field</returns>
         public Field this[int index]
         {
-            get => buffer.Skip(GetPayloadFieldOffset(index)).Take(4).ToArray();
-            set
+            get => new(BinaryPrimitives.ReadUInt32LittleEndian(_buffer.AsSpan(GetPayloadFieldOffset(index), sizeof(uint))));
+            set => BinaryPrimitives.WriteUInt32LittleEndian(
+                _buffer.AsSpan(GetPayloadFieldOffset(index), sizeof(uint)),
+                value);
+        }
+
+        public bool TryReset(byte[]? data)
+        {
+            var reason = Validate(data, out var payloadLength);
+            if (reason != ValidationFailure.None)
             {
-                // First we get offset to be sure it's a valid one
-                int fieldOffset = GetPayloadFieldOffset(index);
-                value.Data.CopyTo(buffer, fieldOffset);
+                _buffer = Array.Empty<byte>();
+                _payloadLength = 0;
+                return false;
             }
+
+            _buffer = data!;
+            _payloadLength = payloadLength;
+            return true;
         }
 
         public UdpPacket Set(int payloadField, Field value)
@@ -160,64 +139,66 @@ namespace Empyrean.Common.Infra.Networking.Udp
 
         public UdpPacket UpdateCRC()
         {
-            int crcFieldIndex = payloadLength;
-            int headerPlusPayloadSize = GetPayloadFieldOffsetUnsafe(crcFieldIndex);
-
-            Field crc = CalculateCRC(headerPlusPayloadSize);
-
-            crc.Data.CopyTo(buffer, headerPlusPayloadSize);
-
+            var checksumOffset = GetPayloadFieldOffsetUnsafe(_payloadLength);
+            var checksum = CrcUtils.ComputeChecksum(_buffer.AsSpan(0, checksumOffset));
+            BinaryPrimitives.WriteUInt32LittleEndian(
+                _buffer.AsSpan(checksumOffset, sizeof(uint)),
+                checksum);
             return this;
         }
 
-        #endregion Pulbic methods
-
-        #region Private methods
-
-        private Field GetHeaderField(UdpPacketHeaderField field)
+        private ValidationFailure Validate(byte[]? data, out int payloadLength)
         {
-            return buffer.Skip(GetHeaderFieldOffset(field)).Take(4).ToArray();
+            payloadLength = 0;
+            if (data is null)
+                return ValidationFailure.Null;
+            if (data.Length < MinimumPacketSize)
+                return ValidationFailure.TooSmall;
+
+            var specifiedPayloadFields = BinaryPrimitives.ReadUInt32LittleEndian(
+                data.AsSpan(GetHeaderFieldOffset(UdpPacketHeaderField.PayloadLength), sizeof(uint)));
+            var expectedPacketSize = (ulong)(HeaderFields + 1u + specifiedPayloadFields) * sizeof(uint);
+            if (expectedPacketSize != (ulong)data.Length || specifiedPayloadFields > int.MaxValue)
+                return ValidationFailure.LengthMismatch;
+
+            var checksumOffset = data.Length - sizeof(uint);
+            var packetChecksum = BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(checksumOffset));
+            var calculatedChecksum = CrcUtils.ComputeChecksum(data.AsSpan(0, checksumOffset));
+            if (packetChecksum != calculatedChecksum)
+                return ValidationFailure.ChecksumMismatch;
+
+            payloadLength = (int)specifiedPayloadFields;
+            return ValidationFailure.None;
         }
 
-        private void SetHeaderField(UdpPacketHeaderField field, Field value)
-        {
-            value.Data.CopyTo(buffer, GetHeaderFieldOffset(field));
-        }
+        private uint GetHeaderField(UdpPacketHeaderField field) =>
+            BinaryPrimitives.ReadUInt32LittleEndian(
+                _buffer.AsSpan(GetHeaderFieldOffset(field), sizeof(uint)));
 
-        private static int GetFieldOffset(int field)
-        {
-            return field * 4;
-        }
+        private void SetHeaderField(UdpPacketHeaderField field, uint value) =>
+            BinaryPrimitives.WriteUInt32LittleEndian(
+                _buffer.AsSpan(GetHeaderFieldOffset(field), sizeof(uint)),
+                value);
 
-        private static int GetHeaderFieldOffset(UdpPacketHeaderField field)
-        {
-            return GetFieldOffset((int)field);
-        }
-
-        private static int GetPayloadFieldOffsetUnsafe(int field)
-        {
-            return GetFieldOffset(field + (int)HEADER_FIELDS);
-        }
-
-        private static uint CalculatePacketSize(uint payloadFields = 0)
-        {
-            return (HEADER_FIELDS + payloadFields + 1) * 4;
-        }
+        private static int GetFieldOffset(int field) => field * sizeof(uint);
+        private static int GetHeaderFieldOffset(UdpPacketHeaderField field) => GetFieldOffset((int)field);
+        private static int GetPayloadFieldOffsetUnsafe(int field) => GetFieldOffset(field + (int)HeaderFields);
+        private static uint CalculatePacketSize(uint payloadFields = 0) => (HeaderFields + payloadFields + 1u) * sizeof(uint);
 
         private int GetPayloadFieldOffset(int field)
         {
-            if (field < 0 || field >= payloadLength)
-            {
+            if (field < 0 || field >= _payloadLength)
                 throw new ArgumentOutOfRangeException("UdpPacket error: payload field index is out of range");
-            }
             return GetPayloadFieldOffsetUnsafe(field);
         }
 
-        private uint CalculateCRC(int startBlockLength)
+        private enum ValidationFailure
         {
-            return CrcUtils.ComputeChecksum(buffer.Take(startBlockLength).ToArray());
+            None,
+            Null,
+            TooSmall,
+            LengthMismatch,
+            ChecksumMismatch,
         }
-
-        #endregion Private methods
     }
 }

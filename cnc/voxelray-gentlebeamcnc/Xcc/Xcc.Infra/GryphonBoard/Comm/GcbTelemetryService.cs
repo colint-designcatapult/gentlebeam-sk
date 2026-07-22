@@ -6,7 +6,7 @@ using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Logging;
 using Xcc.Core.Models;
 using Xcc.Core.Services;
-using Xcc.Infra.GryphonBoard.Comm.Udp;
+using Xcc.Infra.GryphonBoard;
 
 namespace Xcc.Infra.GryphonBoard.Comm
 {
@@ -14,12 +14,10 @@ namespace Xcc.Infra.GryphonBoard.Comm
     public class GcbTelemetryService : ITelemetryService
     {
         private const int TELEMETRY_EXPIRATION_TIMEOUT = 1500;
-        private const int TELEMETRY_SERVICE_INTERVAL = 250;
 
-        private IGcbXRayCommandOperator GcbXRayCommandOperator { get; }
         public ILogWriter LogWriter { get; }
         private IAsyncClientConnection Connection { get; }
-        public ISystemTelemetryChanged SystemTelemetryChangedCallback { get; }
+        private ISystemTelemetryProcessor SystemTelemetryProcessor { get; }
         private Task? ReceiveProcess { get; set; }
         private CancellationToken GlobalToken { get; }
         private CancellationTokenSource ReceiveProcessCts { get; set; } = new();
@@ -27,16 +25,14 @@ namespace Xcc.Infra.GryphonBoard.Comm
 
         public GcbTelemetryService(
             IAppGlobals appGlobals,
-            IGcbXRayCommandOperator gcbXRayCommandOperator,
-            IGcbTelemetryConnection gcbTelemetryConnection,
-            ISystemTelemetryChanged systemTelemetryChangedCallback,
+            IGcbTelemetryConnectionFactory gcbTelemetryConnectionFactory,
+            ISystemTelemetryProcessor systemTelemetryProcessor,
             ILogWriter logWriter)
         {
             GlobalToken = appGlobals.AppCancellationTokenSource.Token;
-            GcbXRayCommandOperator = gcbXRayCommandOperator;
             LogWriter = logWriter;
-            Connection = gcbTelemetryConnection;
-            SystemTelemetryChangedCallback = systemTelemetryChangedCallback;
+            Connection = gcbTelemetryConnectionFactory.GetGcbTelemetryConnection();
+            SystemTelemetryProcessor = systemTelemetryProcessor;
             ExpirationTimer = new(ResetTelemetry);
         }
 
@@ -72,10 +68,8 @@ namespace Xcc.Infra.GryphonBoard.Comm
 
                     try
                     {
-                        if (result.Length > 0)
+                        if (result.Length > 0 && SystemTelemetryProcessor.Process(result))
                         {
-                            SystemTelemetryChangedCallback.OnSystemTelemetryChanged(SystemTelemetry.Parse(result));
-
                             lock (_expirationTimerLock)
                             {
                                 ExpirationTimer.Change(TELEMETRY_EXPIRATION_TIMEOUT, 0); //restart expiration timer
@@ -97,7 +91,7 @@ namespace Xcc.Infra.GryphonBoard.Comm
 
         private void ResetTelemetry(object? state)
         {
-            SystemTelemetryChangedCallback.OnSystemTelemetryChanged(null!);
+            SystemTelemetryProcessor.NotifyTelemetryExpired();
             if (!_storeExceptionToLog || _isLogWriting)
                 return;
 

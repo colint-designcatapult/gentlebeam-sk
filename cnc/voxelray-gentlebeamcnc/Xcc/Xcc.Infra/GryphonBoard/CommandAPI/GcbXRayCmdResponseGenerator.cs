@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Empyrean.Common.Infra.Networking.Udp;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
@@ -27,22 +28,49 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                     ]);
         }
 
-        public static byte[] GenerateFaultInfoResponse(uint packetCounter, FaultEntry faultEntry)
+        public static byte[] GenerateFaultInfoResponse(
+            uint packetCounter,
+            FaultUpdate update,
+            params uint[] arguments)
         {
+            ArgumentNullException.ThrowIfNull(update);
+            arguments ??= [];
+            if (arguments.Length > 5)
+                throw new ArgumentOutOfRangeException(nameof(arguments), "A fault response supports at most five arguments.");
+
+            var payload = new uint[FaultEntryParser.ResponseWords];
+            payload[2] = update.ClearEpoch;
+            payload[3] = update.EntryIndex;
+            payload[4] = update.ActiveCount;
+
+            if (update.Entry is FaultEntry entry)
+            {
+                byte[] formatBytes = Encoding.ASCII.GetBytes(entry.Format);
+                if (formatBytes.Length >= 128 || formatBytes.Any(value => value < 0x20 || value > 0x7E))
+                    throw new ArgumentException("Fault format must contain at most 127 printable ASCII bytes.", nameof(update));
+                if (CrcUtils.ComputeChecksum(formatBytes) != entry.FormatHash)
+                    throw new ArgumentException("Fault format hash does not match the format text.", nameof(update));
+
+                payload[0] = (uint)entry.FaultType;
+                payload[1] = entry.FormatHash;
+                payload[5] = (uint)entry.CapturedState;
+                payload[6] = entry.CapturedRuntime;
+                payload[7] = (uint)arguments.Length;
+                Buffer.BlockCopy(formatBytes, 0, payload, 8 * sizeof(uint), formatBytes.Length);
+                for (int index = 0; index < arguments.Length; index++)
+                {
+                    payload[40 + index] = arguments[index];
+                }
+            }
+            else if (arguments.Length != 0)
+            {
+                throw new ArgumentException("An empty fault response cannot contain arguments.", nameof(arguments));
+            }
+
             return UdpPacketBuilder.BuildRawPacket(
                 packetType: (uint)GCBPacketType.FaultInfoResponse,
                 packetCounter: packetCounter,
-                payload: [
-                    faultEntry.FaultId,
-                    (int)faultEntry.FaultIdSupportingDetails,
-                    faultEntry.FaultEntryState,
-                    faultEntry.FaultTimeValue,
-                    faultEntry.ExpectedParameter,
-                    faultEntry.ExpectedParameterSupportingDetails,
-                    faultEntry.ParameterTolerance,
-                    faultEntry.MeasuredParameter,
-                    faultEntry.MeasuredParameterSupportingDetails
-                ]);
+                payload: payload.Select(value => new UdpPacket.Field(value)).ToList());
         }
 
         public static byte[] GenerateConditioningResponse(uint packetCounter, GcbProcessingStatus status)

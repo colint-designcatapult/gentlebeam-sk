@@ -1,5 +1,4 @@
-﻿using Empyrean.Common.Infra.Networking.Udp;
-using Moq;
+﻿using Moq;
 using NUnit.Framework;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
 using Xcc.Application.Models;
@@ -18,17 +17,13 @@ namespace Heracles.Outdoor.Test.Models.GryphonBoard.Indicators
 
         public WarmUpProgress WarmUpProgress { get; private set; }
 
-        private ISystemTelemetry MakeSystemTelemetry(GcbStateNew state, float filamentSetpoint)
-        {
-            var packet = new UdpPacket(
-                packetType: (uint)GCBPacketType.TelemetryResponse,
-                packetCounter: 0,
-                payloadLength: (uint)GCBTelemetryResponseField.PayloadFields);
-            packet[(int)GCBTelemetryResponseField.SystemState] = (int)state;
-            packet[(int)GCBTelemetryResponseField.FilamentSetpoint] = filamentSetpoint;
-            packet.UpdateCRC();
-            return SystemTelemetry.Parse(packet.Buffer);
-        }
+        private static ISystemTelemetry MakeSystemTelemetry(GcbStateNew state, float filamentFeedback) =>
+            new SystemNormalTelemetry
+            {
+                ControlBoardState = state,
+                HeaterCurrentFeedback = filamentFeedback,
+            };
+
         private GcbStateNew GetWarmupState(WarmupType warmupType)
         {
             return warmupType switch {

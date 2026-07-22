@@ -19,8 +19,8 @@ namespace Xcc.Test.Xcc.Core.Models.GryphonBoard
         public void MagnetometerValues_Ctor()
         {
             var mockTelemetry = new Mock<ISystemTelemetry>();
-            mockTelemetry.Setup(t => t.Mag1).Returns([1.1f, 2.2f, 3.3f]);
-            mockTelemetry.Setup(t => t.Mag2).Returns([4.4f, 5.5f, 6.6f]);
+            mockTelemetry.Setup(t => t.Mag1).Returns(new TelemetryVector3(1.1f, 2.2f, 3.3f));
+            mockTelemetry.Setup(t => t.Mag2).Returns(new TelemetryVector3(4.4f, 5.5f, 6.6f));
             
             var sut = new MagnetometerValues(mockTelemetry.Object);
 

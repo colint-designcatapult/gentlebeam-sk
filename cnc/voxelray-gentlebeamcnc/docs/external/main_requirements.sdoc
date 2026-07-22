@@ -395,13 +395,17 @@ UID: RQ-H10TG-2
 TYPE: Safety
 TITLE: Treatment View - Telemetry
 STATEMENT: >>>
-The application shall provide an interface that enables users to view real-time telemetry data of the system, including:
+The application shall provide an interface that displays immutable semantic telemetry
+received from the control-board firmware in real time, including:
 
-* Control board state (System Status)
-* Emission timer
-* Backup timers
-* Emission current
-* Energy Level
+* Control-board state and firmware mode
+* Emission and backup timers
+* Emission current and energy
+* Safety interlocks and system-fault categories
+
+The application shall select the telemetry layout from the reported firmware version and
+mode. A field that is not supplied by that firmware mode shall be shown as unavailable
+rather than as a false or zero measurement.
 <<<
 
 [REQUIREMENT]
@@ -461,9 +465,9 @@ UID: RQ-H10TG-82
 TYPE: Safety
 TITLE: Treatment View - Telemetry - No communication to GCB indication
 STATEMENT: >>>
-The telemetry controls shall show a clear indication if there is no communication with the GCB.
-
-The System Status shall show - NO-COMM Timers, Energy, and Current shall show - 0
+The telemetry controls shall show a clear no-communication indication when no valid
+telemetry has been received from the GCB for 1.5 seconds. Stale telemetry values shall no
+longer be presented as current; affected values shall be shown as unavailable.
 
 .. image:: _images/RQ-H10TG-82.png
 <<<
@@ -614,9 +618,12 @@ UID: RQ-H10TG-139
 TYPE: Safety
 TITLE: Treatment View - Safety Interlocks
 STATEMENT: >>>
-The application shall provide an interface that displays the status of all safety interlocks, with indicators when an interlock is engaged.
+The application shall provide an interface that displays the semantic state of all safety
+interlocks. An available interlock shall indicate ready or active; an interlock not supplied
+by the selected firmware mode shall indicate unavailable.
 
-The application will have a dedicated control that, when clicked by the user, will display a pop-up with the list of interlocks.
+The application will have a dedicated control that, when clicked by the user, will display
+a pop-up with the list of interlocks.
 
 The interlocks should include:
 
@@ -657,6 +664,31 @@ STATEMENT: >>>
 The application shall prevent the user from starting clinical emission exposure (treatment) when no approved physics data is available in the system.
 
 When the user presses the prepare button, an error message will pop up with a message such as: 'Treatment cannot be started. Approved physics data is required.'
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-284
+TYPE: Functional
+TITLE: Treatment View - Active Fault Information
+STATEMENT: >>>
+The application shall display the currently latched control-board fault records. Each
+record shall show the fault category, formatted message, and the system state and runtime
+captured when the fault occurred.
+
+The application shall retrieve multi-entry fault snapshots by index, keep the displayed
+list synchronized with unsolicited fault and clear notifications, and provide a command to
+clear the latched records. Up to four simultaneously active records shall be displayed.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-285
+TYPE: Safety
+TITLE: Disable Clinical Functions in Calibration Mode
+STATEMENT: >>>
+When the connected control board reports calibration firmware mode, the application shall
+disable the Treatment and Quality Assurance tabs and obscure their content with a message
+directing the user to service the device. Non-clinical service, log, and exit functions
+shall remain accessible.
 <<<
 
 [REQUIREMENT]

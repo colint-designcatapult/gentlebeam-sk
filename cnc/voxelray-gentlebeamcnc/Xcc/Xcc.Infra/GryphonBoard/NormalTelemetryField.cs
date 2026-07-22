@@ -1,7 +1,7 @@
 ﻿
-namespace Xcc.Core.Enums
+namespace Xcc.Infra.GryphonBoard
 {
-    public enum GCBTelemetryResponseField : int
+    public enum NormalTelemetryField : int
     {
         SystemState = 0,
         SystemRuntime,
@@ -23,8 +23,8 @@ namespace Xcc.Core.Enums
         HvpsRuntime,
         HvpsIO,
         HvpsStatusFlags,
-        kVFeedback,
-        mAFeedback,
+        KvFeedback,
+        MaFeedback,
         FilamentSetpoint,
         FilamentFeedback,
         GridSetpoint,
@@ -45,10 +45,10 @@ namespace Xcc.Core.Enums
         Mag2X,
         Mag2Y,
         Mag2Z,
-        Applicator,
-        kVSetpoint,
-        emissionCurrentLimit,
-        hvpsPowerSetpoint,
+        TvmInterlock,
+        KvSetpoint,
+        EmissionCurrentLimit,
+        HvpsPowerSetpoint,
         PayloadFields, // number of fields in total
     }
 }

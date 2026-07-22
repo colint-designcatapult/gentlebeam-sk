@@ -14,6 +14,9 @@
     xmlns:appx="clr-namespace:Xcc.Application.UI;assembly=Xcc.Application"
     xmlns:sharedViews="clr-namespace:Xcc.Shared.Views;assembly=Xcc.Shared"
     xmlns:viewsx="clr-namespace:Xcc.Application.Views;assembly=Xcc.Application"
+    xmlns:common="clr-namespace:Heracles.Application.Common;assembly=Heracles.Application"
+    xmlns:coreEnums="clr-namespace:Xcc.Core.Enums;assembly=Xcc.Core"
+    xmlns:heraclesControls="clr-namespace:Heracles.Application.UI.UserControls;assembly=Heracles.Application"
 
     mc:Ignorable="d" 
     d:DesignWidth="1920" d:DesignHeight="1080"
@@ -64,7 +67,9 @@
             SelectFirstVisibleItem="True">
             
             <!--Treatment Tab-->
-            <TabItem>
+            <TabItem
+                ToolTip="{x:Static common:StringConstants+Common.CalibrationModeServiceRequiredMessage}"
+                ToolTipService.ShowOnDisabled="True">
                 <TabItem.Visibility>
                     <MultiBinding Converter="{convx:VisibilityConjunction}">
                         <Binding Path="AuthorizedUserStore.AuthorizedUser.Role.Permissions.ClinicalData" Converter="{convx:BooleanToVisibilityConverter}" FallbackValue="Collapsed" />
@@ -76,6 +81,12 @@
                     <MultiBinding Converter="{convx:InverseBoolAndValueMatchConverter}" ConverterParameter="{x:Static enums:ExternalTabName.Treatment}" Mode="OneWay" >
                         <Binding Path="UIStateMachine.IsPlanLoadedForTreatment" />
                         <Binding Path="UIStateMachine.TabName"/>
+                        <Binding
+                            Path="GcbDataStore.SystemTelemetry.FirmwareMode"
+                            Converter="{convx:ObjectIsNotEqualConverter}"
+                            ConverterParameter="{x:Static coreEnums:FirmwareMode.Calibration}"
+                            FallbackValue="True"
+                            TargetNullValue="True" />
                     </MultiBinding>
                 </TabItem.IsEnabled>
 
@@ -86,17 +97,28 @@
                     </StackPanel>
                 </TabItem.Header>
                 
-                <ContentControl prism:RegionManager.RegionName="{x:Static  appx:Regions+External.TreatmentRegion}" IsTabStop="False"/>
+                <Grid>
+                    <ContentControl prism:RegionManager.RegionName="{x:Static appx:Regions+External.TreatmentRegion}" IsTabStop="False"/>
+                    <heraclesControls:CalibrationModeLockoutOverlay Panel.ZIndex="10" />
+                </Grid>
             </TabItem>
          
             <!--Quality Assurance Tab-->
             <TabItem
+                ToolTip="{x:Static common:StringConstants+Common.CalibrationModeServiceRequiredMessage}"
+                ToolTipService.ShowOnDisabled="True"
                 Visibility="{Binding AuthorizedUserStore.AuthorizedUser.Role.Permissions.QualityAssurance, Converter={convx:BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
                 
                 <TabItem.IsEnabled>
                     <MultiBinding Converter="{convx:InverseBoolAndValueMatchConverter}" ConverterParameter="{x:Static enums:ExternalTabName.QA}" Mode="OneWay" >
                         <Binding Path="UIStateMachine.IsPlanLoadedForTreatment" />
                         <Binding Path="UIStateMachine.TabName"/>
+                        <Binding
+                            Path="GcbDataStore.SystemTelemetry.FirmwareMode"
+                            Converter="{convx:ObjectIsNotEqualConverter}"
+                            ConverterParameter="{x:Static coreEnums:FirmwareMode.Calibration}"
+                            FallbackValue="True"
+                            TargetNullValue="True" />
                     </MultiBinding>
                 </TabItem.IsEnabled>
                 
@@ -108,7 +130,10 @@
                     </StackPanel>
                 </TabItem.Header>
 
-                <ContentControl prism:RegionManager.RegionName="{x:Static  appx:Regions+External.QualityAssuranceRegion}" />
+                <Grid>
+                    <ContentControl prism:RegionManager.RegionName="{x:Static appx:Regions+External.QualityAssuranceRegion}" />
+                    <heraclesControls:CalibrationModeLockoutOverlay Panel.ZIndex="10" />
+                </Grid>
             </TabItem>
             
             <!--Log Tab-->

@@ -11,6 +11,9 @@
 #ifndef FAULTS_H_
 #define FAULTS_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "system_parameters.h"
 
 #if !defined(CALIBRATION_MODE)
@@ -34,7 +37,9 @@
 //#define VERIFICATION_MODE_KV			1
 #endif
 
-#define MAX_FAULT_REPORTS		25
+#define MAX_FAULT_REPORTS		4
+#define FAULT_FORMAT_BYTES		128
+#define MAX_FAULT_ARGS			5
 
 typedef enum faultType
 {
@@ -61,77 +66,107 @@ typedef enum faultType
 	FAULT_ADC_BUS,
 	FAULT_MEMORY,
 	FAULT_INVALID_CONFIG,
+	FAULT_OTHER,
 	NUM_FAULTS
 } FaultType;
 
-enum additionalFaultDetails
+typedef union
 {
-	ADC_BUS_FAULT_SETUP = 1,
-	ADC_BUS_FAULT_TIMEOUT,
-	ADC_BUS_FAULT_NACK,
-	TMR_FAULT_COMM_TIMEOUT,
-	TMR_FAULT_CHECKSUM_1,
-	TMR_FAULT_CHECKSUM_2,
-	TMR_FAULT_NACK_1,
-	TMR_FAULT_NACK_2,
-	HEAD_BRD_FAULT_TIMEOUT,
-	HEAD_BRD_FAULT_CHECKSUM,
-	HVPS_COMM_FAULT_TIMEOUT,
-	HVPS_COMM_FAULT_CHECKSUM,
-	HVPS_COMM_FAULT_OVERRUN,
-	FIL_FAULT_STARTUP,
-	FIL_FAULT_RAMP_TIMEOUT,
-	FIL_FAULT_OVERCURRENT_SP,
-	FIL_FAULT_OVERCURRENT_FB,
-	KV_FAULT_RAMP_TIMEOUT,
-	KV_FAULT_OOT,
-	KV_FAULT_UNWANTED_HV,
-	MA_FAULT_UNSTABLE,
-	MA_GRID_FAULT_UNDESIRED,
-	PLT_COMM_FAULT_TIMEOUT,
-	PLT_COMM_FAULT_CHECKSUM,
-	ION_REP_FAULT_OVERCURRENT,
-	ION_REP_FAULT_OOT,
-	COIL_FAULT_X_CURRENT,
-	COIL_FAULT_X_VOLTAGE,
-	COIL_FAULT_Y_CURRENT,
-	COIL_FAULT_Y_VOLTAGE,
-	COIL_FAULT_F_CURRENT,
-	COIL_FAULT_F_VOLTAGE,
-	COOLANT_FAULT_OVERTEMP,
-	COOLANT_FAULT_LOW_FLOW,
-	COOLANT_FAULT_OVERPRESSURE,
-	INVALID_FAULT_PLAN_RELEASE,
-	MEMORY_FAULT_OP_IDX
-};
+	int32_t i;
+	uint32_t u;
+	float f;
+} LogArg_t;
 
+_Static_assert(sizeof(LogArg_t) == sizeof(uint32_t), "LogArg_t must be one protocol word");
 
+#define MAKE_ARG(x) \
+	_Generic((x), \
+		float: (LogArg_t){ .f = (x) }, \
+		double: (LogArg_t){ .f = (float)(x) }, \
+		int32_t: (LogArg_t){ .i = (x) }, \
+		uint32_t: (LogArg_t){ .u = (x) }, \
+		default: (LogArg_t){ .i = (int32_t)(x) })
 
-typedef struct faultReport
-{
-	FaultType id;
-	uint32_t id_detail;
-	uint32_t entry_state;
-	uint32_t fault_time;
-	float expected_val;
-	uint32_t expected_detail;
-	float tolerance;
-	float measured_val;
-	uint32_t measured_detail;
-} FaultReport;
+#define FAULT_FORMAT_ASSERT(format) \
+	_Static_assert(__builtin_constant_p(format), "fault format must be a string literal"); \
+	_Static_assert(sizeof(format) <= FAULT_FORMAT_BYTES, "fault format exceeds 127 ASCII bytes")
 
+#define report_typed_fault(type, format) \
+	do { \
+		FAULT_FORMAT_ASSERT(format); \
+		fault_latch(type); \
+		record_fault_internal(type, format, (uint8_t)(sizeof(format) - 1u), 0u, NULL); \
+	} while (0)
 
-extern VariableValue fault_information[FAULT_RES_COUNT];
+#define report_typed_fault1(type, format, arg1) \
+	do { \
+		FAULT_FORMAT_ASSERT(format); \
+		fault_latch(type); \
+		const LogArg_t fault_args_[] = { (arg1) }; \
+		record_fault_internal(type, format, (uint8_t)(sizeof(format) - 1u), 1u, fault_args_); \
+	} while (0)
+
+#define report_typed_fault2(type, format, arg1, arg2) \
+	do { \
+		FAULT_FORMAT_ASSERT(format); \
+		fault_latch(type); \
+		const LogArg_t fault_args_[] = { (arg1), (arg2) }; \
+		record_fault_internal(type, format, (uint8_t)(sizeof(format) - 1u), 2u, fault_args_); \
+	} while (0)
+
+#define report_typed_fault3(type, format, arg1, arg2, arg3) \
+	do { \
+		FAULT_FORMAT_ASSERT(format); \
+		fault_latch(type); \
+		const LogArg_t fault_args_[] = { (arg1), (arg2), (arg3) }; \
+		record_fault_internal(type, format, (uint8_t)(sizeof(format) - 1u), 3u, fault_args_); \
+	} while (0)
+
+#define report_typed_fault4(type, format, arg1, arg2, arg3, arg4) \
+	do { \
+		FAULT_FORMAT_ASSERT(format); \
+		fault_latch(type); \
+		const LogArg_t fault_args_[] = { (arg1), (arg2), (arg3), (arg4) }; \
+		record_fault_internal(type, format, (uint8_t)(sizeof(format) - 1u), 4u, fault_args_); \
+	} while (0)
+
+#define report_typed_fault5(type, format, arg1, arg2, arg3, arg4, arg5) \
+	do { \
+		FAULT_FORMAT_ASSERT(format); \
+		fault_latch(type); \
+		const LogArg_t fault_args_[] = { (arg1), (arg2), (arg3), (arg4), (arg5) }; \
+		record_fault_internal(type, format, (uint8_t)(sizeof(format) - 1u), 5u, fault_args_); \
+	} while (0)
+
+#define report_fault(format) \
+	report_typed_fault(FAULT_OTHER, format)
+
+#define report_fault1(format, arg1) \
+	report_typed_fault1(FAULT_OTHER, format, arg1)
+
+#define report_fault2(format, arg1, arg2) \
+	report_typed_fault2(FAULT_OTHER, format, arg1, arg2)
+
+#define report_fault3(format, arg1, arg2, arg3) \
+	report_typed_fault3(FAULT_OTHER, format, arg1, arg2, arg3)
+
+#define report_fault4(format, arg1, arg2, arg3, arg4) \
+	report_typed_fault4(FAULT_OTHER, format, arg1, arg2, arg3, arg4)
+
+#define report_fault5(format, arg1, arg2, arg3, arg4, arg5) \
+	report_typed_fault5(FAULT_OTHER, format, arg1, arg2, arg3, arg4, arg5)
+
+extern volatile uint32_t fault_reports_dropped;
 extern volatile uint32_t internal_time;
 
-
-void init_faults();
-void report_simple_fault(FaultType ftype, float target, float limit, float real);
-void report_fault(FaultType ftype, uint32_t type_detail, float target,  float limit, float real);
-void report_verbose_fault(FaultType v_ftype, uint32_t v_type_detail, float v_target, uint32_t v_target_detail, float v_limit, float v_real, uint32_t v_real_detail);
-void clear_faults();
-void process_faults();
-void pulse_fault_clear();
+void init_faults(void);
+void fault_latch(FaultType type);
+void record_fault_internal(FaultType type, const char *format, uint8_t format_length, uint8_t arg_count, const LogArg_t *args);
+bool consume_fault_transition(void);
+void serialize_fault_response(uint32_t requested_index, VariableValue response[FAULT_RES_COUNT]);
+void clear_faults(void);
+void process_faults(void);
+void pulse_fault_clear(void);
 
 #if defined(CALIBRATION_MODE)
 //Cal

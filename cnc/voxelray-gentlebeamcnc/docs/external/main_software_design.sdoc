@@ -117,10 +117,15 @@ TITLE: Design Items
 UID: SW-H10TG-269
 TITLE: A visual indication for system faults
 STATEMENT: >>>
-The application will indicate a fault in the system using a visual icon.
-
-.. image:: _images/SW-H10TG-269.png
+The GCB data store maintains an immutable list of the currently latched fault records and
+publishes a fault-changed event whenever the list changes. The fault view renders each
+record's category, formatted message, captured control-board state, and captured runtime.
+General fault-category flags continue to drive the system-fault indication.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-284
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-255
@@ -191,34 +196,35 @@ RELATIONS:
 UID: SW-H10TG-271
 TITLE: Clear Fault Flags
 STATEMENT: >>>
-The flow for performing Clear Faults should be implemented as described in the following sequence diagram:
+The fault view sends the clear command through the main-board model and unified GCB command
+interface. The firmware acknowledges the command, clears its latched records, increments
+the clear epoch, and publishes an empty fault update. The telemetry processor applies that
+update to the GCB data store, which notifies the fault view.
 
 .. raw:: html
 
     <pre class="mermaid">
     sequenceDiagram
-        box Application
-            participant FaultsViewModel
-            participant MainBoardModelBase
-            participant XRayService
-        end
-        box Control Board
-            participant Firmware
-        end
+        participant FaultsViewModel
+        participant MainBoardModel
+        participant GcbCommandInterface
+        participant Firmware
+        participant SystemTelemetryProcessor
+        participant GCBDataStore
 
-        activate FaultsViewModel
-        FaultsViewModel->>MainBoardModelBase: ClearFaults
-        activate MainBoardModelBase
-        MainBoardModelBase-->>FaultsViewModel: 
-        
-        MainBoardModelBase->>XRayService: ClearFaults
-        XRayService->>Firmware: (UDP) ClearFaults
-        
-        MainBoardModelBase-->>FaultsViewModel: return Faults
-        deactivate MainBoardModelBase
-        deactivate FaultsViewModel
+        FaultsViewModel->>MainBoardModel: ClearFaults
+        MainBoardModel->>GcbCommandInterface: ClearFaults
+        GcbCommandInterface->>Firmware: [UDP] clear-fault directive
+        Firmware-->>GcbCommandInterface: [UDP] command response
+        Firmware-->>SystemTelemetryProcessor: [UDP] empty fault update, new clear epoch
+        SystemTelemetryProcessor->>GCBDataStore: ApplyFaultUpdate
+        GCBDataStore-->>FaultsViewModel: FaultsChangedEvent(empty)
     </pre>
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-284
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-249
@@ -346,23 +352,34 @@ RELATIONS:
 UID: SW-H10TG-265
 TITLE: Display System Telemetry
 STATEMENT: >>>
-The application should subscribe to a UDP event from the firmware to get the system telemetry.
+The receive-only telemetry service listens for unsolicited GCB datagrams. Device-information
+packets identify the firmware version and mode; the system telemetry processor selects the
+matching normal or calibration parser. Unsupported versions and malformed packets are
+rejected without replacing the last valid state.
+
+Valid telemetry is converted to an immutable semantic snapshot. Firmware-specific fields
+are represented as unavailable when absent. Snapshots are published at most every 250 ms,
+while device information continues to refresh the selected parser. If no valid telemetry
+is received for 1.5 seconds, the processor publishes an unavailable snapshot.
 
 .. raw:: html
 
     <pre class="mermaid">
     sequenceDiagram
-        participant TelemetryViewModel
+        participant TelemetryView
+        participant GCBDataStore
+        participant MainBoardModel
+        participant SystemTelemetryProcessor
         participant TelemetryService
         participant Firmware
 
-        TelemetryViewModel->>TelemetryService: Subscribe
-        activate TelemetryService
-        activate Firmware
-        Firmware->>TelemetryService: [UDP] telemetry response
-        TelemetryService->>TelemetryViewModel: SystemTelemetryChanged
-        deactivate TelemetryService
-        deactivate Firmware
+        Firmware->>TelemetryService: [UDP] device information, 1 Hz
+        TelemetryService->>SystemTelemetryProcessor: Select parser by version and mode
+        Firmware->>TelemetryService: [UDP] system telemetry, 100 Hz
+        TelemetryService->>SystemTelemetryProcessor: Process datagram
+        SystemTelemetryProcessor->>MainBoardModel: OnSystemTelemetryChanged(ISystemTelemetry?)
+        MainBoardModel->>GCBDataStore: Set immutable SystemTelemetry
+        GCBDataStore-->>TelemetryView: Publish semantic telemetry
     </pre>
 <<<
 RELATIONS:
@@ -512,10 +529,9 @@ RELATIONS:
 UID: SW-H10TG-277
 TITLE: Get Interlocks state
 STATEMENT: >>>
-The flow for getting interlocks states should be implemented as described in the following sequence diagram:
-
-The flow for getting interlocks states should be implemented as described in the following 
-sequence diagram:
+The interlocks view model reads semantic interlock values from the latest immutable
+telemetry snapshot. Each interlock is represented as ready, active, or unavailable so that
+fields omitted by calibration firmware are not presented as healthy.
 
 .. raw:: html
 
@@ -524,22 +540,21 @@ sequence diagram:
         participant InterlocksView
         participant InterlocksViewModel
         participant GCBDataStore
+        participant MainBoardModel
 
         activate InterlocksView
-        InterlocksView->>InterlocksViewModel: getGcbInterlocks
+        InterlocksView->>InterlocksViewModel: Show interlocks
         activate InterlocksViewModel
         
-        [?] ->> GCBDataStore: OnSystemTelemetry
+        MainBoardModel->>GCBDataStore: Set SystemTelemetry
         activate GCBDataStore
-        GCBDataStore->>GCBDataStore: setInterlocks
-        activate GCBDataStore
+        GCBDataStore->>GCBDataStore: Notify SystemTelemetry changed
         deactivate GCBDataStore
         
-        InterlocksViewModel->>GCBDataStore: getGcbDataStore
-        GCBDataStore-->>InterlocksViewModel: return gcbDataStore
-        deactivate GCBDataStore
+        InterlocksViewModel->>GCBDataStore: Read SystemTelemetry.Interlocks
+        GCBDataStore-->>InterlocksViewModel: Return tri-state interlocks
         
-        InterlocksViewModel-->>InterlocksView: return gcbInterlocks
+        InterlocksViewModel-->>InterlocksView: Render available interlocks
         deactivate InterlocksViewModel
         deactivate InterlocksView
     </pre>
@@ -964,40 +979,33 @@ STATEMENT: >>>
    <pre class="mermaid">
    sequenceDiagram
        autonumber
-       
+
        box Application
            participant OperatePlanViewModelBase
            participant InterlockIndicators
            participant BeamOnCommand
+           participant GCBDataStore
+           participant SystemTelemetryProcessor
            participant TelemetryService
        end
        box ControlBoard
            participant Firmware
        end
 
-       TelemetryService->>Firmware: "[UDP] request telemetry"
-       activate TelemetryService
-       activate Firmware
-       Firmware-->>TelemetryService: "[UDP] telemetry response"
-       deactivate Firmware
+       Firmware-->>TelemetryService: [UDP] unsolicited telemetry
+       TelemetryService->>SystemTelemetryProcessor: Process datagram
+       SystemTelemetryProcessor->>GCBDataStore: Set semantic snapshot
+       GCBDataStore-->>OperatePlanViewModelBase: SystemTelemetryChanged
 
-       TelemetryService-->>OperatePlanViewModelBase: telemetry changed
        activate OperatePlanViewModelBase
-       
-       Note over OperatePlanViewModelBase: "check telemetry for intelocks/faults"
-       OperatePlanViewModelBase->>OperatePlanViewModelBase: 
-
-       alt "[interlock flag is set]"
+       Note over OperatePlanViewModelBase: Check semantic interlocks and active fault categories
+       alt Interlock or fault is active
            OperatePlanViewModelBase->>BeamOnCommand: disable
        end
        deactivate OperatePlanViewModelBase
 
-       TelemetryService-->>InterlockIndicators: telemetry changed
-       activate InterlockIndicators
-       Note over InterlockIndicators: update indicators
-       InterlockIndicators->>InterlockIndicators: 
-       deactivate InterlockIndicators
-       deactivate TelemetryService
+       GCBDataStore-->>InterlockIndicators: SystemTelemetryChanged
+       InterlockIndicators->>InterlockIndicators: Render ready, active, or unavailable
    </pre>
 <<<
 RELATIONS:
@@ -1015,7 +1023,7 @@ STATEMENT: >>>
    sequenceDiagram
        autonumber
        actor User
-       participant ExtCC as Ext C&amp;C
+       participant ExtCC as Ext C and C
        participant Boards
        participant HVPS
 
@@ -1115,7 +1123,7 @@ STATEMENT: >>>
    sequenceDiagram
        autonumber
        actor User
-       participant ExtCC as Ext C&amp;C
+       participant ExtCC as Ext C and C
        participant Boards
        participant HVPS
 
@@ -1296,13 +1304,10 @@ STATEMENT: >>>
        deactivate TreatmentService
        deactivate TreatmentModel
 
-       loop "[Telemetry polling]"
-           TelemetryService->>Firmware: "[UDP] request telemetry"
+       loop "[Unsolicited semantic telemetry]"
+           Firmware-->>TelemetryService: "[UDP] telemetry packet"
            activate TelemetryService
-           activate Firmware
-           Firmware-->>TelemetryService: "[UDP] telemetry response"
-           deactivate Firmware
-           TelemetryService-->>OperatePlanViewModelBase: telemetry data
+           TelemetryService-->>OperatePlanViewModelBase: immutable telemetry snapshot
            deactivate TelemetryService
            
            alt "[Emission state: update treatment field from telemetry]"
@@ -1419,35 +1424,40 @@ RELATIONS:
 UID: SW-H10TG-270
 TITLE: Retrieve Fault Information from Firmware
 STATEMENT: >>>
-The flow for Retrieving fault Information from Firmware should be implemented as described in the 
-following sequence diagram:
+The command interface retrieves a coherent snapshot of the latched fault list using indexed
+requests. Each 45-word response is validated for packet shape, index, count, clear epoch,
+fault category, printable NUL-terminated format string, format checksum, and argument count.
+The interface retries the snapshot up to three times if the clear epoch changes during
+retrieval. The main-board model replaces the GCB data store's active list only after a
+coherent snapshot has been assembled.
 
 .. raw:: html
 
     <pre class="mermaid">
     sequenceDiagram
-        box Application
-            participant FaultsViewModel
-            participant MainBoardModelBase
-            participant XRayService
-        end
-        box Control Board
-            participant Firmware
-        end
+        participant FaultsViewModel
+        participant MainBoardModel
+        participant GcbCommandInterface
+        participant FaultEntryParser
+        participant Firmware
+        participant GCBDataStore
 
-        activate FaultsViewModel
-        FaultsViewModel->>MainBoardModelBase: GetFaults
-        activate MainBoardModelBase
-        MainBoardModelBase-->>FaultsViewModel: 
-        
-        MainBoardModelBase->>XRayService: GetFaults
-        XRayService->>Firmware: (UDP) GetFaultInfo
-        
-        MainBoardModelBase-->>FaultsViewModel: return Faults
-        deactivate MainBoardModelBase
-        deactivate FaultsViewModel
+        FaultsViewModel->>MainBoardModel: GetFaults
+        MainBoardModel->>GcbCommandInterface: GetFaults
+        loop Entry index 0 through active count - 1
+            GcbCommandInterface->>Firmware: [UDP] FaultInfoRequest(index)
+            Firmware-->>GcbCommandInterface: [UDP] FaultInfoResponse(45 words)
+            GcbCommandInterface->>FaultEntryParser: Validate and format entry
+        end
+        GcbCommandInterface-->>MainBoardModel: FaultSnapshot(epoch, entries)
+        MainBoardModel->>GCBDataStore: ReplaceFaults
+        GCBDataStore-->>FaultsViewModel: FaultsChangedEvent
     </pre>
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-284
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-261
@@ -1708,51 +1718,33 @@ RELATIONS:
 UID: SW-H10TG-254
 TITLE: Treatment Fields Emission Progress indicators
 STATEMENT: >>>
+Emission progress consumes the immutable semantic snapshots published from unsolicited
+telemetry. The operational-point index updates the selected treatment field and collimator.
+During emission the timer values determine emission progress; during launching the heater
+current setpoint determines launching progress.
 
 .. raw:: html
 
     <pre class="mermaid">
     sequenceDiagram
-        autonumber
-        box Application
-            participant VM as OperatePlanViewModelBase
-            participant CC as CollimatorControl
-            participant TFL as TreatmentFieldList
-            participant EP as EmissionProgress
-            participant TS as TelemetryService
-        end
-        box ControlBoard
-            participant F as Firmware
-        end
+        participant VM as OperatePlanViewModelBase
+        participant CC as CollimatorControl
+        participant TFL as TreatmentFieldList
+        participant EP as EmissionProgress
+        participant DS as GCBDataStore
 
-        Note over VM, F: User initiates the emission delivery
-
-        loop Telemetry polling
-            TS->>F: [UDP] request telemetry
-            activate F
-            F-->>TS: [UDP] telemetry response
-            deactivate F
-            TS-->>VM: telemetry data
-            
-            activate VM
-            VM->>VM: get telemetry CurrentOperationalPoint index
-            VM->>CC: update selection
-            VM->>TFL: update selection
-            
-            alt Emission state
-                VM->>VM: calculate emission progress
-                VM->>EP: set emission progress value
-            end
-            
-            alt Launching state
-                VM->>VM: get telemetry HeaterCurrentSetpoint
-                VM->>VM: calculate launching progress
-                VM->>EP: set launching progress value
-            end
-            deactivate VM
+        DS-->>VM: SystemTelemetryChanged(immutable snapshot)
+        VM->>VM: Read CurrentOperationalPoint
+        VM->>CC: Update selection
+        VM->>TFL: Update selection
+        alt Emission state
+            VM->>VM: Calculate emission progress from timers
+            VM->>EP: Set emission progress
+        else Launching state
+            VM->>VM: Calculate launching progress from heater setpoint
+            VM->>EP: Set launching progress
         end
     </pre>
-
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1844,34 +1836,23 @@ The flow for validating the active collimator when performing Quality Checks sho
 UID: SW-H10TG-256
 TITLE: Warmup Progress Monitoring
 STATEMENT: >>>
+Warmup progress consumes immutable semantic snapshots published from unsolicited telemetry.
+The warmup model uses the available heater-current setpoint to calculate and publish the
+progress value.
+
 .. raw:: html
 
     <pre class="mermaid">
     sequenceDiagram
-        box Application
-            participant M as WarmupModel
-            participant WP as WarmupProgress
-            participant TS as TelemetryService
-        end
-        box ControlBoard
-            participant F as Firmware
-        end
+        participant M as WarmupModel
+        participant WP as WarmupProgress
+        participant DS as GCBDataStore
 
-        Note over M, F: User initiates Warmup/Conditioning
-
-        loop Telemetry polling
-            TS->>F: [UDP] request telemetry
-            activate F
-            F-->>TS: [UDP] telemetry response
-            deactivate F
-            TS-->>M: telemetry data
-            
-            activate M
-            M->>M: get telemetry HeaterCurrentSetpoint
-            M->>M: calculate warmup progress
-            M->>WP: notify on progress value change
-            deactivate M
-        end
+        Note over M, DS: User initiates Warmup/Conditioning
+        DS-->>M: SystemTelemetryChanged(immutable snapshot)
+        M->>M: Read available HeaterCurrentSetpoint
+        M->>M: Calculate warmup progress
+        M->>WP: Notify progress value change
     </pre>
 <<<
 RELATIONS:
@@ -1888,51 +1869,44 @@ STATEMENT: >>>
     <pre class="mermaid">
     sequenceDiagram
         actor User
-        box Application
-            participant VM as OperatePlanViewModelBase
-            participant M as MainBoardModel
-            participant D as DialogService
-            participant T as TelemetryService
-        end
-        box ControlBoard
-            participant F as Firmware
-        end
+        participant VM as OperatePlanViewModelBase
+        participant M as MainBoardModel
+        participant D as DialogService
+        participant DS as GCBDataStore
+        participant F as Firmware
 
         User->>VM: BeamOn
-        activate VM
         VM->>M: BeamOn
-        activate M
-        
         M->>F: [UDP] ReleasePoint command
-        activate F
-        F-->>M: [UDP] status response
-        deactivate F
-        
-        M->>M: wait for emission termination
-        
-        activate T
-        T->>F: query telemetry
-        activate F
-        F-->>T: [UDP] telemetry response
-        deactivate F
-        T->>VM: telemetry changed
-        deactivate T
+        F-->>M: [UDP] command response
+        M->>M: Wait for emission termination
 
-        VM->>VM: check board state
-        
+        F-->>DS: Unsolicited telemetry routed through processor
+        DS-->>VM: SystemTelemetryChanged
+        VM->>VM: Check control-board state and active faults
+
         alt Board is in Fault state
-            VM->>M: cancel current task
+            VM->>M: Cancel current task
             M-->>VM: BeamOn task cancellation exception
-            deactivate M
-            VM->>D: show emission error dialog
-            activate D
-            D-->>User: error dialog
-            deactivate D
+            VM->>D: Show emission error dialog
+            D-->>User: Error dialog
         end
-        
-        deactivate VM
     </pre>
-
 <<<
+
+[DESIGN_ITEM]
+UID: SW-H10TG-279
+TITLE: Calibration Mode Clinical Lockout
+STATEMENT: >>>
+The external tab view binds each clinical tab's enabled state to the immutable telemetry
+firmware mode in addition to the existing plan-loaded navigation constraint. Calibration
+mode disables the Treatment and Quality Assurance tabs. A high-z-order overlay inside each
+tab obscures previously rendered content and displays the service-required message.
+Unknown or unavailable firmware mode does not lock the tabs.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-285
+  ROLE: Refines
 
 [[/SECTION]]

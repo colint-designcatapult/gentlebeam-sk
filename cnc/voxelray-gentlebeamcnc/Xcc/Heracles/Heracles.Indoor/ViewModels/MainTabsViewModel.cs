@@ -13,13 +13,16 @@ using Xcc.Application.Models;
 using Xcc.Application.UI.Mvvm;
 using Xcc.Application.UI.UserControls;
 using Xcc.Core.Enums;
+using Xcc.Core.Models;
 using Xcc.Core.Services;
 
 namespace Heracles.Indoor.ViewModels
 {
     public class MainTabsViewModel : RegionViewModelBase
     {
-        public MainTabsViewModel(IAuthorizedUserStore authorizedUserStore,
+        public MainTabsViewModel(
+            IAuthorizedUserStore authorizedUserStore,
+            IGCBDataStore gcbDataStore,
             IRegionManager regionManager,
             IDialogService dialogService,
             IHeaterCurrentStore heaterCurrentStore,
@@ -35,6 +38,7 @@ namespace Heracles.Indoor.ViewModels
             SystemService = systemService;
             PopUpService = popUpService;
             AuthorizedUserStore = authorizedUserStore;
+            GcbDataStore = gcbDataStore;
             HeaterCurrentStore = heaterCurrentStore;
             CoilConfigurationStore = coilConfigurationStore;
             MagnetometerCorrectionsStore = magnetometerCorrectionsStore;
@@ -49,6 +53,7 @@ namespace Heracles.Indoor.ViewModels
 
         #region Injected Dependencies
         public IAuthorizedUserStore AuthorizedUserStore { get; }
+        public IGCBDataStore GcbDataStore { get; }
         public IHeaterCurrentStore HeaterCurrentStore { get; }
         public ICoilConfigurationStore CoilConfigurationStore { get; }
         public IMagnetometerCorrectionsStore MagnetometerCorrectionsStore { get; }

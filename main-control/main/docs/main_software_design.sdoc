@@ -549,17 +549,28 @@ RELATIONS:
 UID: SW-H1FWMC-183
 TITLE: PC Ethernet Communication
 STATEMENT: >>>
-The firmware communicates with the PC through an Ethernet interface, using an RMII setup to a transceiver IC. The firmware both receives and transmits data over Ethernet. While the Ethernet interface has independent transmit and receive lines, and the transmit and receive functionality operates independently at a driver level, the application-level protocol has separate command-response and periodic telemetry traffic.
+The firmware communicates with the PC through an Ethernet interface using an RMII
+transceiver and the LWIP UDP stack. Application traffic is separated into:
 
-Ethernet communication utilizes LWIP middleware libraries to transmit and receive UDP packets over this Ethernet connection. UDP was chosen over TCP as the real-time availability is more important than attempting to continuously resend information. Any missed packets can be re sent at the application level, but routing of packets should not be held up by built-in TCP handshaking.
+- Commands and their responses
+- Unsolicited 100 Hz system-telemetry packets
+- Unsolicited 1 Hz device-information packets
+- Unsolicited fault-entry and fault-clear notifications
 
-The firmware transmits system telemetry as unsolicited UDP packets every 10 ms (100 Hz) and in response to a telemetry request from the PC. Commands continue to use the command-response protocol.
-
-Transmission and reception are both performed at a packet level due to the LWIP library handling of the incoming and outgoing UDP packets. While UDP packets have built-in formatting and headers, the application-level payloads, for both transmitted and received packets, also contain custom defined formatting for additional organization and parsing.
+The PC can also request telemetry, device information, and an indexed fault entry. UDP is
+used because timely delivery is more important than retransmitting stale real-time data.
+Application payloads use the PC-Firmware Communication Protocol framing and CRC described
+in the appendix.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWMC-84
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-83
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-306
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -583,17 +594,17 @@ RELATIONS:
 UID: SW-H1FWMC-185
 TITLE: Fault Handling
 STATEMENT: >>>
-The firmware logs faults to provide informational data to the PC as to the cause of a fault. The system status telemetry packet has a bitmask of flags indicating the general category of faults present. The PC can also obtain a more detailed fault report from the firmware. A fault report contains the following information:
+The firmware maintains a latched table of at most four active fault records. A record
+contains the fault category, CRC-32 hash of the format string, clear epoch, entry index,
+active count, captured system state, captured runtime, format-argument count, a
+NUL-terminated 128-byte printable ASCII format string, and up to five 32-bit arguments.
+Format specifiers identify unsigned integer, hexadecimal, floating-point, and literal
+percent values so that the CNC can render a human-readable message.
 
-- Fault ID: An enumerated value indicating the category of the fault type
-- Fault detail: An enumerated value indicating additional details of the fault type
-- Entry state: The state in which the fault originally occurred
-- Fault time: The time at which the fault occurred
-- Expected value: The expected value which the measured parameter or signal was supposed to be for a non-fault condition
-- Expected detail: Additional information on the expected value
-- Tolerance: The tolerance for the measured parameter or signal against the expected value
-- Measure value: The measured parameter or signal which resulted in the fault condition
-- Measured detail: Additional information on the measured value
+Repeated reports with the same category and format are deduplicated while latched. A new
+distinct record is published without waiting for a request. The PC retrieves a coherent
+snapshot by requesting entries by index and checking the clear epoch and active count.
+An out-of-range index returns an empty entry with the current snapshot metadata.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -604,7 +615,11 @@ RELATIONS:
 UID: SW-H1FWMC-186
 TITLE: PC Ethernet Data
 STATEMENT: >>>
-Each PC Ethernet communication packet is formatted to have a header, data payload, and footer. Each communication packet from the PC is a command to the firmware. The packets sent by the firmware are responses to each received command, on a 1-to-1 basis. The details of each of these commands and responses, as well as the overall structure of each packet, are documented in the appendix section PC-Firmware Communication Protocol.
+Each PC Ethernet communication packet contains a synchronization header, packet type,
+packet counter, payload length, payload, and CRC footer. PC commands receive corresponding
+responses. System telemetry, device information, new fault entries, and fault-clear
+updates can also be transmitted without a preceding request. Packet types and payload
+schemas are documented in the appendix section PC-Firmware Communication Protocol.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -977,7 +992,12 @@ RELATIONS:
 UID: SW-H1FWMC-207
 TITLE: System Status (Telemetry)
 STATEMENT: >>>
-The firmware monitors and keeps track of multiple signals and reported values. These signals, statuses, and values are collected in a singular 'system status' array. This system status array serves as the source for unsolicited UDP telemetry packets transmitted to the PC every 10 ms (100 Hz). It is also used for processing within the rest of the firmware as the 'source of truth' for the monitored parameters. Further details on the system status values can be found in the telemetry packet details in the appendix section for the PC-Firmware Communication Protocol.
+The firmware collects monitored values in a system-status array used as the source of truth
+for firmware decisions and telemetry serialization. Every 10 ms, it serializes the array
+using the normal or calibration layout selected at compile time and sends it to the CNC.
+Normal mode includes treatment, interlock, fault, HVPS, coolant, magnetometer, timer, and
+operational-point data. Calibration mode publishes the calibration-specific subset.
+Telemetry requests use the same serializer and packet layouts.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1123,7 +1143,13 @@ RELATIONS:
 UID: SW-H1FWMC-298
 TITLE: Fault Clearing
 STATEMENT: >>>
-The main control board has hardware which latches fault conditions and disables interlocks so that emission is safely terminated and cannot be resumed until action is taken by the firmware. To do this, the firmware is able to send a pulse signal on a digital output in order to unlatch fault conditions. The firmware cannot override hardware fault conditions and any remaining hardware faults will re-latch the interlocks in a disabled emission state.
+The main control board has hardware which latches fault conditions and disables interlocks
+so that emission is safely terminated and cannot be resumed until action is taken by the
+firmware. On a PC clear-fault request, the firmware pulses the hardware clear output,
+increments the software clear epoch, empties the latched fault-record table, clears the
+software category flags, and publishes an empty fault update. The firmware cannot override
+an active hardware fault; any remaining condition re-latches the interlocks and can create
+a new software fault record.
 <<<
 RELATIONS:
 - TYPE: Parent

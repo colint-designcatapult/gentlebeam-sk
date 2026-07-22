@@ -43,6 +43,11 @@ uint8_t pc_tx_buffer[PC_TX_BUFFER_SIZE];
 
 uint8_t extra_pc_tx_buffer[PC_TX_BUFFER_SIZE];
 
+_Static_assert(FAULT_PACKET_BYTES <= sizeof(pc_tx_buffer), "fault packet exceeds command TX buffer");
+_Static_assert(FAULT_PACKET_BYTES <= sizeof(extra_pc_tx_buffer), "fault packet exceeds telemetry TX buffer");
+
+static uint32_t telemetry_packet_id = 0;
+
 int expected_data_count[PACKET_TYPE_COUNT];
 int response_data_count[PACKET_TYPE_COUNT];
 
@@ -439,58 +444,67 @@ static void send_response_packet(int byte_count, void* output_payload)
 	pbuf_free(p);
 }
 
-// Send Telemetry packet to port 40020
-void send_telemetry_packet(u16_t port)
+// Send an unsolicited response packet to the telemetry port.
+err_t send_telemetry_packet(u16_t port, PacketType_t packet_type, const void *payload, uint32_t payload_words)
 {
-	struct udp_pcb *upcb;
-	static u32_t telemetry_packet_id = 0;
-
-	//Get response data
-	void *output_data = get_response_data(PCCOM_TELEMETERY_REQUEST);
-	if(output_data == NULL) return;
-	
-	//Copy all data bytes to the TX buffer
-	memcpy(extra_pc_tx_buffer+PC_PACKET_DATA_POS, output_data, response_data_count[(int)PCCOM_TELEMETERY_REQUEST] * sizeof(uint32_t));
-
-	//Write header information
-	uint32_t *header_value = (uint32_t *)(extra_pc_tx_buffer+PC_PACKET_COUNT_POS);
-	*header_value = (response_data_count[(int)PCCOM_TELEMETERY_REQUEST]);
-	
-	header_value = (uint32_t *)(extra_pc_tx_buffer+PC_PACKET_TYPE_POS);
-	*header_value = (uint32_t)PCCOM_TELEMETERY_REQUEST + PC_RESPONSE_TYPE_OFFSET;
-	
-	header_value = (uint32_t *)(extra_pc_tx_buffer+PC_PACKET_ID_POS);
-	*header_value = telemetry_packet_id;
-	telemetry_packet_id++;
-	
-	//Get total number response bytes including header and CRC footer
-	int output_byte_count = response_data_count[(int)PCCOM_TELEMETERY_REQUEST] * sizeof(uint32_t);
-	output_byte_count += PC_MIN_PACKET_SIZE;
-	
-	//Calculate CRC and write value to last 4 bytes of output
-	uint32_t *crc_val = (uint32_t*)(extra_pc_tx_buffer+output_byte_count-sizeof(uint32_t));
-	*crc_val = crc_32(extra_pc_tx_buffer, output_byte_count-sizeof(uint32_t));
-
-	// Allocate a reference pbuf which only allocates the UDP/IP header and references our existing buffers
-	struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, output_byte_count, PBUF_REF);
-	if(p == NULL) {
-		return;
+	if(payload_words > ((sizeof(extra_pc_tx_buffer) - PC_MIN_PACKET_SIZE) / sizeof(uint32_t)))
+	{
+		return ERR_BUF;
+	}
+	if(payload_words > 0u && payload == NULL)
+	{
+		return ERR_ARG;
 	}
 
-	// Point the payload directly to the static buffer
-	p->payload = extra_pc_tx_buffer;
+	size_t payload_bytes = payload_words * sizeof(uint32_t);
+	size_t output_byte_count = payload_bytes + PC_MIN_PACKET_SIZE;
+	if(payload_bytes > 0u)
+	{
+		memcpy(extra_pc_tx_buffer + PC_PACKET_DATA_POS, payload, payload_bytes);
+	}
 
-	upcb = udp_extra_rx_pcb;
-	udp_sendto(upcb, p, IP_ADDR_BROADCAST, port);
+	uint32_t *header_value = (uint32_t *)(extra_pc_tx_buffer + PC_PACKET_COUNT_POS);
+	*header_value = payload_words;
+
+	header_value = (uint32_t *)(extra_pc_tx_buffer + PC_PACKET_TYPE_POS);
+	*header_value = (uint32_t)packet_type + PC_RESPONSE_TYPE_OFFSET;
+
+	header_value = (uint32_t *)(extra_pc_tx_buffer + PC_PACKET_ID_POS);
+	*header_value = telemetry_packet_id++;
+
+	uint32_t *crc_val = (uint32_t *)(extra_pc_tx_buffer + output_byte_count - sizeof(uint32_t));
+	*crc_val = crc_32(extra_pc_tx_buffer, output_byte_count - sizeof(uint32_t));
+
+	struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)output_byte_count, PBUF_REF);
+	if(p == NULL)
+	{
+		return ERR_MEM;
+	}
+
+	p->payload = extra_pc_tx_buffer;
+	err_t result = udp_sendto(udp_extra_rx_pcb, p, IP_ADDR_BROADCAST, port);
 	pbuf_free(p);
+	return result;
 }
 
-void send_telemetry()
+void send_telemetry(void)
 {
 	static u32_t last_10ms = 0;
-	
-	if((sys_now() - last_10ms) >= PC_TELEMETRY_FREQ_MS) {
-		last_10ms += 10; // Maintain 10ms cadence
-		send_telemetry_packet(PC_TELEMETRY_PORT);
+	static u32_t last_1000ms = 0;
+
+	if((sys_now() - last_10ms) >= PC_TELEMETRY_FREQ_MS)
+	{
+		last_10ms += PC_TELEMETRY_FREQ_MS;
+		send_telemetry_packet(PC_TELEMETRY_PORT, PCCOM_TELEMETERY_REQUEST,
+			get_response_data(PCCOM_TELEMETERY_REQUEST),
+			(uint32_t)response_data_count[PCCOM_TELEMETERY_REQUEST]);
+	}
+
+	if((sys_now() - last_1000ms) >= PC_VERSION_FREQ_MS)
+	{
+		last_1000ms += PC_VERSION_FREQ_MS;
+		send_telemetry_packet(PC_TELEMETRY_PORT, PCCOM_VERSION_REQUEST,
+			get_response_data(PCCOM_VERSION_REQUEST),
+			(uint32_t)response_data_count[PCCOM_VERSION_REQUEST]);
 	}
 }

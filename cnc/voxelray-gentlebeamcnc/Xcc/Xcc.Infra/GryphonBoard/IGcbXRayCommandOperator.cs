@@ -23,7 +23,7 @@ namespace Xcc.Infra.GryphonBoard
         byte[] GenerateReleaseTreatmentPlanCmd(GCBReleaseCommandScope scope, IGcbSessionAuthentication sessionKey);
         byte[] GenerateTelemetryRequestCmd();
         byte[] GenerateVersionInfoRequestCmd();
-        byte[] GenerateFaultInfoRequestCmd();
+        byte[] GenerateFaultInfoRequestCmd(uint index);
         byte[] GenerateWaitForButtonCmd(IGcbSessionAuthentication sessionKey);
         byte[] GenerateReleaseImagingPointCmd(IGcbSessionAuthentication sessionKey);
     }

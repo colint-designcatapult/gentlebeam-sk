@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Empyrean.Common.Infra.Networking.Udp;
 using Xcc.Core.Domain.GryphonBoard;
@@ -192,15 +193,62 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             await SendDirectiveCommand(GCBDirectiveCommandNew.ResetTimers);
         }
 
-        public async Task<FaultEntry> GetFaults()
+        public async Task<FaultSnapshot> GetFaults()
         {
-            byte[] data = GcbXRayCommandOperator.GenerateFaultInfoRequestCmd();
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                FaultUpdate first = await RequestFaultUpdate(0);
+                if (first.EntryIndex != 0u)
+                {
+                    throw new InvalidOperationException("Fault response index did not match the requested index");
+                }
 
-            var responseData = await SendRequestSeveralTimes(data);
+                uint epoch = first.ClearEpoch;
+                uint activeCount = first.ActiveCount;
+                var entries = new List<FaultEntry>(checked((int)activeCount));
+                if (activeCount == 0u)
+                {
+                    return new FaultSnapshot(epoch, entries.AsReadOnly());
+                }
+                if (first.Entry is null)
+                {
+                    throw new InvalidOperationException("Fault response omitted an active entry");
+                }
+                entries.Add(first.Entry);
 
-            ParseAndValidateResponseData(responseData, GCBPacketType.FaultInfoResponse, expectedPayloadLength: 9);
-            
-            return FaultEntryParser.Parse(responseData);
+                bool epochChanged = false;
+                for (uint index = 1u; index < activeCount; index++)
+                {
+                    FaultUpdate update = await RequestFaultUpdate(index);
+                    if (update.ClearEpoch != epoch)
+                    {
+                        epochChanged = true;
+                        break;
+                    }
+                    if (update.EntryIndex != index)
+                    {
+                        throw new InvalidOperationException("Fault response index did not match the requested index");
+                    }
+                    if (update.ActiveCount < activeCount)
+                    {
+                        throw new InvalidOperationException("Fault count decreased while synchronizing");
+                    }
+                    if (update.Entry is null)
+                    {
+                        throw new InvalidOperationException("Fault response omitted an active entry");
+                    }
+
+                    entries.Add(update.Entry);
+                    activeCount = update.ActiveCount;
+                }
+
+                if (!epochChanged)
+                {
+                    return new FaultSnapshot(epoch, entries.AsReadOnly());
+                }
+            }
+
+            throw new InvalidOperationException("Fault list changed while synchronizing");
         }
 
         public async Task Conditioning(float conditioningSetpoint)
@@ -288,6 +336,17 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
         #endregion Public methods
 
         #region Private methods
+        private async Task<FaultUpdate> RequestFaultUpdate(uint index)
+        {
+            byte[] data = GcbXRayCommandOperator.GenerateFaultInfoRequestCmd(index);
+            byte[] responseData = await SendRequestSeveralTimes(data);
+            UdpPacket packet = ParseAndValidateResponseData(
+                responseData,
+                GCBPacketType.FaultInfoResponse,
+                expectedPayloadLength: FaultEntryParser.ResponseWords);
+            return FaultEntryParser.Parse(packet);
+        }
+
         private async Task<byte[]> SendRequestSeveralTimes(byte[] data, int attempts = 3)
         {
             for (int i = 1; i <= attempts; i++)

@@ -11,6 +11,9 @@
                 xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
                 xmlns:sharedViews="clr-namespace:Xcc.Shared.Views;assembly=Xcc.Shared"
                 xmlns:sharedHeraclesViews="clr-namespace:Heracles.Application.UI.Views;assembly=Heracles.Application"
+                xmlns:common="clr-namespace:Heracles.Application.Common;assembly=Heracles.Application"
+                xmlns:coreEnums="clr-namespace:Xcc.Core.Enums;assembly=Xcc.Core"
+                xmlns:heraclesControls="clr-namespace:Heracles.Application.UI.UserControls;assembly=Heracles.Application"
                 
                 xmlns:prism="http://prismlibrary.com/"
                 prism:ViewModelLocator.AutoWireViewModel="True"
@@ -67,6 +70,9 @@
 
             <!--Patients Tab-->
             <TabItem
+                IsEnabled="{Binding GcbDataStore.SystemTelemetry.FirmwareMode, Converter={convx:ObjectIsNotEqualConverter}, ConverterParameter={x:Static coreEnums:FirmwareMode.Calibration}, FallbackValue=True, TargetNullValue=True}"
+                ToolTip="{x:Static common:StringConstants+Common.CalibrationModeServiceRequiredMessage}"
+                ToolTipService.ShowOnDisabled="True"
                 Visibility="{Binding AuthorizedUserStore.AuthorizedUser.Role.Permissions.ClinicalData, Converter={convx:BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
                 <TabItem.Header>
                     <StackPanel>
@@ -75,7 +81,10 @@
                     </StackPanel>
                 </TabItem.Header>
 
-                <local:PatientsView VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+                <Grid>
+                    <local:PatientsView VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+                    <heraclesControls:CalibrationModeLockoutOverlay Panel.ZIndex="10" />
+                </Grid>
             </TabItem>
 
             <!--Log Tab-->

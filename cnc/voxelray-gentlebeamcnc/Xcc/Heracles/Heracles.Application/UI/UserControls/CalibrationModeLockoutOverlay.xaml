@@ -1,0 +1,58 @@
+<UserControl
+    x:Class="Heracles.Application.UI.UserControls.CalibrationModeLockoutOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:common="clr-namespace:Heracles.Application.Common"
+    xmlns:enums="clr-namespace:Xcc.Core.Enums;assembly=Xcc.Core"
+    Focusable="True"
+    IsTabStop="True"
+    UseLayoutRounding="True">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.Style>
+        <Style TargetType="{x:Type UserControl}">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding GcbDataStore.SystemTelemetry.FirmwareMode}" Value="{x:Static enums:FirmwareMode.Calibration}">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Style>
+
+    <Border Background="{StaticResource DisabledControlBrush}">
+        <Border
+            Width="660"
+            Padding="32"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="{StaticResource BlockBackgroundColor}"
+            BorderBrush="{StaticResource AppBorderActiveColor}"
+            BorderThickness="1"
+            CornerRadius="8">
+            <StackPanel>
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    FontSize="{StaticResource HugeFontSize}"
+                    FontWeight="SemiBold"
+                    Style="{StaticResource TextBlockLegendStyle}"
+                    Text="Calibration mode" />
+                <TextBlock
+                    Margin="0,24,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="{StaticResource BaseFontSize}"
+                    Style="{StaticResource TextBlockLegendStyle}"
+                    Text="{x:Static common:StringConstants+Common.CalibrationModeServiceRequiredMessage}"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+    </Border>
+</UserControl>

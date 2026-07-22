@@ -99,7 +99,11 @@ UID: RQ-H10SG-54
 TYPE: Functional
 TITLE: Main View - System Status
 STATEMENT: >>>
-The application shall present the user with the current system status. This status shall include system errors, emission parameters, battery status, energy level, and emission time (in case the system irradiates). This information should always be visible to the user.
+The application shall present the user with the current immutable system status. This
+status shall include the firmware mode, communication availability, system errors, emission
+parameters, battery status, energy level, and emission time while the system irradiates.
+Firmware-specific values that are not supplied shall be shown as unavailable rather than
+as false or zero. This information should always be visible to the user.
 <<<
 
 [REQUIREMENT]
@@ -943,7 +947,9 @@ UID: RQ-H10SG-65
 TYPE: Functional
 TITLE: Service - System's Signals
 STATEMENT: >>>
-The application shall have a user interface allowing the user (service engineer) to view the realtime system signals read from the board telemetry.
+The application shall have a user interface allowing the service engineer to view semantic
+real-time system signals decoded from the board telemetry according to the reported
+firmware version and mode.
 
 The System Signals to be presented are:
 
@@ -998,13 +1004,15 @@ The System Signals to be presented are:
 +--------------------+-------------------------+-------+
 | HVPS               | Grid setpoint           | [V]   |
 +--------------------+-------------------------+-------+
+| System             | Firmware mode           |       |
++--------------------+-------------------------+-------+
 | System             | System state            |       |
 +--------------------+-------------------------+-------+
 | System             | System runtime          | [ms]  |
 +--------------------+-------------------------+-------+
-| System             | System Fault Flags      | [raw] |
+| System             | Fault category flags    |       |
 +--------------------+-------------------------+-------+
-| System             | Interlock Flags         | [raw] |
+| System             | Interlock states        |       |
 +--------------------+-------------------------+-------+
 | General            | Ring LED State          |       |
 +--------------------+-------------------------+-------+
@@ -1032,6 +1040,10 @@ The System Signals to be presented are:
 +--------------------+-------------------------+-------+
 | Timers             | Timer 2 Value           | [sec] |
 +--------------------+-------------------------+-------+
+
+Fields not supplied by the selected firmware mode shall be shown as unavailable. The
+service interface shall also show the current latched fault records with each record's
+category, formatted message, captured system state, and captured runtime.
 
 .. image:: _images/RQ-H10SG-65.png
 <<<
@@ -1221,6 +1233,16 @@ TYPE: Functional
 TITLE: User Profile Management
 STATEMENT: >>>
 The application should have a user interface to enable a super user to view, assign, and update user's roles.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10SG-741
+TYPE: Safety
+TITLE: Disable Patient Functions in Calibration Mode
+STATEMENT: >>>
+When the connected control board reports calibration firmware mode, the indoor application
+shall disable the Patients tab and obscure its content with a message directing the user to
+service the device. Non-patient service functions shall remain accessible.
 <<<
 
 [[/SECTION]]

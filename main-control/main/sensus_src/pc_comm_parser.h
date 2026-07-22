@@ -11,9 +11,14 @@
 #ifndef PC_COMM_PARSER_H_
 #define PC_COMM_PARSER_H_
 
+#include <stdint.h>
+#include <lwip/err.h>
+
 #define PC_RX_MIN_COUNT			4
 #define PC_RX_BUFFER_SIZE		248
 #define PC_TX_BUFFER_SIZE		248
+#define PC_RX_PACKET_CAPACITY	PC_RX_BUFFER_SIZE
+#define PC_TX_PACKET_CAPACITY	PC_TX_BUFFER_SIZE
 
 #define PC_SYNC_VAL			0xFFFFFFFFFFFFFFFF
 
@@ -23,11 +28,12 @@
 #define PC_PACKET_COUNT_POS	16
 #define PC_PACKET_DATA_POS	20
 #define PC_MIN_PACKET_SIZE	24
-#define PC_MAX_PACKET_SIZE	100
+#define PC_MAX_AUTH_INDEX	100
 
 #define PC_RESPONSE_TYPE_OFFSET	100
 
 #define PC_TELEMETRY_FREQ_MS 10
+#define PC_VERSION_FREQ_MS   1000
 #define PC_TELEMETRY_PORT	 40020
 
 typedef enum packetType
@@ -95,23 +101,63 @@ enum pcVerResFields
 
 enum faultReqFields
 {
-	FAULT_REQ_RESERVED = 0,
+	FAULT_REQ_INDEX = 0,
 	FAULT_REQ_COUNT
 };
 
 enum faultResFields
 {
-	FAULT_RES_ID = 0,
-	FAULT_RES_ID_DETAIL,
+	FAULT_RES_TYPE = 0,
+	FAULT_RES_FORMAT_HASH,
+	FAULT_RES_CLEAR_EPOCH,
+	FAULT_RES_ENTRY_INDEX,
+	FAULT_RES_ACTIVE_COUNT,
 	FAULT_RES_STATE,
 	FAULT_RES_TIME,
-	FAULT_RES_EXPECTED,
-	FAULT_RES_EXPECTED_DETAIL,
-	FAULT_RES_TOLERANCE,
-	FAULT_RES_MEASURED,
-	FAULT_RES_MEASURED_DETAIL,
+	FAULT_RES_ARG_COUNT,
+	FAULT_RES_FORMAT_0,
+	FAULT_RES_FORMAT_1,
+	FAULT_RES_FORMAT_2,
+	FAULT_RES_FORMAT_3,
+	FAULT_RES_FORMAT_4,
+	FAULT_RES_FORMAT_5,
+	FAULT_RES_FORMAT_6,
+	FAULT_RES_FORMAT_7,
+	FAULT_RES_FORMAT_8,
+	FAULT_RES_FORMAT_9,
+	FAULT_RES_FORMAT_10,
+	FAULT_RES_FORMAT_11,
+	FAULT_RES_FORMAT_12,
+	FAULT_RES_FORMAT_13,
+	FAULT_RES_FORMAT_14,
+	FAULT_RES_FORMAT_15,
+	FAULT_RES_FORMAT_16,
+	FAULT_RES_FORMAT_17,
+	FAULT_RES_FORMAT_18,
+	FAULT_RES_FORMAT_19,
+	FAULT_RES_FORMAT_20,
+	FAULT_RES_FORMAT_21,
+	FAULT_RES_FORMAT_22,
+	FAULT_RES_FORMAT_23,
+	FAULT_RES_FORMAT_24,
+	FAULT_RES_FORMAT_25,
+	FAULT_RES_FORMAT_26,
+	FAULT_RES_FORMAT_27,
+	FAULT_RES_FORMAT_28,
+	FAULT_RES_FORMAT_29,
+	FAULT_RES_FORMAT_30,
+	FAULT_RES_FORMAT_31,
+	FAULT_RES_ARG_0,
+	FAULT_RES_ARG_1,
+	FAULT_RES_ARG_2,
+	FAULT_RES_ARG_3,
+	FAULT_RES_ARG_4,
 	FAULT_RES_COUNT
 };
+
+#define FAULT_PACKET_BYTES (PC_MIN_PACKET_SIZE + (FAULT_RES_COUNT * 4u))
+_Static_assert(FAULT_PACKET_BYTES == 204u, "fault packet layout must be 204 bytes");
+_Static_assert(FAULT_PACKET_BYTES <= PC_TX_PACKET_CAPACITY, "fault packet exceeds TX capacity");
 
 enum directiveCmdFields
 {
@@ -295,9 +341,10 @@ enum startStopResFields
 };
 #endif
 
-void pc_comm_init();
-void process_pc_comm();
-void send_pc_response();
-void send_telemetry();
+void pc_comm_init(void);
+void process_pc_comm(void);
+void send_pc_response(void);
+err_t send_telemetry_packet(u16_t port, PacketType_t packet_type, const void *payload, uint32_t payload_words);
+void send_telemetry(void);
 
 #endif /* PC_COMM_PARSER_H_ */
