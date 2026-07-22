@@ -163,7 +163,7 @@ EXPECTED_BEHAVIOR: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWT-3
+  VALUE: RQ-H1FHI-14
   ROLE: Verifies
 
 [TEST_CASE]
@@ -203,9 +203,9 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FHI-17
-TITLE: Illumination LEDs 1 - Test Case
+TITLE: Illumination LEDs - Test Case
 STATEMENT: >>>
-When user press and release the laser membrane key several times, verify the head interface firmware should enable / disable the head lasers.
+When user press and release the laser membrane key several times, verify the head interface firmware should enable / disable the illumination LEDs.
 <<<
 PREREQUISITES: >>>
 1. System is ready to run.
@@ -214,9 +214,9 @@ PREREQUISITES: >>>
 STEPS: >>>
 1. Check the system when is powered on.
 2. Press membrane key.
-3. Check the head lasers.
+3. Check the illumination LEDs.
 4. Press membrane key again.
-5. Check the head lasers.
+5. Check the illumination LEDs.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. Verify there is no treatment.
@@ -257,10 +257,14 @@ EXPECTED_BEHAVIOR: >>>
 5. Verify the emission started.
 6. Make a note of any changes in the LEDs.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-14
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FHI-19
-TITLE: 8.1 Cooling System Temperature
+TITLE: Cooling System Temperature
 STATEMENT: >>>
 When a service user power on the system without loading any treatment plan, he/she be able to see the water temperature on GUI.
 <<<
@@ -280,35 +284,6 @@ EXPECTED_BEHAVIOR: >>>
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FHI-1
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FHI-20
-TITLE: Illumination LEDs 1
-STATEMENT: >>>
-When user press and release the laser membrane key several times, verify the head interface firmware should enable / disable the head lasers.
-<<<
-PREREQUISITES: >>>
-1. System is ready to run.
-2. No treatment plan is running
-<<<
-STEPS: >>>
-1. Check the system when is powered on
-2. Press membrane key
-3. Check the head lasers
-4. Press membrane key again
-5. Check the head lasers
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Verify there is no treatment plan is loaded.
-2. Verify physically that the membrane key is pressed
-3. Verify it’s disabled
-4. Verify physically that the membrane key is pressed
-5. Verify it’s enabled
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FHI-5
   ROLE: Verifies
 
 [TEST_CASE]
@@ -476,6 +451,39 @@ EXPECTED_BEHAVIOR: >>>
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FHI-53
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FHI-56
+TITLE: Robot Hand Guidance Button Test
+STATEMENT: >>>
+Service user should verify that the robot arm moves in manually guided positions when the button is pressed down and holds its position
+upon release.
+<<<
+PREREQUISITES: >>>
+1. The user should be service user
+2. The system should be powered on
+3. The robot arm should be ready and in a safe, reachable position to move
+<<<
+STEPS: >>>
+1. Check the system is powered on
+2. Check the robot status LED and robot controller to ensure arm is ready for hand guidance
+3. If the button is not safely reachable, use the GUI to change the arm to the “Treatment” position
+4. With one hand holding the opposite side of the treatment hand, and the other holding the bar with the manual guidance button, press and hold the button down
+5. Gently push the robot arm in all 6 directions: forward, backward, left, right, up, and down, within comfortable reach
+6. Release the robot hand guidance button
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The system should appear in normal operation with no interlocks or errors tripped.
+2. The system should be on, and the robot arm LED should be flashing blue
+3. The robot arm moves to the treatment position with no issues. The head can be reached.
+4. The robot arm should have a relay that has an audible click once the button is engaged. The LEDs on the robot arm should change color. The robot arm should respond to the button press in under 1 second.
+5. The robot arm should move in all directions smoothly without interruption.
+6. The robot arm relay should have an audible click again. The LED’s on the robot arm return to the ready state color. The robot arm holds its position within 1 second of the button’s release. The robot arm is immovable with the same pressure applied in Step 5.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-55
   ROLE: Verifies
 
 [[/SECTION]]
