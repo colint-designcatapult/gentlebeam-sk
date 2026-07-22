@@ -4,8 +4,8 @@
 #include "stm32f4xx_hal.h"
 
 // LIS3MDL I2C Address (SA1 = 0 or 1; default is 0x1E << 1)
-#define LIS2MDL_I2C_ADDR0       0x1F << 1		//FRONT Magnetometer (U15)
-#define LIS2MDL_I2C_ADDR1       0x1E << 1		//BACK Magnetometer	 (U22)
+#define LIS2MDL_I2C_ADDR0       0x1F << 1		//FRONT Magnetometer (U22)
+#define LIS2MDL_I2C_ADDR1       0x1E << 1		//BACK Magnetometer	 (U15)
 
 // Register addresses
 #define LIS2MDL_WHO_AM_I        0x4F

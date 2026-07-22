@@ -1,0 +1,8 @@
+../SensusSrc/setup.c:20:6:run_setup	8	static
+../SensusSrc/setup.c:34:6:run_post	0	static
+../SensusSrc/setup.c:40:6:run_loop	8	static
+../SensusSrc/setup.c:58:6:HAL_I2C_MemRxCpltCallback	0	static
+../SensusSrc/setup.c:71:6:HAL_I2C_MemTxCpltCallback	0	static
+../SensusSrc/setup.c:77:6:HAL_UART_RxCpltCallback	0	static
+../SensusSrc/setup.c:83:6:HAL_UART_TxCpltCallback	0	static
+../SensusSrc/setup.c:89:6:HAL_ADC_ConvCpltCallback	0	static

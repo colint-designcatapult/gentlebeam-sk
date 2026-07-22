@@ -1,0 +1,3 @@
+../SensusSrc/lis2mdl.c:15:9:LIS2MDL_WhoAmI	32	static
+../SensusSrc/lis2mdl.c:24:19:LIS2MDL_Init	48	static
+../SensusSrc/lis2mdl.c:59:19:LIS2MDL_ReadMagnetometers	56	static

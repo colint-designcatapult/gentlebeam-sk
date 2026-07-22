@@ -1,0 +1,7 @@
+../SensusSrc/qc.c:38:19:Read_ADC121C021_Conversion_IT	3
+../SensusSrc/qc.c:179:6:I2C_Reset	1
+../SensusSrc/qc.c:205:6:I2C_ForceBusRecovery	13
+../SensusSrc/qc.c:89:6:process_qc	22
+../SensusSrc/qc.c:284:6:HAL_I2C_MasterTxCpltCallback	2
+../SensusSrc/qc.c:297:6:HAL_I2C_MasterRxCpltCallback	6
+../SensusSrc/qc.c:332:6:HAL_I2C_ErrorCallback	3

@@ -1,0 +1,4 @@
+../SensusSrc/lis3mdl.c:5:26:LIS3MDL_WriteRegister	32	static
+../SensusSrc/lis3mdl.c:15:9:LIS3MDL_WhoAmI	32	static
+../SensusSrc/lis3mdl.c:24:19:LIS3MDL_Init	8	static
+../SensusSrc/lis3mdl.c:67:19:LIS3MDL_ReadMagnetometers	56	static

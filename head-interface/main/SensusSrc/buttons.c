@@ -77,7 +77,9 @@ static void check_button(int idx)
 		if(pin_status != button_debounce[idx].pin_state)
 		{
 			button_debounce[idx].pin_state = pin_status;
+#if !defined(CALIBRATION_MODE)
 			report_button_toggle(idx, pin_status);
+#endif
 			execute_button_function(idx, pin_status);
 		}
 	}

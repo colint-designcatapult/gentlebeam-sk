@@ -3,11 +3,13 @@
 
 #include "main.h"
 
+#if !defined(CALIBRATION_MODE)
+
 #define FW_MAJOR_VERSION	02
 #define FW_MINOR_VERSION	00
 #define FW_LEVEL_VERSION	01
 
-#if defined(CALIBRATION_MODE)
+#else
 
 #define FW_MAJOR_VERSION	1
 #define FW_MINOR_VERSION	0
