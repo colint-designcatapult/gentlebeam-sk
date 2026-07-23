@@ -1,4 +1,4 @@
-﻿using Grpc.Core;
+using Grpc.Core;
 using Heracles.Application.Domain.DataManagement.System.Collimators;
 using Heracles.Application.Domain.DataManagement.System.Physics;
 using Heracles.Application.Domain.DataManagement.System.QualityCheck;
@@ -272,20 +272,9 @@ namespace Heracles.Application.Infra.DataManagement.System.DataAccess.Dummy
             {
                 RecordAndVerifyEndPoint = new SystemEndPoint(heraclesCoreSettings.DataCommandsEndPoint), // Moses
                 DatabaseEndpoint = new SystemEndPoint("127.0.0.1:5433"),
-                ImagingHeadCamEndPoint = new SystemEndPoint("127.0.0.1:50002"),
                 TreatmentHeadCamEndPoint = new SystemEndPoint("127.0.0.1:50003"),
-                RobotCamEndPoint = new SystemEndPoint("127.0.0.1:50004"),
-                RoboticRosEndPoint = new SystemEndPoint("127.0.0.1:50051"),
                 GCBTelemetryEndPoint = new SystemEndPoint(heraclesCoreSettings.GCBTelemetryEndPoint?.Address() ?? "127.0.0.1:50020"),
-                GCBCommandsEndPoint = new SystemEndPoint(heraclesCoreSettings.GCBCommandsEndPoint?.Address() ?? "127.0.0.1:50007"),
-                AcbCommandsEndPoint = new SystemEndPoint(heraclesCoreSettings.AcbCommandsEndPoint?.Address() ?? "127.0.0.1:7000"),
-                QcbCommandsEndPoint = new SystemEndPoint(heraclesCoreSettings.QcbCommandsEndPoint?.Address() ?? "127.0.0.1:8000"),
-                ImagingServerEndPoint = new SystemEndPoint(heraclesCoreSettings.PhotoAcousticEndPoint?.Address() ?? "127.0.0.1:33405"),
-
-                DCDataReconstructionServerEndPoint = new SystemEndPoint("127.0.0.1:1234"),
-                DCDataProgressWebSocketEndPoint = new SystemEndPoint("127.0.0.1:1234"),
-                DCDatabaseEndPoint = new SystemEndPoint("127.0.0.1:1234"),
-                DCDataReconstructionZmqEndPoint = new SystemEndPoint("127.0.0.1:1234")
+                GCBCommandsEndPoint = new SystemEndPoint(heraclesCoreSettings.GCBCommandsEndPoint?.Address() ?? "127.0.0.1:50007")
             };
 
             var settings = new SystemSettings { DeviceSerial = debugSettings.DummyDeviceSerial, EndPointsConfiguration = endpoints };

@@ -13,7 +13,6 @@ using Com.Empyreanmed.Heracles.Prescriptions.V1;
 using Com.Empyreanmed.Heracles.QcsampleFields.V1;
 using Com.Empyreanmed.Heracles.Qcsamples.V1;
 using Com.Empyreanmed.Heracles.SafetyChecks.V1;
-using Com.Empyreanmed.Heracles.Series.V1;
 using Com.Empyreanmed.Heracles.Settings.V1;
 using Com.Empyreanmed.Heracles.Simulations.V1;
 using Com.Empyreanmed.Heracles.TreatmentDevices.V1;
@@ -997,39 +996,6 @@ namespace Heracles.Application.Protos
             }
         }
 
-        public static Core.Enums.ImageType FromProto(IMAGETYPE type)
-        {
-            switch (type)
-            {
-                case IMAGETYPE.Unspecified:
-                    return Core.Enums.ImageType.Unspecified;
-                case IMAGETYPE.Xray:
-                    return Core.Enums.ImageType.Xray;
-                case IMAGETYPE.Photoacoustic:
-                    return Core.Enums.ImageType.Photoacoustic;
-                case IMAGETYPE.Photosonic:
-                    return Core.Enums.ImageType.PhotoSonic;
-                default:
-                    throw new InvalidCastException("Unknown argument: " + type.ToString());
-            }
-        }
-
-        public static IMAGETYPE ToProto(Core.Enums.ImageType type)
-        {
-            switch (type)
-            {
-                case Core.Enums.ImageType.Unspecified:
-                    return IMAGETYPE.Unspecified;
-                case Core.Enums.ImageType.Xray:
-                    return IMAGETYPE.Xray;
-                case Core.Enums.ImageType.Photoacoustic:
-                    return IMAGETYPE.Photoacoustic;
-                case Core.Enums.ImageType.PhotoSonic:
-                    return IMAGETYPE.Photosonic;
-                default:
-                    throw new InvalidCastException("Unknown argument: " + type.ToString());
-            }
-        }
 
         public static DEVICETYPE ToProto(Core.Enums.DeviceType deviceName)
         {
@@ -2024,7 +1990,6 @@ namespace Heracles.Application.Protos
             {
                 Id = plan.Id,
                 PrescriptionId = plan.PrescriptionId,
-                OriginSeriesId = plan.OriginSeriesId,
                 CollimatorType = FromProto(plan.TargetType),
                 ApprovedBy = plan.ApprovedBy,
                 CreationDate = FromTimestamp(plan.CreationDate),
@@ -2047,10 +2012,6 @@ namespace Heracles.Application.Protos
                 TreatmentLoadingState = ToProto(plan.TreatmentLoadingState)
             };
 
-            if (plan.OriginSeriesId > 0)
-            {
-                protoPlan.OriginSeriesId = plan.OriginSeriesId;
-            }
 
 
             if (!BaseEntry.IsBlankEntry(plan))
@@ -2352,55 +2313,6 @@ namespace Heracles.Application.Protos
                 outValue.Id = position.Id;
             }
             return outValue;
-        }
-
-        public static ISeries FromProto(Series series)
-        {
-            if (series == null)
-                throw new ArgumentNullException(nameof(series));
-
-            return new Application.Models.RDBMS.EMR.Series
-            {
-                Id = series.Id,
-                CreationDate = FromTimestamp(series.CreationDate),
-                DiagnosisId = series.DiagnosisId,
-                LesionDepth = series.LesionDepth,
-                Location = series.Location,
-                Name = series.Name,
-                Type = FromProto(series.Type),
-                VisitId = series.VisitId,
-                Description = series.Description,
-                NumberOfInstances = series.NumOfInstances,
-            };
-        }
-
-        public static Series ToProto(ISeries series)
-        {
-            if (series == null)
-                throw new ArgumentNullException(nameof(series));
-
-            var proto = new Series
-            {
-                DiagnosisId = series.DiagnosisId,
-                LesionDepth = (float)series.LesionDepth,
-                Location = series.Location,
-                Name = series.Name,
-                Type = ToProto(series.Type),
-                VisitId = series.VisitId,
-                NumOfInstances = series.NumberOfInstances,
-            };
-
-            if (series.Description != null)
-            {
-                proto.Description = series.Description;
-            }
-
-            if (!BaseEntry.IsBlankEntry(series))
-            {
-                proto.Id = series.Id;
-            }
-
-            return proto;
         }
 
         public static Photo ToProto(IPhotoDescription photoDescription)
@@ -3106,19 +3018,9 @@ namespace Heracles.Application.Protos
                 {
                     RecordAndVerifyEndPoint = new SystemEndPoint(settings.RecordAndVerifyIp, settings.RecordAndVerifyPort),
                     DatabaseEndpoint = new SystemEndPoint(settings.DatabaseIp, settings.DatabasePort),
-                    ImagingHeadCamEndPoint = new SystemEndPoint(settings.ImagingHeadcamIp, settings.ImagingHeadcamPort),
                     TreatmentHeadCamEndPoint = new SystemEndPoint(settings.TreatmentHeadcamIp, settings.TreatmentHeadcamPort),
-                    RobotCamEndPoint = new SystemEndPoint(settings.RobotcamIp, settings.RobotcamPort),
                     GCBTelemetryEndPoint = new SystemEndPoint(settings.GcbTelemetryIp, settings.GcbTelemetryPort),
-                    GCBCommandsEndPoint = new SystemEndPoint(settings.GcbCommandsIp, settings.GcbCommandsPort),
-                    RoboticRosEndPoint = new SystemEndPoint(settings.RoboticRosIp, settings.RoboticRosPort),
-                    // TODO: we temporarily store qcb in robot's columns
-                    QcbCommandsEndPoint = new SystemEndPoint(settings.RoboticRosIp, settings.RoboticRosPort),
-                    ImagingServerEndPoint = new SystemEndPoint(settings.DataAcquisitionIp, settings.DataAcquisitionPort),
-                    DCDataReconstructionServerEndPoint = new SystemEndPoint(settings.DcDataReconstructionIp, settings.DcDataReconstructionPort),
-                    DCDataProgressWebSocketEndPoint = new SystemEndPoint(settings.DcDataProgressWebsocketIp, settings.DcDataProgressWebsocketPort),
-                    DCDataReconstructionZmqEndPoint = new SystemEndPoint(settings.DcDataReconstructionZMqIp, settings.DcDataReconstructionZMqPort),
-                    DCDatabaseEndPoint = new SystemEndPoint(settings.DcDatabaseIp, settings.DcDatabasePort)
+                    GCBCommandsEndPoint = new SystemEndPoint(settings.GcbCommandsIp, settings.GcbCommandsPort)
                 },
                 DeviceSerial = settings.DeviceSerial,
             };
@@ -3137,31 +3039,12 @@ namespace Heracles.Application.Protos
                 RecordAndVerifyPort = settings.EndPointsConfiguration.RecordAndVerifyEndPoint.Port.ToString(),
                 DatabaseIp = settings.EndPointsConfiguration.DatabaseEndpoint.Ip(),
                 DatabasePort = settings.EndPointsConfiguration.DatabaseEndpoint.Port.ToString(),
-                ImagingHeadcamIp = settings.EndPointsConfiguration.ImagingHeadCamEndPoint.Ip(),
-                ImagingHeadcamPort = settings.EndPointsConfiguration.ImagingHeadCamEndPoint.Port.ToString(),
                 TreatmentHeadcamIp = settings.EndPointsConfiguration.TreatmentHeadCamEndPoint.Ip(),
                 TreatmentHeadcamPort = settings.EndPointsConfiguration.TreatmentHeadCamEndPoint.Port.ToString(),
-                RobotcamIp = settings.EndPointsConfiguration.RobotCamEndPoint.Ip(),
-                RobotcamPort = settings.EndPointsConfiguration.RobotCamEndPoint.Port.ToString(),
-
                 GcbTelemetryIp = settings.EndPointsConfiguration.GCBTelemetryEndPoint.Ip(),
                 GcbTelemetryPort = settings.EndPointsConfiguration.GCBTelemetryEndPoint.Port.ToString(),
                 GcbCommandsIp = settings.EndPointsConfiguration.GCBCommandsEndPoint.Ip(),
                 GcbCommandsPort = settings.EndPointsConfiguration.GCBCommandsEndPoint.Port.ToString(),
-                // TODO: we temporarily store qcb in robot's columns
-                RoboticRosIp = settings.EndPointsConfiguration.QcbCommandsEndPoint.Ip(),
-                RoboticRosPort = settings.EndPointsConfiguration.QcbCommandsEndPoint.Port.ToString(),
-                DataAcquisitionIp = settings.EndPointsConfiguration.ImagingServerEndPoint.Ip(),
-                DataAcquisitionPort = settings.EndPointsConfiguration.ImagingServerEndPoint.Port.ToString(),
-
-                DcDataReconstructionIp = settings.EndPointsConfiguration.DCDataReconstructionServerEndPoint.Ip(),
-                DcDataReconstructionPort = settings.EndPointsConfiguration.DCDataReconstructionServerEndPoint.Port.ToString(),
-                DcDataProgressWebsocketIp = settings.EndPointsConfiguration.DCDataProgressWebSocketEndPoint.Ip(),
-                DcDataProgressWebsocketPort = settings.EndPointsConfiguration.DCDataProgressWebSocketEndPoint.Port.ToString(),
-                DcDataReconstructionZMqIp = settings.EndPointsConfiguration.DCDataReconstructionZmqEndPoint.Ip(),
-                DcDataReconstructionZMqPort = settings.EndPointsConfiguration.DCDataReconstructionZmqEndPoint.Port.ToString(),
-                DcDatabaseIp = settings.EndPointsConfiguration.DCDatabaseEndPoint.Ip(),
-                DcDatabasePort = settings.EndPointsConfiguration.DCDatabaseEndPoint.Port.ToString(),
 
                 DeviceSerial = settings.DeviceSerial
             };

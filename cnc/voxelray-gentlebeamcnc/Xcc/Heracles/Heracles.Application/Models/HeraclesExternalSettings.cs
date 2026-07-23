@@ -19,20 +19,7 @@ public class HeraclesExternalSettings(ISettingsReader reader) : Core.Models.IHer
 
 
     #region IHeraclesCoreSettings
-    public ISystemEndPoint RobotGrpcServerEndPoint { set; get; } =
-        SystemEndPoint.Create(
-            reader.GetOptionalString("AppSettings:EndPoints:RobotGrpcServerEndPoint", NetworkProperties.RobotGrpcServerEndPoint));
-
-
-    public ISystemEndPoint AcbCommandsEndPoint { get; set; } =
-        SystemEndPoint.Create(
-            reader.GetOptionalString("AppSettings:EndPoints:AcbCommandsEndPoint", NetworkProperties.AcbCommandsEndPoint));
-
-    public ISystemEndPoint PhotoAcousticEndPoint { get; } =
-        SystemEndPoint.Create(
-            reader.GetOptionalString("AppSettings:EndPoints:PhotoAcousticEndPoint", NetworkProperties.ImagingEndPoint));
-
-
+    
     #region ICoreSettings
     public ISystemEndPoint GCBTelemetryEndPoint { get; set; } =
         SystemEndPoint.Create(
@@ -42,17 +29,9 @@ public class HeraclesExternalSettings(ISettingsReader reader) : Core.Models.IHer
         SystemEndPoint.Create(
             reader.GetOptionalString("AppSettings:EndPoints:GCBCommandsEndPoint", NetworkProperties.GcbCommandsEndPoint));
 
-    public ISystemEndPoint QcbCommandsEndPoint { get; set; } =
-        SystemEndPoint.Create(
-            reader.GetOptionalString("AppSettings:EndPoints:QcbCommandsEndPoint", NetworkProperties.QcbEndPoint));
-
     public ISystemEndPoint DataCommandsEndPoint { set; get; } =
         SystemEndPoint.Create(
             reader.GetOptionalString("AppSettings:EndPoints:DataCommandsEndPoint", NetworkProperties.DataCommandsEndPoint));
-
-    public ISystemEndPoint UpsBroadcastServiceEndPoint { set; get; } =
-        SystemEndPoint.Create(
-            reader.GetOptionalString("AppSettings:EndPoints:UpsBroadcastServiceEndPoint", NetworkProperties.UpsBroadcastServiceEndPoint));
     public int GrpcTimeout { get; } = reader.GetOptionalInt("AppSettings:GrpcTimeout_ms", 5000);
 
     public string StorageRoot { get; } = reader.GetOptionalString("AppSettings:StorageRoot", @"C:\GentleBeam\deep-color-raw-dcm\");
@@ -96,7 +75,6 @@ public class HeraclesExternalSettings(ISettingsReader reader) : Core.Models.IHer
     public string? DebugAuthPassword { get; } = reader.GetOptionalString("AppSettings:Debug:AuthPassword");
     public string? DummyCollimatorSerial { get; } = reader.GetOptionalString("AppSettings:Debug:DummyCollimatorSerial");
     public long DebugLoadedPlanId { get; } = reader.GetOptionalLong("AppSettings:Debug:LoadedPlanId", 0);
-    public long DebugLoadedImagingPlanId { get; } = reader.GetOptionalLong("AppSettings:Debug:LoadedImagingPlanId", 0);
     public string? PathToDummyImage { get; set; } = reader.GetOptionalString("AppSettings:Debug:PathToDummyImage");
     public string? PathToTagScreenshot { get; set; } = reader.GetOptionalString("AppSettings:Debug:PathToTagScreenshot");
     public bool DoNotExpandFullscreen { get; set; } = reader.GetOptionalBool("AppSettings:Debug:DoNotExpandFullscreen", false);

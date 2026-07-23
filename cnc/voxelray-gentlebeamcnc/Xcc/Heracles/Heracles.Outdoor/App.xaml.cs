@@ -51,15 +51,11 @@ using Xcc.Infra.GryphonBoard.CommandAPI;
 using Xcc.Infra.Logging;
 using Xcc.Infra.Networking.gRPC.Channels;
 using Xcc.Infra.QualityCheck;
-using Xcc.Infra.QualityCheck.Comm;
-using Xcc.Infra.QualityCheck.Comm.Udp.MockServers;
 using Xcc.Infra.Services;
-using Xcc.Infra.Services.UPS;
 using Xcc.Infra.UserSessions.BearerToken;
 using Xcc.Shared.Services;
 using Xcc.Shared.Views;
 using AppGlobals = Heracles.Application.Models.AppGlobals;
-using QcbCommunicationService = Heracles.Application.Services.QcbCommunicationService;
 using SystemConfiguration = Heracles.Application.Models.SystemConfiguration;
 
 
@@ -159,9 +155,7 @@ namespace Heracles.External
                 containerRegistry.RegisterManySingleton<GcbCommandInterface>();
                 containerRegistry.RegisterManySingleton<DummyMainBoardModel>();
                 containerRegistry.RegisterSingleton<ITelemetryService, DummyTelemetryService>();
-                containerRegistry.RegisterSingleton<IUpsService, DummyUPSService>();
                 //containerRegistry.RegisterSingleton<ILogService, TextLogService>();
-                containerRegistry.RegisterSingleton<MockQcbServer>();
             }
             else
             {
@@ -170,16 +164,14 @@ namespace Heracles.External
                 containerRegistry.RegisterSingleton<IGcbCommandInterface, GcbCommandInterface>();
                 containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
                 containerRegistry.RegisterManySingleton<GcbTelemetryService>();
-                containerRegistry.RegisterSingleton<IUpsService, UpsService>();
                 containerRegistry.RegisterManySingleton<MainBoardModelBase>();
                 #endregion
             }
 
             containerRegistry.RegisterSingleton<IGcbIndicators, GcbIndicators>();
             containerRegistry.RegisterManySingleton<WarmupService>();
-            containerRegistry.RegisterSingleton<IQcbCommunicationService, QcbCommunicationService>();
-            containerRegistry.RegisterSingleton<IQcbService, QcbService>();
-            containerRegistry.RegisterSingleton<IQcbReadingModel, QcbReadingModel>();
+            containerRegistry.RegisterSingleton<IQcbService, MockQcbService>();
+            containerRegistry.RegisterSingleton<IQcbReadingModel, MockQcbReadingModel>();
 
             if (heraclesExternalSettings.UseDummyDatabase)
             {
@@ -199,7 +191,6 @@ namespace Heracles.External
                 containerRegistry.RegisterSingleton<IEmrActualTreatmentFieldCommands, EmrDummyActualTreatmentFieldCommands>();
                 containerRegistry.RegisterSingleton<IEmrEmissionTreatmentFieldCommands, EmrDummyEmissionTreatmentFieldCommands>();
                 containerRegistry.RegisterSingleton<IEmrTreatmentCommands, EmrDummyTreatmentCommands>();
-                containerRegistry.RegisterSingleton<IEmrSeriesCommands, EmrDummySeriesCommands>();
                 containerRegistry.RegisterSingleton<IEmrPhotoCommands, EmrDummyPhotoCommands>();
 
                 containerRegistry.RegisterSingleton<IUserCommands, DummyUserCommands>();
@@ -272,7 +263,6 @@ namespace Heracles.External
                 containerRegistry.RegisterSingleton<ILogCommands, GrpcLogCommands>();
 
                 //containerRegistry.RegisterSingleton<IUserCommands, GrpcUserCommands>();
-                containerRegistry.RegisterSingleton<IEmrSeriesCommands, GrpcSeriesCommands>();
                 containerRegistry.RegisterSingleton<ISystemCommands, GrpcSystemCommands>();
                 #endregion
             }

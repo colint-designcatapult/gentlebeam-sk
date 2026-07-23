@@ -15,22 +15,6 @@ namespace Heracles.Application.Models
         #region IHeraclesMainSetting
 
 
-        public Uri RobotGrpcServerUri => new($"http://{RobotGrpcServerEndPoint.Address()}");
-
-        // RobotGrpcServerMac was needed for WakeOnLan service that we don't utilize anymore
-        [Obsolete]
-        public PhysicalAddress RobotGrpcServerMac { get; } = 
-            reader.GetOptionalString("AppSettings:RobotGrpcServerMacString") is null ?
-                PhysicalAddress.None : PhysicalAddress.Parse(reader.GetOptionalString("AppSettings:RobotGrpcServerMacString"));
-
-        public ISystemEndPoint UpsBroadcastServiceEndPoint { set; get; } =
-            SystemEndPoint.Create(
-                reader.GetOptionalString("AppSettings:EndPoints:UpsBroadcastServiceEndPoint", NetworkProperties.UpsBroadcastServiceEndPoint));
-
-        public double RobotSafeZoneThresholdZmm { set; get; } = reader.GetOptionalDouble("AppSettings:RobotSafeZoneThresholdZmm", 0d);
-        public double RobotSafeZoneThresholdYmm { set; get; } = reader.GetOptionalDouble("AppSettings:RobotSafeZoneThresholdYmm", 0d);
-
-
         #region ITextLogSettings
         public string LogFilename { get; } = reader.GetString("AppSettings:LogFilename");
         public int LogPageSize { get; } = reader.GetOptionalInt("AppSettings:LogPageSize", 0);
@@ -39,18 +23,6 @@ namespace Heracles.Application.Models
 
 
         #region IHeraclesCoreSettings
-        public ISystemEndPoint RobotGrpcServerEndPoint { set; get; } =
-            SystemEndPoint.Create(
-                reader.GetOptionalString("AppSettings:EndPoints:RobotGrpcServerEndPoint", NetworkProperties.RobotGrpcServerEndPoint));
-
-        public ISystemEndPoint AcbCommandsEndPoint { get; set; } =
-            SystemEndPoint.Create(
-                reader.GetOptionalString("AppSettings:EndPoints:AcbCommandsEndPoint", NetworkProperties.AcbCommandsEndPoint));
-        public ISystemEndPoint PhotoAcousticEndPoint { get; } =
-            SystemEndPoint.Create(
-                reader.GetOptionalString("AppSettings:EndPoints:PhotoAcousticEndPoint", NetworkProperties.ImagingEndPoint));
-
-
         #region ICoreSettings
         public ISystemEndPoint GCBTelemetryEndPoint { get; set; } =
             SystemEndPoint.Create(
@@ -59,10 +31,6 @@ namespace Heracles.Application.Models
         public ISystemEndPoint GCBCommandsEndPoint { get; set; } =
             SystemEndPoint.Create(
                 reader.GetOptionalString("AppSettings:EndPoints:GCBCommandsEndPoint", NetworkProperties.GcbCommandsEndPoint));
-
-        public ISystemEndPoint QcbCommandsEndPoint { get; set; } =
-            SystemEndPoint.Create(
-                reader.GetOptionalString("AppSettings:EndPoints:QcbCommandsEndPoint", NetworkProperties.QcbEndPoint));
 
         public ISystemEndPoint DataCommandsEndPoint { set; get; } =
             SystemEndPoint.Create(
@@ -112,7 +80,6 @@ namespace Heracles.Application.Models
         public string? DebugAuthPassword { get; } = reader.GetOptionalString("AppSettings:Debug:AuthPassword");
         public string? DummyCollimatorSerial { get; } = reader.GetOptionalString("AppSettings:Debug:DummyCollimatorSerial");
         public long DebugLoadedPlanId { get; } = reader.GetOptionalLong("AppSettings:Debug:LoadedPlanId", 0);
-        public long DebugLoadedImagingPlanId { get; } = reader.GetOptionalLong("AppSettings:Debug:LoadedImagingPlanId", 0);
         public string? PathToDummyImage { get; set; } = reader.GetOptionalString("AppSettings:Debug:PathToDummyImage");
         public string? PathToTagScreenshot { get; set; } = reader.GetOptionalString("AppSettings:Debug:PathToTagScreenshot");
         public bool DoNotExpandFullscreen { get; set; } = reader.GetOptionalBool("AppSettings:Debug:DoNotExpandFullscreen", false);
@@ -120,17 +87,6 @@ namespace Heracles.Application.Models
         public int GcbTelemetryListenerPort { get; } = reader.GetOptionalInt("AppSettings:Debug:GcbTelemetryListenerPort", 0);
         #endregion IDebugSettings
 
-
-        #region IDeepColorSettings
-        public bool ImagingEmulator { get; } = reader.GetOptionalBool("AppSettings:ImagingEmulator", false);
-
-        public ISystemEndPoint ImagingEndpoint { get; } = SystemEndPoint.Create(reader.GetOptionalString("AppSettings:ImagingEndpoint", NetworkProperties.ImagingEndPoint));
-        
-        public string? PathToDeepColorApp { get; } = reader.GetOptionalString("AppSettings:PathToDeepColorApp");
-        
-        public int HttpRequestTimeout { get; } = reader.GetOptionalInt("AppSettings:HttpRequestTimeout", 2);
-
-        #endregion IDeepColorSettings
 
         #endregion IHeraclesMainSetting
     }

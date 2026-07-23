@@ -19,13 +19,9 @@ using Com.Empyreanmed.Heracles.Prescriptions.V1;
 using Com.Empyreanmed.Heracles.Qcsamples.V1;
 using Com.Empyreanmed.Heracles.QcsampleFields.V1;
 using Com.Empyreanmed.Heracles.ReferenceFields.V1;
-using Com.Empyreanmed.Heracles.RobotSequences.V1;
-using Com.Empyreanmed.Heracles.RobotSequenceSteps.V1;
-using Com.Empyreanmed.Heracles.RobotStoredPositions.V1;
 using Com.Empyreanmed.Heracles.Roles.V1;
 using Com.Empyreanmed.Heracles.RolesPermissions.V1;
 using Com.Empyreanmed.Heracles.SafetyChecks.V1;
-using Com.Empyreanmed.Heracles.Series.V1;
 using Com.Empyreanmed.Heracles.Settings.V1;
 using Com.Empyreanmed.Heracles.Simulations.V1;
 using Com.Empyreanmed.Heracles.TreatmentDevices.V1;
@@ -79,7 +75,6 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
         services.AddSingleton(_ => new SqliteProtoRepository<ActualTreatmentField>(dbPath, "actual_treatment_fields", hasParentId: true));
         services.AddSingleton(_ => new SqliteProtoRepository<EmissionTreatmentField>(dbPath, "emission_treatment_fields", hasParentId: true));
         services.AddSingleton(_ => new SqliteProtoRepository<Treatment>(dbPath, "treatments"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Series>(dbPath, "series", hasParentId: true));
         services.AddSingleton(_ => new SqliteProtoRepository<Photo>(dbPath, "photos", hasParentId: true));
         services.AddSingleton(_ => new SqliteProtoRepository<Com.Empyreanmed.Heracles.Users.V1.User>(dbPath, "users"));
         services.AddSingleton(_ => new SqliteProtoRepository<Role>(dbPath, "roles"));
@@ -101,9 +96,6 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
         services.AddSingleton(_ => new SqliteProtoRepository<Warmup>(dbPath, "warmups"));
         services.AddSingleton(_ => new SqliteProtoRepository<Log>(dbPath, "logs"));
         services.AddSingleton(_ => new SqliteProtoRepository<Settings>(dbPath, "settings"));
-        services.AddSingleton(_ => new SqliteProtoRepository<RobotSequence>(dbPath, "robot_sequences"));
-        services.AddSingleton(_ => new SqliteProtoRepository<RobotSequenceStep>(dbPath, "robot_sequence_steps"));
-        services.AddSingleton(_ => new SqliteProtoRepository<RobotStoredPosition>(dbPath, "robot_stored_positions"));
 
         // Service implementations
         services.AddGrpc();
@@ -120,7 +112,6 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
         services.AddSingleton<ActualTreatmentFieldServiceImpl>();
         services.AddSingleton<EmissionTreatmentFieldServiceImpl>();
         services.AddSingleton<TreatmentServiceImpl>();
-        services.AddSingleton<SeriesServiceImpl>();
         services.AddSingleton<PhotosServiceImpl>();
         services.AddSingleton<UsersServiceImpl>();
         services.AddSingleton<RoleServiceImpl>();
@@ -143,9 +134,6 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
         services.AddSingleton<LogServiceImpl>();
         services.AddSingleton<SettingsServiceImpl>();
         services.AddSingleton<SystemServiceImpl>();
-        services.AddSingleton<RobotSequenceServiceImpl>();
-        services.AddSingleton<RobotSequenceStepServiceImpl>();
-        services.AddSingleton<RobotStoredPositionServiceImpl>();
 
         _app = builder.Build();
 
@@ -162,7 +150,6 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
         _app.MapGrpcService<ActualTreatmentFieldServiceImpl>();
         _app.MapGrpcService<EmissionTreatmentFieldServiceImpl>();
         _app.MapGrpcService<TreatmentServiceImpl>();
-        _app.MapGrpcService<SeriesServiceImpl>();
         _app.MapGrpcService<PhotosServiceImpl>();
         _app.MapGrpcService<UsersServiceImpl>();
         _app.MapGrpcService<RoleServiceImpl>();
@@ -185,9 +172,6 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
         _app.MapGrpcService<LogServiceImpl>();
         _app.MapGrpcService<SettingsServiceImpl>();
         _app.MapGrpcService<SystemServiceImpl>();
-        _app.MapGrpcService<RobotSequenceServiceImpl>();
-        _app.MapGrpcService<RobotSequenceStepServiceImpl>();
-        _app.MapGrpcService<RobotStoredPositionServiceImpl>();
     }
 
     public Task StartAsync(CancellationToken cancellationToken = default)

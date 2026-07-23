@@ -1,11 +1,10 @@
-﻿using Empyrean.Common.Infra.Settings;
+using Empyrean.Common.Infra.Settings;
 using Heracles.Application.AppLayer.Collimators;
 using Heracles.Application.AppLayer.Patient;
 using Heracles.Application.AppLayer.QualityAssurance.QualityCheck;
 using Heracles.Application.Commands.DummyCommands;
 using Heracles.Application.Commands.gRPC.Common;
 using Heracles.Application.Commands.gRPC.EMR;
-using Heracles.Application.DeepColor;
 using Heracles.Application.Infra.DataManagement.EMR;
 using Heracles.Application.Infra.DataManagement.EMR.DataAccess;
 using Heracles.Application.Infra.DataManagement.EMR.DataAccess.gRPC;
@@ -22,7 +21,6 @@ using Heracles.Application.Models.Treatment;
 using Heracles.Application.Services;
 using Heracles.Core.Commands;
 using Heracles.Core.Models;
-using Heracles.Indoor.AppLayer.DeepColor;
 using Heracles.Indoor.Models;
 using Heracles.Indoor.Models.UseCases;
 using Heracles.Indoor.Modules;
@@ -125,8 +123,6 @@ namespace Heracles.Indoor
             containerRegistry.RegisterSingleton<IPlanLoading, PlanLoading>();
             containerRegistry.RegisterSingleton<LoadForTreatmentEventSource>();
             containerRegistry.RegisterSingleton<PlanEventSource>();
-            containerRegistry.RegisterSingleton<ISeriesModel, SeriesModel>();
-            containerRegistry.RegisterSingleton<IAcquisitionModel, AcquisitionModel>();
             containerRegistry.RegisterSingleton<IExitingModel, ExitingModel>();
             containerRegistry.RegisterSingleton<IAcquisitionResultStore, AcquisitionResultStore>();
             containerRegistry.RegisterSingleton<IQcRepository, QcRepository>();
@@ -189,7 +185,6 @@ namespace Heracles.Indoor
                 containerRegistry.RegisterSingleton<IEmrTreatmentFieldCommands, GrpcTreatmentFieldCommands>();
                 containerRegistry.RegisterSingleton<IEmrTreatmentCommands, GrpcTreatmentCommands>();
                 containerRegistry.RegisterSingleton<IEmrActualTreatmentFieldCommands, GrpcActualTreatmentFieldCommands>();
-                containerRegistry.RegisterSingleton<IEmrSeriesCommands, GrpcSeriesCommands>();
                 containerRegistry.RegisterSingleton<IEmrPhotoCommands, GrpcPhotoCommands>();
 
                 containerRegistry.RegisterSingleton<IUserCommands, GrpcUserCommands>();
@@ -235,7 +230,6 @@ namespace Heracles.Indoor
                 containerRegistry.RegisterSingleton<IEmrActualTreatmentFieldCommands, EmrDummyActualTreatmentFieldCommands>();
                 containerRegistry.RegisterSingleton<IEmrEmissionTreatmentFieldCommands, EmrDummyEmissionTreatmentFieldCommands>();
                 containerRegistry.RegisterSingleton<IEmrTreatmentCommands, EmrDummyTreatmentCommands>();
-                containerRegistry.RegisterSingleton<IEmrSeriesCommands, EmrDummySeriesCommands>();
                 containerRegistry.RegisterSingleton<IEmrPhotoCommands, EmrDummyPhotoCommands>();
 
                 containerRegistry.RegisterSingleton<IUserCommands, DummyUserCommands>();
@@ -283,7 +277,6 @@ namespace Heracles.Indoor
                 containerRegistry.RegisterSingleton<IEmrTreatmentCommands, GrpcTreatmentCommands>();
                 containerRegistry.RegisterSingleton<IEmrActualTreatmentFieldCommands, GrpcActualTreatmentFieldCommands>();
                 //containerRegistry.RegisterSingleton<IUserCommands, GrpcUserCommands>();
-                containerRegistry.RegisterSingleton<IEmrSeriesCommands, GrpcSeriesCommands>();
                 containerRegistry.RegisterSingleton<IEmrPhotoCommands, GrpcPhotoCommands>();
 
                 containerRegistry.RegisterSingleton<IUserCommands, GrpcUserCommands>();
@@ -337,11 +330,6 @@ namespace Heracles.Indoor
                 containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
                 containerRegistry.RegisterSingleton<ITelemetryService, GcbTelemetryService>();
             }
-
-            #region DeepColor integration
-            containerRegistry.RegisterSingleton<IpcModel>();
-            containerRegistry.RegisterSingleton<IpcService>();
-            #endregion DeepColor integration
 
 
             containerRegistry.RegisterSingleton<FieldModel>();

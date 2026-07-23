@@ -14,19 +14,8 @@ namespace Heracles.Application.Models.Settings
         {
             RecordAndVerifyEndPoint = new SystemEndPoint(configuration.RecordAndVerifyEndPoint);
             TreatmentHeadCamEndPoint = new SystemEndPoint(configuration.TreatmentHeadCamEndPoint);
-            ImagingHeadCamEndPoint = new SystemEndPoint(configuration.ImagingHeadCamEndPoint);
-            TreatmentHeadCamEndPoint = new SystemEndPoint(configuration.TreatmentHeadCamEndPoint);
-            RobotCamEndPoint = new SystemEndPoint(configuration.RobotCamEndPoint);
             GCBTelemetryEndPoint = new SystemEndPoint(configuration.GCBTelemetryEndPoint);
             GCBCommandsEndPoint = new SystemEndPoint(configuration.GCBCommandsEndPoint);
-            AcbCommandsEndPoint = new SystemEndPoint(configuration.AcbCommandsEndPoint);
-            QcbCommandsEndPoint = new SystemEndPoint(configuration.QcbCommandsEndPoint);
-            RoboticRosEndPoint = new SystemEndPoint(configuration.RoboticRosEndPoint);
-            ImagingServerEndPoint = new SystemEndPoint(configuration.ImagingServerEndPoint);
-            DCDataReconstructionServerEndPoint = new SystemEndPoint(configuration.DCDataReconstructionServerEndPoint);
-            DCDataProgressWebSocketEndPoint = new SystemEndPoint(configuration.DCDataProgressWebSocketEndPoint);
-            DCDataReconstructionZmqEndPoint = new SystemEndPoint(configuration.DCDataReconstructionZmqEndPoint);
-            DCDatabaseEndPoint = new SystemEndPoint(configuration.DCDatabaseEndPoint);
 
             AcceptChanges();
         }
@@ -53,18 +42,6 @@ namespace Heracles.Application.Models.Settings
             }
         }
 
-        //TODO: ask Limor about this, where is should be Uri like this:
-        //rtsp://root:Empy!12@172.31.1.40:554/axis-media/media.amp
-        SystemEndPoint _imagingHeadCamEndPoint = SystemEndPoint.LocalHost;
-        public SystemEndPoint ImagingHeadCamEndPoint
-        {
-            get => _imagingHeadCamEndPoint;
-            set
-            {
-                SetPropertyWithDirtyFlag(ref _imagingHeadCamEndPoint, value);
-            }
-        }
-
         //TODO: ask Limor about this, there is should be Uri like this:
         //rtsp://root:Empy!12@172.31.1.40:554/axis-media/media.amp
         SystemEndPoint _treatmentHeadCamEndPoint = SystemEndPoint.LocalHost;
@@ -74,18 +51,6 @@ namespace Heracles.Application.Models.Settings
             set
             {
                 SetPropertyWithDirtyFlag(ref _treatmentHeadCamEndPoint, value);
-            }
-        }
-
-        //TODO: ask Limor about this, there is should be Uri like this:
-        //rtsp://root:Empy!12@172.31.1.40:554/axis-media/media.amp
-        SystemEndPoint _robotCamEndPoint = SystemEndPoint.LocalHost;
-        public SystemEndPoint RobotCamEndPoint
-        {
-            get => _robotCamEndPoint;
-            set
-            {
-                SetPropertyWithDirtyFlag(ref _robotCamEndPoint, value);
             }
         }
 
@@ -109,74 +74,6 @@ namespace Heracles.Application.Models.Settings
             }
         }
 
-        SystemEndPoint _roboticRosEndPoint = SystemEndPoint.LocalHost;
-        public SystemEndPoint RoboticRosEndPoint
-        {
-            get => _roboticRosEndPoint;
-            set
-            {
-                SetPropertyWithDirtyFlag(ref _roboticRosEndPoint, value);
-            }
-        }
-
-        SystemEndPoint _acbCommandsEndPoint = SystemEndPoint.LocalHost;
-        public SystemEndPoint AcbCommandsEndPoint
-        {
-            get => _acbCommandsEndPoint;
-            set
-            {
-                SetPropertyWithDirtyFlag(ref _acbCommandsEndPoint, value);
-            }
-        }
-
-        SystemEndPoint _qcbCommandsEndPoint = SystemEndPoint.LocalHost;
-        public SystemEndPoint QcbCommandsEndPoint
-        {
-            get => _qcbCommandsEndPoint;
-            set
-            {
-                SetPropertyWithDirtyFlag(ref _qcbCommandsEndPoint, value);
-            }
-        }
-
-        SystemEndPoint _imagingServerEndPoint = SystemEndPoint.LocalHost;
-        public SystemEndPoint ImagingServerEndPoint
-        {
-            get => _imagingServerEndPoint;
-            set
-            {
-                SetPropertyWithDirtyFlag(ref _imagingServerEndPoint, value);
-            }
-        }
-
-        private SystemEndPoint _dcDataReconstructionServerEndPoint;
-        public SystemEndPoint DCDataReconstructionServerEndPoint
-        {
-            get { return _dcDataReconstructionServerEndPoint; }
-            set { SetPropertyWithDirtyFlag(ref _dcDataReconstructionServerEndPoint, value); }
-        }
-
-        private SystemEndPoint _dcDataProgressWebSocketEndPoint;
-        public SystemEndPoint DCDataProgressWebSocketEndPoint
-        {
-            get { return _dcDataProgressWebSocketEndPoint; }
-            set { SetPropertyWithDirtyFlag(ref _dcDataProgressWebSocketEndPoint, value); }
-        }
-
-        private SystemEndPoint _dcDataReconstructionZmqEndPoint;
-        public SystemEndPoint DCDataReconstructionZmqEndPoint 
-        { 
-            get => _dcDataReconstructionZmqEndPoint;
-            set => SetPropertyWithDirtyFlag(ref _dcDataReconstructionZmqEndPoint, value);
-        }
-
-        private SystemEndPoint _dcDatabaseEndPoint;
-        public SystemEndPoint DCDatabaseEndPoint 
-        {
-            get => _dcDatabaseEndPoint;
-            set => SetPropertyWithDirtyFlag(ref _dcDatabaseEndPoint, value);
-        }
-
         #endregion Properties
 
         public override void AcceptChanges()
@@ -184,18 +81,9 @@ namespace Heracles.Application.Models.Settings
             base.AcceptChanges();
             RecordAndVerifyEndPoint.AcceptChanges();
             DatabaseEndpoint.AcceptChanges();
-            ImagingHeadCamEndPoint.AcceptChanges();
             TreatmentHeadCamEndPoint.AcceptChanges();
-            RobotCamEndPoint.AcceptChanges();
             GCBTelemetryEndPoint.AcceptChanges();
             GCBCommandsEndPoint.AcceptChanges();
-            AcbCommandsEndPoint.AcceptChanges();
-            RoboticRosEndPoint.AcceptChanges();
-            ImagingServerEndPoint.AcceptChanges();
-            DCDataReconstructionServerEndPoint.AcceptChanges();
-            DCDataProgressWebSocketEndPoint.AcceptChanges();
-            DCDataReconstructionZmqEndPoint.AcceptChanges();
-            DCDatabaseEndPoint.AcceptChanges();
         }
         
 

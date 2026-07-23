@@ -142,7 +142,6 @@ namespace Heracles.Application.Models
             IDialogService dialogService,
             IActionAuditService actionAuditService,
             IAuthorizedUserStore authorizedUserStore,
-            ISeriesModel seriesModel,
             ISimulationRepository simulationRepository,
             ITreatmentDoseCalculation treatmentDoseCalculation,
             Treatment.IPrescriptionRepository prescriptionRepository,
@@ -156,7 +155,6 @@ namespace Heracles.Application.Models
             DialogService = dialogService;
             ActionAuditService = actionAuditService;
             AuthorizedUserStore = authorizedUserStore;
-            SeriesModel = seriesModel;
             SimulationRepository = simulationRepository;
             PrescriptionRepository = prescriptionRepository;
             PlanRepository = planRepository;
@@ -226,7 +224,6 @@ namespace Heracles.Application.Models
         public IDialogService DialogService { get; }
         public IActionAuditService ActionAuditService { get; }
         public IAuthorizedUserStore AuthorizedUserStore { get; }
-        public ISeriesModel SeriesModel { get; }
         public ISimulationRepository SimulationRepository { get; }
         public Treatment.IPrescriptionRepository PrescriptionRepository { get; }
         public IPlanRepository PlanRepository { get; }
@@ -749,7 +746,6 @@ namespace Heracles.Application.Models
             {
                 CreationDate = DateTime.Now,
                 PrescriptionId = Prescription.Id,
-                OriginSeriesId = SeriesModel.Series?.Id ?? 0,
                 Status = PlanStatus.PENDING_APPROVAL,
                 CollimatorType = TreatmentInfoStore.Simulation?.TargetType ?? TargetType.TargetType_None,
                 TreatmentLoadingState = TreatmentLoadingState.Unloaded,

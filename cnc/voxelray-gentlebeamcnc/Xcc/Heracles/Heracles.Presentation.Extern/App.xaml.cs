@@ -48,14 +48,8 @@ namespace Heracles
             containerRegistry.RegisterSingleton<IAppSettings, AppSettings>();
             containerRegistry.RegisterSingleton<ITelemetryService, AaronTelemetryService>();
             //containerRegistry.RegisterSingleton<ITelemetryService, TelemetryService>();
-            containerRegistry.RegisterSingleton<IUPSService, UPSService>();
             containerRegistry.RegisterSingleton<IGCBCommandsService, GCBCommandsService>();
             containerRegistry.RegisterSingleton<IGCBCommunicationService, GCBCommunicationService>();
-            containerRegistry.RegisterSingleton<IRoboticArmCommandCommService, RoboticArmCommandCommService>();
-            containerRegistry.RegisterSingleton<IRoboticArmControlCommService, RoboticArmControlCommService>();
-            containerRegistry.RegisterSingleton<IRoboticArmControlService, RoboticArmControlService>();
-            containerRegistry.RegisterSingleton<IRoboticArmService, RoboticArmService>();
-            containerRegistry.RegisterSingleton<IRoboticArmTelemetryCommService, RoboticArmTelemetryCommService>();
             containerRegistry.RegisterSingleton<IXRayService, XRayService>();
             containerRegistry.RegisterSingleton<IImagingService, ImagingService>();
             containerRegistry.RegisterSingleton<IExternChannelService, ExternChannelService>();
@@ -72,13 +66,7 @@ namespace Heracles
             containerRegistry.RegisterSingleton<INotificationsArea, NotificationsArea>();
             containerRegistry.RegisterSingleton<IGCBFaults, GCBFaults>();
             containerRegistry.RegisterSingleton<IGCBInterlocks, GCBInterlocks>();
-            containerRegistry.RegisterSingleton<IUPSTelemetry, UPSTelemetry>();
             containerRegistry.RegisterSingleton<IGCBPushButtons, GCBPushButtons>();
-            containerRegistry.RegisterSingleton<IRoboticArmFrame, RoboticArmFrame>();
-            containerRegistry.RegisterSingleton<IRoboticArmJointsPosition, RoboticArmJointsPosition>();
-            containerRegistry.RegisterSingleton<IRoboticArmExternalTorques, RoboticArmExternalTorques>();
-            containerRegistry.RegisterSingleton<IRoboticArmTelemetry, RoboticArmTelemetry>();
-            containerRegistry.RegisterSingleton<IRoboticArmControlTelemetry, RoboticArmControlTelemetry>();
             containerRegistry.RegisterSingleton<ITargetsConfigurationPreset, ActiveTargetsConfigurationPreset>();
             containerRegistry.RegisterSingleton<IMagneticCorrectionMatrices, MagneticCorrectionMatrices>();
             containerRegistry.RegisterSingleton<IAuthorizedUser, ActiveUser>();
