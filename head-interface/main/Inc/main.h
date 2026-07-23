@@ -81,8 +81,6 @@ void Error_Handler(void);
 #define IO_CB_RX_GPIO_Port GPIOA
 #define IO_MAG_INT_Pin GPIO_PIN_4
 #define IO_MAG_INT_GPIO_Port GPIOA
-#define IO_USER_LED_Pin GPIO_PIN_5
-#define IO_USER_LED_GPIO_Port GPIOA
 #define IO_EE_HOLDn_Pin GPIO_PIN_4
 #define IO_EE_HOLDn_GPIO_Port GPIOC
 #define IO_PB_F2_Pin GPIO_PIN_5

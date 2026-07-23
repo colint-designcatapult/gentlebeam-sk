@@ -6,7 +6,7 @@
 #include "control_comm.h"
 #include "leds.h"
 #include "checksum.h"
-
+#include "dotstar.h"
 
 volatile int32_t control_comm_ms = 50;
 
@@ -210,7 +210,8 @@ static void process_comm_rx_packet()
 		update_mag_cal_window((int32_t)window_val);
 //For regular execution, update LED sequence
 #else
-		set_new_led_sequence((int)control_comm_rx_buf[5]);
+//		set_new_led_sequence((int)control_comm_rx_buf[5]);
+		process_led_sequence(control_comm_rx_buf[5]);
 #endif
 	}
 }
