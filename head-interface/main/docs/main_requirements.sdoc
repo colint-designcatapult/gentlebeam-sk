@@ -111,15 +111,6 @@ trigger an interlock fault during emission if the collimator disconnects
 <<<
 
 [REQUIREMENT]
-UID: RQ-H1FHI-5
-TYPE: Functional
-TITLE: Head lasers
-STATEMENT: >>>
-The head interface firmware shall alternately enable and disable the head lasers after the
-detection of a user pressing the associated membrane button
-<<<
-
-[REQUIREMENT]
 UID: RQ-H1FHI-6
 TYPE: Functional
 TITLE: Illumination LEDs
@@ -182,6 +173,14 @@ cooling water pressure
 <<<
 
 [REQUIREMENT]
+UID: RQ-H1FHI-14
+TYPE: Functional
+TITLE: Indicator LEDs
+STATEMENT: >>>
+The head interface firmware shall provide LED status indications that enable the user to verify the operational state of the device based on LED color and behavior.
+<<<
+
+[REQUIREMENT]
 UID: RQ-H1FHI-53
 TYPE: Safety
 TITLE: QC Read
@@ -198,5 +197,9 @@ STATEMENT: >>>
 The head interface firmware shall monitor the activity state of the hand guidance button and pass
 it to the robotic arm controller.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FHI-26
+  ROLE: Refines
 
 [[/SECTION]]

@@ -196,9 +196,6 @@ RELATIONS:
   VALUE: RQ-H1FHI-2
   ROLE: Refines
 - TYPE: Parent
-  VALUE: RQ-H1FHI-5
-  ROLE: Refines
-- TYPE: Parent
   VALUE: RQ-H1FHI-6
   ROLE: Refines
 - TYPE: Parent
@@ -237,23 +234,22 @@ changed button input states for processing and reporting to the main control app
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FHI-6
+  VALUE: RQ-H1FHI-11
   ROLE: Refines
 - TYPE: Parent
-  VALUE: RQ-H1FHI-11
+  VALUE: RQ-H1FHI-55
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FHI-28
 TITLE: Output Signals
 STATEMENT: >>>
-The firmware controls two digital output signals. One digital output signal controls the output state
-of the illumination LEDs. The second digital output signal controls the output state of the laser
-modules.
+The firmware controls one digital output signal. The digital output signal controls the output state
+of the illumination LEDs.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FHI-5
+  VALUE: RQ-H1FHI-6
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -389,35 +385,19 @@ STATEMENT: >>>
 After monitoring for debouncing, the firmware also performs specific actions based on which
 buttons were pressed. The following actions are mapped to specific button presses:
 
-- Laser button release results in the laser output signal toggling (alternating between lasers on and
-  off)
-
 - LED button release results in the illumination LED output signal toggling (alternating between
   illumination LEDs on and off)
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FHI-5
+  VALUE: RQ-H1FHI-6
   ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H1FHI-37
-TITLE: Indicator LED Interface
-STATEMENT: >>>
-The firmware sends data to two external LED controllers which set the outputs for the indicator
-LEDs. Both LED controllers are the same make and model and are interfaced via a singular I2C bus
-(the two controllers have different I2C addresses). When sending data the firmware alternates
-between sending data to each LED controller. Each LED controller has multiple channels, with each
-channel representing a different color of one octant of the indicator LED ring. Each LED octant has 3
-colors (red, green, and blue). The firmware divides up the channels, so patterns of colors based on
-the red, green, and blue values of each section can be written as needed.
-<<<
 
 [DESIGN_ITEM]
 UID: SW-H1FHI-38
 TITLE: Indicator LED Data
 STATEMENT: >>>
-As the firmware implements an indicator LED interface witch its individual colors for individual
+As the firmware implements an indicator LED interface with its individual colors for individual
 sections of the indicator LED ring, the data is structured in such a way so that the indicator LEDs
 can display specific 'sequences' or 'patterns'. These patterns are each structs, which are then all
 organized into an array of such patterns. Each pattern is indexed according to a specific system
@@ -437,6 +417,10 @@ current animation pattern to output the current frame. It does so by setting the
 controllers to the specified colors of the frame, for the given duration of the frame. Once the frame
 time has expired, the LED interface moves onto the next frame of the current pattern.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FHI-14
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FHI-39
