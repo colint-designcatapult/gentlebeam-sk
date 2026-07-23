@@ -431,7 +431,7 @@ internal sealed class CalibrationTelemetryState
 
     internal void Update(UdpPacket packet)
     {
-        if (packet.PacketType != (uint)GCBPacketType.TelemetryResponse || packet.PayloadLength != 48u)
+        if (packet.PacketType != (uint)GCBPacketType.TelemetryResponse || packet.PayloadLength != 47u)
             throw new ArgumentException("Invalid calibration telemetry packet");
 
         _controlBoardState = (GcbStateNew)(int)packet[1];
@@ -446,7 +446,7 @@ internal sealed class CalibrationTelemetryState
         var rawFaults = (uint)packet[12];
         var rawCommunicationFaults = (uint)packet[13];
         var rawInterlocks = (uint)packet[14];
-        var rawRequiredInterlocks = (uint)packet[47];
+        var rawRequiredInterlocks = (uint)packet[10];
         _faults = new SystemFaults(
             rawFaults,
             rawCommunicationFaults,
