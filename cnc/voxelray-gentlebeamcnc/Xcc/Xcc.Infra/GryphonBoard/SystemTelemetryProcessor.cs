@@ -68,7 +68,7 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
 
         if (_selectedVersion == CalibrationSignature)
         {
-            if (_packet.PayloadLength != 48u)
+            if (_packet.PayloadLength != 47u)
                 return false;
 
             _calibrationState!.Update(_packet);

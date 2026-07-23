@@ -147,7 +147,7 @@ internal class SystemTelemetryProcessorTests
         });
 
         sut.Process(BuildVersionInfo(1, 0, 0, FirmwareMode.Calibration));
-        Assert.That(sut.Process(BuildPacket(GCBPacketType.TelemetryResponse, 47)), Is.False);
+        Assert.That(sut.Process(BuildPacket(GCBPacketType.TelemetryResponse, 48)), Is.False);
     }
 
     [TestCase(FirmwareMode.Normal)]
@@ -363,12 +363,12 @@ internal class SystemTelemetryProcessorTests
         uint errorFlags = 0,
         float kvFeedback = 0)
     {
-        var packet = new UdpPacket((uint)GCBPacketType.TelemetryResponse, 0, 48);
+        var packet = new UdpPacket((uint)GCBPacketType.TelemetryResponse, 0, 47);
         packet[1] = (int)state;
         packet[7] = runtime;
         packet[12] = faultFlags;
         packet[14] = interlockFlags;
-        packet[47] = requiredInterlockFlags;
+        packet[10] = requiredInterlockFlags;
         packet[15] = ioFlags;
         packet[16] = statusFlags;
         packet[17] = errorFlags;
