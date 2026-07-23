@@ -14,7 +14,6 @@ namespace Heracles.Application.Models.Supervision
     public class NetworkConnectionSupervisor 
         : IGcbTelemetryConnectionFactory
         , IGcbCommandConnectionFactory
-        , IGcbCommunicationConnectionFactory
     {
         private readonly ISystemSettingsStore settingsStore;
         private readonly ILogWriter _logWriter;
