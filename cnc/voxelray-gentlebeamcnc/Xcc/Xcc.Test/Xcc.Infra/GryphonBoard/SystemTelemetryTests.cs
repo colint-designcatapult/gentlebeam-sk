@@ -138,7 +138,7 @@ internal class SystemTelemetryTests
     [Test]
     public void CalibrationParser_MapsAuthoritativeLayoutAndUnavailableValues()
     {
-        var packet = NewTelemetryPacket(48);
+        var packet = NewTelemetryPacket(47);
         packet[1] = (int)GcbStateNew.WarmupFault;
         packet[2] = 102;
         packet[3] = 103;
@@ -172,7 +172,7 @@ internal class SystemTelemetryTests
         packet[41] = 141.5f;
         packet[42] = 142.5f;
         packet[43] = 143.5f;
-        packet[47] = 0xC3FFFu;
+        packet[10] = 0xC3FFFu;
 
         var telemetry = SystemCalibrationTelemetry.Parse(packet.UpdateCRC().Buffer);
 
@@ -238,9 +238,9 @@ internal class SystemTelemetryTests
         });
     }
 
-    [TestCase(47)]
-    [TestCase(49)]
-    public void CalibrationParser_RequiresExactlyFortyEightFields(int fieldCount)
+    [TestCase(46)]
+    [TestCase(48)]
+    public void CalibrationParser_RequiresExactlyFortySevenFields(int fieldCount)
     {
         var packet = NewTelemetryPacket((uint)fieldCount).UpdateCRC();
         Assert.That(() => SystemCalibrationTelemetry.Parse(packet.Buffer), Throws.ArgumentException);

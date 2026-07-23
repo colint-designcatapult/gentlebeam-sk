@@ -993,10 +993,10 @@ STATEMENT: >>>
 The firmware collects monitored values in a system-status array used as the source of truth
 for firmware decisions and telemetry serialization. Every 10 ms, it serializes the array
 using the normal or calibration layout selected at compile time and sends it to the CNC.
-The normal and calibration telemetry layouts append the raw state-dependent required-interlock
-mask and publish the complete physical interlock-input mask. The normal layout includes a
-reserved word between the second magnetometer vector and setpoint fields so its established
-payload count and field positions remain unchanged. Telemetry requests use the same serializers.
+The normal telemetry layout appends the raw state-dependent required-interlock mask. The
+calibration layout publishes the same mask in its first reserved word so its established
+payload count and field positions remain unchanged. Both layouts publish the complete
+physical interlock-input mask. Telemetry requests use the same serializers.
 <<<
 RELATIONS:
 - TYPE: Parent
