@@ -7,6 +7,7 @@
 #include "magnetometer.h"
 #include "timer.h"
 #include "sys_data.h"
+#include "dotstar.h"
 
 #if !defined(CALIBRATION_MODE)
 #include "buttons.h"
@@ -29,6 +30,7 @@ void run_setup()
 	//init_collimator();
 	init_1wire();
 #endif
+	init_rgb_strip();
 }
 
 void run_post()
