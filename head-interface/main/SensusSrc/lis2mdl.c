@@ -8,7 +8,7 @@ static HAL_StatusTypeDef LIS2MDL_WriteRegister(I2C_HandleTypeDef *hi2c3, uint16_
 
 
 static HAL_StatusTypeDef LIS2MDL_ReadRegisters(I2C_HandleTypeDef *hi2c3, uint16_t address, uint8_t reg, uint8_t *data, uint16_t size) {
-	return HAL_I2C_Mem_Read(hi2c3, address, reg , I2C_MEMADD_SIZE_8BIT, data, size, 100);  // MSB = auto-increment
+	return HAL_I2C_Mem_Read(hi2c3, address, reg | 0x80, I2C_MEMADD_SIZE_8BIT, data, size, 100);  // MSB = auto-increment
 }
 
 
@@ -22,8 +22,8 @@ uint8_t LIS2MDL_WhoAmI(I2C_HandleTypeDef *hi2c3, uint16_t address) {
 
 
 HAL_StatusTypeDef LIS2MDL_Init(I2C_HandleTypeDef *hi2c3) {
-	/********* FRONT (U15/ADDR0) MAGNETOMETER REGISTER INIT *********/
-	//FRONT magnetometer (U15/ADDR0) Ping
+	/********* FRONT (U22/ADDR0) MAGNETOMETER REGISTER INIT *********/
+	//FRONT magnetometer (U22/ADDR0) Ping
 	if (LIS2MDL_WhoAmI(hi2c3, LIS2MDL_I2C_ADDR0) != LIS2MDL_WHO_AM_I_RESP) {
         return HAL_ERROR;
     }
@@ -37,8 +37,8 @@ HAL_StatusTypeDef LIS2MDL_Init(I2C_HandleTypeDef *hi2c3) {
 			return HAL_ERROR;
 
 
-    /********* BACK (U14/ADDR1) MAGNETOMETER REGISTER INIT *********/
-	//BACK magnetometer (U14/ADDR1) Ping
+    /********* BACK (U15/ADDR1) MAGNETOMETER REGISTER INIT *********/
+	//BACK magnetometer (U15/ADDR1) Ping
 	if (LIS2MDL_WhoAmI(hi2c3, LIS2MDL_I2C_ADDR1) != LIS2MDL_WHO_AM_I_RESP) {
         return HAL_ERROR;
     }
@@ -57,7 +57,7 @@ HAL_StatusTypeDef LIS2MDL_Init(I2C_HandleTypeDef *hi2c3) {
 
 
 HAL_StatusTypeDef LIS2MDL_ReadMagnetometers(I2C_HandleTypeDef *hi2c3, LIS2MDL_Data_t *data) {
-	/********* FRONT (U15/ADDR0) MAGNETOMETER READ *********/
+	/********* FRONT (U22/ADDR0) MAGNETOMETER READ *********/
 	uint8_t raw[6];
     if (LIS2MDL_ReadRegisters(hi2c3, LIS2MDL_I2C_ADDR0, LIS2MDL_OUTX_L_REG, raw, 6) != HAL_OK) {
         return HAL_ERROR;
@@ -67,7 +67,7 @@ HAL_StatusTypeDef LIS2MDL_ReadMagnetometers(I2C_HandleTypeDef *hi2c3, LIS2MDL_Da
     data->y0 = (int16_t)(raw[3] << 8 | raw[2]);
     data->z0 = (int16_t)(raw[5] << 8 | raw[4]);
 
-    /********* BACK (U14/ADDR1) MAGNETOMETER READ *********/
+    /********* BACK (U15/ADDR1) MAGNETOMETER READ *********/
     uint8_t raw2[6];
     if (LIS2MDL_ReadRegisters(hi2c3, LIS2MDL_I2C_ADDR1, LIS2MDL_OUTX_L_REG, raw2, 6) != HAL_OK) {
     	return HAL_ERROR;
