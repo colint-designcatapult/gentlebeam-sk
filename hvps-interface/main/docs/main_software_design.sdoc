@@ -70,6 +70,7 @@ control application firmware. The HVPS interface application firmware contains r
 filament current, as well as the high voltage. It contains a PID loop for regulating the emission output to a
 given setpoint.
 The HVPS interface application firmware runs on the MCU of the HVPS interface board.
+Application setup and cyclic processing run in a single FreeRTOS task.
 <<<
 
 [[/SECTION]]
