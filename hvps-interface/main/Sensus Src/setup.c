@@ -115,15 +115,3 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		ftdi_rx_cb();
 	}
 }
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	if(htim->Instance == TIM7)
-	{
-		HAL_GPIO_TogglePin(GPIOE, IO_GRID_CLK_Pin);
-	}
-	else if(htim->Instance == TIM6)
-	{
-		runtime_ms++;
-	}
-}
