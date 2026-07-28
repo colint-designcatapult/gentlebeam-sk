@@ -443,6 +443,36 @@ static float get_cabinet_temp(float voltage)
 	return (float)num_temp_points;
 }
 
+#define HEAT_SINK_GE_2102
+
+#if defined(HEAT_SINK_GE_2102)
+#define NTC_VSUPPLY     			5.0f
+#define NTC_R_FIXED     			10000.0f     // 10 kΩ pull-up
+#define NTC_R0          			10000.0f     // 10 kΩ @ 25°C
+#define NTC_BETA        			3977.0f
+#define NTC_REF_TEMP_KELVIN         298.15f      // 25°C
+#define KELVIN_OFFSET   			273.15f
+
+static float get_heatsink_temp(float voltage)
+{
+	if(isnan(voltage))
+	{
+#if defined(CALIBRATION_MODE)
+		return (DEFAULT_HS_TEMP_ERR+1);
+#else
+		return (HEATSINK_ERR_TH+1);
+#endif
+	}
+
+	// Calculate NTC temperature in °C from divider voltage using the Beta model.
+    return
+        1.0f /
+        ((1.0f / NTC_REF_TEMP_KELVIN) +
+         (1.0f / NTC_BETA) *
+         logf(voltage / (NTC_VSUPPLY - voltage)))
+        - KELVIN_OFFSET;
+}
+#else
 static float get_heatsink_temp(float voltage)
 {
 	if(isnan(voltage))
@@ -481,6 +511,7 @@ static float get_heatsink_temp(float voltage)
 	//Return max temperature if voltage is out of bounds
 	return (float)num_temp_points;
 }
+#endif
 
 #if !defined(CALIBRATION_MODE)
 //Save reported values from the head board
