@@ -28,6 +28,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
+option(CALIBRATION_MODE "Enable calibration mode" OFF)
+
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
 
@@ -59,7 +61,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined symbols
+    $<$<BOOL:${CALIBRATION_MODE}>:CALIBRATION_MODE=1>
 )
 
 # Remove wrong libob.a library dependency when using cpp files

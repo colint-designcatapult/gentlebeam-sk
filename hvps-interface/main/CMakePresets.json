@@ -31,7 +31,7 @@
                 "Debug"
             ],
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "CalibrationDebug"
+                "CALIBRATION_MODE": "ON"
             }
         }
     ],
@@ -43,6 +43,10 @@
         {
             "name": "Release",
             "configurePreset": "Release"
+        },
+        {
+            "name": "CalibrationDebug",
+            "configurePreset": "CalibrationDebug"
         }
     ]
 }
