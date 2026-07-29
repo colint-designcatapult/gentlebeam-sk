@@ -44,6 +44,7 @@ static float get_max11647_voltage(uint16_t *adc_data);
 
 static void adc_tx();
 static void adc_rx();
+static bool recover_ext_adc_i2c_bus(void);
 static void save_adc_rx(uint8_t val);
 static uint16_t * get_adc_buffer();
 static void adc_transmission_complete();
@@ -80,7 +81,9 @@ void init_ext_adcs()
 	
 	if(adc_setup_retries >= MAX_ADC_SETUP_RETRIES)
 	{
-		report_typed_fault3(FAULT_ADC_BUS, "ADC setup failed at address %u after %u retries (transfer size: %u bytes).", MAKE_ARG(ION_R_ADC_ADDR), MAKE_ARG(MAX_ADC_SETUP_RETRIES), MAKE_ARG(1));
+		if (recover_ext_adc_i2c_bus() == false) {
+			report_typed_fault3(FAULT_ADC_BUS, "ADC setup failed at address %u after %u retries (transfer size: %u bytes).", MAKE_ARG(ION_R_ADC_ADDR), MAKE_ARG(MAX_ADC_SETUP_RETRIES), MAKE_ARG(1));
+		}
 	}
 	
 	//Clear interrupt statuses before enabling them for async functionality
@@ -102,7 +105,7 @@ void init_ext_adcs()
 	VTIMER_ext_adc_check.interval = ADC_COMM_TIMEOUT_MS;
 	VTIMER_ext_adc_check.cb = ext_adc_comm_timeout_check;
 	VTIMER_ext_adc_check.mode = TIMER_TASK_REPEAT;
-	//timer_add_task(&VTIMER, &VTIMER_ext_adc_check);
+	// timer_add_task(&VTIMER, &VTIMER_ext_adc_check);
 	
 	//Start up ADC readings
 	adc_ch = 100;	//arbitrarily large adc ch to force device change
@@ -114,11 +117,6 @@ void init_ext_adcs()
 //Callback function, keep short
 static void ext_adc_comm_timeout_check(const struct timer_task *const timer_task)
 {
-	//Check to see if adc bus is stuck (i.e. slave hold)
-	if(adc_bus_stuck)
-	{
-		//add fault report if needed
-	}
 	adc_bus_stuck = true;
 }
 
@@ -221,6 +219,7 @@ static void adc_tx()
 	if(adc_tx_idx < ADC_TX_SIZE)
 	{
 		hri_twihs_write_THR_reg(ADC_I2C.device.hw, adc_tx_buf[adc_tx_idx]);
+
 		adc_tx_idx++;
 	}
 	//Otherwise begin end of transmission
@@ -492,4 +491,99 @@ void TWIHS2_Handler()
 	{
 		adc_rx();
 	}
+}
+
+#define I2C_RECOVERY_PULSES    9
+
+#define TWI2_SDA_PIN          PIO_PD27
+#define TWI2_SCL_PIN          PIO_PD28
+#define TWI2_PIO              PIOD
+
+static bool recover_ext_adc_i2c_bus(void)
+{
+    bool recovered = false;
+
+    /* Disable TWIHS2 interrupt */
+    NVIC_DisableIRQ(TWIHS2_IRQn);
+
+    /* Disable TWIHS2 master */
+    hri_twihs_write_CR_reg(TWIHS2, TWIHS_CR_MSDIS);
+
+    /* Give PD27/PD28 back to the PIO controller */
+    TWI2_PIO->PIO_PER = TWI2_SDA_PIN | TWI2_SCL_PIN;
+
+    /* Enable outputs and drive both high */
+    TWI2_PIO->PIO_OER = TWI2_SDA_PIN | TWI2_SCL_PIN;
+    TWI2_PIO->PIO_SODR = TWI2_SDA_PIN | TWI2_SCL_PIN;
+
+    delay_us(10);
+
+    /* Release SDA so we can monitor it */
+    TWI2_PIO->PIO_ODR = TWI2_SDA_PIN;
+
+    /*
+     * If SDA is being held low by a slave,
+     * toggle SCL up to 9 times.
+     */
+    if (!(TWI2_PIO->PIO_PDSR & TWI2_SDA_PIN))
+    {
+        for (uint32_t i = 0; i < I2C_RECOVERY_PULSES; i++)
+        {
+            TWI2_PIO->PIO_CODR = TWI2_SCL_PIN;
+            delay_us(5);
+
+            TWI2_PIO->PIO_SODR = TWI2_SCL_PIN;
+            delay_us(5);
+
+            if (TWI2_PIO->PIO_PDSR & TWI2_SDA_PIN)
+            {
+                break;
+            }
+        }
+    }
+
+    /*
+     * Generate a STOP:
+     * SDA low -> SCL high -> SDA high
+     */
+    TWI2_PIO->PIO_OER = TWI2_SDA_PIN;
+
+    TWI2_PIO->PIO_CODR = TWI2_SDA_PIN;
+    delay_us(5);
+
+    TWI2_PIO->PIO_SODR = TWI2_SCL_PIN;
+    delay_us(5);
+
+    TWI2_PIO->PIO_SODR = TWI2_SDA_PIN;
+    delay_us(5);
+
+    /* Release both lines */
+    TWI2_PIO->PIO_ODR = TWI2_SDA_PIN | TWI2_SCL_PIN;
+
+    delay_us(5);
+
+    /* Verify idle bus */
+    recovered =
+        ((TWI2_PIO->PIO_PDSR & TWI2_SDA_PIN) != 0U) &&
+        ((TWI2_PIO->PIO_PDSR & TWI2_SCL_PIN) != 0U);
+
+    /*
+     * Restore peripheral control.
+     *
+     * Check your SAME70 pinmux: TWD2/TWCK2 are typically
+     * Peripheral C on PD27/PD28.
+     */
+    TWI2_PIO->PIO_PDR = TWI2_SDA_PIN | TWI2_SCL_PIN;
+
+    /* Reinitialize TWIHS2 */
+    i2c_m_sync_disable(&ADC_I2C);
+    i2c_m_sync_enable(&ADC_I2C);
+
+    /* Clear stale status */
+    volatile uint32_t sr = hri_twihs_read_SR_reg(TWIHS2);
+    (void)sr;
+
+    NVIC_EnableIRQ(TWIHS2_IRQn);
+
+    return recovered;
 }
