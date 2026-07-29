@@ -36,6 +36,8 @@
 #include <utils.h>
 #include <utils_assert.h>
 
+#define I2C_TIMEOUT_MS    20
+
 /**
  * \internal Set baudrate for TWIHS
  *
@@ -204,77 +206,118 @@ int32_t _i2c_m_sync_transfer(struct _i2c_m_sync_device *const dev, struct _i2c_m
 
 static inline int32_t _i2c_m_sync_write(struct _i2c_m_sync_device *const dev, struct _i2c_m_msg *msg)
 {
-	uint32_t i;
-	uint32_t sr;
-	int      ret = ERR_NONE;
+    uint32_t i;
+    uint32_t sr;
+    uint32_t start_tick;
 
-	msg->flags |= I2C_M_BUSY;
+    msg->flags |= I2C_M_BUSY;
 
-	if (msg->addr & I2C_M_TEN) {
-		hri_twihs_write_MMR_reg(dev->hw, TWIHS_MMR_DADR(0x78 | (msg->addr >> 8)) | TWIHS_MMR_IADRSZ(1));
-		hri_twihs_write_IADR_reg(dev->hw, msg->addr & 0xff);
-	} else {
-		hri_twihs_write_MMR_reg(dev->hw, TWIHS_MMR_DADR(msg->addr));
-	}
+    if (msg->addr & I2C_M_TEN) {
+        hri_twihs_write_MMR_reg(dev->hw, TWIHS_MMR_DADR(0x78 | (msg->addr >> 8)) | TWIHS_MMR_IADRSZ(1));
+        hri_twihs_write_IADR_reg(dev->hw, msg->addr & 0xff);
+    } else {
+        hri_twihs_write_MMR_reg(dev->hw, TWIHS_MMR_DADR(msg->addr));
+    }
 
-	for (i = 0; i < msg->len; i++) {
-		/* Wait for data is transferred from TWIHS_THR or if NACK is detected */
-		do {
-			sr = hri_twihs_read_SR_reg(dev->hw);
-			if (sr & TWIHS_SR_NACK) {
-				ret = I2C_NACK;
-				break;
-			}
-		} while (!(sr & TWIHS_SR_TXRDY));
+    for (i = 0; i < msg->len; i++) {
 
-		hri_twihs_write_THR_reg(dev->hw, msg->buffer[i]);
-	}
+        start_tick = sys_now();
 
-	if (msg->flags & I2C_M_STOP) {
-		hri_twihs_write_CR_reg(dev->hw, TWIHS_CR_STOP);
-		while (!hri_twihs_get_SR_TXCOMP_bit(dev->hw)) {
-		};
-	}
+        /* Wait for data is transferred from TWIHS_THR or if NACK is detected */
+        do {
+            sr = hri_twihs_read_SR_reg(dev->hw);
 
-	dev->service.msg.flags &= ~I2C_M_BUSY;
+            if (sr & TWIHS_SR_NACK) {
+                return I2C_NACK;
+            }
 
-	return ret;
+            if ((sys_now() - start_tick) >= I2C_TIMEOUT_MS) {
+                return ERR_TIMEOUT;
+            }
+
+        } while (!(sr & TWIHS_SR_TXRDY));
+
+        hri_twihs_write_THR_reg(dev->hw, msg->buffer[i]);
+    }
+
+    if (msg->flags & I2C_M_STOP) {
+
+        hri_twihs_write_CR_reg(dev->hw, TWIHS_CR_STOP);
+
+        start_tick = sys_now();
+
+        while (!hri_twihs_get_SR_TXCOMP_bit(dev->hw)) {
+
+            if ((sys_now() - start_tick) >= I2C_TIMEOUT_MS) {
+                return ERR_TIMEOUT;
+            }
+        }
+    }
+
+    dev->service.msg.flags &= ~I2C_M_BUSY;
+
+    return ERR_NONE;
 }
 
 static inline int32_t _i2c_m_sync_read(struct _i2c_m_sync_device *const dev, struct _i2c_m_msg *msg)
 {
-	uint32_t i;
+    uint32_t i;
+    uint32_t start_tick;
 
-	msg->flags |= I2C_M_BUSY;
+    msg->flags |= I2C_M_BUSY;
 
-	if (msg->addr & I2C_M_TEN) {
-		hri_twihs_write_MMR_reg(dev->hw,
-		                        TWIHS_MMR_DADR(0x78 | (msg->addr >> 8)) | TWIHS_MMR_IADRSZ(1) | TWIHS_MMR_MREAD);
-		hri_twihs_write_IADR_reg(dev->hw, msg->addr & 0xff);
-	} else {
-		hri_twihs_write_MMR_reg(dev->hw, TWIHS_MMR_DADR(msg->addr) | TWIHS_MMR_MREAD);
-	}
-	/* In single data byte master read, the START and STOP must both be set */
-	hri_twihs_write_CR_reg(dev->hw, TWIHS_CR_START | ((msg->len == 1) ? TWIHS_CR_STOP : 0));
+    if (msg->addr & I2C_M_TEN) {
+        hri_twihs_write_MMR_reg(dev->hw,
+                                TWIHS_MMR_DADR(0x78 | (msg->addr >> 8))
+                                | TWIHS_MMR_IADRSZ(1)
+                                | TWIHS_MMR_MREAD);
+        hri_twihs_write_IADR_reg(dev->hw, msg->addr & 0xff);
+    } else {
+        hri_twihs_write_MMR_reg(dev->hw,
+                                TWIHS_MMR_DADR(msg->addr)
+                                | TWIHS_MMR_MREAD);
+    }
 
-	for (i = 0; i < msg->len; i++) {
-		/* Wait for a byte has been received in TWIHS_RHR since last read */
-		while (!hri_twihs_get_SR_RXRDY_bit(dev->hw)) {
-		};
+    /* In single data byte master read, the START and STOP must both be set */
+    hri_twihs_write_CR_reg(dev->hw,
+                           TWIHS_CR_START
+                           | ((msg->len == 1) ? TWIHS_CR_STOP : 0));
 
-		msg->buffer[i] = hri_twihs_read_RHR_reg(dev->hw);
-		/* In multiple data bytes master read, the STOP must be set after the
-		 * last data received but one */
-		if (i == (msg->len - 2)) {
-			hri_twihs_write_CR_reg(dev->hw, TWIHS_CR_STOP);
-		}
-	}
+    for (i = 0; i < msg->len; i++) {
 
-	while (!hri_twihs_get_SR_TXCOMP_bit(dev->hw)) {
-	};
-	dev->service.msg.flags &= ~I2C_M_BUSY;
+        start_tick = sys_now();
 
-	return ERR_NONE;
+        /* Wait for a byte has been received in TWIHS_RHR since last read */
+        while (!hri_twihs_get_SR_RXRDY_bit(dev->hw)) {
+
+            if ((sys_now() - start_tick) >= I2C_TIMEOUT_MS) {
+                dev->service.msg.flags &= ~I2C_M_BUSY;
+                return ERR_TIMEOUT;
+            }
+        }
+
+        msg->buffer[i] = hri_twihs_read_RHR_reg(dev->hw);
+
+        /* In multiple data bytes master read, the STOP must be set after the
+         * last data received but one */
+        if (i == (msg->len - 2)) {
+            hri_twihs_write_CR_reg(dev->hw, TWIHS_CR_STOP);
+        }
+    }
+
+    start_tick = sys_now();
+
+    while (!hri_twihs_get_SR_TXCOMP_bit(dev->hw)) {
+
+        if ((sys_now() - start_tick) >= I2C_TIMEOUT_MS) {
+            dev->service.msg.flags &= ~I2C_M_BUSY;
+            return ERR_TIMEOUT;
+        }
+    }
+
+    dev->service.msg.flags &= ~I2C_M_BUSY;
+
+    return ERR_NONE;
 }
 
 static int32_t _twihs_set_baudrate(void *const hw, uint32_t clk, uint32_t baudrate)
