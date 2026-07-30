@@ -1,0 +1,87 @@
+<UserControl x:Class="Heracles.Ucsi.Views.GraphPaneView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:scottPlot="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
+             MinHeight="280">
+    <Border Style="{DynamicResource UcsiPanelBorderStyle}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid Margin="10,8,10,6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{DynamicResource UcsiGraphTitleStyle}"/>
+                <ToggleButton x:Name="SeriesButton" Grid.Column="1" Margin="8,0,0,0"
+                              Content="{Binding SelectionSummary}" Style="{DynamicResource UcsiCompactToggleButtonStyle}"/>
+                <Button Grid.Column="2" Margin="8,0,0,0" Content="Remove"
+                        Style="{DynamicResource UcsiCompactButtonStyle}"
+                        Command="{Binding RemoveCommand}"/>
+                <Popup PlacementTarget="{Binding ElementName=SeriesButton}"
+                       Placement="Bottom" StaysOpen="False"
+                       IsOpen="{Binding IsChecked, ElementName=SeriesButton}">
+                    <Border Style="{DynamicResource UcsiPopupBorderStyle}" Width="330" MaxHeight="430">
+                        <DockPanel>
+                            <TextBox DockPanel.Dock="Top" Margin="8" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Search parameters"/>
+                            <ListBox ItemsSource="{Binding ParameterView}" BorderThickness="0" Background="Transparent">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsSelected}" Margin="6,3">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding DisplayName}"/>
+                                                <TextBlock Text="{Binding Group}" FontSize="10" Opacity="0.65"/>
+                                            </StackPanel>
+                                        </CheckBox>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </DockPanel>
+                    </Border>
+                </Popup>
+
+                <Grid Grid.Row="1" Grid.ColumnSpan="3" Margin="0,7,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource UcsiMutedTextBrush}"
+                               Text="Pan: drag  ·  Zoom: wheel  ·  X only: Ctrl+wheel  ·  Y only: Shift+wheel  ·  Box zoom: middle-drag"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <ToggleButton x:Name="FollowButton" Content="Following 30 s" IsChecked="True"
+                                      Click="OnFollowClick" AutomationProperties.Name="Follow latest telemetry"
+                                      ToolTip="Keep the latest 30 seconds visible. Panning or zooming pauses following."
+                                      Style="{DynamicResource UcsiCompactToggleButtonStyle}"/>
+                        <Button Content="Fit All" Margin="6,0,0,0" Click="OnFitAllClick"
+                                AutomationProperties.Name="Fit all graph data"
+                                ToolTip="Show all recorded data on every axis"
+                                Style="{DynamicResource UcsiCompactButtonStyle}"/>
+                        <Button Content="Fit Y" Margin="4,0,0,0" Click="OnFitYClick"
+                                AutomationProperties.Name="Fit graph vertically"
+                                ToolTip="Fit vertical axes without changing the visible time range"
+                                Style="{DynamicResource UcsiCompactButtonStyle}"/>
+                        <Button Content="+" Margin="4,0,0,0" Click="OnZoomInClick"
+                                AutomationProperties.Name="Zoom graph in"
+                                ToolTip="Zoom in"
+                                Style="{DynamicResource UcsiGraphNavigationButtonStyle}"/>
+                        <Button Content="−" Margin="4,0,0,0" Click="OnZoomOutClick"
+                                AutomationProperties.Name="Zoom graph out"
+                                ToolTip="Zoom out"
+                                Style="{DynamicResource UcsiGraphNavigationButtonStyle}"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+            <scottPlot:WpfPlot x:Name="PlotControl" Grid.Row="1"/>
+        </Grid>
+    </Border>
+</UserControl>

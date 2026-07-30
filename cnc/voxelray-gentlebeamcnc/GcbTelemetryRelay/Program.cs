@@ -5,7 +5,7 @@ namespace GcbTelemetryRelay;
 internal static class Program
 {
     private const int DefaultFirmwarePort = 40020;
-    private static readonly int[] DefaultApplicationPorts = [40021, 40022];
+    private static readonly int[] DefaultApplicationPorts = [40021, 40022, 40023];
 
     private static async Task<int> Main(string[] args)
     {

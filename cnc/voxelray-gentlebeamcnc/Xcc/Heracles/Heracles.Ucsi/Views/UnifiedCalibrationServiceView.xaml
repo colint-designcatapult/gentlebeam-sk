@@ -1,0 +1,254 @@
+<UserControl x:Class="Heracles.Ucsi.Views.UnifiedCalibrationServiceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:prism="http://prismlibrary.com/"
+             xmlns:views="clr-namespace:Heracles.Ucsi.Views"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             Background="{DynamicResource UcsiBackgroundBrush}"
+             Foreground="{DynamicResource UcsiTextBrush}"
+             MinWidth="900" MinHeight="620">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Heracles.Ucsi;component/Resources/UcsiStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource UcsiBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource UcsiPanelBrush}" BorderBrush="{StaticResource UcsiBorderBrush}" BorderThickness="0,0,0,1">
+            <Grid Margin="14,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Unified Calibration &amp; Service Interface" FontSize="20" FontWeight="SemiBold"/>
+                    <Border Margin="14,0,0,0" Padding="9,3" CornerRadius="2" Background="{StaticResource UcsiPanelAlternateBrush}">
+                        <TextBlock Text="{Binding ModeText}" Foreground="{StaticResource UcsiAccentBrush}" FontWeight="Bold"/>
+                    </Border>
+                    <TextBlock Text="{Binding TransportText}" Margin="10,0,0,0" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding ErrorText}" Foreground="{StaticResource UcsiFaultBrush}"
+                           MaxWidth="650" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="8,4,8,2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="560"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="360" MinWidth="280"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="0.9*" MinHeight="260"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="1.1*" MinHeight="280"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.82*" MinWidth="250"/>
+                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="1.08*" MinWidth="280"/>
+                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="1.1*" MinWidth="300"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource UcsiPanelBorderStyle}">
+                        <Grid Margin="10">
+                            <Viewbox Stretch="Uniform">
+                                <Border Width="300" Height="300" Background="#0A1014" BorderBrush="{StaticResource UcsiBorderBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <Line X1="0" Y1="0" X2="300" Y2="300" Stroke="#283B45" StrokeThickness="1"/>
+                                        <Line X1="300" Y1="0" X2="0" Y2="300" Stroke="#283B45" StrokeThickness="1"/>
+                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                                                   Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="17">
+                                            <Run Text="Teledyne DALSA"/><LineBreak/>
+                                            <Run Text="X-Ray Display"/><LineBreak/>
+                                            <Run Text="Placeholder"/>
+                                        </TextBlock>
+                                    </Grid>
+                                </Border>
+                            </Viewbox>
+                        </Grid>
+                    </Border>
+
+                    <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{StaticResource UcsiBorderBrush}"/>
+
+                    <Border Grid.Column="2" Style="{StaticResource UcsiPanelBorderStyle}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Text="System Status" Style="{StaticResource UcsiSectionTitleStyle}"/>
+                                <Grid Margin="10,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Connection" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Column="1" Text="{Binding ConnectionText}"/>
+                                    <TextBlock Grid.Row="1" Text="Control state" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SystemStateText}"/>
+                                    <TextBlock Grid.Row="2" Text="Runtime" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding RuntimeText}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                    <TextBlock Grid.Row="3" Text="Capture rate" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SampleRateText}"/>
+                                    <TextBlock Grid.Row="4" Text="GCB firmware" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="4" Grid.Column="1" Text="v3.0.0 abc123"/>
+                                    <TextBlock Grid.Row="5" Text="HVPS firmware" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="5" Grid.Column="1" Text="v3.0.0 def456"/>
+                                </Grid>
+                                <Separator Margin="10" Background="{StaticResource UcsiBorderBrush}"/>
+                                <TextBlock Text="HVPS &amp; Beam" Style="{StaticResource UcsiSectionTitleStyle}"/>
+                                <UniformGrid Columns="2" Margin="10,0,10,8">
+                                    <TextBlock Text="kV feedback" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding CurrentSample.Telemetry.KvFeedback, StringFormat={}{0:F2} kV}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                    <TextBlock Text="Emission" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding CurrentSample.Telemetry.EmissionCurrent, StringFormat={}{0:F3} mA}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                    <TextBlock Text="Heater feedback" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding CurrentSample.Telemetry.HeaterCurrentFeedback, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                    <TextBlock Text="Grid voltage" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding CurrentSample.Telemetry.GridVoltage, StringFormat={}{0:F1} V}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                </UniformGrid>
+                                <TextBlock Text="Coils" Style="{StaticResource UcsiSectionTitleStyle}"/>
+                                <UniformGrid Columns="2" Margin="10,0,10,8">
+                                    <TextBlock Text="X coil" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Text="{Binding CurrentSample.Telemetry.XCoilCurrent, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                    <TextBlock Text="Y coil" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Text="{Binding CurrentSample.Telemetry.YCoilCurrent, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                    <TextBlock Text="Focus coil" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Text="{Binding CurrentSample.Telemetry.FocusCurrent, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                </UniformGrid>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch" Background="{StaticResource UcsiBorderBrush}"/>
+
+                    <Border Grid.Column="4" Style="{StaticResource UcsiPanelBorderStyle}">
+                        <TabControl Style="{StaticResource UcsiTabControlStyle}" ItemContainerStyle="{StaticResource UcsiTabItemStyle}" Margin="6">
+                            <TabItem Header="Interlocks">
+                                <ListBox ItemsSource="{Binding Interlocks}" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiTextBrush}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="5,3">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                <Ellipse Width="9" Height="9" Margin="0,0,8,0" Fill="{StaticResource UcsiFaultBrush}">
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse"><Setter Property="Fill" Value="{StaticResource UcsiFaultBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsActive}" Value="True"><Setter Property="Fill" Value="{StaticResource UcsiGoodBrush}"/></DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsAvailable}" Value="False"><Setter Property="Fill" Value="{StaticResource UcsiMutedTextBrush}"/></DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Value}" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </TabItem>
+                            <TabItem Header="HVPS Status">
+                                <ListBox ItemsSource="{Binding HvpsStates}" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiTextBrush}">
+                                    <ListBox.ItemTemplate><DataTemplate><Grid Margin="5,4"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Name}"/><TextBlock Grid.Column="1" Text="{Binding Value}" Foreground="{StaticResource UcsiAccentBrush}"/></Grid></DataTemplate></ListBox.ItemTemplate>
+                                </ListBox>
+                            </TabItem>
+                            <TabItem Header="Faults">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Bottom" Margin="6" Content="Clear Faults" Command="{Binding ClearFaultsCommand}"
+                                            IsEnabled="{Binding CanClearFaults}" ToolTip="{Binding ClearFaultsToolTip}" Style="{StaticResource UcsiButtonStyle}"/>
+                                    <ListBox ItemsSource="{Binding ActiveFaults}" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiTextBrush}"/>
+                                </DockPanel>
+                            </TabItem>
+                        </TabControl>
+                    </Border>
+                </Grid>
+
+                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{StaticResource UcsiBorderBrush}"/>
+
+                <Border Grid.Row="2" Style="{StaticResource UcsiPanelBorderStyle}">
+                    <TabControl Style="{StaticResource UcsiTabControlStyle}" ItemContainerStyle="{StaticResource UcsiTabItemStyle}" Margin="6">
+                        <TabItem Header="Graphs">
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                                <Button Content="Add Graph" Command="{Binding AddGraphCommand}" Style="{StaticResource UcsiCompactButtonStyle}" HorizontalAlignment="Left" Margin="4,6"/>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsControl ItemsSource="{Binding Graphs}">
+                                        <ItemsControl.ItemTemplate><DataTemplate><views:GraphPaneView/></DataTemplate></ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="Logs">
+                            <DataGrid ItemsSource="{Binding Logs}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                                      Background="{StaticResource UcsiBackgroundBrush}" Foreground="{StaticResource UcsiTextBrush}" BorderThickness="0">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Time" Binding="{Binding Timestamp, StringFormat={}{0:HH:mm:ss.fff}}" Width="130"/>
+                                    <DataGridTextColumn Header="Severity" Binding="{Binding Severity}" Width="100"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding Type}" Width="120"/>
+                                    <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                    </TabControl>
+                </Border>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{StaticResource UcsiBorderBrush}"/>
+
+            <Border Grid.Column="2" Style="{StaticResource UcsiPanelBorderStyle}">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid Margin="10,8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Monitored Parameters" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0" VerticalAlignment="Center"/>
+                        <ToggleButton x:Name="ParameterButton" Grid.Column="1" Content="Configure" Style="{StaticResource UcsiCompactToggleButtonStyle}"/>
+                        <Popup PlacementTarget="{Binding ElementName=ParameterButton}" Placement="Bottom" StaysOpen="False"
+                               IsOpen="{Binding IsChecked, ElementName=ParameterButton}">
+                            <Border Width="350" MaxHeight="520" Style="{StaticResource UcsiPopupBorderStyle}">
+                                <Grid>
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                    <TextBox Margin="8" Text="{Binding ParameterFilterText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Search all telemetry parameters"/>
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding ParameterView}" Background="Transparent" BorderThickness="0">
+                                        <ListBox.ItemTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected}" Margin="7,3"><StackPanel><TextBlock Text="{Binding DisplayName}"/><TextBlock Text="{Binding Group}" FontSize="10" Opacity="0.65"/></StackPanel></CheckBox></DataTemplate></ListBox.ItemTemplate>
+                                    </ListBox>
+                                    <Button Grid.Row="2" Content="Apply" Margin="8" Command="{Binding ApplyMonitoredSelectionCommand}" Style="{StaticResource UcsiCompactButtonStyle}"/>
+                                </Grid>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ListView Grid.Row="1" ItemsSource="{Binding MonitoredParameters}" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiTextBrush}">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Parameter" Width="190" DisplayMemberBinding="{Binding DisplayName}"/>
+                                <GridViewColumn Header="Value" Width="105" DisplayMemberBinding="{Binding Value}"/>
+                                <GridViewColumn Header="Unit" Width="50" DisplayMemberBinding="{Binding Unit}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2" Background="{StaticResource UcsiPanelBrush}" BorderBrush="{StaticResource UcsiBorderBrush}" BorderThickness="0,1,0,0">
+            <Grid Margin="12,9">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button Content="{Binding RecordButtonText}" Command="{Binding RecordCommand}" Style="{StaticResource UcsiButtonStyle}"/>
+                <Button Grid.Column="1" Content="Load" Command="{Binding LoadCommand}" Style="{StaticResource UcsiButtonStyle}" Margin="8,0,0,0"/>
+                <Button Grid.Column="2" Content="{Binding PlayPauseButtonText}" Command="{Binding PlayPauseCommand}" Style="{StaticResource UcsiButtonStyle}" Margin="8,0,0,0"/>
+                <Button Grid.Column="3" Content="Return to Live" Command="{Binding ReturnToLiveCommand}" Style="{StaticResource UcsiButtonStyle}" Margin="8,0,12,0"/>
+                <StackPanel Grid.Column="4" Margin="6,0,12,0">
+                    <Slider Minimum="0" Maximum="{Binding TimelineMaximumSeconds}" Value="{Binding TimelineSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            IsEnabled="{Binding IsReplay}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding RecordingCountText}" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11"/>
+                </StackPanel>
+                <TextBlock Grid.Column="5" Text="{Binding TimelineText}" Style="{StaticResource UcsiValueTextStyle}" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

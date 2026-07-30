@@ -25,6 +25,8 @@ using Heracles.Indoor.Models;
 using Heracles.Indoor.Models.UseCases;
 using Heracles.Indoor.Modules;
 using Heracles.Indoor.Views;
+using UcsiRegistration = Heracles.Ucsi.UcsiRegistration;
+using Heracles.Ucsi.Services;
 using Microsoft.Extensions.Configuration;
 using Prism.Ioc;
 using Prism.Modularity;
@@ -41,6 +43,7 @@ using Xcc.Application.Common;
 using Xcc.Application.Domain.GryphonBoard.Model;
 using Xcc.Application.Models;
 using Xcc.Core.Domain.DataManagement.Common.Users.DataAccess;
+using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Infra.DataManagement.Common.DataAccess;
 using Xcc.Core.Logging;
 using Xcc.Core.Models;
@@ -72,6 +75,8 @@ namespace Heracles.Indoor
         protected override Window CreateShell()
         {
             Unosquare.FFME.Library.FFmpegDirectory = @"C:\ffmpeg\";
+
+            Container.Resolve<ITelemetrySessionCoordinator>().Start();
 
             return Container.Resolve<MainWindow>();
         }
@@ -137,6 +142,11 @@ namespace Heracles.Indoor
             containerRegistry.RegisterManySingleton<MainBoardState>();
             containerRegistry.RegisterSingleton<IGCBDataStore, GCBDataStore>();
             containerRegistry.RegisterSingleton<CollimatorWatchdog>();
+            var decodedTelemetryFrameHub = new DecodedTelemetryFrameHub();
+            containerRegistry.RegisterInstance(decodedTelemetryFrameHub);
+            containerRegistry.RegisterInstance<IDecodedTelemetryFrameSink>(decodedTelemetryFrameHub);
+            containerRegistry.RegisterInstance<IDecodedTelemetryFrameSource>(decodedTelemetryFrameHub);
+            UcsiRegistration.RegisterTypes(containerRegistry);
             containerRegistry.RegisterManySingleton<NetworkConnectionSupervisor>();
 
             // Services
@@ -355,8 +365,8 @@ namespace Heracles.Indoor
         }
         protected override void OnExit(ExitEventArgs e)
         {
+            Container.Resolve<ITelemetrySessionCoordinator>().DisposeAsync().AsTask().GetAwaiter().GetResult();
             base.OnExit(e);
-
             // Stop the embedded SQLite gRPC server if it was started
             if (Container.IsRegistered<SqliteGrpcServerHost>())
                 Container.Resolve<SqliteGrpcServerHost>().StopAsync().GetAwaiter().GetResult();

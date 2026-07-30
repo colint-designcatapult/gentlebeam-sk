@@ -18,6 +18,7 @@
     xmlns:coreEnums="clr-namespace:Xcc.Core.Enums;assembly=Xcc.Core"
     xmlns:heraclesControls="clr-namespace:Heracles.Application.UI.UserControls;assembly=Heracles.Application"
 
+    xmlns:ucsiViews="clr-namespace:Heracles.Ucsi.Views;assembly=Heracles.Ucsi"
     mc:Ignorable="d" 
     d:DesignWidth="1920" d:DesignHeight="1080"
     xmlns:viewModels="clr-namespace:Heracles.External.ViewModels"
@@ -171,22 +172,7 @@
                     </StackPanel>
                 </TabItem.Header>
 
-                <Border Style="{StaticResource BorderOutlineStyle}">
-                    <Grid>
-                        <views:DetailedTelemetryView IsTabStop="False"/>
-
-                        <Button
-                            Width="{StaticResource ButtonWidth}"
-                            Height="{StaticResource ButtonHeight}"
-                            Margin="{StaticResource ViewMargin}"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Panel.ZIndex="1"
-                            Command="{Binding ClearFaultsCommand}">
-                            <TextBlock Text="Clear Faults" Style="{StaticResource TextBlockButtonStyle}"/>
-                        </Button>
-                    </Grid>
-                </Border>
+                <ucsiViews:UnifiedCalibrationServiceView/>
             </TabItem>            
             
             <!--Exit Tab (button)-->

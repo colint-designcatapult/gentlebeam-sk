@@ -26,6 +26,10 @@ using Heracles.Core.Models;
 using Heracles.External.Models;
 using Heracles.External.Models.CollimatorConfiguration;
 using Heracles.External.Views;
+using Heracles.External.Services;
+using UcsiRegistration = Heracles.Ucsi.UcsiRegistration;
+using Heracles.Ucsi.Services;
+using Heracles.Ucsi.ViewModels;
 using Herales.External;
 using Microsoft.Extensions.Configuration;
 using Prism.Ioc;
@@ -70,6 +74,8 @@ namespace Heracles.External
         protected override Window CreateShell()
         {
             Unosquare.FFME.Library.FFmpegDirectory = @"C:\ffmpeg\";
+
+            Container.Resolve<ITelemetrySessionCoordinator>().Start();
 
             return Container.Resolve<MainWindow>();
         }
@@ -118,6 +124,12 @@ namespace Heracles.External
             // Telemetry data (MonitorView)
             containerRegistry.RegisterSingleton<IGCBDataStore, Xcc.Application.Models.GCBDataStore>();
             containerRegistry.RegisterSingleton<CollimatorWatchdog>();
+            var decodedTelemetryFrameHub = new Xcc.Application.Models.DecodedTelemetryFrameHub();
+            containerRegistry.RegisterInstance(decodedTelemetryFrameHub);
+            containerRegistry.RegisterInstance<IDecodedTelemetryFrameSink>(decodedTelemetryFrameHub);
+            containerRegistry.RegisterInstance<IDecodedTelemetryFrameSource>(decodedTelemetryFrameHub);
+            UcsiRegistration.RegisterTypes(containerRegistry);
+            containerRegistry.RegisterSingleton<IUcsiHostCommands, ExternalUcsiHostCommands>();
             containerRegistry.RegisterManySingleton<NetworkConnectionSupervisor>();
 
             containerRegistry.RegisterSingleton<IUIStateMachine, UIStateMachine>();
@@ -320,8 +332,8 @@ namespace Heracles.External
 
         protected override void OnExit(ExitEventArgs e)
         {
+            Container.Resolve<ITelemetrySessionCoordinator>().DisposeAsync().AsTask().GetAwaiter().GetResult();
             base.OnExit(e);
-
             if (Container.Resolve<IGrpcChannelManager>() is { } emrGrpcSettings)
                 emrGrpcSettings.ShutdownChannel();
 

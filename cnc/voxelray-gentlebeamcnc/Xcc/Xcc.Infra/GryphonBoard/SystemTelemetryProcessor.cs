@@ -1,3 +1,4 @@
+using System;
 using Empyrean.Common.Infra.Networking.Udp;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
@@ -9,6 +10,7 @@ namespace Xcc.Infra.GryphonBoard;
 public interface ISystemTelemetryProcessor
 {
     bool Process(byte[] datagram);
+    bool Process(byte[] datagram, DateTimeOffset receivedAtUtc);
     void NotifyTelemetryExpired();
 }
 
@@ -20,6 +22,7 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
 
     private readonly ISystemTelemetryChanged _systemTelemetryChangedCallback;
     private readonly IGCBDataStore _gcbDataStore;
+    private readonly IDecodedTelemetryFrameSink _decodedTelemetryFrameSink;
     private readonly UdpPacket _packet = new();
     private FirmwareVersionSignature? _selectedVersion;
     private NormalTelemetryState? _normalState;
@@ -28,13 +31,17 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
 
     public SystemTelemetryProcessor(
         ISystemTelemetryChanged systemTelemetryChangedCallback,
-        IGCBDataStore gcbDataStore)
+        IGCBDataStore gcbDataStore,
+        IDecodedTelemetryFrameSink decodedTelemetryFrameSink)
     {
         _systemTelemetryChangedCallback = systemTelemetryChangedCallback;
         _gcbDataStore = gcbDataStore;
+        _decodedTelemetryFrameSink = decodedTelemetryFrameSink;
     }
 
-    public bool Process(byte[] datagram)
+    public bool Process(byte[] datagram) => Process(datagram, default);
+
+    public bool Process(byte[] datagram, DateTimeOffset receivedAtUtc)
     {
         if (!_packet.TryReset(datagram))
             return false;
@@ -62,7 +69,7 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
             }
 
             _normalState!.Update(_packet);
-            PublishIfDue(_normalState);
+            Publish(_normalState, datagram, receivedAtUtc);
             return true;
         }
 
@@ -72,7 +79,7 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
                 return false;
 
             _calibrationState!.Update(_packet);
-            PublishIfDue(_calibrationState);
+            Publish(_calibrationState, datagram, receivedAtUtc);
             return true;
         }
 
@@ -122,22 +129,61 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
         ClearSelection();
     }
 
-    private void PublishIfDue(NormalTelemetryState state)
+    private void Publish(NormalTelemetryState state, byte[] datagram, DateTimeOffset receivedAtUtc)
     {
-        if (!IsPublicationDue(state.Runtime))
+        (bool publishCurrentValue, bool publishDecodedFrame) = GetPublicationTargets(state.Runtime);
+        if (!publishCurrentValue && !publishDecodedFrame)
             return;
 
-        _systemTelemetryChangedCallback.OnSystemTelemetryChanged(state.Snapshot());
-        _lastPublishedRuntime = state.Runtime;
+        PublishSnapshot(
+            state.Runtime,
+            state.Snapshot(),
+            datagram,
+            receivedAtUtc,
+            publishCurrentValue,
+            publishDecodedFrame);
     }
 
-    private void PublishIfDue(CalibrationTelemetryState state)
+    private void Publish(CalibrationTelemetryState state, byte[] datagram, DateTimeOffset receivedAtUtc)
     {
-        if (!IsPublicationDue(state.Runtime))
+        (bool publishCurrentValue, bool publishDecodedFrame) = GetPublicationTargets(state.Runtime);
+        if (!publishCurrentValue && !publishDecodedFrame)
             return;
 
-        _systemTelemetryChangedCallback.OnSystemTelemetryChanged(state.Snapshot());
-        _lastPublishedRuntime = state.Runtime;
+        PublishSnapshot(
+            state.Runtime,
+            state.Snapshot(),
+            datagram,
+            receivedAtUtc,
+            publishCurrentValue,
+            publishDecodedFrame);
+    }
+
+    private (bool CurrentValue, bool DecodedFrame) GetPublicationTargets(uint runtime) =>
+        (IsPublicationDue(runtime), _decodedTelemetryFrameSink.IsEnabled);
+
+    private void PublishSnapshot(
+        uint runtime,
+        ISystemTelemetry snapshot,
+        byte[] datagram,
+        DateTimeOffset receivedAtUtc,
+        bool publishCurrentValue,
+        bool publishDecodedFrame)
+    {
+        if (publishDecodedFrame)
+        {
+            DateTimeOffset timestamp = receivedAtUtc == default
+                ? DateTimeOffset.UtcNow
+                : receivedAtUtc;
+            _decodedTelemetryFrameSink.Publish(
+                new DecodedTelemetryFrame(timestamp, snapshot, datagram));
+        }
+
+        if (publishCurrentValue)
+        {
+            _systemTelemetryChangedCallback.OnSystemTelemetryChanged(snapshot);
+            _lastPublishedRuntime = runtime;
+        }
     }
 
     private bool IsPublicationDue(uint runtime) =>

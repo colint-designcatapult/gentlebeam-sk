@@ -42,6 +42,7 @@
     <ProjectReference Include="..\..\..\Empyrean\Tests\Empyrean.Common.Test\Empyrean.Common.Test.csproj" />
     <ProjectReference Include="..\..\Xcc.Test\Xcc.Test.csproj" />
     <ProjectReference Include="..\Heracles.Application\Heracles.Application.csproj" />
+    <ProjectReference Include="..\Heracles.Ucsi\Heracles.Ucsi.csproj" />
   </ItemGroup>
 
   <ItemGroup>
