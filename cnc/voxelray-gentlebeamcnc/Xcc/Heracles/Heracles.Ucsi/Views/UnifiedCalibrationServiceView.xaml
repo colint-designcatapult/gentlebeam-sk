@@ -164,7 +164,7 @@
                                                         <Slider Orientation="Vertical" Minimum="{Binding HvpsMinimumHV, Mode=OneWay}" Maximum="120" Value="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="30" Height="180" IsEnabled="{Binding IsHvEnabled}"
                                                                 TickPlacement="BottomRight" TickFrequency="10"/>
                                                     </StackPanel>
-                                                    <TextBlock Grid.Column="0" Grid.Row="2" Text="0" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,4,0,0"/>
+                                                    <TextBlock Grid.Column="0" Grid.Row="2" Text="{Binding HvpsMinimumHV, StringFormat={}{0:F1}}" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,4,0,0"/>
 
                                                     <!-- e- [mA] - Read Only (Derived) -->
                                                     <TextBlock Grid.Column="1" Text="e- [mA]" HorizontalAlignment="Center" FontSize="12" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,0,6"/>

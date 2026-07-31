@@ -366,10 +366,18 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
                 RaisePropertyChanged(nameof(IsHvEnabled));
                 RaisePropertyChanged(nameof(HvpsCommandEmission));
                 
-                double newMin = HvpsMinimumHV;
-                if (_hvpsCommandHV < newMin)
+                // Special case: when Power is 0, reset HV to 0 as well
+                if (clampedValue == 0)
                 {
-                    HvpsCommandHV = newMin;
+                    HvpsCommandHV = 0;
+                }
+                else
+                {
+                    double newMin = HvpsMinimumHV;
+                    if (_hvpsCommandHV < newMin)
+                    {
+                        HvpsCommandHV = newMin;
+                    }
                 }
             }
         }
