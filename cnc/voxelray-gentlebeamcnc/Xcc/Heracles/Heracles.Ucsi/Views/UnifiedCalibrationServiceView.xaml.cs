@@ -1,4 +1,7 @@
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Heracles.Ucsi.Models;
@@ -82,6 +85,16 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
                 yield return match;
             foreach (T descendant in FindVisualChildren<T>(child))
                 yield return descendant;
+        }
+    }
+
+    private void OnCommandTextBoxKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == Key.Return && sender is System.Windows.Controls.TextBox textBox)
+        {
+            BindingExpression binding = textBox.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty);
+            binding?.UpdateSource();
+            e.Handled = true;
         }
     }
 }

@@ -113,6 +113,7 @@ public sealed class GraphPaneViewModel : BindableBase
         }
         ParameterView = CollectionViewSource.GetDefaultView(ParameterOptions);
         ParameterView.Filter = FilterParameter;
+        ParameterView.SortDescriptions.Add(new SortDescription(nameof(CheckableParameterViewModel.IsSelected), ListSortDirection.Descending));
         RemoveCommand = new DelegateCommand(() => _remove(this));
     }
 
@@ -176,6 +177,7 @@ public sealed class GraphPaneViewModel : BindableBase
         RaisePropertyChanged(nameof(SelectionSummary));
         if (ParameterOptions.Count(option => option.IsSelected) == 1)
             Title = ParameterOptions.First(option => option.IsSelected).DisplayName;
+        ParameterView.Refresh();
         SeriesSelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 }
@@ -209,7 +211,6 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private double _timelineMaximumSeconds;
     private CancellationTokenSource? _seekCancellation;
     private double _hvpsCommandHV;
-    private double _hvpsCommandEmission;
     private double _hvpsCommandPower;
     private double _hvpsCommandGrid;
     private double _hvpsCommandHeat;
@@ -229,6 +230,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             catalog.All.Select(descriptor => new CheckableParameterViewModel(descriptor)));
         ParameterView = CollectionViewSource.GetDefaultView(ParameterOptions);
         ParameterView.Filter = FilterParameter;
+        ParameterView.SortDescriptions.Add(new SortDescription(nameof(CheckableParameterViewModel.IsSelected), ListSortDirection.Descending));
         foreach (CheckableParameterViewModel option in ParameterOptions)
             option.IsSelected = DefaultMonitoredParameters.Contains(option.Id, StringComparer.Ordinal);
 
@@ -328,32 +330,84 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     public double HvpsCommandHV
     {
         get => _hvpsCommandHV;
-        set => SetProperty(ref _hvpsCommandHV, value);
+        set
+        {
+            // Clamp HV to [minimum, 120] where minimum = Power / 4 (max e- = 4.0)
+            double newMin = HvpsMinimumHV;
+            double clampedValue = Math.Max(newMin, Math.Min(120, value));
+            if (SetProperty(ref _hvpsCommandHV, clampedValue))
+            {
+                // When KV changes, e- changes too (e- = Power / KV)
+                RaisePropertyChanged(nameof(HvpsCommandEmission));
+            }
+        }
     }
 
-    public double HvpsCommandEmission
-    {
-        get => _hvpsCommandEmission;
-        set => SetProperty(ref _hvpsCommandEmission, value);
-    }
+    // e- is now derived: e- = Power / HV (max 4.0 mA)
+    public double HvpsCommandEmission => _hvpsCommandHV > 0 ? _hvpsCommandPower / _hvpsCommandHV : 0;
+
+    // Minimum HV = Power / 4 (the maximum e- value of 4.0)
+    public double HvpsMinimumHV => _hvpsCommandPower > 0 ? _hvpsCommandPower / 4.0 : 0;
+
+    // HV is only editable when Power > 0
+    public bool IsHvEnabled => _hvpsCommandPower > 0;
 
     public double HvpsCommandPower
     {
         get => _hvpsCommandPower;
-        set => SetProperty(ref _hvpsCommandPower, value);
+        set
+        {
+            // Clamp Power to 0-400 W
+            double clampedValue = Math.Max(0, Math.Min(400, value));
+            if (SetProperty(ref _hvpsCommandPower, clampedValue))
+            {
+                // When Power changes, recalculate HV minimum and clamp HV if needed
+                RaisePropertyChanged(nameof(HvpsMinimumHV));
+                RaisePropertyChanged(nameof(IsHvEnabled));
+                RaisePropertyChanged(nameof(HvpsCommandEmission));
+                
+                double newMin = HvpsMinimumHV;
+                if (_hvpsCommandHV < newMin)
+                {
+                    HvpsCommandHV = newMin;
+                }
+            }
+        }
     }
 
     public double HvpsCommandGrid
     {
         get => _hvpsCommandGrid;
-        set => SetProperty(ref _hvpsCommandGrid, value);
+        set
+        {
+            // Clamp Grid to 0-600 V
+            double clampedValue = Math.Max(0, Math.Min(600, value));
+            SetProperty(ref _hvpsCommandGrid, clampedValue);
+        }
     }
 
     public double HvpsCommandHeat
     {
         get => _hvpsCommandHeat;
-        set => SetProperty(ref _hvpsCommandHeat, value);
+        set
+        {
+            // Clamp Heat to 0-4000 mA
+            double clampedValue = Math.Max(0, Math.Min(4000, value));
+            SetProperty(ref _hvpsCommandHeat, clampedValue);
+        }
     }
+
+    public double HvpsSetpointKV => CurrentSample?.Telemetry.KvSetpoint ?? 0.0;
+    public double HvpsSetpointEmission => CurrentSample?.Telemetry.EmissionCurrentLimit ?? 0.0;
+    public double HvpsSetpointPower => CurrentSample?.Telemetry.HvpsPowerSetpoint ?? 0.0;
+    public double HvpsSetpointGrid => CurrentSample?.Telemetry.GridSetpoint ?? 0.0;
+    public double HvpsSetpointHeat => CurrentSample?.Telemetry.HeaterCurrentSetpoint ?? 0.0;
+
+    public double HvpsFeedbackKV => CurrentSample?.Telemetry.KvFeedback ?? 0.0;
+    public double HvpsFeedbackEmission => CurrentSample?.Telemetry.EmissionCurrent ?? 0.0;
+    public double HvpsFeedbackPower => (CurrentSample?.Telemetry.KvFeedback ?? 0.0) * (CurrentSample?.Telemetry.EmissionCurrent ?? 0.0);
+    public double HvpsFeedbackGrid => CurrentSample?.Telemetry.GridVoltage ?? 0.0;
+    public double HvpsFeedbackHeat => CurrentSample?.Telemetry.HeaterCurrentFeedback ?? 0.0;
 
     public async Task TickAsync()
     {
@@ -467,6 +521,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
 
     private void ApplyMonitoredSelection()
     {
+        ParameterView.Refresh();
         MonitoredParameters.Clear();
         foreach (CheckableParameterViewModel option in ParameterOptions.Where(option => option.IsSelected))
             MonitoredParameters.Add(new MonitoredParameterViewModel(option.Descriptor));
@@ -545,6 +600,17 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         RaisePropertyChanged(nameof(CanLoad));
         RaisePropertyChanged(nameof(CanPlayPause));
         RaisePropertyChanged(nameof(CanClearFaults));
+        RaisePropertyChanged(nameof(HvpsCommandPower));
+        RaisePropertyChanged(nameof(HvpsSetpointKV));
+        RaisePropertyChanged(nameof(HvpsSetpointEmission));
+        RaisePropertyChanged(nameof(HvpsSetpointPower));
+        RaisePropertyChanged(nameof(HvpsSetpointGrid));
+        RaisePropertyChanged(nameof(HvpsSetpointHeat));
+        RaisePropertyChanged(nameof(HvpsFeedbackKV));
+        RaisePropertyChanged(nameof(HvpsFeedbackEmission));
+        RaisePropertyChanged(nameof(HvpsFeedbackPower));
+        RaisePropertyChanged(nameof(HvpsFeedbackGrid));
+        RaisePropertyChanged(nameof(HvpsFeedbackHeat));
         RecordCommand.RaiseCanExecuteChanged();
         LoadCommand.RaiseCanExecuteChanged();
         PlayPauseCommand.RaiseCanExecuteChanged();
