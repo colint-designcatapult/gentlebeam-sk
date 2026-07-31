@@ -86,41 +86,243 @@
                     <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{StaticResource UcsiBorderBrush}"/>
 
                     <Border Grid.Column="2" Style="{StaticResource UcsiPanelBorderStyle}">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                                <TextBlock Text="System Status" Style="{StaticResource UcsiSectionTitleStyle}"/>
-                                <Grid Margin="10,2">
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Text="Connection" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Column="1" Text="{Binding ConnectionText}"/>
-                                    <TextBlock Grid.Row="1" Text="Control state" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SystemStateText}"/>
-                                    <TextBlock Grid.Row="2" Text="Runtime" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding RuntimeText}" Style="{StaticResource UcsiValueTextStyle}"/>
-                                    <TextBlock Grid.Row="3" Text="Capture rate" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SampleRateText}"/>
-                                    <TextBlock Grid.Row="4" Text="GCB firmware" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="4" Grid.Column="1" Text="v3.0.0 abc123"/>
-                                    <TextBlock Grid.Row="5" Text="HVPS firmware" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="5" Grid.Column="1" Text="v3.0.0 def456"/>
+                        <TabControl Style="{StaticResource UcsiTabControlStyle}" ItemContainerStyle="{StaticResource UcsiTabItemStyle}" Margin="6">
+                            
+                            <!-- System Status Tab -->
+                            <TabItem Header="System Status">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <TextBlock Text="System Status" Style="{StaticResource UcsiSectionTitleStyle}"/>
+                                        <Grid Margin="10,2">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="Connection" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Column="1" Text="{Binding ConnectionText}"/>
+                                            <TextBlock Grid.Row="1" Text="Control state" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SystemStateText}"/>
+                                            <TextBlock Grid.Row="2" Text="Runtime" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding RuntimeText}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                            <TextBlock Grid.Row="3" Text="Capture rate" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SampleRateText}"/>
+                                            <TextBlock Grid.Row="4" Text="GCB firmware" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="4" Grid.Column="1" Text="v3.0.0 abc123"/>
+                                            <TextBlock Grid.Row="5" Text="HVPS firmware" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="5" Grid.Column="1" Text="v3.0.0 def456"/>
+                                        </Grid>
+                                        <Separator Margin="10" Background="{StaticResource UcsiBorderBrush}"/>
+                                        <TextBlock Text="HVPS &amp; Beam" Style="{StaticResource UcsiSectionTitleStyle}"/>
+                                        <UniformGrid Columns="2" Margin="10,0,10,8">
+                                            <TextBlock Text="kV feedback" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                            <TextBlock Text="{Binding CurrentSample.Telemetry.KvFeedback, StringFormat={}{0:F2} kV}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                            <TextBlock Text="Emission" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                            <TextBlock Text="{Binding CurrentSample.Telemetry.EmissionCurrent, StringFormat={}{0:F3} mA}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                            <TextBlock Text="Heater feedback" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                            <TextBlock Text="{Binding CurrentSample.Telemetry.HeaterCurrentFeedback, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                            <TextBlock Text="Grid voltage" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                            <TextBlock Text="{Binding CurrentSample.Telemetry.GridVoltage, StringFormat={}{0:F1} V}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                        </UniformGrid>
+                                        <TextBlock Text="Coils" Style="{StaticResource UcsiSectionTitleStyle}"/>
+                                        <UniformGrid Columns="2" Margin="10,0,10,8">
+                                            <TextBlock Text="X coil" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Text="{Binding CurrentSample.Telemetry.XCoilCurrent, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                            <TextBlock Text="Y coil" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Text="{Binding CurrentSample.Telemetry.YCoilCurrent, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                            <TextBlock Text="Focus coil" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Text="{Binding CurrentSample.Telemetry.FocusCurrent, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                        </UniformGrid>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- HVPS Tab -->
+                            <TabItem Header="HVPS">
+
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Margin="10">
+                                        <!-- All 5 sliders in one row -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="20"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Group 1: HV, e-, Power -->
+                                            <Border Grid.Column="0" Grid.ColumnSpan="3" Background="#1FFFFFFF" CornerRadius="4" Padding="10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="220"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <!-- HV [kV] -->
+                                                    <TextBlock Grid.Column="0" Text="HV [kV]" HorizontalAlignment="Center" FontSize="12" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,0,6"/>
+                                                    <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,0">
+                                                        <TextBlock Text="120" FontSize="10" Foreground="{StaticResource UcsiMutedTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                                        <Slider Orientation="Vertical" Minimum="0" Maximum="120" Value="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="30" Height="200"
+                                                                TickPlacement="BottomRight" TickFrequency="10"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="0" Grid.Row="2" Text="0" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,4,0,0"/>
+
+                                                    <!-- e- [mA] -->
+                                                    <TextBlock Grid.Column="1" Text="e- [mA]" HorizontalAlignment="Center" FontSize="12" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,0,6"/>
+                                                    <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,0">
+                                                        <TextBlock Text="2.0" FontSize="10" Foreground="{StaticResource UcsiMutedTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                                        <Slider Orientation="Vertical" Minimum="0" Maximum="2" Value="{Binding HvpsCommandEmission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="30" Height="200"
+                                                                TickPlacement="BottomRight" TickFrequency="0.2"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Grid.Row="2" Text="0" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,4,0,0"/>
+
+                                                    <!-- Power [W] -->
+                                                    <TextBlock Grid.Column="2" Text="Power [W]" HorizontalAlignment="Center" FontSize="12" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,0,6"/>
+                                                    <StackPanel Grid.Column="2" Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,0">
+                                                        <TextBlock Text="400" FontSize="10" Foreground="{StaticResource UcsiMutedTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                                        <Slider Orientation="Vertical" Minimum="0" Maximum="400" Value="{Binding HvpsCommandPower, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="30" Height="200"
+                                                                TickPlacement="BottomRight" TickFrequency="50"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Grid.Row="2" Text="0" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,4,0,0"/>
+                                                </Grid>
+                                            </Border>
+
+                                            <!-- Group 2: Grid, Heat -->
+                                            <Border Grid.Column="4" Grid.ColumnSpan="2" Background="#1FFFFFFF" CornerRadius="4" Padding="10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="220"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <!-- Grid [V] -->
+                                                    <TextBlock Grid.Column="0" Text="Grid [V]" HorizontalAlignment="Center" FontSize="12" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,0,6"/>
+                                                    <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,0">
+                                                        <TextBlock Text="600" FontSize="10" Foreground="{StaticResource UcsiMutedTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                                        <Slider Orientation="Vertical" Minimum="0" Maximum="600" Value="{Binding HvpsCommandGrid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="30" Height="200"
+                                                                TickPlacement="BottomRight" TickFrequency="50"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="0" Grid.Row="2" Text="0" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,4,0,0"/>
+
+                                                    <!-- Heat [mA] -->
+                                                    <TextBlock Grid.Column="1" Text="Heat [mA]" HorizontalAlignment="Center" FontSize="12" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,0,6"/>
+                                                    <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,0">
+                                                        <TextBlock Text="4000" FontSize="10" Foreground="{StaticResource UcsiMutedTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                                        <Slider Orientation="Vertical" Minimum="0" Maximum="4000" Value="{Binding HvpsCommandHeat, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="30" Height="200"
+                                                                TickPlacement="BottomRight" TickFrequency="500"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Grid.Row="2" Text="0" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,4,0,0"/>
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Values Grid: Command / SP / FB -->
+                                        <Separator Margin="0,12,0,12" Background="{StaticResource UcsiBorderBrush}"/>
+                                        <Grid Margin="10,0,10,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Header Row -->
+                                            <TextBlock Grid.Column="0" Text="State" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" FontWeight="Bold" Margin="0,0,10,6"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,6">
+                                                <TextBlock Text="HV [kV]" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" FontWeight="Bold"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,0,6">
+                                                <TextBlock Text="e- [mA]" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" FontWeight="Bold"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,0,6">
+                                                <TextBlock Text="Power [W]" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" FontWeight="Bold"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="0,0,0,6">
+                                                <TextBlock Text="Grid [V]" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" FontWeight="Bold"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="5" Orientation="Horizontal" Margin="0,0,0,6">
+                                                <TextBlock Text="Heat [mA]" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" FontWeight="Bold"/>
+                                            </StackPanel>
+
+                                            <!-- Command Row -->
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Command" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" Margin="0,0,10,4"/>
+                                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4"/>
+                                            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding HvpsCommandEmission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" Margin="0,0,6,4" Padding="4"/>
+                                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding HvpsCommandPower, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4"/>
+                                            <TextBox Grid.Row="1" Grid.Column="4" Text="{Binding HvpsCommandGrid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4"/>
+                                            <TextBox Grid.Row="1" Grid.Column="5" Text="{Binding HvpsCommandHeat, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F0}}" Margin="0,0,0,4" Padding="4"/>
+
+                                            <!-- SP Row -->
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="SP" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" Margin="0,0,10,4"/>
+                                            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,6,4">
+                                                <TextBlock Text="0.0" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Margin="0,0,6,4">
+                                                <TextBlock Text="0.000" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Horizontal" Margin="0,0,6,4">
+                                                <TextBlock Text="0.0" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="4" Orientation="Horizontal" Margin="0,0,6,4">
+                                                <TextBlock Text="0.0" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="5" Orientation="Horizontal" Margin="0,0,0,4">
+                                                <TextBlock Text="0" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                            </StackPanel>
+
+                                            <!-- FB Row -->
+                                            <TextBlock Grid.Row="3" Grid.Column="0" Text="FB" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" Margin="0,0,10,0"/>
+                                            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,0,6,0">
+                                                <TextBlock Text="0.0" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal" Margin="0,0,6,0">
+                                                <TextBlock Text="0.000" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="3" Grid.Column="3" Orientation="Horizontal" Margin="0,0,6,0">
+                                                <TextBlock Text="0.0" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="3" Grid.Column="4" Orientation="Horizontal" Margin="0,0,6,0">
+                                                <TextBlock Text="0.0" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="3" Grid.Column="5" Orientation="Horizontal" Margin="0,0,0,0">
+                                                <TextBlock Text="0" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+
+                            <!-- Coils Tab -->
+                            <TabItem Header="Coils">
+                                <Grid Background="{StaticResource UcsiBackgroundBrush}">
+                                    <TextBlock Text="Coils Controls - Placeholder" Foreground="{StaticResource UcsiMutedTextBrush}" 
+                                               VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="14"/>
                                 </Grid>
-                                <Separator Margin="10" Background="{StaticResource UcsiBorderBrush}"/>
-                                <TextBlock Text="HVPS &amp; Beam" Style="{StaticResource UcsiSectionTitleStyle}"/>
-                                <UniformGrid Columns="2" Margin="10,0,10,8">
-                                    <TextBlock Text="kV feedback" Foreground="{StaticResource UcsiMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding CurrentSample.Telemetry.KvFeedback, StringFormat={}{0:F2} kV}" Style="{StaticResource UcsiValueTextStyle}"/>
-                                    <TextBlock Text="Emission" Foreground="{StaticResource UcsiMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding CurrentSample.Telemetry.EmissionCurrent, StringFormat={}{0:F3} mA}" Style="{StaticResource UcsiValueTextStyle}"/>
-                                    <TextBlock Text="Heater feedback" Foreground="{StaticResource UcsiMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding CurrentSample.Telemetry.HeaterCurrentFeedback, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
-                                    <TextBlock Text="Grid voltage" Foreground="{StaticResource UcsiMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding CurrentSample.Telemetry.GridVoltage, StringFormat={}{0:F1} V}" Style="{StaticResource UcsiValueTextStyle}"/>
-                                </UniformGrid>
-                                <TextBlock Text="Coils" Style="{StaticResource UcsiSectionTitleStyle}"/>
-                                <UniformGrid Columns="2" Margin="10,0,10,8">
-                                    <TextBlock Text="X coil" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Text="{Binding CurrentSample.Telemetry.XCoilCurrent, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
-                                    <TextBlock Text="Y coil" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Text="{Binding CurrentSample.Telemetry.YCoilCurrent, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
-                                    <TextBlock Text="Focus coil" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Text="{Binding CurrentSample.Telemetry.FocusCurrent, StringFormat={}{0:F3} A}" Style="{StaticResource UcsiValueTextStyle}"/>
-                                </UniformGrid>
-                            </StackPanel>
-                        </ScrollViewer>
+                            </TabItem>
+
+                        </TabControl>
                     </Border>
 
                     <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch" Background="{StaticResource UcsiBorderBrush}"/>

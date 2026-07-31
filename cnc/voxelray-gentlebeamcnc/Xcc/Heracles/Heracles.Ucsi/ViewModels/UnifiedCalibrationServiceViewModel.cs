@@ -208,6 +208,11 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private double _timelineSeconds;
     private double _timelineMaximumSeconds;
     private CancellationTokenSource? _seekCancellation;
+    private double _hvpsCommandHV;
+    private double _hvpsCommandEmission;
+    private double _hvpsCommandPower;
+    private double _hvpsCommandGrid;
+    private double _hvpsCommandHeat;
 
     public UnifiedCalibrationServiceViewModel(
         ITelemetrySessionCoordinator coordinator,
@@ -319,6 +324,36 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         private set => SetProperty(ref _timelineMaximumSeconds, value);
     }
     public string TimelineText => $"{TimeSpan.FromSeconds(TimelineSeconds):hh\\:mm\\:ss\\.fff} / {TimeSpan.FromSeconds(TimelineMaximumSeconds):hh\\:mm\\:ss\\.fff}";
+
+    public double HvpsCommandHV
+    {
+        get => _hvpsCommandHV;
+        set => SetProperty(ref _hvpsCommandHV, value);
+    }
+
+    public double HvpsCommandEmission
+    {
+        get => _hvpsCommandEmission;
+        set => SetProperty(ref _hvpsCommandEmission, value);
+    }
+
+    public double HvpsCommandPower
+    {
+        get => _hvpsCommandPower;
+        set => SetProperty(ref _hvpsCommandPower, value);
+    }
+
+    public double HvpsCommandGrid
+    {
+        get => _hvpsCommandGrid;
+        set => SetProperty(ref _hvpsCommandGrid, value);
+    }
+
+    public double HvpsCommandHeat
+    {
+        get => _hvpsCommandHeat;
+        set => SetProperty(ref _hvpsCommandHeat, value);
+    }
 
     public async Task TickAsync()
     {
