@@ -168,10 +168,10 @@
                                                     <TextBlock Grid.Column="0" Text="HV [kV]" HorizontalAlignment="Center" FontSize="12" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,0,6"/>
                                                     <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,0">
                                                         <TextBlock Text="120" FontSize="10" Foreground="{StaticResource UcsiMutedTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                                                        <Slider Orientation="Vertical" Minimum="{Binding HvpsMinimumHV, Mode=OneWay}" Maximum="120" Value="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="30" Height="180" IsEnabled="{Binding IsHvEnabled}"
+                                                        <Slider Orientation="Vertical" Minimum="0" Maximum="120" Value="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="30" Height="180" IsEnabled="{Binding IsHvEnabled}"
                                                                 TickPlacement="BottomRight" TickFrequency="10"/>
                                                     </StackPanel>
-                                                    <TextBlock Grid.Column="0" Grid.Row="2" Text="{Binding HvpsMinimumHV, StringFormat={}{0:F1}}" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,4,0,0"/>
+                                                    <TextBlock Grid.Column="0" Grid.Row="2" Text="0" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,4,0,0"/>
 
                                                     <!-- e- [mA] - Read Only (Derived) -->
                                                     <TextBlock Grid.Column="1" Text="e- [mA]" HorizontalAlignment="Center" FontSize="12" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,0,6"/>
@@ -266,7 +266,7 @@
                                             <!-- Command Row -->
                                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Command" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" Margin="0,0,10,4"/>
                                             <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}" IsEnabled="{Binding IsHvEnabled}" Margin="0,0,6,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown"/>
-                                            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding HvpsCommandEmission, Mode=OneWay, StringFormat={}{0:F3}}" IsReadOnly="True" Margin="0,0,6,4" Padding="4" Opacity="0.6"/>
+                                            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding HvpsCommandEmission, Mode=OneWay, StringFormat={}{0:F3}}" IsReadOnly="True" Margin="0,0,6,4" Padding="4" Opacity="0.6" BorderBrush="{Binding EmissionTextBoxBorder}" BorderThickness="2"/>
                                             <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding HvpsCommandPower, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4"/>
                                             <TextBox Grid.Row="1" Grid.Column="4" Text="{Binding HvpsCommandGrid, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown"/>
                                             <TextBox Grid.Row="1" Grid.Column="5" Text="{Binding HvpsCommandHeat, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F0}}" Margin="0,0,0,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown"/>
@@ -323,7 +323,8 @@
                                     <!-- Right panel: Emission, Interlocks, Controls -->
                                     <StackPanel Grid.Column="1" Margin="10,10,10,10" Width="180" VerticalAlignment="Top">
                                         <!-- Emission Button -->
-                                        <Button Content="▶ Emission" Foreground="{StaticResource UcsiTextBrush}" Background="#4A7C7C" Padding="10,8" Margin="0,0,0,12" FontSize="12" Cursor="Hand"/>
+                                        <Button Content="▶ Emission" Foreground="{StaticResource UcsiTextBrush}" Background="#4A7C7C" Padding="10,8" Margin="0,0,0,4" FontSize="12" Cursor="Hand" IsEnabled="{Binding CanEnableEmission}"/>
+                                        <TextBlock Text="{Binding EmissionValidationError}" Foreground="{StaticResource UcsiFaultBrush}" FontSize="10" TextWrapping="Wrap" Margin="0,0,0,8" MinHeight="20" Visibility="{Binding HasEmissionExceedsMaximumError, Converter={StaticResource BoolToVisibility}}"/>
                                         
                                         <!-- Interlocks Section -->
                                         <TextBlock Text="Interlocks" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,0,0,8"/>

@@ -559,7 +559,7 @@ public sealed class TelemetryParameterCatalog
         if (propertyName.Contains("Emission", StringComparison.OrdinalIgnoreCase)) return "mA";
         if (propertyName.Contains("HeaterCurrent", StringComparison.OrdinalIgnoreCase)) return "mA";
         if (propertyName.Contains("Power", StringComparison.OrdinalIgnoreCase)) return "W";
-        if (propertyName.Contains("GridVoltage", StringComparison.OrdinalIgnoreCase)) return "V";
+        if (propertyName.Contains("Grid", StringComparison.OrdinalIgnoreCase)) return "V";
         if (propertyName.Contains("CoilCurrent", StringComparison.OrdinalIgnoreCase) || propertyName == nameof(ISystemTelemetry.FocusCurrent)) return "A";
         if (propertyName.Contains("Temperature", StringComparison.OrdinalIgnoreCase)) return "°C";
         if (propertyName.Contains("Pressure", StringComparison.OrdinalIgnoreCase)) return "psi";

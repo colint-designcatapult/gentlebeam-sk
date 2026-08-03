@@ -335,22 +335,42 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         get => _hvpsCommandHV;
         set
         {
-            // Clamp HV to [minimum, 120] where minimum = Power / 4 (max e- = 4.0)
-            double newMin = HvpsMinimumHV;
-            double clampedValue = Math.Max(newMin, Math.Min(120, value));
+            // Clamp HV to [0, 120] - static range
+            double clampedValue = Math.Max(0, Math.Min(120, value));
             if (SetProperty(ref _hvpsCommandHV, clampedValue))
             {
-                // When KV changes, e- changes too (e- = Power / KV)
+                // When HV changes, e- changes too (e- = Power / HV)
                 RaisePropertyChanged(nameof(HvpsCommandEmission));
+                RaisePropertyChanged(nameof(IsEmissionValid));
+                RaisePropertyChanged(nameof(EmissionValidationError));
+                RaisePropertyChanged(nameof(HasEmissionExceedsMaximumError));
+                RaisePropertyChanged(nameof(EmissionTextBoxBorder));
+                RaisePropertyChanged(nameof(CanEnableEmission));
             }
         }
     }
 
-    // e- is now derived: e- = Power / HV (max 4.0 mA)
+    // e- is derived: e- = Power / HV (should stay <= 4.0 mA)
     public double HvpsCommandEmission => _hvpsCommandHV > 0 ? _hvpsCommandPower / _hvpsCommandHV : 0;
 
-    // Minimum HV = Power / 4 (the maximum e- value of 4.0)
-    public double HvpsMinimumHV => _hvpsCommandPower > 0 ? _hvpsCommandPower / 4.0 : 0;
+    // Emission is valid if it doesn't exceed 4.0 mA
+    public bool IsEmissionValid => HvpsCommandEmission <= 4.0;
+
+    // Error message for invalid emission
+    public string EmissionValidationError => 
+        !IsEmissionValid ? "Emission limit exceeded (>4 mA)" : string.Empty;
+
+    // Bool flag for error state - true when emission exceeds maximum
+    public bool HasEmissionExceedsMaximumError => !IsEmissionValid;
+
+    // Emission button can only be enabled if valid AND both Power and HV are set
+    public bool CanEnableEmission => IsEmissionValid && HvpsCommandPower > 0 && HvpsCommandHV > 0;
+
+    // TextBox border brush - red if invalid, transparent if valid
+    public SolidColorBrush EmissionTextBoxBorder =>
+        IsEmissionValid 
+            ? new SolidColorBrush(System.Windows.Media.Color.FromArgb(0, 255, 255, 255))
+            : new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 0, 0));
 
     // HV is only editable when Power > 0
     public bool IsHvEnabled => _hvpsCommandPower > 0;
@@ -364,23 +384,19 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             double clampedValue = Math.Max(0, Math.Min(400, value));
             if (SetProperty(ref _hvpsCommandPower, clampedValue))
             {
-                // When Power changes, recalculate HV minimum and clamp HV if needed
-                RaisePropertyChanged(nameof(HvpsMinimumHV));
+                // When Power changes, update dependent properties
                 RaisePropertyChanged(nameof(IsHvEnabled));
                 RaisePropertyChanged(nameof(HvpsCommandEmission));
+                RaisePropertyChanged(nameof(IsEmissionValid));
+                RaisePropertyChanged(nameof(EmissionValidationError));
+                RaisePropertyChanged(nameof(HasEmissionExceedsMaximumError));
+                RaisePropertyChanged(nameof(EmissionTextBoxBorder));
+                RaisePropertyChanged(nameof(CanEnableEmission));
                 
-                // Special case: when Power is 0, reset HV to 0 as well
+                // When Power is 0, reset HV to 0
                 if (clampedValue == 0)
                 {
                     HvpsCommandHV = 0;
-                }
-                else
-                {
-                    double newMin = HvpsMinimumHV;
-                    if (_hvpsCommandHV < newMin)
-                    {
-                        HvpsCommandHV = newMin;
-                    }
                 }
             }
         }
@@ -706,6 +722,11 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         RaisePropertyChanged(nameof(HvpsFeedbackPower));
         RaisePropertyChanged(nameof(HvpsFeedbackGrid));
         RaisePropertyChanged(nameof(HvpsFeedbackHeat));
+        RaisePropertyChanged(nameof(IsEmissionValid));
+        RaisePropertyChanged(nameof(EmissionValidationError));
+        RaisePropertyChanged(nameof(HasEmissionExceedsMaximumError));
+        RaisePropertyChanged(nameof(EmissionTextBoxBorder));
+        RaisePropertyChanged(nameof(CanEnableEmission));
         RaisePropertyChanged(nameof(WarmingIndicatorColor));
         RaisePropertyChanged(nameof(HvRampingIndicatorColor));
         RaisePropertyChanged(nameof(CoolingWaterPumpText));
