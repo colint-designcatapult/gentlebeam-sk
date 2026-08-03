@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Data;
+using System.Windows.Media;
 using Heracles.Ucsi.Models;
 using Heracles.Ucsi.Services;
 using Prism.Commands;
@@ -214,6 +215,8 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private double _hvpsCommandPower;
     private double _hvpsCommandGrid;
     private double _hvpsCommandHeat;
+    private bool _coolingWaterPumpEnabled;
+    private bool _coolingRadiatorFanEnabled;
 
     public UnifiedCalibrationServiceViewModel(
         ITelemetrySessionCoordinator coordinator,
@@ -417,6 +420,72 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     public double HvpsFeedbackGrid => CurrentSample?.Telemetry.GridVoltage ?? 0.0;
     public double HvpsFeedbackHeat => CurrentSample?.Telemetry.HeaterCurrentFeedback ?? 0.0;
 
+    // Indicator light colors - Interlocks (grey for now, telemetry not yet available)
+    public SolidColorBrush InterlockHvColor => new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));
+    public SolidColorBrush InterlockGridColor => new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));
+    public SolidColorBrush InterlockGridWatchdogColor => new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));
+
+    // Indicator light colors - State indicators
+    public SolidColorBrush WarmingIndicatorColor
+    {
+        get
+        {
+            // Grey if Heat is 0
+            if (_hvpsCommandHeat <= 0)
+                return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));
+
+            // Check if HeaterCurrentSetpoint is within 50mA of target
+            double setpointHeat = CurrentSample?.Telemetry.HeaterCurrentSetpoint ?? 0.0;
+            if (Math.Abs(setpointHeat - _hvpsCommandHeat) <= 50.0)
+                return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0, 200, 0)); // Green
+
+            // Yellow/amber while ramping
+            return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 200, 0)); // Amber
+        }
+    }
+
+    public SolidColorBrush HvRampingIndicatorColor
+    {
+        get
+        {
+            // Grey if HV is 0
+            if (_hvpsCommandHV <= 0)
+                return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));
+
+            // Check if KvSetpoint is within 5kV of target
+            double setpointKv = CurrentSample?.Telemetry.KvSetpoint ?? 0.0;
+            if (Math.Abs(setpointKv - _hvpsCommandHV) <= 5.0)
+                return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0, 200, 0)); // Green
+
+            // Yellow/amber while ramping
+            return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 200, 0)); // Amber
+        }
+    }
+
+    // Cooling controls
+    public bool CoolingWaterPumpEnabled
+    {
+        get => _coolingWaterPumpEnabled;
+        set => SetProperty(ref _coolingWaterPumpEnabled, value);
+    }
+
+    public bool CoolingRadiatorFanEnabled
+    {
+        get => _coolingRadiatorFanEnabled;
+        set => SetProperty(ref _coolingRadiatorFanEnabled, value);
+    }
+
+    public string CoolingWaterPumpText => _coolingWaterPumpEnabled ? "Water Pump: On" : "Water Pump: Off";
+    public string CoolingRadiatorFanText => _coolingRadiatorFanEnabled ? "Radiator Fan: On" : "Radiator Fan: Off";
+
+    public SolidColorBrush CoolingWaterPumpColor => _coolingWaterPumpEnabled
+        ? new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 45, 92, 111))   // Blue
+        : new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));   // Grey
+
+    public SolidColorBrush CoolingRadiatorFanColor => _coolingRadiatorFanEnabled
+        ? new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 45, 92, 111))   // Blue
+        : new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));   // Grey
+
     public async Task TickAsync()
     {
         if (_tickInProgress)
@@ -535,6 +604,24 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             MonitoredParameters.Add(new MonitoredParameterViewModel(option.Descriptor));
     }
 
+    public void AddToMonitoredParameters(string parameterId)
+    {
+        // Check if already monitored
+        if (MonitoredParameters.Any(p => p.Descriptor.Id == parameterId))
+            return; // Already added, idempotent
+
+        // Find the descriptor
+        var option = ParameterOptions.FirstOrDefault(o => o.Id == parameterId);
+        if (option != null)
+        {
+            // Add to monitored list
+            MonitoredParameters.Add(new MonitoredParameterViewModel(option.Descriptor));
+            // Mark as selected for consistency
+            option.IsSelected = true;
+            ParameterView.Refresh();
+        }
+    }
+
     private void RemoveGraph(GraphPaneViewModel graph) => Graphs.Remove(graph);
 
     private bool FilterParameter(object item)
@@ -619,6 +706,12 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         RaisePropertyChanged(nameof(HvpsFeedbackPower));
         RaisePropertyChanged(nameof(HvpsFeedbackGrid));
         RaisePropertyChanged(nameof(HvpsFeedbackHeat));
+        RaisePropertyChanged(nameof(WarmingIndicatorColor));
+        RaisePropertyChanged(nameof(HvRampingIndicatorColor));
+        RaisePropertyChanged(nameof(CoolingWaterPumpText));
+        RaisePropertyChanged(nameof(CoolingRadiatorFanText));
+        RaisePropertyChanged(nameof(CoolingWaterPumpColor));
+        RaisePropertyChanged(nameof(CoolingRadiatorFanColor));
         RecordCommand.RaiseCanExecuteChanged();
         LoadCommand.RaiseCanExecuteChanged();
         PlayPauseCommand.RaiseCanExecuteChanged();

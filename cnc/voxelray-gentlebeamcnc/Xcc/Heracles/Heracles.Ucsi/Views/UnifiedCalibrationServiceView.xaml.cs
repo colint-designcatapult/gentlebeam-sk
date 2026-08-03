@@ -97,4 +97,21 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
             e.Handled = true;
         }
     }
+
+    private void OnApplyMonitoredParametersClick(object sender, RoutedEventArgs e)
+    {
+        // Close the popup by toggling the ParameterButton's IsChecked state
+        ParameterButton.IsChecked = false;
+    }
+
+    private void OnEyeButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button button && button.Tag is string parameterId)
+        {
+            if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+            {
+                viewModel.AddToMonitoredParameters(parameterId);
+            }
+        }
+    }
 }

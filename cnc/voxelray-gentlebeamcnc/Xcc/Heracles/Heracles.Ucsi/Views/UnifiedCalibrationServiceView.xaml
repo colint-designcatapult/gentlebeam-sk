@@ -59,9 +59,9 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="0.82*" MinWidth="250"/>
                         <ColumnDefinition Width="5"/>
-                        <ColumnDefinition Width="1.08*" MinWidth="280"/>
+                        <ColumnDefinition Width="1.35*" MinWidth="320"/>
                         <ColumnDefinition Width="5"/>
-                        <ColumnDefinition Width="1.1*" MinWidth="300"/>
+                        <ColumnDefinition Width="0.8*" MinWidth="280"/>
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0" Style="{StaticResource UcsiPanelBorderStyle}">
@@ -94,16 +94,19 @@
                                     <StackPanel>
                                         <TextBlock Text="System Status" Style="{StaticResource UcsiSectionTitleStyle}"/>
                                         <Grid Margin="10,2">
-                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
-                                            <TextBlock Text="Connection" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Column="1" Text="{Binding ConnectionText}"/>
-                                            <TextBlock Grid.Row="1" Text="Control state" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SystemStateText}"/>
-                                            <TextBlock Grid.Row="2" Text="Runtime" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding RuntimeText}" Style="{StaticResource UcsiValueTextStyle}"/>
-                                            <TextBlock Grid.Row="3" Text="Capture rate" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SampleRateText}"/>
-                                            <TextBlock Grid.Row="4" Text="GCB firmware" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="4" Grid.Column="1" Text="v3.0.0 abc123"/>
-                                            <TextBlock Grid.Row="5" Text="HVPS firmware" Foreground="{StaticResource UcsiMutedTextBrush}"/><TextBlock Grid.Row="5" Grid.Column="1" Text="v3.0.0 def456"/>
+                                            <TextBlock Text="Connection" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Column="1" Text="{Binding ConnectionText}"/>
+                                            <TextBlock Grid.Row="1" Text="Control state" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SystemStateText}"/>
+                                            <TextBlock Grid.Row="2" Text="Runtime" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding RuntimeText}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                            <TextBlock Grid.Row="3" Text="Capture rate" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SampleRateText}"/>
+                                            <TextBlock Grid.Row="4" Text="GCB firmware" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="4" Grid.Column="1" Text="v3.0.0 abc123"/>
+                                            <TextBlock Grid.Row="5" Text="HVPS firmware" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="5" Grid.Column="1" Text="v3.0.0 def456"/>
                                         </Grid>
                                         <Separator Margin="10" Background="{StaticResource UcsiBorderBrush}"/>
                                         <TextBlock Text="HVPS &amp; Beam" Style="{StaticResource UcsiSectionTitleStyle}"/>
@@ -129,10 +132,14 @@
 
                             <!-- HVPS Tab -->
                             <TabItem Header="HVPS">
-
-                                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <StackPanel Margin="10">
-                                        <!-- All 5 sliders in one row -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="10">
+                                            <!-- All 5 sliders in one row -->
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -268,50 +275,106 @@
                                             <TextBlock Grid.Row="2" Grid.Column="0" Text="SP" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" Margin="0,0,10,4"/>
                                             <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,6,4">
                                                 <TextBlock Text="{Binding HvpsSetpointKV, StringFormat={}{0:F1}}" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
-                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand" Tag="system.KvSetpoint" Click="OnEyeButtonClick"/>
                                             </StackPanel>
                                             <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Margin="0,0,6,4">
                                                 <TextBlock Text="{Binding HvpsSetpointEmission, StringFormat={}{0:F3}}" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
-                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand" Tag="mock.Setpoint.Emission" Click="OnEyeButtonClick"/>
                                             </StackPanel>
                                             <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Horizontal" Margin="0,0,6,4">
                                                 <TextBlock Text="{Binding HvpsSetpointPower, StringFormat={}{0:F1}}" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
-                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand" Tag="system.HvpsPowerSetpoint" Click="OnEyeButtonClick"/>
                                             </StackPanel>
                                             <StackPanel Grid.Row="2" Grid.Column="4" Orientation="Horizontal" Margin="0,0,6,4">
                                                 <TextBlock Text="{Binding HvpsSetpointGrid, StringFormat={}{0:F1}}" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
-                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand" Tag="system.GridSetpoint" Click="OnEyeButtonClick"/>
                                             </StackPanel>
                                             <StackPanel Grid.Row="2" Grid.Column="5" Orientation="Horizontal" Margin="0,0,0,4">
                                                 <TextBlock Text="{Binding HvpsSetpointHeat, StringFormat={}{0:F0}}" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
-                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand" Tag="system.HeaterCurrentSetpoint" Click="OnEyeButtonClick"/>
                                             </StackPanel>
 
                                             <!-- FB Row -->
                                             <TextBlock Grid.Row="3" Grid.Column="0" Text="FB" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" Margin="0,0,10,0"/>
                                             <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,0,6,0">
                                                 <TextBlock Text="{Binding HvpsFeedbackKV, StringFormat={}{0:F1}}" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
-                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand" Tag="system.KvFeedback" Click="OnEyeButtonClick"/>
                                             </StackPanel>
                                             <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal" Margin="0,0,6,0">
                                                 <TextBlock Text="{Binding HvpsFeedbackEmission, StringFormat={}{0:F3}}" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
-                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand" Tag="system.EmissionCurrent" Click="OnEyeButtonClick"/>
                                             </StackPanel>
                                             <StackPanel Grid.Row="3" Grid.Column="3" Orientation="Horizontal" Margin="0,0,6,0">
                                                 <TextBlock Text="{Binding HvpsFeedbackPower, StringFormat={}{0:F1}}" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
-                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand" Tag="mock.Feedback.Power" Click="OnEyeButtonClick"/>
                                             </StackPanel>
                                             <StackPanel Grid.Row="3" Grid.Column="4" Orientation="Horizontal" Margin="0,0,6,0">
                                                 <TextBlock Text="{Binding HvpsFeedbackGrid, StringFormat={}{0:F1}}" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
-                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand" Tag="system.GridVoltage" Click="OnEyeButtonClick"/>
                                             </StackPanel>
                                             <StackPanel Grid.Row="3" Grid.Column="5" Orientation="Horizontal" Margin="0,0,0,0">
                                                 <TextBlock Text="{Binding HvpsFeedbackHeat, StringFormat={}{0:F0}}" Style="{StaticResource UcsiValueTextStyle}" Margin="0,0,6,0"/>
-                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand"/>
+                                                <Button Content="👁" Width="24" Height="24" Padding="0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource UcsiMutedTextBrush}" Cursor="Hand" Tag="system.HeaterCurrentFeedback" Click="OnEyeButtonClick"/>
                                             </StackPanel>
                                         </Grid>
                                     </StackPanel>
-                                </ScrollViewer>
+                                    </ScrollViewer>
+                                    
+                                    <!-- Right panel: Emission, Interlocks, Controls -->
+                                    <StackPanel Grid.Column="1" Margin="10,10,10,10" Width="180" VerticalAlignment="Top">
+                                        <!-- Emission Button -->
+                                        <Button Content="▶ Emission" Foreground="{StaticResource UcsiTextBrush}" Background="#4A7C7C" Padding="10,8" Margin="0,0,0,12" FontSize="12" Cursor="Hand"/>
+                                        
+                                        <!-- Interlocks Section -->
+                                        <TextBlock Text="Interlocks" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,0,0,8"/>
+                                        <StackPanel Margin="0,0,0,8">
+                                            <Grid Margin="0,2" Height="20">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Ellipse Width="10" Height="10" Fill="{Binding InterlockHvColor}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="HV Interlock" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            </Grid>
+                                            <Grid Margin="0,2" Height="20">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Ellipse Width="10" Height="10" Fill="{Binding InterlockGridColor}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="Grid Interlock" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            </Grid>
+                                            <Grid Margin="0,2" Height="20">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Ellipse Width="10" Height="10" Fill="{Binding InterlockGridWatchdogColor}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="Grid Watchdog" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            </Grid>
+                                        </StackPanel>
+                                        
+                                        <!-- State Controls Section -->
+                                        <TextBlock Text="State" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,8,0,8"/>
+                                        <StackPanel Margin="0,0,0,8">
+                                            <Grid Margin="0,2" Height="20">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Ellipse Width="10" Height="10" Fill="{Binding WarmingIndicatorColor}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="Warming" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            </Grid>
+                                            <Grid Margin="0,2" Height="20">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Ellipse Width="10" Height="10" Fill="{Binding HvRampingIndicatorColor}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="HV Ramping" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            </Grid>
+                                        </StackPanel>
+                                        
+                                        <!-- PID Section -->
+                                        <CheckBox Content="PID Enabled" Margin="0,2" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                        
+                                        <!-- Cooling Section -->
+                                        <TextBlock Text="Cooling" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,12,0,8"/>
+                                        <StackPanel Margin="0,0,0,0">
+                                            <ToggleButton IsChecked="{Binding CoolingWaterPumpEnabled, Mode=TwoWay}" Foreground="{StaticResource UcsiTextBrush}" Background="{Binding CoolingWaterPumpColor}" Padding="8,6" Margin="0,0,0,6" Cursor="Hand">
+                                                <TextBlock Text="{Binding CoolingWaterPumpText}"/>
+                                            </ToggleButton>
+                                            <ToggleButton IsChecked="{Binding CoolingRadiatorFanEnabled, Mode=TwoWay}" Foreground="{StaticResource UcsiTextBrush}" Background="{Binding CoolingRadiatorFanColor}" Padding="8,6" Cursor="Hand">
+                                                <TextBlock Text="{Binding CoolingRadiatorFanText}"/>
+                                            </ToggleButton>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
                             </TabItem>
 
                             <!-- Coils Tab -->
@@ -407,7 +470,7 @@
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <TextBlock Text="Monitored Parameters" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0" VerticalAlignment="Center"/>
                         <ToggleButton x:Name="ParameterButton" Grid.Column="1" Content="Configure" Style="{StaticResource UcsiCompactToggleButtonStyle}"/>
-                        <Popup PlacementTarget="{Binding ElementName=ParameterButton}" Placement="Bottom" StaysOpen="False"
+                        <Popup x:Name="ParameterPopup" PlacementTarget="{Binding ElementName=ParameterButton}" Placement="Bottom" StaysOpen="False"
                                IsOpen="{Binding IsChecked, ElementName=ParameterButton}">
                             <Border Width="350" MaxHeight="520" Style="{StaticResource UcsiPopupBorderStyle}">
                                 <Grid>
@@ -416,7 +479,7 @@
                                     <ListBox Grid.Row="1" ItemsSource="{Binding ParameterView}" Background="Transparent" BorderThickness="0">
                                         <ListBox.ItemTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected}" Margin="7,3"><StackPanel><TextBlock Text="{Binding DisplayName}"/><TextBlock Text="{Binding Group}" FontSize="10" Opacity="0.65"/></StackPanel></CheckBox></DataTemplate></ListBox.ItemTemplate>
                                     </ListBox>
-                                    <Button Grid.Row="2" Content="Apply" Margin="8" Command="{Binding ApplyMonitoredSelectionCommand}" Style="{StaticResource UcsiCompactButtonStyle}"/>
+                                    <Button Grid.Row="2" Content="Apply" Margin="8" Command="{Binding ApplyMonitoredSelectionCommand}" Click="OnApplyMonitoredParametersClick" Style="{StaticResource UcsiCompactButtonStyle}"/>
                                 </Grid>
                             </Border>
                         </Popup>
