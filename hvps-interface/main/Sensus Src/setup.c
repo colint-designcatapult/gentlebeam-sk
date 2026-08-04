@@ -14,8 +14,6 @@
 #include "processing.h"
 #include "timers.h"
 
-volatile bool spi1_recovery_needed = false;
-volatile bool spi3_recovery_needed = false;
 
 //Run once at startup to initialize peripherals
 void run_setup()
@@ -51,7 +49,6 @@ void run_loop()
 {
 	process_adc();
 	process_control_comm();
-	process_ext_adcs();
 	process_ext_dacs();
 	process_ftdi();
 	process_io();
@@ -59,16 +56,6 @@ void run_loop()
 	heartbeat();
 }
 
-void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
-	if(hspi->Instance == SPI1)
-	{
-		spi1_recovery_needed = true;
-	}
-	else if(hspi->Instance == SPI3)
-	{
-		spi3_recovery_needed = true;
-	}
-}
 
 //HAL callbacks here will trigger the module specific functions
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
@@ -79,17 +66,6 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 	}
 }
 
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-	if(hspi->Instance == SPI1)
-	{
-		ext_kv_rx_done();
-	}
-	else if(hspi->Instance == SPI3)
-	{
-		ext_ma_rx_done();
-	}
-}
 
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
