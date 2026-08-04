@@ -18,6 +18,9 @@ namespace Xcc.Infra.GryphonBoard
         byte[] GenerateOperationalPointCmd(GCBPacketType packetType, GcbOperationalPoint op, IGcbSessionAuthentication sessionKey);
         byte[] GenerateConditioningCmd(float filamentSetpoint);
         byte[] GenerateWarmupCmd(float filamentSetpoint);
+        byte[] GenerateCalibrationHvpsKvCmd(float kvSetpoint, float maSetpoint);
+        byte[] GenerateCalibrationHvpsGridCmd(float gridVoltage);
+        byte[] GenerateCalibrationHvpsFilamentCmd(float filamentCurrent);
         byte[] GenerateNewSessionCmd(int totalPoints);
         byte[] GenerateOperationalPointQueryCmd(int pointIndex);
         byte[] GenerateReleaseTreatmentPlanCmd(GCBReleaseCommandScope scope, IGcbSessionAuthentication sessionKey);

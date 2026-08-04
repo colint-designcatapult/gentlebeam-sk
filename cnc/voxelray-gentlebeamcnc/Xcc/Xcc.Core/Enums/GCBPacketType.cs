@@ -16,6 +16,7 @@
         WaitForButtonCmd = 13,
         QcbPing = 14,
         QcbReadingsCommand = 15,
+        CalibrationHvpsCmd = 31,
 
         InvalidPacket = 100,
         VersionInfoResponse = 101,
@@ -32,5 +33,6 @@
         WaitForButtonResponse = 113,
         QcbPingResponse = 114,
         QcbReadingsCommandResponse = 115,
+        CalibrationHvpsResponse = 131,
     }
 }

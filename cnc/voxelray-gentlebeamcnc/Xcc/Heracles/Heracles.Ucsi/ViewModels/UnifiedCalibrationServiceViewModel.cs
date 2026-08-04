@@ -196,6 +196,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private readonly TelemetryParameterCatalog _catalog;
     private readonly IUcsiHostCommands _hostCommands;
     private readonly UcsiLogBuffer _logBuffer;
+    private readonly IGcbCommandInterface _commandInterface;
     private bool _tickInProgress;
     private bool _updatingTimeline;
     private int _nextGraphNumber = 3;
@@ -222,12 +223,14 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         ITelemetrySessionCoordinator coordinator,
         TelemetryParameterCatalog catalog,
         IUcsiHostCommands hostCommands,
-        UcsiLogBuffer logBuffer)
+        UcsiLogBuffer logBuffer,
+        IGcbCommandInterface commandInterface)
     {
         _coordinator = coordinator;
         _catalog = catalog;
         _hostCommands = hostCommands;
         _logBuffer = logBuffer;
+        _commandInterface = commandInterface;
 
         ParameterOptions = new ObservableCollection<CheckableParameterViewModel>(
             catalog.All.Select(descriptor => new CheckableParameterViewModel(descriptor)));
@@ -393,10 +396,11 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
                 RaisePropertyChanged(nameof(EmissionTextBoxBorder));
                 RaisePropertyChanged(nameof(CanEnableEmission));
                 
-                // When Power is 0, reset HV to 0
-                if (clampedValue == 0)
+                // When Power is 0, reset HV to 0 and send command to firmware
+                if (clampedValue == 0 && _hvpsCommandHV > 0)
                 {
                     HvpsCommandHV = 0;
+                    _ = SendHvpsKvToBoard(); // Send HV=0 command to firmware
                 }
             }
         }
@@ -746,5 +750,101 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         return descriptor.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
             .OfType<System.ComponentModel.DataAnnotations.DisplayAttribute>()
             .FirstOrDefault()?.Name ?? value.ToString();
+    }
+
+    /// <summary>
+    /// Sends HVPS KV (kilovoltage) command to the board with current HV and derived mA values.
+    /// Called when user finishes editing the HV textbox (LostFocus event).
+    /// Emission (mA) is derived from: Power / HV
+    /// </summary>
+    public async Task SendHvpsKvAsync()
+    {
+        await SendHvpsKvToBoard();
+    }
+
+    /// <summary>
+    /// Sends HVPS Grid (grid voltage) command to the board with current Grid value.
+    /// Called when user finishes editing the Grid textbox (LostFocus event).
+    /// </summary>
+    public async Task SendHvpsGridAsync()
+    {
+        await SendHvpsGridToBoard();
+    }
+
+    /// <summary>
+    /// Sends HVPS Filament (heater) command to the board with current Heat value.
+    /// Called when user finishes editing the Heat textbox (LostFocus event).
+    /// </summary>
+    public async Task SendHvpsFilamentAsync()
+    {
+        await SendHvpsFilamentToBoard();
+    }
+
+    private async Task SendHvpsKvToBoard()
+    {
+        try
+        {
+            // Derive mA from Power / HV
+            double mA = _hvpsCommandHV > 0 ? _hvpsCommandPower / _hvpsCommandHV : 0;
+
+            await _commandInterface.SendHvpsKv(
+                (float)_hvpsCommandHV,
+                (float)mA);
+            
+            _logBuffer.Log(
+                $"HVPS KV command sent: HV={_hvpsCommandHV:F1}kV, mA={mA:F1}mA (from Power={_hvpsCommandPower:F1}W)",
+                LogRecordSeverity.Info,
+                LogRecordType.System);
+        }
+        catch (Exception ex)
+        {
+            ErrorText = $"HVPS KV command failed: {ex.Message}";
+            _logBuffer.Log(
+                $"HVPS KV command failed: {ex.Message}",
+                LogRecordSeverity.Error,
+                LogRecordType.System);
+        }
+    }
+
+    private async Task SendHvpsGridToBoard()
+    {
+        try
+        {
+            await _commandInterface.SendHvpsGrid((float)_hvpsCommandGrid);
+            
+            _logBuffer.Log(
+                $"HVPS Grid command sent: Grid={_hvpsCommandGrid:F1}V",
+                LogRecordSeverity.Info,
+                LogRecordType.System);
+        }
+        catch (Exception ex)
+        {
+            ErrorText = $"HVPS Grid command failed: {ex.Message}";
+            _logBuffer.Log(
+                $"HVPS Grid command failed: {ex.Message}",
+                LogRecordSeverity.Error,
+                LogRecordType.System);
+        }
+    }
+
+    private async Task SendHvpsFilamentToBoard()
+    {
+        try
+        {
+            await _commandInterface.SendHvpsFilament((float)_hvpsCommandHeat);
+            
+            _logBuffer.Log(
+                $"HVPS Filament command sent: Heat={_hvpsCommandHeat:F0}mA",
+                LogRecordSeverity.Info,
+                LogRecordType.System);
+        }
+        catch (Exception ex)
+        {
+            ErrorText = $"HVPS Filament command failed: {ex.Message}";
+            _logBuffer.Log(
+                $"HVPS Filament command failed: {ex.Message}",
+                LogRecordSeverity.Error,
+                LogRecordType.System);
+        }
     }
 }

@@ -114,4 +114,31 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
             }
         }
     }
+
+    private void OnHvCommandLostFocus(object sender, RoutedEventArgs e)
+    {
+        // When user finishes editing HV, send HV+mA command to the board
+        if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+        {
+            _ = viewModel.SendHvpsKvAsync();
+        }
+    }
+
+    private void OnGridCommandLostFocus(object sender, RoutedEventArgs e)
+    {
+        // When user finishes editing Grid, send Grid command to the board
+        if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+        {
+            _ = viewModel.SendHvpsGridAsync();
+        }
+    }
+
+    private void OnHeatCommandLostFocus(object sender, RoutedEventArgs e)
+    {
+        // When user finishes editing Heat/Filament, send Filament command to the board
+        if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+        {
+            _ = viewModel.SendHvpsFilamentAsync();
+        }
+    }
 }

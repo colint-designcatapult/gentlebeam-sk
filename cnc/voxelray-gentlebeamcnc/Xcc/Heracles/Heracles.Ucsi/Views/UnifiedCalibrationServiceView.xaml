@@ -265,11 +265,11 @@
 
                                             <!-- Command Row -->
                                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Command" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" Margin="0,0,10,4"/>
-                                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}" IsEnabled="{Binding IsHvEnabled}" Margin="0,0,6,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown"/>
+                                            <TextBox x:Name="HvCommandTextBox" Grid.Row="1" Grid.Column="1" Text="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}" IsEnabled="{Binding IsHvEnabled}" Margin="0,0,6,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown" LostFocus="OnHvCommandLostFocus"/>
                                             <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding HvpsCommandEmission, Mode=OneWay, StringFormat={}{0:F3}}" IsReadOnly="True" Margin="0,0,6,4" Padding="4" Opacity="0.6" BorderBrush="{Binding EmissionTextBoxBorder}" BorderThickness="2"/>
-                                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding HvpsCommandPower, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4"/>
-                                            <TextBox Grid.Row="1" Grid.Column="4" Text="{Binding HvpsCommandGrid, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown"/>
-                                            <TextBox Grid.Row="1" Grid.Column="5" Text="{Binding HvpsCommandHeat, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F0}}" Margin="0,0,0,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown"/>
+                                            <TextBox x:Name="PowerCommandTextBox" Grid.Row="1" Grid.Column="3" Text="{Binding HvpsCommandPower, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4"/>
+                                            <TextBox x:Name="GridCommandTextBox" Grid.Row="1" Grid.Column="4" Text="{Binding HvpsCommandGrid, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown" LostFocus="OnGridCommandLostFocus"/>
+                                            <TextBox x:Name="HeatCommandTextBox" Grid.Row="1" Grid.Column="5" Text="{Binding HvpsCommandHeat, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F0}}" Margin="0,0,0,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown" LostFocus="OnHeatCommandLostFocus"/>
 
                                             <!-- SP Row -->
                                             <TextBlock Grid.Row="2" Grid.Column="0" Text="SP" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" Margin="0,0,10,4"/>

@@ -23,6 +23,9 @@ namespace Xcc.Core.Domain.GryphonBoard
         Task<FaultSnapshot> GetFaults();
         Task Conditioning(float conditioningSetpoint);
         Task WarmUp(float warmupSetpoint);
+        Task SendHvpsKv(float kvSetpoint, float maSetpoint);
+        Task SendHvpsGrid(float gridVoltage);
+        Task SendHvpsFilament(float filamentCurrent);
         Task<GcbOperationalPoint> QueryPoint(int pointIndex);
         Task<VersionInfo> GetVersionInfo();
     }

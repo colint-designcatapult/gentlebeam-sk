@@ -251,6 +251,122 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
 #endif
         }
 
+        public async Task SendHvpsKv(float kvSetpoint, float maSetpoint)
+        {
+            byte[] data = GcbXRayCommandOperator.GenerateCalibrationHvpsKvCmd(kvSetpoint, maSetpoint);
+
+            // Log raw packet for debugging
+            _ = LogWriter.LogAsync(
+                $"[HVPS_KV] Sending {data.Length} bytes: {BitConverter.ToString(data)}",
+                LogRecordSeverity.Info, LogRecordType.System);
+
+            try
+            {
+                var responseData = await SendRequestSeveralTimes(data);
+                
+                _ = LogWriter.LogAsync(
+                    $"[HVPS_KV] Received {responseData.Length} bytes: {BitConverter.ToString(responseData)}",
+                    LogRecordSeverity.Info, LogRecordType.System);
+
+                var responsePacket = ParseAndValidateResponseData(responseData, GCBPacketType.CalibrationHvpsResponse, expectedPayloadLength: 1);
+
+                var status = (GcbProcessingStatus)(int)responsePacket[0];
+                if (status != GcbProcessingStatus.OK)
+                {
+                    throw new Exception($"Failed to complete 'SendHvpsKv' command with status: {status}");
+                }
+
+#if DEBUG
+                string msg = $"GCB 'SendHvpsKv' command status: {status} (KV:{kvSetpoint:F1}kV, mA:{maSetpoint:F1}mA)";
+                _ = LogWriter.LogAsync(msg, LogRecordSeverity.Info, LogRecordType.System);
+#endif
+            }
+            catch (Exception ex)
+            {
+                _ = LogWriter.LogAsync(
+                    $"[HVPS_KV] ERROR: {ex.Message}",
+                    LogRecordSeverity.Error, LogRecordType.System);
+                throw;
+            }
+        }
+
+        public async Task SendHvpsGrid(float gridVoltage)
+        {
+            byte[] data = GcbXRayCommandOperator.GenerateCalibrationHvpsGridCmd(gridVoltage);
+
+            // Log raw packet for debugging
+            _ = LogWriter.LogAsync(
+                $"[HVPS_GRID] Sending {data.Length} bytes: {BitConverter.ToString(data)}",
+                LogRecordSeverity.Info, LogRecordType.System);
+
+            try
+            {
+                var responseData = await SendRequestSeveralTimes(data);
+                
+                _ = LogWriter.LogAsync(
+                    $"[HVPS_GRID] Received {responseData.Length} bytes: {BitConverter.ToString(responseData)}",
+                    LogRecordSeverity.Info, LogRecordType.System);
+
+                var responsePacket = ParseAndValidateResponseData(responseData, GCBPacketType.CalibrationHvpsResponse, expectedPayloadLength: 1);
+
+                var status = (GcbProcessingStatus)(int)responsePacket[0];
+                if (status != GcbProcessingStatus.OK)
+                {
+                    throw new Exception($"Failed to complete 'SendHvpsGrid' command with status: {status}");
+                }
+
+#if DEBUG
+                string msg = $"GCB 'SendHvpsGrid' command status: {status} (Grid:{gridVoltage:F1}V)";
+                _ = LogWriter.LogAsync(msg, LogRecordSeverity.Info, LogRecordType.System);
+#endif
+            }
+            catch (Exception ex)
+            {
+                _ = LogWriter.LogAsync(
+                    $"[HVPS_GRID] ERROR: {ex.Message}",
+                    LogRecordSeverity.Error, LogRecordType.System);
+                throw;
+            }
+        }
+
+        public async Task SendHvpsFilament(float filamentCurrent)
+        {
+            byte[] data = GcbXRayCommandOperator.GenerateCalibrationHvpsFilamentCmd(filamentCurrent);
+
+            // Log raw packet for debugging
+            _ = LogWriter.LogAsync(
+                $"[HVPS_FIL] Sending {data.Length} bytes: {BitConverter.ToString(data)}",
+                LogRecordSeverity.Info, LogRecordType.System);
+
+            try
+            {
+                var responseData = await SendRequestSeveralTimes(data);
+                
+                _ = LogWriter.LogAsync(
+                    $"[HVPS_FIL] Received {responseData.Length} bytes: {BitConverter.ToString(responseData)}",
+                    LogRecordSeverity.Info, LogRecordType.System);
+
+                var responsePacket = ParseAndValidateResponseData(responseData, GCBPacketType.CalibrationHvpsResponse, expectedPayloadLength: 1);
+
+                var status = (GcbProcessingStatus)(int)responsePacket[0];
+                if (status != GcbProcessingStatus.OK)
+                {
+                    throw new Exception($"Failed to complete 'SendHvpsFilament' command with status: {status}");
+                }
+
+#if DEBUG
+                string msg = $"GCB 'SendHvpsFilament' command status: {status} (Filament:{filamentCurrent:F0}mA)";
+                _ = LogWriter.LogAsync(msg, LogRecordSeverity.Info, LogRecordType.System);
+#endif
+            }
+            catch (Exception ex)
+            {
+                _ = LogWriter.LogAsync(
+                    $"[HVPS_FIL] ERROR: {ex.Message}",
+                    LogRecordSeverity.Error, LogRecordType.System);
+                throw;
+            }
+        }
         public async Task<GcbOperationalPoint> QueryPoint(int pointIndex)
         {
             byte[] data = GcbXRayCommandOperator.GenerateOperationalPointQueryCmd(pointIndex);

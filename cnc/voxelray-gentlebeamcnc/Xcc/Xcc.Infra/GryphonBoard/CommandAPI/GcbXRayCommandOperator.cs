@@ -65,6 +65,49 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
         }
 
         /// <summary>
+        /// This command is used in calibration mode to set HVPS kilovoltage and mA limit.
+        /// Payload: [cmd_id=5 (SET_KV), kv_value, flags]
+        /// </summary>
+        /// <param name="kvSetpoint">[kV] Kilovoltage setpoint (0-100)</param>
+        /// <param name="maSetpoint">[mA] mA current limit setpoint</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsKvCmd(float kvSetpoint, float maSetpoint)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: [5, kvSetpoint, (uint)maSetpoint]);
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to set HVPS grid voltage.
+        /// Payload: [cmd_id=7 (SET_GRID), grid_value, flags]
+        /// </summary>
+        /// <param name="gridVoltage">[V] Grid voltage setpoint (0-600)</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsGridCmd(float gridVoltage)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: [7, gridVoltage, 0]);
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to set HVPS filament current.
+        /// Payload: [cmd_id=8 (SET_FIL), filament_value, flags]
+        /// </summary>
+        /// <param name="filamentCurrent">[mA] Filament heater current setpoint (0-4000)</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsFilamentCmd(float filamentCurrent)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: [8, filamentCurrent, 0]);
+        }
+
+        /// <summary>
         /// This command is used to begin staging a new treatment plan. If successful, the firmware responds with a new session ID.
         /// </summary>
         /// <param name="totalPoints">The total requested number of points for the new plan</param>
