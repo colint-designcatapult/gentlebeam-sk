@@ -5,6 +5,7 @@ using Heracles.Ucsi.ViewModels;
 using Prism.Ioc;
 using Prism.Modularity;
 using Xcc.Core.Domain.GryphonBoard;
+using Xcc.Core.Enums;
 using Xcc.Core.Logging;
 using Xcc.Infra.GryphonBoard;
 using Xcc.Infra.GryphonBoard.CommandAPI;
@@ -57,21 +58,23 @@ public sealed class UcsiModule : IModule
     {
         try
         {
+            var logWriter = containerProvider.Resolve<ILogWriter>();
             // Start the GCB communication service receive loop so it can listen for responses
             var gcbComm = containerProvider.Resolve<IGcbCommunicationService>() as IRawUdpClient;
             if (gcbComm != null)
             {
                 gcbComm.Start();
-                System.Diagnostics.Debug.WriteLine("[UCSI] GCB Communication Service started successfully");
+                logWriter.Log("[UCSI] GCB Communication Service started successfully", LogRecordSeverity.Info, LogRecordType.System);
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("[UCSI] ERROR: GcbCommunicationService could not be cast to IRawUdpClient");
+                logWriter.Log("[UCSI] ERROR: GcbCommunicationService could not be cast to IRawUdpClient", LogRecordSeverity.Error, LogRecordType.System);
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[UCSI] ERROR starting GCB Communication Service: {ex.Message}");
+            var logWriter = containerProvider.Resolve<ILogWriter>();
+            logWriter.Log($"[UCSI] ERROR starting GCB Communication Service: {ex.Message}", LogRecordSeverity.Error, LogRecordType.System);
         }
     }
 }
