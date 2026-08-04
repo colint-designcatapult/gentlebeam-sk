@@ -27,23 +27,17 @@ public static class UcsiRegistration
         
         // GCB command interface infrastructure for HVPS calibration
         containerRegistry.RegisterSingleton<IGcbXRayCommandOperator, GcbXRayCommandOperator>();
+        // Register command options from configuration
+        containerRegistry.RegisterSingleton<UcsiStandaloneCommandOptions>();
         // Register the connection factory for real UDP communication to bench
         containerRegistry.RegisterSingleton<IGcbCommandConnectionFactory, UcsiGcbCommandConnectionFactory>();
         // Use UCSI-specific communication service with independent cancellation
-        // Auto-start the receive task when the service is created
+        // The service is not started in the factory - it will be started in OnInitialized
         containerRegistry.RegisterSingleton<IGcbCommunicationService>(container =>
         {
             var service = container.Resolve<UcsiGcbCommunicationService>();
-            try
-            {
-                System.Diagnostics.Debug.WriteLine("[UCSI] Starting GCB Communication Service from factory");
-                (service as IRawUdpClient)?.Start();
-                System.Diagnostics.Debug.WriteLine("[UCSI] GCB Communication Service started successfully");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[UCSI] ERROR in factory: {ex.Message}");
-            }
+            // NOTE: Do NOT call Start() here. It will be called in OnInitialized to ensure
+            // proper initialization order. Starting here can cause timing issues.
             return service;
         });
         // Use UcsiLogBuffer as the ILogWriter implementation (already registered above)

@@ -94,6 +94,21 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
         {
             BindingExpression binding = textBox.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty);
             binding?.UpdateSource();
+            
+            // After binding is updated, send the appropriate command
+            if (sender is System.Windows.Controls.TextBox && textBox.Name == "HvCommandTextBox")
+            {
+                _ = (DataContext as UnifiedCalibrationServiceViewModel)?.SendHvpsKvAsync();
+            }
+            else if (sender is System.Windows.Controls.TextBox && textBox.Name == "GridCommandTextBox")
+            {
+                _ = (DataContext as UnifiedCalibrationServiceViewModel)?.SendHvpsGridAsync();
+            }
+            else if (sender is System.Windows.Controls.TextBox && textBox.Name == "HeatCommandTextBox")
+            {
+                _ = (DataContext as UnifiedCalibrationServiceViewModel)?.SendHvpsFilamentAsync();
+            }
+            
             e.Handled = true;
         }
     }
@@ -136,6 +151,42 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
     private void OnHeatCommandLostFocus(object sender, RoutedEventArgs e)
     {
         // When user finishes editing Heat/Filament, send Filament command to the board
+        if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+        {
+            _ = viewModel.SendHvpsFilamentAsync();
+        }
+    }
+
+    private void OnHvCommandSliderReleased(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        // When user releases the HV slider, send HV+mA command to the board
+        if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+        {
+            _ = viewModel.SendHvpsKvAsync();
+        }
+    }
+
+    private void OnPowerCommandSliderReleased(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        // When user releases the Power slider, send HV+mA command to the board (power affects HV calculation)
+        if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+        {
+            _ = viewModel.SendHvpsKvAsync();
+        }
+    }
+
+    private void OnGridCommandSliderReleased(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        // When user releases the Grid slider, send Grid command to the board
+        if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+        {
+            _ = viewModel.SendHvpsGridAsync();
+        }
+    }
+
+    private void OnHeatCommandSliderReleased(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        // When user releases the Heat/Filament slider, send Filament command to the board
         if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
         {
             _ = viewModel.SendHvpsFilamentAsync();

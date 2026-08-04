@@ -29,6 +29,20 @@ public sealed class UcsiStandaloneTelemetryOptions
     public int ListenerPort { get; }
 }
 
+public sealed class UcsiStandaloneCommandOptions
+{
+    public UcsiStandaloneCommandOptions(IConfiguration configuration)
+    {
+        RemoteAddress = configuration["Ucsi:Commands:RemoteAddress"] ?? "172.31.1.100";
+        RemotePort = configuration.GetValue("Ucsi:Commands:RemotePort", 40_020);
+        if (RemotePort is < 1 or > 65_535)
+            throw new InvalidOperationException("Ucsi:Commands:RemotePort must be between 1 and 65535.");
+    }
+
+    public string RemoteAddress { get; }
+    public int RemotePort { get; }
+}
+
 public sealed class StandaloneTelemetryConnectionFactory(
     UcsiStandaloneTelemetryOptions options) : IGcbTelemetryConnectionFactory
 {

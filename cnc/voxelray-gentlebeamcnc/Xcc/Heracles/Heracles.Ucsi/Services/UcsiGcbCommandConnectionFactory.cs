@@ -7,20 +7,24 @@ namespace Heracles.Ucsi.Services
     /// <summary>
     /// Minimal UDP connection factory for UCSI standalone calibration commands.
     /// Creates direct UDP connections to the bench firmware without complex infrastructure.
+    /// Uses configuration from appsettings for IP and port (allows customization for different test benches).
     /// </summary>
     public class UcsiGcbCommandConnectionFactory : IGcbCommandConnectionFactory
     {
-        // Bench hardcoded address - these match the telemetry that's already working
-        private const string GCB_BENCH_IP = "172.31.1.100";
-        private const int GCB_COMMANDS_PORT = 40020;
+        private readonly UcsiStandaloneCommandOptions _options;
+
+        public UcsiGcbCommandConnectionFactory(UcsiStandaloneCommandOptions options)
+        {
+            _options = options;
+        }
 
         public IAsyncClientConnection GetGcbCommandConnection()
         {
             // Create a simple UDP connection to the bench firmware
             // Let OS assign an ephemeral client port (0) to avoid port conflicts with telemetry listener
             return new UdpClientConnection(
-                GCB_BENCH_IP,
-                GCB_COMMANDS_PORT,
+                _options.RemoteAddress,
+                _options.RemotePort,
                 clientPort: 0);
         }
     }
