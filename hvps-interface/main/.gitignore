@@ -1,5 +1,6 @@
 Debug/
 CalibrationDebug/
+Production/
 build/
 .settings/
 .clangd
