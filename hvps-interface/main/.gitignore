@@ -1,6 +1,7 @@
 Debug/
 CalibrationDebug/
 Production/
+Release/
 build/
 .settings/
 .clangd

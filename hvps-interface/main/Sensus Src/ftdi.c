@@ -27,7 +27,7 @@ static HAL_StatusTypeDef write_crc_magic(void);
 
 void setup_ftdi()
 {
-#if !defined(PRODUCTION)
+#if !defined(RELEASE)
 	write_crc_magic(); 
 #endif
 
