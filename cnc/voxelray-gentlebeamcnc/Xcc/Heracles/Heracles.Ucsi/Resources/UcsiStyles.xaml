@@ -99,6 +99,16 @@
         <Setter Property="Margin" Value="10,8,10,5"/>
     </Style>
 
+    <Style x:Key="UcsiTextBoxStyle" TargetType="TextBox">
+        <Setter Property="Foreground" Value="{StaticResource UcsiTextBrush}"/>
+        <Setter Property="Background" Value="{StaticResource UcsiPanelAlternateBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource UcsiBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="6,4"/>
+        <Setter Property="Foreground" Value="{StaticResource UcsiTextBrush}"/>
+        <Setter Property="CaretBrush" Value="{StaticResource UcsiTextBrush}"/>
+    </Style>
+
     <Style x:Key="UcsiValueTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource UcsiTextBrush}"/>
         <Setter Property="FontFamily" Value="Consolas"/>

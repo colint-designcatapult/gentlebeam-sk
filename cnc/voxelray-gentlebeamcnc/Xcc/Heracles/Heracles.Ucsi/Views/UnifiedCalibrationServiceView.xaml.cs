@@ -192,4 +192,20 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
             _ = viewModel.SendHvpsFilamentAsync();
         }
     }
+
+    private void OnSetMaLimitClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+        {
+            _ = viewModel.SendMaLimitAsync();
+        }
+    }
+
+    private void OnTestVersionRequestClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+        {
+            _ = viewModel.SendVersionRequestAsync();
+        }
+    }
 }

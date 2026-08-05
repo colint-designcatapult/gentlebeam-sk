@@ -30,19 +30,19 @@ public static class UcsiRegistration
         containerRegistry.RegisterSingleton<IGcbXRayCommandOperator, GcbXRayCommandOperator>();
         // Register command options from configuration
         containerRegistry.RegisterSingleton<UcsiStandaloneCommandOptions>();
+        // Use UcsiLogBuffer as the ILogWriter implementation
+        containerRegistry.RegisterSingleton<ILogWriter>(c => c.Resolve<UcsiLogBuffer>());
         // Register the connection factory for real UDP communication to bench
         containerRegistry.RegisterSingleton<IGcbCommandConnectionFactory, UcsiGcbCommandConnectionFactory>();
         // Use UCSI-specific communication service with independent cancellation
-        // The service is not started in the factory - it will be started in OnInitialized
+        // Start the receive task immediately in the factory so it runs before any commands are sent
         containerRegistry.RegisterSingleton<IGcbCommunicationService>(container =>
         {
             var service = container.Resolve<UcsiGcbCommunicationService>();
-            // NOTE: Do NOT call Start() here. It will be called in OnInitialized to ensure
-            // proper initialization order. Starting here can cause timing issues.
+            (service as IRawUdpClient)?.Start();
             return service;
         });
-        // Use UcsiLogBuffer as the ILogWriter implementation (already registered above)
-        containerRegistry.RegisterSingleton<ILogWriter>(c => c.Resolve<UcsiLogBuffer>());
+        // Register the command interface (uses GcbCommandInterface which requires logWriter and communication service)
         containerRegistry.RegisterSingleton<IGcbCommandInterface, GcbCommandInterface>();
         
         containerRegistry.RegisterSingleton<UnifiedCalibrationServiceViewModel>();
@@ -56,25 +56,7 @@ public sealed class UcsiModule : IModule
 
     public void OnInitialized(IContainerProvider containerProvider)
     {
-        try
-        {
-            var logWriter = containerProvider.Resolve<ILogWriter>();
-            // Start the GCB communication service receive loop so it can listen for responses
-            var gcbComm = containerProvider.Resolve<IGcbCommunicationService>() as IRawUdpClient;
-            if (gcbComm != null)
-            {
-                gcbComm.Start();
-                logWriter.Log("[UCSI] GCB Communication Service started successfully", LogRecordSeverity.Info, LogRecordType.System);
-            }
-            else
-            {
-                logWriter.Log("[UCSI] ERROR: GcbCommunicationService could not be cast to IRawUdpClient", LogRecordSeverity.Error, LogRecordType.System);
-            }
-        }
-        catch (Exception ex)
-        {
-            var logWriter = containerProvider.Resolve<ILogWriter>();
-            logWriter.Log($"[UCSI] ERROR starting GCB Communication Service: {ex.Message}", LogRecordSeverity.Error, LogRecordType.System);
-        }
+        // Service is already started in the factory registration
+        // This method is required by IModule interface but intentionally empty
     }
 }

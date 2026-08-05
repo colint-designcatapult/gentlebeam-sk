@@ -265,11 +265,11 @@
 
                                             <!-- Command Row -->
                                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Command" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" Margin="0,0,10,4"/>
-                                            <TextBox x:Name="HvCommandTextBox" Grid.Row="1" Grid.Column="1" Text="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}" IsEnabled="{Binding IsHvEnabled}" Margin="0,0,6,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown" LostFocus="OnHvCommandLostFocus"/>
-                                            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding HvpsCommandEmission, Mode=OneWay, StringFormat={}{0:F3}}" IsReadOnly="True" Margin="0,0,6,4" Padding="4" Opacity="0.6" BorderBrush="{Binding EmissionTextBoxBorder}" BorderThickness="2"/>
-                                            <TextBox x:Name="PowerCommandTextBox" Grid.Row="1" Grid.Column="3" Text="{Binding HvpsCommandPower, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4"/>
-                                            <TextBox x:Name="GridCommandTextBox" Grid.Row="1" Grid.Column="4" Text="{Binding HvpsCommandGrid, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}" Margin="0,0,6,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown" LostFocus="OnGridCommandLostFocus"/>
-                                            <TextBox x:Name="HeatCommandTextBox" Grid.Row="1" Grid.Column="5" Text="{Binding HvpsCommandHeat, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F0}}" Margin="0,0,0,4" Padding="4" KeyDown="OnCommandTextBoxKeyDown" LostFocus="OnHeatCommandLostFocus"/>
+                                            <TextBox x:Name="HvCommandTextBox" Grid.Row="1" Grid.Column="1" Text="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}" IsEnabled="{Binding IsHvEnabled}" Margin="0,0,6,4" Style="{StaticResource UcsiTextBoxStyle}" KeyDown="OnCommandTextBoxKeyDown" LostFocus="OnHvCommandLostFocus"/>
+                                            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding HvpsCommandEmission, Mode=OneWay, StringFormat={}{0:F3}}" IsReadOnly="True" Margin="0,0,6,4" Opacity="0.6" Style="{StaticResource UcsiTextBoxStyle}" BorderBrush="{Binding EmissionTextBoxBorder}" BorderThickness="2"/>
+                                            <TextBox x:Name="PowerCommandTextBox" Grid.Row="1" Grid.Column="3" Text="{Binding HvpsCommandPower, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F1}}" Margin="0,0,6,4" Style="{StaticResource UcsiTextBoxStyle}"/>
+                                            <TextBox x:Name="GridCommandTextBox" Grid.Row="1" Grid.Column="4" Text="{Binding HvpsCommandGrid, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}" Margin="0,0,6,4" Style="{StaticResource UcsiTextBoxStyle}" KeyDown="OnCommandTextBoxKeyDown" LostFocus="OnGridCommandLostFocus"/>
+                                            <TextBox x:Name="HeatCommandTextBox" Grid.Row="1" Grid.Column="5" Text="{Binding HvpsCommandHeat, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F0}}" Margin="0,0,0,4" Style="{StaticResource UcsiTextBoxStyle}" KeyDown="OnCommandTextBoxKeyDown" LostFocus="OnHeatCommandLostFocus"/>
 
                                             <!-- SP Row -->
                                             <TextBlock Grid.Row="2" Grid.Column="0" Text="SP" Foreground="{StaticResource UcsiMutedTextBrush}" FontSize="11" Margin="0,0,10,4"/>
@@ -366,7 +366,7 @@
                                         
                                         <!-- Cooling Section -->
                                         <TextBlock Text="Cooling" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,12,0,8"/>
-                                        <StackPanel Margin="0,0,0,0">
+                                        <StackPanel Margin="0,0,0,8">
                                             <ToggleButton IsChecked="{Binding CoolingWaterPumpEnabled, Mode=TwoWay}" Foreground="{StaticResource UcsiTextBrush}" Background="{Binding CoolingWaterPumpColor}" Padding="8,6" Margin="0,0,0,6" Cursor="Hand">
                                                 <TextBlock Text="{Binding CoolingWaterPumpText}"/>
                                             </ToggleButton>
@@ -374,6 +374,21 @@
                                                 <TextBlock Text="{Binding CoolingRadiatorFanText}"/>
                                             </ToggleButton>
                                         </StackPanel>
+
+                                        <!-- mA Limit Section -->
+                                        <TextBlock Text="mA Limit" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,12,0,8"/>
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox Grid.Column="0" Text="{Binding MaLimitValue, Mode=TwoWay}" Style="{StaticResource UcsiTextBoxStyle}" Margin="0,0,4,0"/>
+                                            <Button Grid.Column="1" Content="Set" Padding="8,4" Background="{StaticResource UcsiAccentBrush}" Foreground="{StaticResource UcsiTextBrush}" Cursor="Hand" Click="OnSetMaLimitClick"/>
+                                        </Grid>
+
+                                        <!-- Diagnostics Section -->
+                                        <TextBlock Text="Diagnostics" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,12,0,8"/>
+                                        <Button Content="Test Version Request" Padding="8,6" Foreground="{StaticResource UcsiTextBrush}" Background="#4A5C7C" Cursor="Hand" Click="OnTestVersionRequestClick"/>
                                     </StackPanel>
                                 </Grid>
                             </TabItem>
@@ -450,6 +465,34 @@
                         <TabItem Header="Logs">
                             <DataGrid ItemsSource="{Binding Logs}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
                                       Background="{StaticResource UcsiBackgroundBrush}" Foreground="{StaticResource UcsiTextBrush}" BorderThickness="0">
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="DataGridCell">
+                                        <Setter Property="Background" Value="{StaticResource UcsiBackgroundBrush}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource UcsiTextBrush}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Padding" Value="6,4"/>
+                                    </Style>
+                                </DataGrid.CellStyle>
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="{StaticResource UcsiPanelAlternateBrush}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource UcsiMutedTextBrush}"/>
+                                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                        <Setter Property="BorderBrush" Value="{StaticResource UcsiBorderBrush}"/>
+                                        <Setter Property="Padding" Value="6,4"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="{StaticResource UcsiBackgroundBrush}"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource UcsiPanelAlternateBrush}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Time" Binding="{Binding Timestamp, StringFormat={}{0:HH:mm:ss.fff}}" Width="130"/>
                                     <DataGridTextColumn Header="Severity" Binding="{Binding Severity}" Width="100"/>

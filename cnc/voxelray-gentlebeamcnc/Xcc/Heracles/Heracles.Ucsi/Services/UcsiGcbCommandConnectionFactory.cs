@@ -1,5 +1,7 @@
 using Empyrean.Common.Infra.Networking;
 using Empyrean.Common.Infra.Networking.Udp;
+using Xcc.Core.Enums;
+using Xcc.Core.Logging;
 using Xcc.Infra.GryphonBoard.Comm;
 
 namespace Heracles.Ucsi.Services
@@ -12,20 +14,24 @@ namespace Heracles.Ucsi.Services
     public class UcsiGcbCommandConnectionFactory : IGcbCommandConnectionFactory
     {
         private readonly UcsiStandaloneCommandOptions _options;
+        private readonly ILogWriter _logWriter;
 
-        public UcsiGcbCommandConnectionFactory(UcsiStandaloneCommandOptions options)
+        public UcsiGcbCommandConnectionFactory(UcsiStandaloneCommandOptions options, ILogWriter logWriter)
         {
             _options = options;
+            _logWriter = logWriter;
         }
 
         public IAsyncClientConnection GetGcbCommandConnection()
         {
             // Create a simple UDP connection to the bench firmware
-            // Let OS assign an ephemeral client port (0) to avoid port conflicts with telemetry listener
+            // Bind to port 20 (same as firmware) so responses come back to us
+            // This matches the third-party calibration software behavior
+            _ = _logWriter.LogAsync($"[UDP_INIT] Creating connection to {_options.RemoteAddress}:{_options.RemotePort} (local port: 20)", LogRecordSeverity.Info, LogRecordType.System);
             return new UdpClientConnection(
                 _options.RemoteAddress,
                 _options.RemotePort,
-                clientPort: 0);
+                clientPort: 20);
         }
     }
 }

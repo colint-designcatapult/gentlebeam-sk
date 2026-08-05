@@ -65,18 +65,45 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
         }
 
         /// <summary>
-        /// This command is used in calibration mode to set HVPS kilovoltage and mA limit.
+        /// This command is used in calibration mode to set HVPS kilovoltage.
         /// Payload: [cmd_id=5 (SET_KV), kv_value, flags]
         /// </summary>
         /// <param name="kvSetpoint">[kV] Kilovoltage setpoint (0-100)</param>
-        /// <param name="maSetpoint">[mA] mA current limit setpoint</param>
         /// <returns></returns>
-        public byte[] GenerateCalibrationHvpsKvCmd(float kvSetpoint, float maSetpoint)
+        public byte[] GenerateCalibrationHvpsKvCmd(float kvSetpoint)
         {
             return UdpPacketBuilder.BuildRawPacket(
                 packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
                 packetCounter: ++packetCounter,
-                payload: [5, kvSetpoint, (uint)maSetpoint]);
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(5), new UdpPacket.Field(kvSetpoint), new UdpPacket.Field(0) });
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to set HVPS power.
+        /// Payload: [cmd_id=4 (SET_PWR), power_value, flags]
+        /// </summary>
+        /// <param name="powerSetpoint">[W] Power setpoint</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsPowerCmd(float powerSetpoint)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(4), new UdpPacket.Field(powerSetpoint), new UdpPacket.Field(0) });
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to set HVPS mA limit.
+        /// Payload: [cmd_id=6 (SET_MA_LIM), ma_limit_value, flags]
+        /// </summary>
+        /// <param name="maSetpoint">[mA] mA current limit setpoint</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsMaLimitCmd(float maSetpoint)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(6), new UdpPacket.Field(maSetpoint), new UdpPacket.Field(0) });
         }
 
         /// <summary>
@@ -90,7 +117,7 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             return UdpPacketBuilder.BuildRawPacket(
                 packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
                 packetCounter: ++packetCounter,
-                payload: [7, gridVoltage, 0]);
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(7), new UdpPacket.Field(gridVoltage), new UdpPacket.Field(0) });
         }
 
         /// <summary>
@@ -104,7 +131,7 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             return UdpPacketBuilder.BuildRawPacket(
                 packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
                 packetCounter: ++packetCounter,
-                payload: [8, filamentCurrent, 0]);
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(8), new UdpPacket.Field(filamentCurrent), new UdpPacket.Field(0) });
         }
 
         /// <summary>

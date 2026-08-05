@@ -216,6 +216,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private double _hvpsCommandPower;
     private double _hvpsCommandGrid;
     private double _hvpsCommandHeat;
+    private float _maLimitValue = 4.0f;
     private bool _coolingWaterPumpEnabled;
     private bool _coolingRadiatorFanEnabled;
 
@@ -231,6 +232,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         _hostCommands = hostCommands;
         _logBuffer = logBuffer;
         _commandInterface = commandInterface;
+
+        // Initialize mA limit asynchronously on startup
+        _ = InitializeMaLimitAsync();
 
         ParameterOptions = new ObservableCollection<CheckableParameterViewModel>(
             catalog.All.Select(descriptor => new CheckableParameterViewModel(descriptor)));
@@ -780,19 +784,34 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         await SendHvpsFilamentToBoard();
     }
 
+    /// <summary>
+    /// Sends HVPS mA Limit command to the board with current MaLimitValue.
+    /// Called when user clicks the Set button in the mA Limit section.
+    /// </summary>
+    public async Task SendMaLimitAsync()
+    {
+        await SendMaLimitToBoard();
+    }
+
+    /// <summary>
+    /// Sends a Version Info request to the board for diagnostics.
+    /// Called when user clicks the Test Version Request button.
+    /// </summary>
+    public async Task SendVersionRequestAsync()
+    {
+        await SendVersionRequest();
+    }
+
     private async Task SendHvpsKvToBoard()
     {
         try
         {
-            // Derive mA from Power / HV
-            double mA = _hvpsCommandHV > 0 ? _hvpsCommandPower / _hvpsCommandHV : 0;
-
             await _commandInterface.SendHvpsKv(
                 (float)_hvpsCommandHV,
-                (float)mA);
+                (float)_hvpsCommandPower);
             
             _logBuffer.Log(
-                $"HVPS KV command sent: HV={_hvpsCommandHV:F1}kV, mA={mA:F1}mA (from Power={_hvpsCommandPower:F1}W)",
+                $"HVPS KV command sent: HV={_hvpsCommandHV:F1}kV, Power={_hvpsCommandPower:F1}W",
                 LogRecordSeverity.Info,
                 LogRecordType.System);
         }
@@ -845,6 +864,65 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
                 $"HVPS Filament command failed: {ex.Message}",
                 LogRecordSeverity.Error,
                 LogRecordType.System);
+        }
+    }
+
+    public float MaLimitValue
+    {
+        get => _maLimitValue;
+        set => SetProperty(ref _maLimitValue, value);
+    }
+
+    private async Task InitializeMaLimitAsync()
+    {
+        try
+        {
+            await _commandInterface.SendHvpsMaLimit(_maLimitValue);
+            _logBuffer.Log(
+                $"HVPS mA Limit initialized: {_maLimitValue:F1}mA",
+                LogRecordSeverity.Info,
+                LogRecordType.System);
+        }
+        catch (Exception ex)
+        {
+            _logBuffer.Log(
+                $"HVPS mA Limit initialization failed: {ex.Message}",
+                LogRecordSeverity.Warn,
+                LogRecordType.System);
+        }
+    }
+
+    private async Task SendMaLimitToBoard()
+    {
+        try
+        {
+            await _commandInterface.SendHvpsMaLimit(MaLimitValue);
+            
+            _logBuffer.Log(
+                $"HVPS mA Limit command sent: {MaLimitValue:F1}mA",
+                LogRecordSeverity.Info,
+                LogRecordType.System);
+        }
+        catch (Exception ex)
+        {
+            ErrorText = $"HVPS mA Limit command failed: {ex.Message}";
+            _logBuffer.Log(
+                $"HVPS mA Limit command failed: {ex.Message}",
+                LogRecordSeverity.Error,
+                LogRecordType.System);
+        }
+    }
+
+    private async Task SendVersionRequest()
+    {
+        try
+        {
+            var response = await _commandInterface.SendVersionInfoRequest();
+            ErrorText = $"Version request successful - {response.Length} bytes received";
+        }
+        catch (Exception ex)
+        {
+            ErrorText = $"Version request failed: {ex.Message}";
         }
     }
 }

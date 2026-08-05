@@ -34,7 +34,7 @@ public sealed class UcsiStandaloneCommandOptions
     public UcsiStandaloneCommandOptions(IConfiguration configuration)
     {
         RemoteAddress = configuration["Ucsi:Commands:RemoteAddress"] ?? "172.31.1.100";
-        RemotePort = configuration.GetValue("Ucsi:Commands:RemotePort", 40_020);
+        RemotePort = configuration.GetValue("Ucsi:Commands:RemotePort", 20);
         if (RemotePort is < 1 or > 65_535)
             throw new InvalidOperationException("Ucsi:Commands:RemotePort must be between 1 and 65535.");
     }
