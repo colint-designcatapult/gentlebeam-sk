@@ -133,7 +133,18 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 packetCounter: ++packetCounter,
                 payload: new UdpPacket.Field[] { new UdpPacket.Field(8), new UdpPacket.Field(filamentCurrent), new UdpPacket.Field(0) });
         }
-
+        /// <summary>
+        /// This command is used in calibration mode to request the current HVPS setpoints.
+        /// Response contains 5 float values: Power, KV, MA Limit, Grid, Filament
+        /// </summary>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationSetpointRequest()
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationSetpointCmd,
+                packetCounter: ++packetCounter,
+                payload: [0 /* reserved field */]);
+        }
         /// <summary>
         /// This command is used to begin staging a new treatment plan. If successful, the firmware responds with a new session ID.
         /// </summary>

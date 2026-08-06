@@ -17,26 +17,31 @@ public interface ISystemTelemetryProcessor
 public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
 {
     private const uint PublicationIntervalMilliseconds = 250;
+    private const uint CalibrationSetpointRefreshIntervalMilliseconds = 500;
     private static readonly FirmwareVersionSignature NormalSignature = new(2, 0, 1, FirmwareMode.Normal);
     private static readonly FirmwareVersionSignature CalibrationSignature = new(1, 0, 0, FirmwareMode.Calibration);
 
     private readonly ISystemTelemetryChanged _systemTelemetryChangedCallback;
     private readonly IGCBDataStore _gcbDataStore;
     private readonly IDecodedTelemetryFrameSink _decodedTelemetryFrameSink;
+    private readonly IGcbCommandInterface? _gcbCommandInterface;
     private readonly UdpPacket _packet = new();
     private FirmwareVersionSignature? _selectedVersion;
     private NormalTelemetryState? _normalState;
     private CalibrationTelemetryState? _calibrationState;
     private uint? _lastPublishedRuntime;
+    private DateTimeOffset _lastSetpointRequestUtc = DateTimeOffset.MinValue;
 
     public SystemTelemetryProcessor(
         ISystemTelemetryChanged systemTelemetryChangedCallback,
         IGCBDataStore gcbDataStore,
-        IDecodedTelemetryFrameSink decodedTelemetryFrameSink)
+        IDecodedTelemetryFrameSink decodedTelemetryFrameSink,
+        IGcbCommandInterface? gcbCommandInterface = null)
     {
         _systemTelemetryChangedCallback = systemTelemetryChangedCallback;
         _gcbDataStore = gcbDataStore;
         _decodedTelemetryFrameSink = decodedTelemetryFrameSink;
+        _gcbCommandInterface = gcbCommandInterface;
     }
 
     public bool Process(byte[] datagram) => Process(datagram, default);
@@ -150,6 +155,12 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
         if (!publishCurrentValue && !publishDecodedFrame)
             return;
 
+        // Periodically request calibration setpoints (every 500ms)
+        if (_gcbCommandInterface is not null && ShouldRefreshSetpoints())
+        {
+            _ = RequestCalibrationSetpointsAsync(state);
+        }
+
         PublishSnapshot(
             state.Runtime,
             state.Snapshot(),
@@ -157,6 +168,27 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
             receivedAtUtc,
             publishCurrentValue,
             publishDecodedFrame);
+    }
+
+    private bool ShouldRefreshSetpoints()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var elapsedMilliseconds = (now - _lastSetpointRequestUtc).TotalMilliseconds;
+        return elapsedMilliseconds >= CalibrationSetpointRefreshIntervalMilliseconds;
+    }
+
+    private async System.Threading.Tasks.Task RequestCalibrationSetpointsAsync(CalibrationTelemetryState state)
+    {
+        try
+        {
+            _lastSetpointRequestUtc = DateTimeOffset.UtcNow;
+            var setpointResponse = await _gcbCommandInterface!.RequestCalibrationSetpoints();
+            state.UpdateSetpoints(setpointResponse);
+        }
+        catch
+        {
+            // Silently ignore setpoint request errors to avoid interrupting telemetry stream
+        }
     }
 
     private (bool CurrentValue, bool DecodedFrame) GetPublicationTargets(uint runtime) =>

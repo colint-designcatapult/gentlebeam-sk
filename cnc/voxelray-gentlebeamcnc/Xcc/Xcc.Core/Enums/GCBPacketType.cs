@@ -17,6 +17,7 @@
         QcbPing = 14,
         QcbReadingsCommand = 15,
         CalibrationHvpsCmd = 31,
+        CalibrationSetpointCmd = 33,
 
         InvalidPacket = 100,
         VersionInfoResponse = 101,
@@ -34,5 +35,6 @@
         QcbPingResponse = 114,
         QcbReadingsCommandResponse = 115,
         CalibrationHvpsResponse = 131,
+        CalibrationSetpointResponse = 133,
     }
 }

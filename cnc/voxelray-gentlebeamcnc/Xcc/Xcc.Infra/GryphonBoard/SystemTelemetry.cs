@@ -426,6 +426,13 @@ internal sealed class CalibrationTelemetryState
     private float _heatSinkTemperature;
     private float _peltierTemperature;
     private float _cabinetTemperature;
+    
+    // Setpoint values retrieved from calibration setpoint request command
+    private float? _kvSetpoint;
+    private float? _hvpsPowerSetpoint;
+    private float? _emissionCurrentLimit;
+    private float? _gridSetpoint;
+    private float? _filamentSetpoint;
 
     internal uint Runtime => unchecked((uint)_systemRuntime);
 
@@ -482,6 +489,15 @@ internal sealed class CalibrationTelemetryState
         _cabinetTemperature = packet[43];
     }
 
+    internal void UpdateSetpoints(CalibrationSetpointResponse setpointResponse)
+    {
+        _hvpsPowerSetpoint = setpointResponse.PowerSetpoint;
+        _kvSetpoint = setpointResponse.KvSetpoint;
+        _emissionCurrentLimit = setpointResponse.MaLimitSetpoint;
+        _gridSetpoint = setpointResponse.GridSetpoint;
+        _filamentSetpoint = setpointResponse.FilamentSetpoint;
+    }
+
     internal SystemCalibrationTelemetry Snapshot() => new()
     {
         ControlBoardState = _controlBoardState,
@@ -504,6 +520,10 @@ internal sealed class CalibrationTelemetryState
         HeaterCurrentSetpoint = _heaterCurrentSetpoint,
         HeaterCurrentFeedback = _heaterCurrentFeedback,
         GridVoltage = _gridVoltage,
+        KvSetpoint = _kvSetpoint,
+        HvpsPowerSetpoint = _hvpsPowerSetpoint,
+        EmissionCurrentLimit = _emissionCurrentLimit,
+        GridSetpoint = _gridSetpoint,
         XCoilCurrent = _xCoilCurrent,
         YCoilCurrent = _yCoilCurrent,
         FocusCurrent = _focusCurrent,

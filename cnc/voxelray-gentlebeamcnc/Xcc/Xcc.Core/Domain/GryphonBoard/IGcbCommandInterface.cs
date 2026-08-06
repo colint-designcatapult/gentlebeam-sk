@@ -3,6 +3,16 @@ using Xcc.Core.Enums;
 
 namespace Xcc.Core.Domain.GryphonBoard
 {
+    /// <summary>
+    /// Response from calibration setpoint request command containing all 5 HVPS setpoints
+    /// </summary>
+    public record CalibrationSetpointResponse(
+        float PowerSetpoint,
+        float KvSetpoint,
+        float MaLimitSetpoint,
+        float GridSetpoint,
+        float FilamentSetpoint);
+
     public class GcbNoConnectionException : System.Exception
     {
         public GcbNoConnectionException(string message) : base(message) { }
@@ -27,6 +37,7 @@ namespace Xcc.Core.Domain.GryphonBoard
         Task SendHvpsMaLimit(float maSetpoint);
         Task SendHvpsGrid(float gridVoltage);
         Task SendHvpsFilament(float filamentCurrent);
+        Task<CalibrationSetpointResponse> RequestCalibrationSetpoints();
         Task<byte[]> SendVersionInfoRequest();
         Task<GcbOperationalPoint> QueryPoint(int pointIndex);
         Task<VersionInfo> GetVersionInfo();

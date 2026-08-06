@@ -259,6 +259,16 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             new("Kilovoltage Ramping"), new("Emission On"), new("PID Enabled"),
             new("High Voltage Interlock"), new("High Voltage Status"), new("Master Fault"),
         ]);
+        InterlockIndicators = new ObservableCollection<TelemetryStateItemViewModel>(
+        [
+            new("HV Interlock"),
+            new("Grid Interlock"),
+        ]);
+        WarmingIndicators = new ObservableCollection<TelemetryStateItemViewModel>(
+        [
+            new("Warming"),
+            new("HV Ramping"),
+        ]);
         ActiveFaults = [];
         Logs = [];
 
@@ -277,6 +287,8 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     public ObservableCollection<GraphPaneViewModel> Graphs { get; }
     public ObservableCollection<TelemetryStateItemViewModel> Interlocks { get; }
     public ObservableCollection<TelemetryStateItemViewModel> HvpsStates { get; }
+    public ObservableCollection<TelemetryStateItemViewModel> InterlockIndicators { get; }
+    public ObservableCollection<TelemetryStateItemViewModel> WarmingIndicators { get; }
     public ObservableCollection<FaultEntry> ActiveFaults { get; }
     public ObservableCollection<UcsiLogEntry> Logs { get; }
 
@@ -444,46 +456,29 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     public double HvpsFeedbackGrid => CurrentSample?.Telemetry.GridVoltage ?? 0.0;
     public double HvpsFeedbackHeat => CurrentSample?.Telemetry.HeaterCurrentFeedback ?? 0.0;
 
-    // Indicator light colors - Interlocks (grey for now, telemetry not yet available)
-    public SolidColorBrush InterlockHvColor => new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));
-    public SolidColorBrush InterlockGridColor => new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));
-    public SolidColorBrush InterlockGridWatchdogColor => new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));
+    // Indicator light colors - Interlocks (using data binding pattern from working implementation)
+    public SolidColorBrush InterlockHvColor => GetInterlockColor(InterlockIndicators[0]);
+    public SolidColorBrush InterlockGridColor => GetInterlockColor(InterlockIndicators[1]);
+    public SolidColorBrush InterlockGridWatchdogColor => new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80)); // TODO: add grid watchdog later
 
-    // Indicator light colors - State indicators
-    public SolidColorBrush WarmingIndicatorColor
+    private SolidColorBrush GetInterlockColor(TelemetryStateItemViewModel indicator)
     {
-        get
-        {
-            // Grey if Heat is 0
-            if (_hvpsCommandHeat <= 0)
-                return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));
-
-            // Check if HeaterCurrentSetpoint is within 50mA of target
-            double setpointHeat = CurrentSample?.Telemetry.HeaterCurrentSetpoint ?? 0.0;
-            if (Math.Abs(setpointHeat - _hvpsCommandHeat) <= 50.0)
-                return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0, 200, 0)); // Green
-
-            // Yellow/amber while ramping
-            return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 200, 0)); // Amber
-        }
+        if (!indicator.IsAvailable)
+            return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80)); // Grey when unavailable
+        return indicator.IsActive
+            ? new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0, 200, 0)) // Green when active
+            : new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80)); // Grey when off
     }
 
-    public SolidColorBrush HvRampingIndicatorColor
+    // Indicator light colors - Warming states (using data binding pattern from working implementation)
+    public SolidColorBrush WarmingIndicatorColor => GetWarmingColor(WarmingIndicators[0]);
+    public SolidColorBrush HvRampingIndicatorColor => GetWarmingColor(WarmingIndicators[1]);
+
+    private SolidColorBrush GetWarmingColor(TelemetryStateItemViewModel indicator)
     {
-        get
-        {
-            // Grey if HV is 0
-            if (_hvpsCommandHV <= 0)
-                return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80));
-
-            // Check if KvSetpoint is within 5kV of target
-            double setpointKv = CurrentSample?.Telemetry.KvSetpoint ?? 0.0;
-            if (Math.Abs(setpointKv - _hvpsCommandHV) <= 5.0)
-                return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0, 200, 0)); // Green
-
-            // Yellow/amber while ramping
-            return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 200, 0)); // Amber
-        }
+        return indicator.IsActive
+            ? new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 200, 0)) // Amber when active
+            : new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80)); // Grey when off
     }
 
     // Cooling controls
@@ -690,6 +685,38 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             HvpsStates[index].IsAvailable = hvps[index].HasValue;
         }
 
+        // Update interlock indicators for UI display
+        bool?[] interlockIndicators = telemetry is null
+            ? new bool?[2]
+            :
+            [
+                telemetry.Hvps.HighVoltageInterlock,
+                telemetry.Hvps.GridInterlock,
+            ];
+        for (int index = 0; index < InterlockIndicators.Count; index++)
+        {
+            InterlockIndicators[index].Value = interlockIndicators[index].HasValue ? interlockIndicators[index]!.Value ? "On" : "Off" : "N/A";
+            InterlockIndicators[index].IsActive = interlockIndicators[index] == true;
+            InterlockIndicators[index].IsAvailable = interlockIndicators[index].HasValue;
+        }
+        // Raise PropertyChanged for color properties that depend on InterlockIndicators
+        RaisePropertyChanged(nameof(InterlockHvColor));
+        RaisePropertyChanged(nameof(InterlockGridColor));
+
+        // Update warming indicators from HVPS States (index 2 = Warming, index 3 = Kilovoltage Ramping)
+        if (HvpsStates.Count >= 4)
+        {
+            WarmingIndicators[0].IsActive = HvpsStates[2].IsActive;
+            WarmingIndicators[0].IsAvailable = HvpsStates[2].IsAvailable;
+            WarmingIndicators[0].Value = HvpsStates[2].Value;
+            WarmingIndicators[1].IsActive = HvpsStates[3].IsActive;
+            WarmingIndicators[1].IsAvailable = HvpsStates[3].IsAvailable;
+            WarmingIndicators[1].Value = HvpsStates[3].Value;
+        }
+        // Raise PropertyChanged for color properties that depend on WarmingIndicators
+        RaisePropertyChanged(nameof(WarmingIndicatorColor));
+        RaisePropertyChanged(nameof(HvRampingIndicatorColor));
+
         ActiveFaults.Clear();
         if (sample is not null)
         {
@@ -735,8 +762,6 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         RaisePropertyChanged(nameof(HasEmissionExceedsMaximumError));
         RaisePropertyChanged(nameof(EmissionTextBoxBorder));
         RaisePropertyChanged(nameof(CanEnableEmission));
-        RaisePropertyChanged(nameof(WarmingIndicatorColor));
-        RaisePropertyChanged(nameof(HvRampingIndicatorColor));
         RaisePropertyChanged(nameof(CoolingWaterPumpText));
         RaisePropertyChanged(nameof(CoolingRadiatorFanText));
         RaisePropertyChanged(nameof(CoolingWaterPumpColor));

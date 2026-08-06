@@ -253,7 +253,9 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
 
         public async Task SendHvpsKv(float kvSetpoint, float powerSetpoint)
         {
+#if DEBUG
             _ = LogWriter.LogAsync($"[HVPS_DIAG] SendHvpsKv STARTED: KV={kvSetpoint:F2}kV, Power={powerSetpoint:F2}W", LogRecordSeverity.Info, LogRecordType.System);
+#endif
             
             // Send KV command
             byte[] kvData = GcbXRayCommandOperator.GenerateCalibrationHvpsKvCmd(kvSetpoint);
@@ -474,6 +476,22 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 throw;
             }
         }
+
+        public async Task<CalibrationSetpointResponse> RequestCalibrationSetpoints()
+        {
+            byte[] data = GcbXRayCommandOperator.GenerateCalibrationSetpointRequest();
+            
+            var responseData = await SendRequestSeveralTimes(data);
+            var responsePacket = ParseAndValidateResponseData(responseData, GCBPacketType.CalibrationSetpointResponse, expectedPayloadLength: 5);
+
+            return new CalibrationSetpointResponse(
+                PowerSetpoint: (float)responsePacket[0],
+                KvSetpoint: (float)responsePacket[1],
+                MaLimitSetpoint: (float)responsePacket[2],
+                GridSetpoint: (float)responsePacket[3],
+                FilamentSetpoint: (float)responsePacket[4]);
+        }
+
         public async Task<GcbOperationalPoint> QueryPoint(int pointIndex)
         {
             byte[] data = GcbXRayCommandOperator.GenerateOperationalPointQueryCmd(pointIndex);
@@ -538,7 +556,9 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 try
                 {
                     UdpPacket packet = new UdpPacket(data);
+#if DEBUG
                     _ = LogWriter.LogAsync($"[HVPS_DIAG] Attempt {i}/{attempts}: Sending packet type {(GCBPacketType)packet.PacketType}, counter={packet.PacketCounter}, size={data.Length} bytes", LogRecordSeverity.Info, LogRecordType.System);
+#endif
                     
                     var bytes = await GcbCommandsAsyncService.SendRequestAsync(data);
                     if (_sendRequestSuccess == false)
@@ -546,18 +566,24 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                         _ = LogWriter.LogAsync($"GCB UdpService communication established", LogRecordSeverity.Info, LogRecordType.System);
                     }
                     _sendRequestSuccess = true;
+#if DEBUG
                     _ = LogWriter.LogAsync($"[HVPS_DIAG] Received response: {bytes.Length} bytes", LogRecordSeverity.Info, LogRecordType.System);
+#endif
                     return bytes;
                 }
                 catch (InvalidOperationException ioEx)
                 {
+#if DEBUG
                     _ = LogWriter.LogAsync($"[HVPS_DIAG_ERR] Attempt {i}: Receive task not running - {ioEx.Message}", LogRecordSeverity.Error, LogRecordType.System);
+#endif
                     _sendRequestSuccess = false;
                     await Task.Delay(DelayAfterSendRequestFailureMilliseconds);
                 }
                 catch (UdpException udpEx)
                 {
+#if DEBUG
                     _ = LogWriter.LogAsync($"[HVPS_DIAG_ERR] Attempt {i}: UDP error - {udpEx.Message}", LogRecordSeverity.Error, LogRecordType.System);
+#endif
                     if (_sendRequestSuccess == true)
                     {
                         _ = LogWriter.LogAsync($"GCB UdpService communication failed: {udpEx.Message}", LogRecordSeverity.Error, LogRecordType.System);
@@ -567,7 +593,9 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 }
                 catch (Exception ex)
                 {
+#if DEBUG
                     _ = LogWriter.LogAsync($"[HVPS_DIAG_ERR] Attempt {i}: Unexpected error - {ex.GetType().Name}: {ex.Message}", LogRecordSeverity.Error, LogRecordType.System);
+#endif
                     _sendRequestSuccess = false;
                     await Task.Delay(DelayAfterSendRequestFailureMilliseconds);
                 }
