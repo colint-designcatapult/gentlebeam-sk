@@ -255,7 +255,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             Enum.GetValues<SystemInterlock>().Select(value => new TelemetryStateItemViewModel(GetDisplayName(value))));
         HvpsStates = new ObservableCollection<TelemetryStateItemViewModel>(
         [
-            new("HV Control Enabled"), new("Grid Control Enabled"), new("Warming"),
+            new("HV Control Enabled"), new("Grid Interlock"), new("Warming"),
             new("Kilovoltage Ramping"), new("Emission On"), new("PID Enabled"),
             new("High Voltage Interlock"), new("High Voltage Status"), new("Master Fault"),
         ]);
@@ -459,13 +459,21 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     // Indicator light colors - Interlocks (using data binding pattern from working implementation)
     public SolidColorBrush InterlockHvColor => GetInterlockColor(InterlockIndicators[0]);
     public SolidColorBrush InterlockGridColor => GetInterlockColor(InterlockIndicators[1]);
-    public SolidColorBrush InterlockGridWatchdogColor => new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80)); // TODO: add grid watchdog later
+    // Grid Watchdog uses HVPS-level GridInterlock (bit 2 of RawIoFlags), not system-level WatchdogReady
+    public SolidColorBrush InterlockGridWatchdogColor => GetSimpleStateColor(CurrentSample?.Telemetry.Hvps.GridInterlock ?? false);
 
     private SolidColorBrush GetInterlockColor(TelemetryStateItemViewModel indicator)
     {
         if (!indicator.IsAvailable)
             return new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80)); // Grey when unavailable
         return indicator.IsActive
+            ? new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0, 200, 0)) // Green when active
+            : new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80)); // Grey when off
+    }
+
+    private SolidColorBrush GetSimpleStateColor(bool isActive)
+    {
+        return isActive
             ? new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 0, 200, 0)) // Green when active
             : new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80)); // Grey when off
     }
@@ -658,7 +666,16 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         SystemInterlock[] values = Enum.GetValues<SystemInterlock>();
         for (int index = 0; index < values.Length; index++)
         {
-            bool? state = telemetry?.Interlocks.GetState(values[index]);
+            bool? state;
+            if (values[index] == SystemInterlock.WatchdogReady)
+            {
+                // Watchdog ready tracks HVPS-level GridInterlock (bit 2 of RawIoFlags), not system-level WatchdogReady
+                state = telemetry?.Hvps.GridInterlock;
+            }
+            else
+            {
+                state = telemetry?.Interlocks.GetState(values[index]);
+            }
             Interlocks[index].Value = state.HasValue ? state.Value ? "Ready" : "Open" : "N/A";
             Interlocks[index].IsActive = state == true;
             Interlocks[index].IsAvailable = state.HasValue;
@@ -669,7 +686,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             :
             [
                 telemetry.Hvps.HighVoltageControlEnabled,
-                telemetry.Hvps.GridControlEnabled,
+                telemetry.Hvps.CalibrationGridInterlockEnabled,  // Bit 8 of RawStatusFlags = Grid Interlock
                 telemetry.Hvps.Warming,
                 telemetry.Hvps.KilovoltageRamping,
                 telemetry.Hvps.EmissionOn,
@@ -686,12 +703,14 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         }
 
         // Update interlock indicators for UI display
+        // Note: GridInterlock (bit 2 of RawIoFlags) is actually a clock/status bit tracking Grid Watchdog
+        // The actual Grid Interlock is CalibrationGridInterlockEnabled (bit 8 of RawStatusFlags)
         bool?[] interlockIndicators = telemetry is null
             ? new bool?[2]
             :
             [
                 telemetry.Hvps.HighVoltageInterlock,
-                telemetry.Hvps.GridInterlock,
+                telemetry.Hvps.CalibrationGridInterlockEnabled,
             ];
         for (int index = 0; index < InterlockIndicators.Count; index++)
         {
@@ -716,6 +735,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         // Raise PropertyChanged for color properties that depend on WarmingIndicators
         RaisePropertyChanged(nameof(WarmingIndicatorColor));
         RaisePropertyChanged(nameof(HvRampingIndicatorColor));
+        // Note: Grid Watchdog uses HVPS-level GridInterlock (bit 2 of RawIoFlags), not system-level WatchdogReady
+        // When Grid Watchdog state changes, we need to notify the color property
+        RaisePropertyChanged(nameof(InterlockGridWatchdogColor));
 
         ActiveFaults.Clear();
         if (sample is not null)
