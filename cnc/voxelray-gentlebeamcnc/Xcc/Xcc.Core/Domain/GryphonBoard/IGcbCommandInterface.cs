@@ -37,6 +37,7 @@ namespace Xcc.Core.Domain.GryphonBoard
         Task SendHvpsMaLimit(float maSetpoint);
         Task SendHvpsGrid(float gridVoltage);
         Task SendHvpsFilament(float filamentCurrent);
+        Task SendHvpsPidControl(bool enable);
         Task<CalibrationSetpointResponse> RequestCalibrationSetpoints();
         Task<byte[]> SendVersionInfoRequest();
         Task<GcbOperationalPoint> QueryPoint(int pointIndex);

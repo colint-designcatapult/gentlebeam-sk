@@ -133,6 +133,20 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 packetCounter: ++packetCounter,
                 payload: new UdpPacket.Field[] { new UdpPacket.Field(8), new UdpPacket.Field(filamentCurrent), new UdpPacket.Field(0) });
         }
+
+        /// <summary>
+        /// This command is used in calibration mode to enable/disable PID controller.
+        /// Payload: [cmd_id=10 (SET_CONFIG), enable_value, flags=0x18]
+        /// </summary>
+        /// <param name="enable">true to enable PID, false to disable</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsPidCmd(bool enable)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(10), new UdpPacket.Field(enable ? 1.0f : 0.0f), new UdpPacket.Field(0x18) });
+        }
         /// <summary>
         /// This command is used in calibration mode to request the current HVPS setpoints.
         /// Response contains 5 float values: Power, KV, MA Limit, Grid, Filament

@@ -168,7 +168,7 @@
                                                     <TextBlock Grid.Column="0" Text="HV [kV]" HorizontalAlignment="Center" FontSize="12" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,0,6"/>
                                                     <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,0">
                                                         <TextBlock Text="120" FontSize="10" Foreground="{StaticResource UcsiMutedTextBrush}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                                                        <Slider x:Name="HvCommandSlider" Orientation="Vertical" Minimum="0" Maximum="120" Value="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="30" Height="180" IsEnabled="{Binding IsHvEnabled}"
+                                                        <Slider x:Name="HvCommandSlider" Orientation="Vertical" Minimum="0" Maximum="120" Value="{Binding HvpsCommandHV, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="30" Height="180" IsEnabled="{Binding IsHvEnabled}" Opacity="{Binding HvCommandSliderOpacity}"
                                                                 TickPlacement="BottomRight" TickFrequency="10" PreviewMouseLeftButtonUp="OnHvCommandSliderReleased"/>
                                                     </StackPanel>
                                                     <TextBlock Grid.Column="0" Grid.Row="2" Text="0" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,4,0,0"/>
@@ -363,7 +363,7 @@
                                         </StackPanel>
                                         
                                         <!-- PID Section -->
-                                        <CheckBox Content="PID Enabled" Margin="0,2" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                        <CheckBox Content="PID Enabled" Margin="0,2" Foreground="{StaticResource UcsiMutedTextBrush}" IsChecked="{Binding PidEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         
                                         <!-- Cooling Section -->
                                         <TextBlock Text="Cooling" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,12,0,8"/>

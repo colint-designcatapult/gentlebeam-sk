@@ -217,8 +217,21 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private double _hvpsCommandGrid;
     private double _hvpsCommandHeat;
     private float _maLimitValue = 4.0f;
+    private bool _pidEnabled;
     private bool _coolingWaterPumpEnabled;
     private bool _coolingRadiatorFanEnabled;
+
+    public bool PidEnabled
+    {
+        get => _pidEnabled;
+        set
+        {
+            if (SetProperty(ref _pidEnabled, value))
+            {
+                _ = SendHvpsPidControlAsync(value);
+            }
+        }
+    }
 
     public UnifiedCalibrationServiceViewModel(
         ITelemetrySessionCoordinator coordinator,
@@ -255,7 +268,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             Enum.GetValues<SystemInterlock>().Select(value => new TelemetryStateItemViewModel(GetDisplayName(value))));
         HvpsStates = new ObservableCollection<TelemetryStateItemViewModel>(
         [
-            new("HV Control Enabled"), new("Grid Interlock"), new("Warming"),
+            new("HV Control Enabled"), new("Grid Control Enabled"), new("Warming"),
             new("Kilovoltage Ramping"), new("Emission On"), new("PID Enabled"),
             new("High Voltage Interlock"), new("High Voltage Status"), new("Master Fault"),
         ]);
@@ -391,8 +404,15 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             ? new SolidColorBrush(System.Windows.Media.Color.FromArgb(0, 255, 255, 255))
             : new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 0, 0));
 
-    // HV is only editable when Power > 0
-    public bool IsHvEnabled => _hvpsCommandPower > 0;
+    // HV slider opacity - dim when disabled, bright when enabled
+    public double HvCommandSliderOpacity => IsHvEnabled ? 1.0 : 0.5;
+
+    // HV is only editable when Power > 0 AND all 3 interlocks are enabled
+    public bool IsHvEnabled => 
+        _hvpsCommandPower > 0 && 
+        InterlockIndicators[0].IsActive &&  // HV Interlock
+        InterlockIndicators[1].IsActive &&  // Grid Interlock
+        (CurrentSample?.Telemetry.Hvps.GridInterlock ?? false);  // Grid Watchdog
 
     public double HvpsCommandPower
     {
@@ -405,6 +425,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             {
                 // When Power changes, update dependent properties
                 RaisePropertyChanged(nameof(IsHvEnabled));
+                RaisePropertyChanged(nameof(HvCommandSliderOpacity));
                 RaisePropertyChanged(nameof(HvpsCommandEmission));
                 RaisePropertyChanged(nameof(IsEmissionValid));
                 RaisePropertyChanged(nameof(EmissionValidationError));
@@ -489,7 +510,6 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             : new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 80, 80, 80)); // Grey when off
     }
 
-    // Cooling controls
     public bool CoolingWaterPumpEnabled
     {
         get => _coolingWaterPumpEnabled;
@@ -686,7 +706,8 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             :
             [
                 telemetry.Hvps.HighVoltageControlEnabled,
-                telemetry.Hvps.CalibrationGridInterlockEnabled,  // Bit 8 of RawStatusFlags = Grid Interlock
+                // Grid Control Enabled = true only when BOTH Grid Interlock (bit 8) AND Grid Watchdog (bit 2) are enabled
+                telemetry.Hvps.CalibrationGridInterlockEnabled == true && telemetry.Hvps.GridInterlock == true ? true : false,
                 telemetry.Hvps.Warming,
                 telemetry.Hvps.KilovoltageRamping,
                 telemetry.Hvps.EmissionOn,
@@ -701,6 +722,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             HvpsStates[index].IsActive = hvps[index] == true;
             HvpsStates[index].IsAvailable = hvps[index].HasValue;
         }
+
+        // Sync PID Enabled state from telemetry (HvpsStates[5])
+        _pidEnabled = hvps[5].GetValueOrDefault(false);
 
         // Update interlock indicators for UI display
         // Note: GridInterlock (bit 2 of RawIoFlags) is actually a clock/status bit tracking Grid Watchdog
@@ -721,6 +745,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         // Raise PropertyChanged for color properties that depend on InterlockIndicators
         RaisePropertyChanged(nameof(InterlockHvColor));
         RaisePropertyChanged(nameof(InterlockGridColor));
+        // Interlocks are updated from telemetry, which affects IsHvEnabled
+        RaisePropertyChanged(nameof(IsHvEnabled));
+        RaisePropertyChanged(nameof(HvCommandSliderOpacity));
 
         // Update warming indicators from HVPS States (index 2 = Warming, index 3 = Kilovoltage Ramping)
         if (HvpsStates.Count >= 4)
@@ -846,7 +873,15 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     /// </summary>
     public async Task SendVersionRequestAsync()
     {
-        await SendVersionRequest();
+        try
+        {
+            var versionInfo = await _commandInterface.GetVersionInfo();
+            ErrorText = $"Firmware Version: {versionInfo.Major}.{versionInfo.Minor} (Level: {versionInfo.Level}, Mode: {versionInfo.Mode})";
+        }
+        catch (Exception ex)
+        {
+            ErrorText = $"Version request failed: {ex.Message}";
+        }
     }
 
     private async Task SendHvpsKvToBoard()
@@ -960,16 +995,28 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         }
     }
 
-    private async Task SendVersionRequest()
+    /// <summary>
+    /// Sends HVPS PID Enable/Disable command to the board.
+    /// Called when user toggles the PID Enabled checkbox.
+    /// </summary>
+    private async Task SendHvpsPidControlAsync(bool enabled)
     {
         try
         {
-            var response = await _commandInterface.SendVersionInfoRequest();
-            ErrorText = $"Version request successful - {response.Length} bytes received";
+            await _commandInterface.SendHvpsPidControl(enabled);
+            
+            _logBuffer.Log(
+                $"HVPS PID command sent: PID={(_pidEnabled ? "Enabled" : "Disabled")}",
+                LogRecordSeverity.Info,
+                LogRecordType.System);
         }
         catch (Exception ex)
         {
-            ErrorText = $"Version request failed: {ex.Message}";
+            ErrorText = $"HVPS PID command failed: {ex.Message}";
+            _logBuffer.Log(
+                $"HVPS PID command failed: {ex.Message}",
+                LogRecordSeverity.Error,
+                LogRecordType.System);
         }
     }
 }

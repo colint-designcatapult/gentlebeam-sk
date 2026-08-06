@@ -23,6 +23,7 @@ namespace Xcc.Infra.GryphonBoard
         byte[] GenerateCalibrationHvpsMaLimitCmd(float maSetpoint);
         byte[] GenerateCalibrationHvpsGridCmd(float gridVoltage);
         byte[] GenerateCalibrationHvpsFilamentCmd(float filamentCurrent);
+        byte[] GenerateCalibrationHvpsPidCmd(bool enable);
         byte[] GenerateCalibrationSetpointRequest();
         byte[] GenerateNewSessionCmd(int totalPoints);
         byte[] GenerateOperationalPointQueryCmd(int pointIndex);

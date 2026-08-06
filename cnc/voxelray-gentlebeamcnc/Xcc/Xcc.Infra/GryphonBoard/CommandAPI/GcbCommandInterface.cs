@@ -477,6 +477,35 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             }
         }
 
+        public async Task SendHvpsPidControl(bool enable)
+        {
+            byte[] data = GcbXRayCommandOperator.GenerateCalibrationHvpsPidCmd(enable);
+
+            try
+            {
+                var responseData = await SendRequestSeveralTimes(data);
+                var responsePacket = ParseAndValidateResponseData(responseData, GCBPacketType.CalibrationHvpsResponse, expectedPayloadLength: 3);
+
+                var status = (GcbProcessingStatus)(int)responsePacket[0];
+                if (status != GcbProcessingStatus.OK)
+                {
+                    throw new Exception($"Failed to complete 'SendHvpsPidControl' command with status: {status}");
+                }
+
+#if DEBUG
+                string msg = $"GCB 'SendHvpsPidControl' command status: {status} (PID:{(enable ? "Enabled" : "Disabled")})";
+                _ = LogWriter.LogAsync(msg, LogRecordSeverity.Info, LogRecordType.System);
+#endif
+            }
+            catch (Exception ex)
+            {
+                _ = LogWriter.LogAsync(
+                    $"[HVPS_PID] ERROR: {ex.Message}",
+                    LogRecordSeverity.Error, LogRecordType.System);
+                throw;
+            }
+        }
+
         public async Task<CalibrationSetpointResponse> RequestCalibrationSetpoints()
         {
             byte[] data = GcbXRayCommandOperator.GenerateCalibrationSetpointRequest();
