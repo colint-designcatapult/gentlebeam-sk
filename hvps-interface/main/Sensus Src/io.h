@@ -3,6 +3,7 @@
 #define IO_H_
 
 #include "stdbool.h"
+#include "main.h"
 
 #define LOCK_TIMER_PERIOD	1500
 #define LOCK_TIMER_MIN_MS	10

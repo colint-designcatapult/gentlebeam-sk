@@ -136,7 +136,11 @@ void uart_log_write(UartLog_Level_t level, const char *fmt, ...)
         return; /* logging turned off: skip formatting and buffer writes entirely */
     }
 
-    len = snprintf(line, sizeof(line), "%s", prefix[level]);
+    if ((unsigned)level >= (sizeof(prefix) / sizeof(prefix[0]))) {
+        return; /* guard against out-of-range level */
+    }
+
+    len = snprintf(line, sizeof(line), "[%10lu] %s", (uint32_t)runtime_ms, prefix[level]);
 
     va_start(args, fmt);
     len += vsnprintf(line + len, sizeof(line) - (size_t)len, fmt, args);
@@ -278,20 +282,5 @@ void uart_log_status_json(void)
     tx_start_if_idle();
     __enable_irq();
 }
-
-/* ------------------------- Wiring the ISR --------------------------------
- *
- * USART3_IRQHandler() in stm32f3xx_it.c must call HAL_UART_IRQHandler() on
- * your huart3 handle directly, which dispatches to the callbacks above:
- *
- *   extern UART_HandleTypeDef huart3;
- *   void USART3_IRQHandler(void)
- *   {
- *     HAL_UART_IRQHandler(&huart3);
- *   }
- *
- * If USART3 shares an IRQ line with USART2 on your part/config (check your
- * datasheet/CubeMX-generated it.c), handle both instances there.
- * --------------------------------------------------------------------------*/
 
 #endif /* UART_LOG_ENABLED */

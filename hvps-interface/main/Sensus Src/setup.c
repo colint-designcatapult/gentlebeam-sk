@@ -46,7 +46,7 @@ void run_setup()
 	enable_grid_clock();
 	enable_runtime_timer();
 	uart_log_init(&huart3);
-	uart_log_write(LOG_LEVEL_INFO, "Sensus setup complete");
+	LOG_INFO("Sensus setup complete");
 }
 
 //Run continuously
