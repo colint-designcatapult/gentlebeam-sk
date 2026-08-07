@@ -5,12 +5,18 @@
 #include "stdlib.h"
 
 #include "ftdi.h"
+#include "uart_log.h"
 
 #define CRC_MAGIC_VALUE    ((uint32_t)0xDEADBEEF)
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-char *ftdi_boot_cmd = "B00TL";
-char *ftdi_get_cmd = "GET..";
-char *ftdi_set_cmd = "..SET";
+static const ftdi_command_t command_table[] =
+{
+    { "B00TL", FTDI_CMD_BOOTLOADER, FTDI_RX_MIN_BYTES },
+    { "GET..", FTDI_CMD_GET,        FTDI_RX_MIN_BYTES },
+    { "..SET", FTDI_CMD_SET,        FTDI_RX_MAX_BYTES },
+};
+
 char cmd_string_comp[FTDI_RX_CMD_BYTES+1];
 uint8_t ftdi_rx_buf[FTDI_RX_MAX_BYTES];
 uint8_t ftdi_rx_in[2];
@@ -20,8 +26,8 @@ volatile bool process_ftdi_rx = false;
 volatile uint8_t ftdi_rx_idx = 0;
 volatile uint8_t ftdi_cmd = FTDI_CMD_NONE;
 
-static uint8_t get_ftdi_rx_cmd();
-static void process_ftdi_cmd(uint8_t cmd);
+static ftdi_cmd_t get_ftdi_rx_cmd();
+static void process_ftdi_cmd(ftdi_cmd_t cmd);
 static void erase_crc_flash();
 static HAL_StatusTypeDef write_crc_magic(void);
 
@@ -51,27 +57,23 @@ void process_ftdi()
 	}
 }
 
-static uint8_t get_ftdi_rx_cmd()
+static ftdi_cmd_t get_ftdi_rx_cmd(void)
 {
-	uint8_t ret_cmd = FTDI_CMD_NONE;
-	memcpy(cmd_string_comp, ftdi_rx_buf+1, FTDI_RX_CMD_BYTES);
-	if(strcmp(cmd_string_comp, ftdi_boot_cmd) == 0 && ftdi_rx_idx == FTDI_MIN_RX_BYTES)
-	{
-		ret_cmd = FTDI_CMD_BOOTLOADER;
-	}
-	else if(strcmp(cmd_string_comp, ftdi_get_cmd) == 0 && ftdi_rx_idx == FTDI_MIN_RX_BYTES)
-	{
-		ret_cmd = FTDI_CMD_GET;
-	}
-	else if(strcmp(cmd_string_comp, ftdi_set_cmd) == 0 && ftdi_rx_idx == FTDI_RX_MAX_BYTES)
-	{
-		ret_cmd = FTDI_CMD_SET;
-	}
+    for(size_t i = 0; i < ARRAY_SIZE(command_table); i++)
+    {
+        if((ftdi_rx_idx == command_table[i].expected_len) &&
+           (memcmp(&ftdi_rx_buf[1],
+                   command_table[i].cmd,
+                   FTDI_RX_CMD_BYTES) == 0))
+        {
+            return command_table[i].id;
+        }
+    }
 
-	return ret_cmd;
+    return FTDI_CMD_NONE;
 }
 
-static void process_ftdi_cmd(uint8_t cmd)
+static void process_ftdi_cmd(ftdi_cmd_t cmd)
 {
 	switch(cmd)
 	{
@@ -80,10 +82,13 @@ static void process_ftdi_cmd(uint8_t cmd)
 			HAL_NVIC_SystemReset();
 			while(1);
 			break;
+
 		case FTDI_CMD_GET:
 			break;
+
 		case FTDI_CMD_SET:
 			break;
+
 		default:
 			break;
 	}

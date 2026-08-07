@@ -2,7 +2,6 @@
 #include "stm32f3xx_hal.h"
 #include "stdbool.h"
 
-
 #include "timers.h"
 
 volatile int32_t ext_adc_ms;
