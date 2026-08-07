@@ -115,6 +115,7 @@ public sealed class GraphPaneViewModel : BindableBase
         ParameterView = CollectionViewSource.GetDefaultView(ParameterOptions);
         ParameterView.Filter = FilterParameter;
         ParameterView.SortDescriptions.Add(new SortDescription(nameof(CheckableParameterViewModel.IsSelected), ListSortDirection.Descending));
+        ParameterView.SortDescriptions.Add(new SortDescription(nameof(CheckableParameterViewModel.DisplayName), ListSortDirection.Ascending));
         RemoveCommand = new DelegateCommand(() => _remove(this));
     }
 
@@ -254,6 +255,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         ParameterView = CollectionViewSource.GetDefaultView(ParameterOptions);
         ParameterView.Filter = FilterParameter;
         ParameterView.SortDescriptions.Add(new SortDescription(nameof(CheckableParameterViewModel.IsSelected), ListSortDirection.Descending));
+        ParameterView.SortDescriptions.Add(new SortDescription(nameof(CheckableParameterViewModel.DisplayName), ListSortDirection.Ascending));
         foreach (CheckableParameterViewModel option in ParameterOptions)
             option.IsSelected = DefaultMonitoredParameters.Contains(option.Id, StringComparer.Ordinal);
 

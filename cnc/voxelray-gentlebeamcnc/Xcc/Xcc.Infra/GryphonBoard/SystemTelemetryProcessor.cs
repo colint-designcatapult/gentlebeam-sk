@@ -185,9 +185,10 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
             var setpointResponse = await _gcbCommandInterface!.RequestCalibrationSetpoints();
             state.UpdateSetpoints(setpointResponse);
         }
-        catch
+        catch (Exception)
         {
             // Silently ignore setpoint request errors to avoid interrupting telemetry stream
+            // If this is failing, check GcbCommandInterface logs for network/parsing errors
         }
     }
 

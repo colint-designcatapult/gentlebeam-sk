@@ -432,7 +432,6 @@ internal sealed class CalibrationTelemetryState
     private float? _hvpsPowerSetpoint;
     private float? _emissionCurrentLimit;
     private float? _gridSetpoint;
-    private float? _filamentSetpoint;
 
     internal uint Runtime => unchecked((uint)_systemRuntime);
 
@@ -495,7 +494,8 @@ internal sealed class CalibrationTelemetryState
         _kvSetpoint = setpointResponse.KvSetpoint;
         _emissionCurrentLimit = setpointResponse.MaLimitSetpoint;
         _gridSetpoint = setpointResponse.GridSetpoint;
-        _filamentSetpoint = setpointResponse.FilamentSetpoint;
+        // Note: (Heater/Filament Setpoint) is NOT updated here
+        // It comes from the base telemetry packet and is set during packet parsing
     }
 
     internal SystemCalibrationTelemetry Snapshot() => new()

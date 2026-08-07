@@ -586,7 +586,7 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 {
                     UdpPacket packet = new UdpPacket(data);
 #if DEBUG
-                    _ = LogWriter.LogAsync($"[HVPS_DIAG] Attempt {i}/{attempts}: Sending packet type {(GCBPacketType)packet.PacketType}, counter={packet.PacketCounter}, size={data.Length} bytes", LogRecordSeverity.Info, LogRecordType.System);
+                    // _ = LogWriter.LogAsync($"[HVPS_DIAG] Attempt {i}/{attempts}: Sending packet type {(GCBPacketType)packet.PacketType}, counter={packet.PacketCounter}, size={data.Length} bytes", LogRecordSeverity.Info, LogRecordType.System);
 #endif
                     
                     var bytes = await GcbCommandsAsyncService.SendRequestAsync(data);
@@ -596,7 +596,7 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                     }
                     _sendRequestSuccess = true;
 #if DEBUG
-                    _ = LogWriter.LogAsync($"[HVPS_DIAG] Received response: {bytes.Length} bytes", LogRecordSeverity.Info, LogRecordType.System);
+                    // _ = LogWriter.LogAsync($"[HVPS_DIAG] Received response: {bytes.Length} bytes", LogRecordSeverity.Info, LogRecordType.System);
 #endif
                     return bytes;
                 }
