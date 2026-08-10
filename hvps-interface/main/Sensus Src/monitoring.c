@@ -331,8 +331,6 @@ static void handle_beam_ctrl(uint32_t rose, uint32_t fell)
     {
         if (sys_stat_check(SYS_HV_CTRL_EN) && sys_stat_check(SYS_GRID_CTRL_EN))
         {
-            prev_error = 0;
-            acc_error = 0;
 #ifdef CALIBRATION_MODE
             set_sys_bit(SYS_CAL_GRID_INT_EN);
 #else
