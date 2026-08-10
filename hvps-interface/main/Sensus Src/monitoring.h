@@ -128,6 +128,8 @@ void report_ma_fb(uint32_t ma_fb);
 
 float get_monitored_float_val(uint32_t comm_idx);
 uint32_t get_monitored_int_val(uint32_t comm_idx);
+bool sys_config_set(unsigned int index, float value);
+float sys_config_get(unsigned int index);
 
 extern float setpoints[NUM_SP];
 

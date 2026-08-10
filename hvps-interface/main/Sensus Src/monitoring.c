@@ -91,6 +91,12 @@ void setup_system_monitoring()
 			(1 << IN_TEMP_1_FAULT)| (1 << IN_OC_CAT_FAULT)| (1 << IN_TEMP_2_FAULT);
 }
 
+/* ========================================================================
+ * System Status Bit Helpers
+ *
+ * Check, set, and clear status bits in sys_stat.
+ *
+ * ======================================================================== */
 bool sys_stat_check(uint8_t bitpos)
 {
 	if(bitpos >= NUM_SYS_BITS)
@@ -119,6 +125,28 @@ void clear_sys_bit(uint8_t bitpos)
 	{
 		sys_stat &= ~(1<<bitpos);
 	}
+}
+
+/* ========================================================================
+ * System Configuration Access Functions
+ *
+ * Get or update values in the config_vals table.
+ *
+ * ======================================================================== */
+bool sys_config_set(unsigned int index, float value)
+{
+    if (index >= NUM_SYS_CONFIG)
+    {
+        return false;
+    }
+
+    config_vals[index] = value;
+    return true;
+}
+
+float sys_config_get(unsigned int index)
+{
+    return config_vals[index];
 }
 
 /* ========================================================================

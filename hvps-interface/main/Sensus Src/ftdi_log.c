@@ -1,17 +1,17 @@
 /**
- * uart_log.c
+ * ftdi_log.c
  *
- * See uart_log.h for usage. Implementation notes:
+ * See ftdi_log.h for usage. Implementation notes:
  *
  * - TX ring buffer: log calls copy formatted text into a circular buffer.
  *   If HAL UART TX is idle, we kick off HAL_UART_Transmit_IT() for the first
  *   chunk; the TxCpltCallback then keeps draining the buffer until empty.
- * - Thread-safety: uart_log_write() disables the UART interrupt briefly while
+ * - Thread-safety: ftdi_log_write() disables the UART interrupt briefly while
  *   touching shared buffer indices (short critical section), so it is safe
  *   to call from main loop and from other (lower-priority) ISRs.
  */
 
-#include "uart_log.h"
+#include "ftdi_log.h"
 #include <stdio.h>
 #include <string.h>
 #include "FreeRTOS.h"
@@ -19,7 +19,7 @@
 #include "cmsis_os2.h"
 #include "timers.h"
 
-#if UART_LOG_ENABLED /* whole file compiles to nothing if disabled */
+#if FTDI_LOG_ENABLED /* whole file compiles to nothing if disabled */
 
 #ifndef USE_LOGGING_TASK
 #define USE_LOGGING_TASK        0
@@ -38,11 +38,13 @@ static void logging_task(void *argument)
 
 	for (;;)
 	{
-        uart_log_status_json();
+        ftdi_log_status_json();
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 #endif /* USE_LOGGING_TASK */
+
+extern volatile bool ftdi_tx_busy;
 
 /* ------------------------- Internal state -------------------------------- */
 
@@ -50,10 +52,9 @@ static UART_HandleTypeDef *s_huart = NULL;
 static volatile uint8_t s_logEnabled = 1; /* enabled by default */
 
 /* TX ring buffer */
-static volatile uint8_t  s_txBuf[UART_LOG_TX_BUF_SIZE];
+static volatile uint8_t  s_txBuf[FTDI_LOG_TX_BUF_SIZE];
 static volatile uint16_t s_txHead = 0;   /* next free write index          */
 static volatile uint16_t s_txTail = 0;   /* next byte to transmit          */
-static volatile uint8_t  s_txBusy = 0;   /* 1 while HAL TX is in progress  */
 
 /* Single-byte holder used for HAL_UART_Transmit_IT of one byte at a time.
  * (Simplest/most portable approach; see note at bottom for a faster
@@ -64,13 +65,13 @@ static uint8_t s_txByte;
 
 static inline uint16_t tx_count(void)
 {
-    return (uint16_t)((s_txHead - s_txTail) & (UART_LOG_TX_BUF_SIZE - 1));
+    return (uint16_t)((s_txHead - s_txTail) & (FTDI_LOG_TX_BUF_SIZE - 1));
 }
 
 /* Push one byte into the ring buffer. Returns 0 if buffer full (byte dropped). */
 static uint8_t tx_push_byte(uint8_t b)
 {
-    uint16_t next = (uint16_t)((s_txHead + 1) & (UART_LOG_TX_BUF_SIZE - 1));
+    uint16_t next = (uint16_t)((s_txHead + 1) & (FTDI_LOG_TX_BUF_SIZE - 1));
     if (next == s_txTail) {
         return 0; /* full: drop byte rather than block/overflow */
     }
@@ -83,10 +84,10 @@ static uint8_t tx_push_byte(uint8_t b)
  * Must be called with UART IRQ disabled or from within the IRQ context. */
 static void tx_start_if_idle(void)
 {
-    if (!s_txBusy && s_txTail != s_txHead) {
-        s_txBusy = 1;
+    if (!ftdi_tx_busy && s_txTail != s_txHead) {
+        ftdi_tx_busy = true;
         s_txByte = s_txBuf[s_txTail];
-        s_txTail = (uint16_t)((s_txTail + 1) & (UART_LOG_TX_BUF_SIZE - 1));
+        s_txTail = (uint16_t)((s_txTail + 1) & (FTDI_LOG_TX_BUF_SIZE - 1));
         HAL_UART_Transmit_IT(s_huart, &s_txByte, 1);
     }
 }
@@ -94,11 +95,11 @@ static void tx_start_if_idle(void)
 /* ------------------------- Public API -------------------------------------- */
 
 
-void uart_log_init(UART_HandleTypeDef *huart)
+void ftdi_log_init(UART_HandleTypeDef *huart)
 {
     s_huart = huart;
     s_txHead = s_txTail = 0;
-    s_txBusy = 0;
+    ftdi_tx_busy = false;
     s_logEnabled = 1;
 
 #if USE_LOGGING_TASK
@@ -115,20 +116,20 @@ void uart_log_init(UART_HandleTypeDef *huart)
 #endif
 }
 
-void uart_log_set_enabled(uint8_t enabled)
+void ftdi_log_set_enabled(uint8_t enabled)
 {
     s_logEnabled = enabled ? 1 : 0;
 }
 
-uint8_t uart_log_is_enabled(void)
+uint8_t ftdi_log_is_enabled(void)
 {
     return s_logEnabled;
 }
 
-void uart_log_write(UartLog_Level_t level, const char *fmt, ...)
+void ftdi_log_write(FtdiLog_Level_t level, const char *fmt, ...)
 {
     static const char *prefix[] = { "[ERR] ", "[WRN] ", "[INF] ", "[DBG] " };
-    char line[UART_LOG_LINE_MAX];
+    char line[FTDI_LOG_LINE_MAX];
     int len;
     va_list args;
 
@@ -166,9 +167,9 @@ void uart_log_write(UartLog_Level_t level, const char *fmt, ...)
     __enable_irq();
 }
 
-void uart_write(const char *fmt, ...)
+void ftdi_write(const char *fmt, ...)
 {
-    char line[UART_LOG_LINE_MAX];
+    char line[FTDI_LOG_LINE_MAX];
     int len;
     va_list args;
 
@@ -206,6 +207,25 @@ void uart_write(const char *fmt, ...)
     __enable_irq();
 }
 
+void ftdi_write_bytes(const uint8_t *data, uint16_t length)
+{
+    if (!s_logEnabled || data == NULL || length == 0) {
+        return;
+    }
+
+    __disable_irq();
+
+    for (uint16_t i = 0; i < length; i++) {
+        if (!tx_push_byte(data[i])) {
+            break;
+        }
+    }
+
+    tx_start_if_idle();
+
+    __enable_irq();
+}
+
 /* ------------------------- Callback dispatch hooks --------------------------
  * NOT named HAL_UART_xxxCallback directly, to avoid "multiple definition"
  * linker errors when those weak HAL callbacks are already defined elsewhere
@@ -219,16 +239,16 @@ void uart_write(const char *fmt, ...)
  * stm32f3xx_it.c / usart.c entirely.
  * --------------------------------------------------------------------------*/
 
-void uart_log_on_tx_cplt(UART_HandleTypeDef *huart)
+void ftdi_log_on_tx_cplt(UART_HandleTypeDef *huart)
 {
     if (huart->Instance != s_huart->Instance) {
         return;
     }
-    s_txBusy = 0;
+    ftdi_tx_busy = false;
     tx_start_if_idle(); /* send next byte if more data is queued */
 }
 
-void uart_log_on_error(UART_HandleTypeDef *huart)
+void ftdi_log_on_error(UART_HandleTypeDef *huart)
 {
     if (huart->Instance != s_huart->Instance) {
         return;
@@ -239,18 +259,18 @@ void uart_log_on_error(UART_HandleTypeDef *huart)
 }
 
 /* ------------------------- JSON status logging ----------------------------
- * See uart_log.h for the UartLog_Status_t field descriptions. Edit the
+ * See ftdi_log.h for the FtdiLog_Status_t field descriptions. Edit the
  * snprintf format string / field list below to match your own struct.
  * --------------------------------------------------------------------------*/
 
-#define UART_LOG_JSON_MAX   320u
+#define FTDI_LOG_JSON_MAX   320u
 
 extern uint32_t sys_stat;
 extern uint32_t sys_io_bits;
 
-void uart_log_status_json(void)
+void ftdi_log_status_json(void)
 {
-    char buf[UART_LOG_JSON_MAX];
+    char buf[FTDI_LOG_JSON_MAX];
     int len;
 
     if (!s_logEnabled) {
@@ -271,7 +291,7 @@ void uart_log_status_json(void)
     }
 
     /* Critical section: push whole JSON line into the same TX ring buffer
-     * used by uart_log_write(), so ordering with normal log lines is
+     * used by ftdi_log_write(), so ordering with normal log lines is
      * preserved. */
     __disable_irq();
     for (int i = 0; i < len; i++) {
@@ -283,4 +303,4 @@ void uart_log_status_json(void)
     __enable_irq();
 }
 
-#endif /* UART_LOG_ENABLED */
+#endif /* FTDI_LOG_ENABLED */

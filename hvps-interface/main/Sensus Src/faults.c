@@ -1,8 +1,9 @@
 #include <stdbool.h>
 #include "faults.h"
+
+#include "ftdi_log.h"
 #include "monitoring.h"
 #include "io.h"
-#include "uart_log.h"
 
 /* Bitmask of all currently latched faults (persists until explicitly cleared) */
 static uint32_t active_fault_mask = 0;
