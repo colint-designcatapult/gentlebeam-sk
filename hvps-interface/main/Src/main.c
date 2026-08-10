@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "../Sensus Src/setup.h"
 #include "../Sensus Src/app_timers.h"
+#include "../Sensus Src/ext_adcs.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,6 +58,7 @@ DMA_HandleTypeDef hdma_spi3_rx;
 
 TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
+DMA_HandleTypeDef hdma_tim7_up;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
@@ -534,7 +536,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -614,7 +616,7 @@ static void MX_SPI3_Init(void)
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -832,6 +834,9 @@ static void MX_DMA_Init(void)
   /* DMA2_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Channel1_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Channel1_IRQn);
+  /* DMA2_Channel4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Channel4_IRQn);
 
 }
 
@@ -859,11 +864,13 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOE, IO_PFC_ALLOWED_Pin|IO_HV_ALLOWED_Pin|IO_BEAM_ALLOWED_Pin|IO_GRID_CLK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, IO_KV_CS_Pin|IO_MA_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, IO_KV_CS_Pin|IO_MA_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, IO_FIL_DAC_CS_Pin|IO_MA_DAC_CS_Pin|IO_KV_DAC_CS_Pin|IO_GRID_DAC_CS_Pin
-                          |IO_TEST_1_Pin|IO_TEST_2_Pin|IO_TEST_3_Pin|IO_SEND_GRID_STAT_Pin
+  HAL_GPIO_WritePin(GPIOD, IO_FIL_DAC_CS_Pin|IO_MA_DAC_CS_Pin|IO_KV_DAC_CS_Pin|IO_GRID_DAC_CS_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, IO_TEST_1_Pin|IO_TEST_2_Pin|IO_TEST_3_Pin|IO_SEND_GRID_STAT_Pin
                           |IO_SEND_ARC_STAT_Pin|IO_SEND_READY_Pin|IO_SEND_HV_STAT_Pin|IO_SEND_WARNING_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -970,12 +977,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-	else if(htim->Instance == TIM7)
-	{
-		HAL_GPIO_TogglePin(GPIOE, IO_GRID_CLK_Pin);
-	}
 	else if(htim->Instance == TIM6)
 	{
+		static uint8_t adc_period_ms = 0U;
+		if (adc_period_ms == 0U)
+		{
+			ext_adcs_start_burst_from_isr();
+		}
+		else if (adc_period_ms == 2U)
+		{
+			ext_adcs_check_completion_from_isr();
+		}
+
+		adc_period_ms++;
+		if (adc_period_ms == 5U)
+		{
+			adc_period_ms = 0U;
+		}
 		runtime_ms++;
 	}
   /* USER CODE END Callback 1 */

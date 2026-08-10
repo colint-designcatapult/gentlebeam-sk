@@ -36,6 +36,9 @@ extern "C" {
 
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
+extern DMA_HandleTypeDef hdma_spi1_rx;
+extern DMA_HandleTypeDef hdma_spi3_rx;
+extern DMA_HandleTypeDef hdma_tim7_up;
 
 extern DAC_HandleTypeDef hdac1;
 extern DAC_HandleTypeDef hdac2;
