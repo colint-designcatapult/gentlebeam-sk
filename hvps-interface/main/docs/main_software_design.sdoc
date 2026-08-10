@@ -70,7 +70,7 @@ control application firmware. The HVPS interface application firmware contains r
 filament current, as well as the high voltage. It contains a PID loop for regulating the emission output to a
 given setpoint.
 The HVPS interface application firmware runs on the MCU of the HVPS interface board.
-Application setup and cyclic processing run in a single FreeRTOS task.
+Application setup and cyclic processing run in the default FreeRTOS task. External ADC result processing and feedback-control calculations run in a separate FreeRTOS control task.
 <<<
 
 [[/SECTION]]
@@ -85,6 +85,8 @@ DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
 DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
 
 DHF-HRC-0019, Rev. 1: Heracles HVPS Interface Application Software Requirements Specification (SRS)
+
+DHF-HRC-0101: Heracles HVPS Interface Application FW Verification Testing Protocol
 
 DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
 <<<
@@ -180,6 +182,11 @@ The firmware reads several feedback signals from the internal ADC peripheral. 15
 are used, and they are read sequentially using the manufacturer's built in hardware abstraction
 library for DMA reads of the ADC peripheral. The firmware periodically reads newly received values
 before initiating a new DMA read.
+
+The internal ADC DMA buffer is polled by the application. Half-transfer and transfer-complete
+interrupts are disabled because the buffer does not require callback processing and continuous
+interrupt activity could interfere with the external ADC DMA transfers. DMA transfer-error handling
+remains enabled.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -261,19 +268,22 @@ UID: SW-H1FWHVPS-110
 TITLE: External ADC Communication
 STATEMENT: >>>
 The firmware communicates with two external ADC IC chips. Each chip has one channel, and they are
-responsible for reading the mA and kV feedback signals. Both chips are identical make and model, and
-each chip has on its own dedicated SPI bus. While each chip has a dedicated SPI bus, each still
-utilizes a chip select line in order to request new samples from the chips. The external ADC module
-continuously reads both ADC ICs at the same time.
+responsible for reading the mA and kV feedback signals. Each chip uses a dedicated SPI bus and chip
+select line.
 
-The DAC module utilizes the manufacturer provided hardware abstraction library to read serial data
-from the SPI bus. The reads from the SPI bus are non-block interrupt-based calls which allows the
-processor to continue operating during the relatively longer SPI transmission (compared to
-processing speed).
+The external ADC module acquires both channels using nonblocking SPI receive DMA transfers. Each
+received frame is decoded and checked for valid device framing. DMA, framing, and acquisition timing
+errors produce an invalid result and prevent that result from being used for feedback processing.
+
+Completed paired samples are averaged before the result is published to the feedback and control
+functions. The ADC chip-select signals remain inactive while the ADCs are idle.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWHVPS-14
+  VALUE: RQ-H1FWHVPS-10
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-11
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -470,50 +480,58 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPS-120
-TITLE: Filament Control PID
+TITLE: Emission Current Grid Control
 STATEMENT: >>>
-The firmware can utilize a PID control closed feedback loop to adjust the filament current during
-emission to manage a stable emission current output. Due to the relatively slower nature of the
-temperature change of the system, there are different 'stages' of the PID control.
+When grid control is enabled, the firmware calculates the difference between the requested emission
+current and the measured feedback current. It adjusts the grid output in response to that error and
+constrains the resulting command to the configured minimum and maximum grid outputs.
 
-When the output error (difference between actual emission output compared to the desired target) is
-very large, a stronger PD only control loop is used. In this PD only control portion, a larger P
-value is used, with no I portion, as we do not want to accumulate, I error due to the time lag of
-the temperature changes. The P and D coefficients are larger than in other stages and are separately
-defined.
-
-When both the output error is very small (difference between actual emission output compared to the
-desired target) and the D factor is not drastically high (indicating an ongoing large overshoot or
-undershoot), we utilize a PI only control loop. The removal of the D coefficient is to prevent
-smaller oscillations and only have the small, accumulated errors slowly nudge the control around the
-target.
-
-When the output error is moderate or there is a larger D factor in the error, a PD is utilized to
-try to balance out the stabilization of the target emission without accumulating too many errors.
-
-In all cases, the adjustment value to the output of the filament current is capped and cannot change
-at too large of a jump.
+The grid-control calculation runs in the FreeRTOS control task. The resulting command is written
+through the external DAC interface.
 <<<
 RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-13
-  ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-14
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPS-121
-TITLE: Grid Clock
+TITLE: DMA Grid Clock
 STATEMENT: >>>
-The HVPS requires a toggling grid clock signal to allow emission. The grid clock signal must be
-several kHz in frequency. The firmware utilizes one of the microcontroller's timer peripherals to
-trigger an interrupt at a 4500 Hz rate. When the interrupt is triggered, the firmware will toggle
-the grid clock output signal.
+The HVPS requires a toggling grid clock signal to allow emission. The firmware uses a timer update
+event and DMA to write alternating set and reset values to the grid-clock GPIO output. This produces
+the grid-clock waveform without a timer interrupt handler.
+
+Enabling the clock resets the output low, initializes the DMA transfer, and starts the timer.
+Disabling the clock stops the timer and DMA transfer and leaves the output low.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-1
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPS-122
+TITLE: External Feedback Control Task
+STATEMENT: >>>
+The firmware creates a dedicated FreeRTOS task for external ADC result processing and feedback
+control. The task waits for notification that an ADC acquisition has completed, accepts only valid
+results, updates feedback values, processes the high-voltage ramp, and calculates output-control
+commands.
+
+Shared status and control state are protected while accessed by the task and interrupt context.
+DAC writes are performed outside the protected state-processing region so external feedback
+processing does not block communication, I/O, or DAC servicing.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-10
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-11
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-14
   ROLE: Refines
 
 [DESIGN_ITEM]

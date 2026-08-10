@@ -23,7 +23,17 @@ void setup_adc()
 
 	HAL_Delay(10);
 
-	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_int, NUM_INT_ADC);
+	status = HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_int, NUM_INT_ADC);
+	if (status == HAL_OK)
+	{
+		/*
+		 * The internal ADC buffer is polled; its circular DMA completion
+		 * callbacks are unused. Suppress the continuous half/full-transfer
+		 * IRQ stream so it cannot starve the time-critical external ADC DMAs.
+		 * Transfer-error interrupts remain enabled.
+		 */
+		__HAL_DMA_DISABLE_IT(&hdma_adc1, DMA_IT_HT | DMA_IT_TC);
+	}
 	int_adc_ms = 5;	//TBD TODO placeholder/magic number
 }
 

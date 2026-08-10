@@ -1,15 +1,42 @@
 #include "main.h"
-#include "stm32f3xx_hal.h"
 #include "stdbool.h"
 #include "math.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 #include "monitoring.h"
 #include "adc.h"
 #include "control_comm.h"
+#include "ext_adcs.h"
 #include "ext_dacs.h"
 #include "io.h"
 #include "timers.h"
 #include "setup.h"
+
+#define CONTROL_TASK_STACK_WORDS		256U
+#define CONTROL_TASK_PRIORITY			32U
+#define CONTROL_PERIOD_S				0.005f
+#define CONTROL_ADC_WAIT_TICKS			pdMS_TO_TICKS(10U)
+
+#define ADS8325_REFERENCE_VOLTS			4.096f
+#define ADS8325_CODE_RANGE				65536.0f
+#define ADS8325_COUNTS_PER_VOLT			(ADS8325_CODE_RANGE / ADS8325_REFERENCE_VOLTS)
+
+#define KV_FB_SERIES_RESISTANCE_OHMS	20000.0f
+#define KV_FB_SHUNT_RESISTANCE_OHMS		10000.0f
+#define KV_FB_VOLTS_PER_KV				0.1f
+#define KV_FB_ADC_DIVIDER_RATIO			(KV_FB_SHUNT_RESISTANCE_OHMS / \
+										(KV_FB_SERIES_RESISTANCE_OHMS + KV_FB_SHUNT_RESISTANCE_OHMS))
+#define KV_FB_COUNTS_PER_KV				(ADS8325_COUNTS_PER_VOLT * \
+										KV_FB_ADC_DIVIDER_RATIO * KV_FB_VOLTS_PER_KV)
+
+#define MA_FB_SERIES_RESISTANCE_OHMS	30000.0f
+#define MA_FB_SHUNT_RESISTANCE_OHMS		20000.0f
+#define MA_FB_VOLTS_PER_MA				1.0f
+#define MA_FB_ADC_DIVIDER_RATIO			(MA_FB_SHUNT_RESISTANCE_OHMS / \
+										(MA_FB_SERIES_RESISTANCE_OHMS + MA_FB_SHUNT_RESISTANCE_OHMS))
+#define MA_FB_COUNTS_PER_MA				(ADS8325_COUNTS_PER_VOLT * \
+										MA_FB_ADC_DIVIDER_RATIO * MA_FB_VOLTS_PER_MA)
 
 uint32_t hvps_fault_mask = 0;
 
@@ -40,15 +67,24 @@ uint32_t kv_fb_count = 0;
 
 
 float fil_adj = 0;
-float prev_error = 0;
-float acc_error = 0;
+static bool grid_control_active;
+static float grid_integral;
+static float grid_previous_kp;
+static float grid_feedforward;
+static StaticTask_t control_task_buffer;
+static StackType_t control_task_stack[CONTROL_TASK_STACK_WORDS];
 
-static void update_ma_target();
-static void process_kv_ramp();
-static void process_fil_ramp();
-static void update_kv_ramp();
-static void get_fil_ramp();
-static void run_grid_ctrl();
+static float update_ma_target(void);
+static bool process_kv_ramp(float *command);
+static void process_fil_ramp(void);
+static void update_kv_ramp(void);
+static void get_fil_ramp(void);
+static bool run_grid_ctrl(float *command);
+static float get_grid_kp(float kv);
+static float clamp_float(float value, float minimum, float maximum);
+
+/* Main control task. */
+static void control_task(void *argument);
 
 void setup_system_monitoring()
 {
@@ -77,6 +113,13 @@ void setup_system_monitoring()
 	config_vals[SYS_CONFIG_KV_RAMP_FAST] = 5;
 	config_vals[SYS_CONFIG_KV_RAMP_SLOW] = 0.5;
 
+	config_vals[SYS_CONFIG_GRID_KP_50] = -25.0f;
+	config_vals[SYS_CONFIG_GRID_KP_70] = -35.0f;
+	config_vals[SYS_CONFIG_GRID_KP_100] = -150.0f;
+	config_vals[SYS_CONFIG_GRID_INTEGRAL_TIME] = 0.2f;
+	config_vals[SYS_CONFIG_GRID_SLEW_DOWN] = 10000.0f;
+	config_vals[SYS_CONFIG_GRID_SLEW_UP] = 3000.0f;
+
 	//Initialize set points
 	setpoints[SP_PWR] = 0;
 	setpoints[SP_KV] = 0;
@@ -84,9 +127,81 @@ void setup_system_monitoring()
 	setpoints[SP_FIL] = 0;
 	setpoints[SP_MA_LIM] = 0;
 
+	grid_control_active = false;
+	grid_integral = 0.0f;
+	grid_previous_kp = config_vals[SYS_CONFIG_GRID_KP_50];
+	grid_feedforward = config_vals[SYS_CONFIG_MAX_GRID];
+	grid_out = grid_feedforward;
+	write_grid(grid_out);
+
 	hvps_fault_mask =
 			(1 << IN_FIL_CLK_FAULT) | (1 << IN_CAT_ARC) 	| (1 << IN_FAN_FAULT) 	| (1 << IN_OC_24_FAULT) | (1 << IN_MASTER_FAULT) |
 			(1 << IN_OC_HV_FAULT) 	| (1 << IN_TEMP_1_FAULT)| (1 << IN_OC_CAT_FAULT)| (1 << IN_TEMP_3_FAULT)| (1 << IN_TEMP_2_FAULT);
+
+	TaskHandle_t control_task_handle = xTaskCreateStatic(
+		control_task,
+		"control",
+		CONTROL_TASK_STACK_WORDS,
+		NULL,
+		CONTROL_TASK_PRIORITY,
+		control_task_stack,
+		&control_task_buffer);
+
+	configASSERT(control_task_handle != NULL);
+
+	ext_adcs_set_result_task(control_task_handle);
+}
+
+static void control_task(void *argument)
+{
+	(void)argument;
+
+	for (;;)
+	{
+		ext_adc_result_t adc_result;
+		bool kv_command_pending = false;
+		bool grid_command_pending = false;
+		float kv_command = 0.0f;
+		float grid_command = 0.0f;
+
+		if (ulTaskNotifyTake(pdTRUE, CONTROL_ADC_WAIT_TICKS) == 0U)
+		{
+			continue;
+		}
+		bool adc_read_ok = ext_adcs_get_latest_result(&adc_result)
+				&& (adc_result.status == EXT_ADC_RESULT_VALID);
+
+		taskENTER_CRITICAL();
+		if (adc_read_ok)
+		{
+			report_kv_fb(adc_result.kv_average);
+			report_ma_fb(adc_result.ma_average);
+		}
+
+#ifndef CALIBRATION_MODE
+		bool kv_ramp_allowed = !sys_stat_check(SYS_EMISSION_ON);
+#else
+		bool kv_ramp_allowed = true;
+#endif
+		if (kv_ramp_allowed && sys_stat_check(SYS_KV_RAMPING)
+				&& (kv_ramp_ms <= 0))
+		{
+			kv_ramp_ms = 1000;
+			kv_command_pending = process_kv_ramp(&kv_command);
+		}
+		grid_command_pending = run_grid_ctrl(&grid_command);
+		taskEXIT_CRITICAL();
+
+		if (kv_command_pending)
+		{
+			write_kv(kv_command);
+		}
+		if (grid_command_pending)
+		{
+			write_grid(grid_command);
+		}
+
+	}
 }
 
 bool sys_stat_check(uint8_t bitpos)
@@ -104,20 +219,25 @@ bool sys_stat_check(uint8_t bitpos)
 
 void set_sys_bit(uint8_t bitpos)
 {
-	if(bitpos < NUM_SYS_BITS)
+	if (bitpos < NUM_SYS_BITS)
 	{
-		sys_stat |= (1<<bitpos);
+		taskENTER_CRITICAL();
+		sys_stat |= (1UL << bitpos);
+		taskEXIT_CRITICAL();
 	}
 }
 
 
 void clear_sys_bit(uint8_t bitpos)
 {
-	if(bitpos < NUM_SYS_BITS)
+	if (bitpos < NUM_SYS_BITS)
 	{
-		sys_stat &= ~(1<<bitpos);
+		taskENTER_CRITICAL();
+		sys_stat &= ~(1UL << bitpos);
+		taskEXIT_CRITICAL();
 	}
 }
+ 
 
 void report_int_adc_vals(uint16_t *vals)
 {
@@ -191,12 +311,10 @@ void report_io_state(uint32_t io_bits)
 	{
 		if(sys_stat_check(SYS_HV_CTRL_EN) && sys_stat_check(SYS_GRID_CTRL_EN))
 		{
-			prev_error = 0;
-			acc_error = 0;
 #ifdef CALIBRATION_MODE
             set_sys_bit(SYS_CAL_GRID_INT_EN);
 #else
-            set_sys_bit(SYS_EMISSION_ON);
+			set_sys_bit(SYS_EMISSION_ON);
 			HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_SET);
 #endif
 			
@@ -216,31 +334,28 @@ void report_io_state(uint32_t io_bits)
 
 void report_kv_fb(uint32_t kv_fb)
 {
-	float divider = 266.6666667;	//TBD TODO magic number
-
-	fb_vals[FB_KV] = (float)(kv_fb)/divider;
+	fb_vals[FB_KV] = (float)kv_fb / KV_FB_COUNTS_PER_KV;
 }
 
 void report_ma_fb(uint32_t ma_fb)
 {
-	float divider = 3200;
-
-	//using (30/20K) divider and 1V:1mA emission current feedback
-	fb_vals[FB_MA] =(float)(ma_fb)/divider;
+	fb_vals[FB_MA] = (float)ma_fb / MA_FB_COUNTS_PER_MA;
 }
 
 
 void set_new_kv(float kv)
 {
+	bool zero_kv_output = false;
+	float ma_limit;
+
+	taskENTER_CRITICAL();
 	kv_stability_count = 0;
 #ifdef CALIBRATION_MODE
 	kv_fb_count = 0;
 #endif
 
-	//Make sure HV interlock is OK
-	if(sys_stat_check(SYS_HV_CTRL_EN))
+	if ((sys_stat & (1UL << SYS_HV_CTRL_EN)) != 0U)
 	{
-		// check if the kV is going up or down
 		if(kv < setpoints[SP_KV])
 		{
 			kv_stat = KV_DOWN;
@@ -254,26 +369,38 @@ void set_new_kv(float kv)
 			kv_stat = KV_STAY;
 		}
 
-		set_sys_bit(SYS_KV_RAMPING);
+		sys_stat |= (1UL << SYS_KV_RAMPING);
 		setpoints[SP_KV] = kv;
-		update_ma_target();
 	}
 	else
 	{
 		setpoints[SP_KV] = 0;
 		kv_out = 0;
-		write_kv(0);
-		update_ma_target();
+		zero_kv_output = true;
 	}
+	ma_limit = update_ma_target();
+	taskEXIT_CRITICAL();
+
+	if (zero_kv_output)
+	{
+		write_kv(0);
+	}
+	write_ma_lim(ma_limit);
 }
 
 void set_new_pwr(float pwr)
 {
+	float ma_limit;
+
+	taskENTER_CRITICAL();
 	setpoints[SP_PWR] = pwr;
-	update_ma_target();
+	ma_limit = update_ma_target();
+	taskEXIT_CRITICAL();
+
+	write_ma_lim(ma_limit);
 }
 
-static void update_ma_target()
+static float update_ma_target(void)
 {
 	if(setpoints[SP_PWR] <= 0 || isnan(setpoints[SP_PWR]) ||
 			setpoints[SP_KV] <= 0 || isnan(setpoints[SP_KV]))
@@ -285,7 +412,7 @@ static void update_ma_target()
 		setpoints[SP_MA] = setpoints[SP_PWR] / setpoints[SP_KV];
 	}
 
-	write_ma_lim(setpoints[SP_MA] * 1.5);
+	return setpoints[SP_MA] * 1.5f;
 }
 
 void set_new_fil(float fil)
@@ -384,82 +511,51 @@ void process_monitoring()
 	 * TBD TODO - not required
 	 * unimplemented for now, but in the future could possibly add
 	 * comparison of output SP and DAC output feedback readings here
-	 * */
+	 */
 
-	if (sys_stat_check(SYS_EMISSION_ON))
+#ifndef CALIBRATION_MODE
+	if (!sys_stat_check(SYS_EMISSION_ON))
 	{
-		if(pid_ms <= 0)
+		if(sys_stat_check(SYS_WARMING))
 		{
-			pid_ms = 50;		//Monitor grid every 50ms
-			run_grid_ctrl();
+#endif
+			if(fil_ramp_ms <= 0)
+			{
+				fil_ramp_ms = 1000;
+				process_fil_ramp();
+			}
+#ifndef CALIBRATION_MODE
 		}
 	}
-#ifndef CALIBRATION_MODE
-    else
-    {
-#endif
-#ifndef CALIBRATION_MODE
-        if(sys_stat_check(SYS_WARMING))
-        {
-#endif
-            if(fil_ramp_ms <= 0)
-            {
-                fil_ramp_ms = 1000;	//Ramp heater every 1000ms
-                process_fil_ramp();
-            }
-#ifndef CALIBRATION_MODE
-        }
-#endif
-
-#ifndef CALIBRATION_MODE
-        if(sys_stat_check(SYS_KV_RAMPING))
-        {
-#endif
-            if(kv_ramp_ms <= 0)
-            {
-                kv_ramp_ms = 1000;	//Ramp kV every 1000ms
-                process_kv_ramp();
-            }
-#ifndef CALIBRATION_MODE
-        }
-#endif
-#ifndef CALIBRATION_MODE
-    }
 #endif
 }
 
-static void process_kv_ramp()
+static bool process_kv_ramp(float *command)
 {
-	//Do nothing if no longer ramping
 	if(!sys_stat_check(SYS_KV_RAMPING))
 	{
-		return;
+		return false;
 	}
 
-	//Make sure values are valid
 	if(kv_out < 0 || isnan(kv_out) || setpoints[SP_KV] < 0 || isnan(setpoints[SP_KV]))
 	{
-		//If not set kV to 0
 		setpoints[SP_KV] = 0;
 		kv_out = 0;
 		clear_sys_bit(SYS_KV_RAMPING);
-
-        //TBD TODO throw error if desired
 	}
-	//If setpoint is low just go to 0
 	else if(setpoints[SP_KV] < config_vals[SYS_CONFIG_MIN_KV])
 	{
 		setpoints[SP_KV] = 0;
 		kv_out = 0;
 		clear_sys_bit(SYS_KV_RAMPING);
 	}
-	//Otherwise get kv ramp value
 	else
 	{
 		update_kv_ramp();
 	}
 
-	write_kv(kv_out);
+	*command = kv_out;
+	return true;
 }
 
 static void update_kv_ramp()
@@ -647,56 +743,171 @@ static void get_fil_ramp()
 	}
 }
 
-static void run_grid_ctrl()
+#if 1
+#define GRID_MAX_STEP 			25
+
+static bool run_grid_ctrl(float *command)
 {
-	if(config_vals[SYS_CONFIG_RUN_PID] == 0)
+    float minimum_grid = config_vals[SYS_CONFIG_MIN_GRID];
+    float maximum_grid = config_vals[SYS_CONFIG_MAX_GRID];
+
+    bool enabled = (config_vals[SYS_CONFIG_RUN_PID] != 0.0f);
+
+    if (!enabled)
+    {
+        return false;
+    }
+
+    float error = setpoints[SP_MA] - fb_vals[FB_MA];
+    float grid_adj = error;
+
+    if (setpoints[SP_KV] == 50.0f)
+    {
+        grid_adj *= -25.0f;
+    }
+    else if (setpoints[SP_KV] == 70.0f)
+    {
+        grid_adj *= -35.0f;
+    }
+    else if (setpoints[SP_KV] == 100.0f)
+    {
+        grid_adj *= -150.0f;
+    }
+    else
+    {
+        return false;
+    }
+
+#if defined(CALIBRATION_MODE)
+    /* Clamp adjustment to configured step limit */
+    if (grid_adj > GRID_MAX_STEP)
+    {
+        grid_adj = GRID_MAX_STEP;
+    }
+    else if (grid_adj < -GRID_MAX_STEP)
+    {
+        grid_adj = -GRID_MAX_STEP;
+    }
+#endif
+
+    grid_out += grid_adj;
+
+    if (grid_out <= minimum_grid)
+    {
+        grid_out = minimum_grid;
+        grid_ctrl_count++;
+    }
+    else if (grid_out >= maximum_grid)
+    {
+        grid_out = maximum_grid;
+        grid_ctrl_count++;
+    }
+
+    *command = grid_out;
+    return true;
+}
+#else
+static bool run_grid_ctrl(float *command)
+{
+	float minimum_grid = config_vals[SYS_CONFIG_MIN_GRID];
+	float maximum_grid = config_vals[SYS_CONFIG_MAX_GRID];
+	bool enabled = (config_vals[SYS_CONFIG_RUN_PID] != 0.0f)
+			&& sys_stat_check(SYS_EMISSION_ON);
+
+
+	if (!enabled)
 	{
-		return;
+		bool output_changed = grid_control_active;
+		if (output_changed)
+		{
+			grid_out = maximum_grid;
+			*command = grid_out;
+		}
+		grid_control_active = false;
+		grid_integral = 0.0f;
+		grid_feedforward = maximum_grid;
+		return output_changed;
 	}
 
 	float error = setpoints[SP_MA] - fb_vals[FB_MA];
-	float grid_adj = error;
+	float kp = get_grid_kp(setpoints[SP_KV]);
+	float integral_time = config_vals[SYS_CONFIG_GRID_INTEGRAL_TIME];
+	float slew_down = config_vals[SYS_CONFIG_GRID_SLEW_DOWN];
+	float slew_up = config_vals[SYS_CONFIG_GRID_SLEW_UP];
 
-	if(setpoints[SP_KV] == 50)
+
+	if (!grid_control_active)
 	{
-		grid_adj *= -25;
-	}
-	else if(setpoints[SP_KV] == 70)
-	{
-		grid_adj *= -35;
-	}
-	else if(setpoints[SP_KV] == 100)
-	{
-		grid_adj *= -150;
-	}
-	else
-	{
-		return;
+		grid_control_active = true;
+		grid_integral = 0.0f;
+		grid_previous_kp = kp;
+		grid_feedforward = maximum_grid;
+		grid_out = maximum_grid;
+		*command = grid_out;
+		return true;
 	}
 
-#if defined (CALIBRATION_MODE)
-	/* Clamp grid_adj to stay within -GRID_MAX_STEP and GRID_MAX_STEP */
-	if (grid_adj > GRID_MAX_STEP) 
+	grid_integral += (grid_previous_kp - kp) * error;
+	grid_integral += grid_feedforward - maximum_grid;
+	grid_previous_kp = kp;
+	grid_feedforward = maximum_grid;
+
+	float integral_delta = (kp / integral_time) * CONTROL_PERIOD_S * error;
+	float integral_candidate = grid_integral + integral_delta;
+
+	float lower_reachable = grid_out - (slew_down * CONTROL_PERIOD_S);
+	float upper_reachable = grid_out + (slew_up * CONTROL_PERIOD_S);
+	lower_reachable = clamp_float(lower_reachable, minimum_grid, maximum_grid);
+	upper_reachable = clamp_float(upper_reachable, minimum_grid, maximum_grid);
+
+	float unsaturated = maximum_grid + (kp * error) + integral_candidate;
+	bool inside_limits = (unsaturated >= lower_reachable) && (unsaturated <= upper_reachable);
+	bool unwinding_high = (unsaturated > upper_reachable) && (integral_delta < 0.0f);
+	bool unwinding_low = (unsaturated < lower_reachable) && (integral_delta > 0.0f);
+
+	if (inside_limits || unwinding_high || unwinding_low)
 	{
-		grid_adj = GRID_MAX_STEP;
-	} else if (grid_adj < -GRID_MAX_STEP) 
-	{
-		grid_adj = -GRID_MAX_STEP;
+		grid_integral = integral_candidate;
 	}
+
+	float grid_value = maximum_grid + (kp * error) + grid_integral;
+	grid_out = clamp_float(grid_value, lower_reachable, upper_reachable);
+
+	if ((grid_out <= minimum_grid) || (grid_out >= maximum_grid))
+	{
+		grid_ctrl_count++;
+	}
+
+	*command = grid_out;
+	return true;
+}
 #endif
 
-	grid_out += grid_adj;
-
-	if(grid_out <= config_vals[SYS_CONFIG_MIN_GRID])
+static float get_grid_kp(float kv)
+{
+	if (kv <= 50.0f)
 	{
-		grid_out = config_vals[SYS_CONFIG_MIN_GRID];
-		grid_ctrl_count++;
+		return config_vals[SYS_CONFIG_GRID_KP_50];
 	}
-	else if(grid_out >= config_vals[SYS_CONFIG_MAX_GRID])
+	if (kv <= 70.0f)
 	{
-		grid_out = config_vals[SYS_CONFIG_MAX_GRID];
-		grid_ctrl_count++;
+		return config_vals[SYS_CONFIG_GRID_KP_70];
 	}
-
-	write_grid(grid_out);
+	return config_vals[SYS_CONFIG_GRID_KP_100];
 }
+
+
+static float clamp_float(float value, float minimum, float maximum)
+{
+	if (value < minimum)
+	{
+		return minimum;
+	}
+	if (value > maximum)
+	{
+		return maximum;
+	}
+	return value;
+}
+
+

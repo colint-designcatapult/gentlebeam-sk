@@ -61,6 +61,8 @@ DHF-HRC-0003, Rev. 2: Heracles SVP
 
 [LINK: DHF-HRC-0019]
 
+[LINK: DHF-HRC-0096]
+
 DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
 <<<
 
@@ -101,31 +103,32 @@ TITLE: Test Protocol
 UID: TC-H1FWHVPS-18
 TITLE: Grid control clock - Test Case
 STATEMENT: >>>
-The firmware shall be able to generate an output for a grid control clock at a frequency between 1
-kHz and 20 kHz. Also, current output of an emission will be different from existing / non-existing
-grid control clock.
+The firmware shall generate a stable grid control clock within the frequency
+range specified by the SRS and shall leave the grid-clock output inactive when
+the clock is disabled.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and ready to use.
 * A treatment plan should be ready to load.
+* An oscilloscope or logic analyzer is connected to the grid-clock output.
 <<<
 STEPS: >>>
 1. Power on the system.
-2. Load a 20 second treatment plan.
-3. Start the emission.
-4. Wait for 5 seconds.
-5. Wait another 10 seconds.
-6. Check if the grid counter clock is present.
-7. Check the emission's current.
+2. Load a treatment plan.
+3. Observe the grid-clock output with the measurement instrument.
+4. Measure the grid-clock frequency and duty cycle.
+5. Disable the grid clock using the approved service or test control.
+6. Observe the grid-clock output after disabling it.
+7. Re-enable the grid clock and observe the output.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. Verify the system is powered on successfully.
 2. Verify the plan is loaded successfully.
-3. Verify the emission started.
-4. Record the current of emission.
-5. Record the current of emission.
-6. Verify the grid counter clock is present, and its frequency is between 1-20 kHz.
-7. Verify the emission's current is <0.2 mA.
+3. Verify the grid-clock output is present when enabled.
+4. Verify the measured frequency is between 1 kHz and 20 kHz.
+5. Verify the clock stops when disabled.
+6. Verify the output remains inactive after disabling the clock.
+7. Verify the clock restarts cleanly when re-enabled.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -471,27 +474,33 @@ RELATIONS:
 UID: TC-H1FWHVPS-30
 TITLE: Control loop - Test Case
 STATEMENT: >>>
-When the system powered on and started to run the loaded treatment plan, make sure the firmware
-provided a control loop to automatically adjust output parameters during emission to establish a
-stable and smooth emission.
+When the system is operating with grid control enabled, the firmware shall
+adjust the grid output in response to the difference between requested and
+measured emission current while keeping the output within its configured limits.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and ready to use.
 * A treatment plan should be ready to load.
+* Grid control is enabled.
+* Instruments are connected to observe emission-current feedback and grid output.
 <<<
 STEPS: >>>
 1. Power on the system.
-2. Load a 20 second treatment plan. Record the value of TBD before starting the emission.
-3. Start the emission.
-4. Wait for 5 seconds.
-5. Wait another 10 seconds.
+2. Load a treatment plan.
+3. Record the requested emission-current setpoint.
+4. Start the emission.
+5. Record the measured emission-current feedback and grid output.
+6. Observe the feedback error and subsequent grid-output commands.
+7. Repeat with different approved operating setpoints.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. Verify the system is powered on successfully.
 2. Verify the plan is loaded successfully.
-3. Verify the emission started.
-4. Record the value of TBD.
-5. Record the value of TBD.
+3. Verify the requested setpoint is reported correctly.
+4. Verify the emission started.
+5. Verify emission feedback and grid output are available.
+6. Verify grid output changes in response to the feedback error.
+7. Verify the grid output remains within its configured minimum and maximum.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -608,6 +617,115 @@ EXPECTED_BEHAVIOR: >>>
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-2
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-35
+TITLE: External ADC feedback acquisition - Test Case
+STATEMENT: >>>
+The firmware shall acquire high-voltage and cathode-current feedback through
+the external ADC interfaces and publish valid paired feedback results.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* A calibrated external signal source or suitable HVPS test fixture is connected.
+* A logic analyzer or oscilloscope can observe both external ADC interfaces.
+* The feedback display or approved diagnostic trace is available.
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Observe both external ADC chip-select signals and SPI activity.
+3. Capture a complete feedback acquisition sequence.
+4. Verify that both feedback channels are acquired through DMA.
+5. Record the published high-voltage and cathode-current feedback values.
+6. Repeat with known input values across the approved operating range.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system starts successfully.
+2. Verify both ADC chip-select signals are inactive while idle.
+3. Verify both ADC channels are sampled without requiring blocking application processing.
+4. Verify a valid paired feedback result is published.
+5. Verify high-voltage and cathode-current values are available.
+6. Verify the published values are within the approved measurement tolerance.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-10
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-11
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-36
+TITLE: External ADC invalid-result handling - Test Case
+STATEMENT: >>>
+The firmware shall reject external ADC results containing framing, DMA, or
+acquisition-timing errors and shall not use an invalid result for feedback
+processing.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and operating with valid external ADC feedback.
+* A bus or firmware fault-injection method is available.
+* Feedback result status or equivalent diagnostic logging is available.
+<<<
+STEPS: >>>
+1. Capture a valid external ADC result.
+2. Inject an invalid ADC framing condition.
+3. Repeat with an ADC DMA-transfer error.
+4. Repeat with an ADC completion-timing failure.
+5. Observe the result status and feedback-control outputs.
+6. Restore valid ADC communication and capture the next result.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the valid result is accepted.
+2. Verify the framing error is reported as invalid.
+3. Verify the DMA error is reported as invalid.
+4. Verify the timing failure is reported as invalid.
+5. Verify invalid feedback is not used for feedback processing or output control.
+6. Verify valid feedback processing resumes after communication is restored.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-10
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-11
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-37
+TITLE: Nonblocking external feedback processing - Test Case
+STATEMENT: >>>
+External ADC acquisition and feedback-control processing shall not prevent the
+firmware from servicing main-control communication, I/O processing, or DAC
+requests.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* External ADC acquisition is active.
+* Main-control communication, I/O, and DAC activity can be observed.
+* Timing capture or equivalent task and interrupt tracing is available.
+<<<
+STEPS: >>>
+1. Start external ADC acquisition.
+2. Send main-control commands while ADC acquisition is active.
+3. Monitor the relevant I/O signals.
+4. Issue DAC output changes during ADC acquisition.
+5. Measure communication and output-service response.
+6. Repeat under the highest expected ADC and control activity.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify ADC acquisition completes without blocking the default task.
+2. Verify main-control commands continue to be received and processed.
+3. Verify I/O processing continues during ADC acquisition.
+4. Verify DAC requests continue to be serviced.
+5. Verify response remains within the approved system timing limits.
+6. Verify no repeated ADC timing failures occur under expected activity.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-14
   ROLE: Verifies
 
 [[/SECTION]]
