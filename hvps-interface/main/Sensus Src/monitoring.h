@@ -62,7 +62,6 @@ enum
 	NUM_FB
 };
 
-
 enum
 {
 	SYS_TEST = 0,
@@ -75,7 +74,21 @@ enum
 	SYS_PID_ON,
 	SYS_CAL_GRID_INT_EN,
 	SYS_FAST_WARMUP_EN,
-	NUM_SYS_BITS
+
+	/* Individual latched fault flags, mirroring hvps_fault_mask sources */
+	SYS_FAULT_FIL_CLK,
+	SYS_FAULT_CAT_ARC,
+	SYS_FAULT_FAN,
+	SYS_FAULT_OC_24,
+	SYS_FAULT_MASTER,
+	SYS_FAULT_OC_HV,
+	SYS_FAULT_TEMP_1,
+	SYS_FAULT_OC_CAT,
+	SYS_FAULT_TEMP_3,
+	SYS_FAULT_TEMP_2,
+
+	NUM_SYS_BITS,
+
 };
 
 typedef enum
@@ -113,6 +126,8 @@ void report_ma_fb(uint32_t ma_fb);
 
 float get_monitored_float_val(uint32_t comm_idx);
 uint32_t get_monitored_int_val(uint32_t comm_idx);
+bool sys_config_set(unsigned int index, float value);
+float sys_config_get(unsigned int index);
 
 extern float setpoints[NUM_SP];
 

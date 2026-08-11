@@ -12,6 +12,7 @@
 #include "io.h"
 #include "timers.h"
 #include "setup.h"
+#include "faults.h"
 
 #define CONTROL_TASK_STACK_WORDS		256U
 #define CONTROL_TASK_PRIORITY			32U
@@ -204,6 +205,12 @@ static void control_task(void *argument)
 	}
 }
 
+/* ========================================================================
+ * System Status Bit Helpers
+ *
+ * Check, set, and clear status bits in sys_stat.
+ *
+ * ======================================================================== */
 bool sys_stat_check(uint8_t bitpos)
 {
 	if(bitpos >= NUM_SYS_BITS)
@@ -239,6 +246,156 @@ void clear_sys_bit(uint8_t bitpos)
 }
  
 
+/* ========================================================================
+ * System Configuration Access Functions
+ *
+ * Get or update values in the config_vals table.
+ *
+ * ======================================================================== */
+bool sys_config_set(unsigned int index, float value)
+{
+    if (index >= NUM_SYS_CONFIG)
+    {
+        return false;
+    }
+
+    config_vals[index] = value;
+    return true;
+}
+
+float sys_config_get(unsigned int index)
+{
+    return config_vals[index];
+}
+
+/* ========================================================================
+ * IO Edge-Triggered Interlock Handlers
+ *
+ * Called from report_io_state() in <original_file>.c, which computes the
+ * rising ('rose') and falling ('fell') edge bitmasks once per call and
+ * dispatches them to the handlers below — one per monitored IO signal
+ * (HV interlock, grid interlock, master fault, beam control).
+ *
+ * ======================================================================== */
+#define IO_BIT(n)   (1u << (n))
+
+static void handle_hv_int(uint32_t rose, uint32_t fell)
+{
+    if (fell & IO_BIT(IN_HV_INT))
+    {
+        lock_hv();
+        clear_sys_bit(SYS_EMISSION_ON);
+    }
+#ifdef CALIBRATION_MODE
+    else if (rose & IO_BIT(IN_HV_INT))
+    {
+        set_sys_bit(SYS_HV_CTRL_EN);
+        HAL_GPIO_WritePin(GPIOE, IO_PFC_ALLOWED_Pin | IO_HV_ALLOWED_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(GPIOD, IO_SEND_READY_Pin, GPIO_PIN_SET);
+    }
+#endif
+}
+
+static void handle_grid_int(uint32_t rose, uint32_t fell)
+{
+    if (fell & IO_BIT(IN_GRID_INT))
+    {
+        lock_grid();
+        clear_sys_bit(SYS_EMISSION_ON);
+    }
+#ifdef CALIBRATION_MODE
+    else if (rose & IO_BIT(IN_GRID_INT))
+    {
+        set_sys_bit(SYS_GRID_CTRL_EN);
+    }
+#endif
+}
+
+static void handle_master_fault(uint32_t rose, uint32_t fell)
+{
+    if (rose & IO_BIT(IN_MASTER_FAULT))
+    {
+        lock_hv();
+        lock_grid();
+        HAL_GPIO_WritePin(GPIOB, IO_PS_OK_Pin, GPIO_PIN_RESET);
+    }
+    else if (fell & IO_BIT(IN_MASTER_FAULT))
+    {
+        HAL_GPIO_WritePin(GPIOB, IO_PS_OK_Pin, GPIO_PIN_SET);
+    }
+}
+
+static void handle_beam_ctrl(uint32_t rose, uint32_t fell)
+{
+    if (rose & IO_BIT(IN_BEAM_CTRL))
+    {
+        if (sys_stat_check(SYS_HV_CTRL_EN) && sys_stat_check(SYS_GRID_CTRL_EN))
+        {
+#ifdef CALIBRATION_MODE
+            set_sys_bit(SYS_CAL_GRID_INT_EN);
+#else
+            set_sys_bit(SYS_EMISSION_ON);
+            HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_SET);
+#endif
+        }
+        //TBD TODO else throw fault
+    }
+    else if (fell & IO_BIT(IN_BEAM_CTRL))
+    {
+#ifdef CALIBRATION_MODE
+        clear_sys_bit(SYS_CAL_GRID_INT_EN);
+#else
+        clear_sys_bit(SYS_EMISSION_ON);
+        HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_RESET);
+#endif
+    }
+}
+
+/* ========================================================================
+ * report_io_state()
+ *
+ * Entry point for processing a new IO state snapshot. Computes rising/
+ * falling edges relative to the previous sys_io_bits, then dispatches
+ * to the per-signal handlers in interlock_handlers.c:
+ *   - handle_hv_int()
+ *   - handle_grid_int()
+ *   - handle_master_fault()
+ *   - handle_beam_ctrl()
+ * ======================================================================== */
+void report_io_state(uint32_t io_bits)
+{
+	static bool first_call = true;
+
+    if (first_call)
+    {
+        first_call = false;
+        sys_io_bits = io_bits;   // establish baseline, no edges to compute yet
+
+        // const uint32_t boot_faults = io_bits & hvps_fault_mask;
+        // if (boot_faults != 0)
+        // {
+        //     report_fault(boot_faults);
+        // }
+        return;
+    }
+
+    const uint32_t rose = (sys_io_bits ^ io_bits) & io_bits;
+    const uint32_t fell = (sys_io_bits ^ io_bits) & sys_io_bits;
+
+    sys_io_bits = io_bits;
+
+	const uint32_t new_faults = rose & hvps_fault_mask;
+    if (new_faults != 0)
+    {
+        report_fault(new_faults);
+    }
+
+    handle_hv_int(rose, fell);
+    handle_grid_int(rose, fell);
+    handle_master_fault(rose, fell);
+    handle_beam_ctrl(rose, fell);
+}
+
 void report_int_adc_vals(uint16_t *vals)
 {
 #ifndef CALIBRATION_MODE
@@ -251,85 +408,6 @@ void report_int_adc_vals(uint16_t *vals)
 	//TBD TODO NOTE: if filament current is > 4 A kill filament DAC directly, update setpoint and throw fault
 	fb_vals[FB_FIL_A] = (float)(vals[INT_ADC_FIL_A])/fil_scale;
 	fb_vals[FB_GRID] = (float)(vals[INT_ADC_GRID])/grid_scale;
-}
-
-void report_io_state(uint32_t io_bits)
-{
-	//Calculate which bits are now high
-	uint32_t new_sys_io_active = (sys_io_bits ^ io_bits) & io_bits;
-
-	//Calculate which bits are now low
-	uint32_t new_sys_io_inactive = (sys_io_bits ^ io_bits) & sys_io_bits;
-
-	//Save all new bits
-	sys_io_bits = io_bits;
-
-	//If any new HVPS fault bits are active, throw a fault
-	if(new_sys_io_active && (hvps_fault_mask != 0))
-	{
-		//TBD TODO throw fault, including setting fault status to ctrl board
-	}
-
-	if(new_sys_io_inactive & (1<<IN_HV_INT))
-	{
-		lock_hv();
-		clear_sys_bit(SYS_EMISSION_ON);
-	}
-#ifdef CALIBRATION_MODE
-	else if(new_sys_io_active & (1<<IN_HV_INT))
-	{
-		set_sys_bit(SYS_HV_CTRL_EN);
-		HAL_GPIO_WritePin(GPIOE, IO_PFC_ALLOWED_Pin|IO_HV_ALLOWED_Pin, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(GPIOD, IO_SEND_READY_Pin, GPIO_PIN_SET);
-	}
-#endif
-
-	if(new_sys_io_inactive & (1<<IN_GRID_INT))
-	{
-		lock_grid();
-		clear_sys_bit(SYS_EMISSION_ON);
-	}
-#ifdef CALIBRATION_MODE
-	else if(new_sys_io_active & (1<<IN_GRID_INT))
-	{
-		set_sys_bit(SYS_GRID_CTRL_EN);
-	}
-#endif
-
-	if(new_sys_io_active & (1<<IN_MASTER_FAULT))
-	{
-		lock_hv();
-		lock_grid();
-		HAL_GPIO_WritePin(GPIOB, IO_PS_OK_Pin, GPIO_PIN_RESET);
-	}
-	else if(new_sys_io_inactive & (1<<IN_MASTER_FAULT))
-	{
-		HAL_GPIO_WritePin(GPIOB, IO_PS_OK_Pin, GPIO_PIN_SET);
-	}
-
-	if(new_sys_io_active & (1<<IN_BEAM_CTRL))
-	{
-		if(sys_stat_check(SYS_HV_CTRL_EN) && sys_stat_check(SYS_GRID_CTRL_EN))
-		{
-#ifdef CALIBRATION_MODE
-            set_sys_bit(SYS_CAL_GRID_INT_EN);
-#else
-			set_sys_bit(SYS_EMISSION_ON);
-			HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_SET);
-#endif
-			
-		}
-		//TBD TODO else throw fault
-	}
-	else if(new_sys_io_inactive & (1<<IN_BEAM_CTRL))
-	{
-#ifdef CALIBRATION_MODE
-            clear_sys_bit(SYS_CAL_GRID_INT_EN);
-#else
-            clear_sys_bit(SYS_EMISSION_ON);
-		    HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_RESET);
-#endif
-	}
 }
 
 void report_kv_fb(uint32_t kv_fb)

@@ -223,4 +223,20 @@ The firmware shall be able to ramp up the filament current at a rate not greater
 second
 <<<
 
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-18
+TYPE: Functional
+TITLE: Logging
+STATEMENT: >>>
+The firmware shall provide non-blocking, interrupt-driven UART logging over USART3 using a ring buffer.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-19
+TYPE: Functional
+TITLE: FTDI UART Communication and Configuration Interface Module
+STATEMENT: >>>
+The firmware shall provide an FTDI UART communication interface that receives and validates protocol messages, processes GET and SET commands for device configuration parameters, returns responses for valid requests, and supports bootloader entry by erasing the CRC flash page and performing a system reset.
+<<<
+
 [[/SECTION]]

@@ -9,6 +9,7 @@
 #include "ext_adcs.h"
 #include "ext_dacs.h"
 #include "ftdi.h"
+#include "ftdi_log.h"
 #include "io.h"
 #include "monitoring.h"
 #include "processing.h"
@@ -42,6 +43,7 @@ void run_setup()
 
 	enable_grid_clock();
 	enable_runtime_timer();
+	LOG_INFO("Sensus setup complete");
 }
 
 //Run continuously
@@ -74,10 +76,11 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	{
 		comm_tx_cb();
 	}
-	else if(huart->Instance == USART3)
-	{
-		ftdi_tx_cb();
-	}
+#if FTDI_LOG_ENABLED
+    else if (huart->Instance == USART3) {
+        ftdi_log_on_tx_cplt(huart);
+    }
+#endif
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -90,4 +93,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	{
 		ftdi_rx_cb();
 	}
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+#if FTDI_LOG_ENABLED
+    if (huart->Instance == USART3) {
+        ftdi_log_on_error(huart);
+    }
+#endif
 }
