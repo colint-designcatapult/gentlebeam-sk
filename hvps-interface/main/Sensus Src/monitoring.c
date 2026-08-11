@@ -268,6 +268,26 @@ float sys_config_get(unsigned int index)
     return config_vals[index];
 }
 
+float sys_setpoint_get(unsigned int index)
+{
+	if (index >= NUM_SP)
+	{
+		return 0.0f;
+	}
+
+	return setpoints[index];
+}
+
+float sys_fb_vals_get(unsigned int index)
+{
+	if (index >= NUM_FB)
+	{
+		return 0.0f;
+	}
+
+	return fb_vals[index];
+}
+
 /* ========================================================================
  * IO Edge-Triggered Interlock Handlers
  *
