@@ -173,6 +173,10 @@ inside of the interrupt callback.
 The firmware will monitor for a boot load command from the PC. Once received the firmware will reset
 the microcontroller into bootloader mode.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-19
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPS-107
@@ -613,6 +617,28 @@ asserted for emission output to be enabled.
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-14
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPS-123
+TITLE: Logging Module
+STATEMENT: >>>
+The logging subsystem provides a configurable mechanism for recording and transmitting diagnostic information. It supports multiple log levels, formatted messages, and status reporting while minimizing application impact through buffered, asynchronous communication. The subsystem interfaces with the platform communication driver and provides a simple API for debugging, monitoring, and diagnostics.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-18
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPS-124
+TITLE: GET and SET Configurations Command Processing
+STATEMENT: >>>
+The firmware processes GET and SET commands received through the FTDI UART interface to read and update configuration parameters. Valid requests are decoded, verified, and executed using the system configuration manager. GET commands return the requested parameter value, while successful SET commands update the parameter and return a confirmation response. Invalid requests are ignored without response.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-18
   ROLE: Refines
 
 [[/SECTION]]

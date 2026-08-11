@@ -531,6 +531,10 @@ EXPECTED_BEHAVIOR: >>>
 3. Verify the logs displayed in the middle of screen.
 4. Record the utility log and verify system enters into bootloader mode.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-19
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-32
@@ -558,6 +562,37 @@ EXPECTED_BEHAVIOR: >>>
 4. Record the utility log and verify system enters into bootloader mode.
 5. Verify an area in the USB which was corresponded to application CRC verification area was erased.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-19
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-38
+TITLE: PC Communication 3 - Test Case
+STATEMENT: >>>
+When the system is powered on, the user can send a request through firmware to get or set any configuration parameters.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* The USB connection is established between the PC and the HVPS board
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Navigate to the Service page
+3. Select a configuration parameter and enter a new value.
+4. Save or apply the new value.
+5. Verify that the displayed value matches the value entered in Step 3.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system accepts the new value entered for the selected configuration parameter.
+2. Verify the system updates the configuration parameter successfully.
+3. Verify the displayed value matches the value entered by the user.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-19
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-33
@@ -695,37 +730,24 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-37
-TITLE: Nonblocking external feedback processing - Test Case
+TITLE: Logging - Test Case
 STATEMENT: >>>
-External ADC acquisition and feedback-control processing shall not prevent the
-firmware from servicing main-control communication, I/O processing, or DAC
-requests.
+When the system is powered, the service user should check the reported logging voltage in the Service screen with / without a running treatment plan.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and ready to use.
-* External ADC acquisition is active.
-* Main-control communication, I/O, and DAC activity can be observed.
-* Timing capture or equivalent task and interrupt tracing is available.
+* The user of the system needs to be a service user.
 <<<
 STEPS: >>>
-1. Start external ADC acquisition.
-2. Send main-control commands while ADC acquisition is active.
-3. Monitor the relevant I/O signals.
-4. Issue DAC output changes during ADC acquisition.
-5. Measure communication and output-service response.
-6. Repeat under the highest expected ADC and control activity.
+1. Power the system
+2. Navigate to the logging console from the Service page
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify ADC acquisition completes without blocking the default task.
-2. Verify main-control commands continue to be received and processed.
-3. Verify I/O processing continues during ADC acquisition.
-4. Verify DAC requests continue to be serviced.
-5. Verify response remains within the approved system timing limits.
-6. Verify no repeated ADC timing failures occur under expected activity.
+1. Verify that log messages are transmitted successfully.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWHVPS-14
+  VALUE: RQ-H1FWHVPS-18
   ROLE: Verifies
 
 [[/SECTION]]
