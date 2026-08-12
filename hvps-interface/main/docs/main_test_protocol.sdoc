@@ -595,6 +595,36 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
+UID: TC-H1FWHVPS-39
+TITLE: PC Communication 4 - Test Case
+STATEMENT: >>>
+When the system is powered on, the user can send a request through firmware to retrieve all configuration values, setpoints, or feedback values in a single bulk-read response.
+<<<
+PREREQUISITES: >>>
+* The system is powered on and ready to use.
+* The USB connection is established between the PC and the HVPS board
+<<<
+STEPS: >>>
+1. Power on the system.
+2. Navigate to the Service page.
+3. Issue a bulk-read request for all configuration values.
+4. Verify that all returned configuration values match the currently stored values on the device.
+5. Issue a bulk-read request for all setpoints.
+6. Verify that all returned setpoint values match the currently stored values on the device.
+7. Issue a bulk-read request for all feedback values.
+8. Verify that all returned feedback values match the currently stored values on the device.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the system accepts each bulk-read request.
+2. Verify the system returns a single response frame containing all values for the requested parameter category, packed sequentially in index order.
+3. Verify the returned values match the currently stored values on the device for each category (configuration values, setpoints, feedback values).
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-19
+  ROLE: Verifies
+
+[TEST_CASE]
 UID: TC-H1FWHVPS-33
 TITLE: Filament current ramping - Test Case
 STATEMENT: >>>
