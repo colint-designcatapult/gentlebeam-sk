@@ -11,11 +11,12 @@
 #define FTDI_RX_IDX_BYTES		2
 #define FTDI_RX_DATA_IDX		(FTDI_RX_PARAM_IDX + FTDI_RX_PARAM_BYTES)
 #define FTDI_RX_DATA_BYTES		4
+
 #define FTDI_RX_MIN_BYTES		(FTDI_RX_PARAM_IDX + 1)
 #define FTDI_RX_GET_BYTES		(FTDI_RX_PARAM_IDX + FTDI_RX_PARAM_BYTES + 1)
 #define FTDI_RX_MAX_BYTES		(FTDI_RX_DATA_IDX + FTDI_RX_DATA_BYTES + 1)
 
-#define FTDI_TX_MAX_BYTES       FTDI_RX_MAX_BYTES
+#define FTDI_TX_MAX_BYTES       256
 
 /* Backing store for GET/SET, indexed by [type][idx].
  * Adjust FTDI_REG_COUNT to match how many indices are valid per type. */
@@ -36,6 +37,9 @@ typedef enum
     FTDI_CMD_BOOTLOADER,
     FTDI_CMD_GET,
     FTDI_CMD_SET,
+    FTDI_CMD_ALL_CONFIG_VALS,
+    FTDI_CMD_ALL_SET_POINTS,
+    FTDI_CMD_ALL_FB_VALS,
     FTDI_CMD_NONE   
 } ftdi_cmd_t;
 

@@ -638,7 +638,18 @@ The firmware processes GET and SET commands received through the FTDI UART inter
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWHVPS-18
+  VALUE: RQ-H1FWHVPS-19
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPS-125
+TITLE: All-Values Bulk Read Command Processing
+STATEMENT: >>>
+The firmware processes bulk-read commands received through the FTDI UART interface to return the complete set of configuration values, setpoints, or feedback values in a single response. Valid requests are decoded and executed using the system configuration manager, setpoint manager, or feedback value manager, as applicable to the command received. Each command returns all values for its corresponding parameter category in a single response frame, with values packed sequentially in index order. Invalid or unrecognized commands are ignored without response.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-19
   ROLE: Refines
 
 [[/SECTION]]

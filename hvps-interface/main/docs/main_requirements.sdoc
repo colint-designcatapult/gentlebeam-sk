@@ -236,7 +236,7 @@ UID: RQ-H1FWHVPS-19
 TYPE: Functional
 TITLE: FTDI UART Communication and Configuration Interface Module
 STATEMENT: >>>
-The firmware shall provide an FTDI UART communication interface that receives and validates protocol messages, processes GET and SET commands for device configuration parameters, returns responses for valid requests, and supports bootloader entry by erasing the CRC flash page and performing a system reset.
+The firmware shall provide an FTDI UART communication interface that receives and validates protocol messages, processes GET and SET commands for individual device configuration parameters, processes bulk-read commands for all configuration values, setpoints, and feedback values, returns responses for valid requests, and supports bootloader entry by erasing the CRC flash page and performing a system reset.
 <<<
 
 [[/SECTION]]

@@ -15,6 +15,9 @@ static const ftdi_command_t command_table[] =
     { "B00TL", FTDI_CMD_BOOTLOADER, FTDI_RX_MIN_BYTES },
     { "GET..", FTDI_CMD_GET,        FTDI_RX_GET_BYTES },
     { "..SET", FTDI_CMD_SET,        FTDI_RX_MAX_BYTES },
+	{ "ACFGS", FTDI_CMD_ALL_CONFIG_VALS, FTDI_RX_MIN_BYTES}, 
+	{ "ASPTS", FTDI_CMD_ALL_SET_POINTS, FTDI_RX_MIN_BYTES},
+	{ "AFBVS", FTDI_CMD_ALL_FB_VALS, FTDI_RX_MIN_BYTES},
 };
 
 char cmd_string_comp[FTDI_RX_CMD_BYTES+1];
@@ -26,6 +29,7 @@ volatile bool ftdi_tx_busy = false;
 volatile bool process_ftdi_rx = false;
 volatile uint8_t ftdi_rx_idx = 0;
 volatile uint8_t ftdi_cmd = FTDI_CMD_NONE;
+volatile uint8_t ftdi_rx_expected_len = 0;
 
 static ftdi_cmd_t get_ftdi_rx_cmd();
 static void process_ftdi_cmd(ftdi_cmd_t cmd);
@@ -49,6 +53,7 @@ void setup_ftdi()
 	//Start interrupt reception
 	HAL_UART_Receive_IT(&huart3, ftdi_rx_in, 1);
 
+	//Initialize logging module
 	ftdi_log_init(&huart3);
 }
 
@@ -79,7 +84,7 @@ static ftdi_cmd_t get_ftdi_rx_cmd(void)
     return FTDI_CMD_NONE;
 }
 
-void ftdi_respond(ftdi_cmd_t cmd_idx, ftdi_type_t type, uint16_t idx, float value)
+static void ftdi_respond(ftdi_cmd_t cmd_idx, ftdi_type_t type, uint16_t idx, float value)
 {
     uint8_t *p = ftdi_tx_buf;
 
@@ -100,6 +105,54 @@ void ftdi_respond(ftdi_cmd_t cmd_idx, ftdi_type_t type, uint16_t idx, float valu
     *p++ = '\n';
 
     ftdi_write_bytes(ftdi_tx_buf, (size_t)(p - ftdi_tx_buf));
+}
+
+static void ftdi_send_all_vals(ftdi_cmd_t cmd_idx)
+{
+	uint8_t *p = ftdi_tx_buf;
+
+	*p++ = '*';
+
+	memcpy(p, command_table[cmd_idx].cmd, FTDI_RX_CMD_BYTES);
+    p += FTDI_RX_CMD_BYTES;
+
+	float value; 
+	switch (cmd_idx)
+	{
+		case FTDI_CMD_ALL_CONFIG_VALS:
+			for (uint16_t idx = 0; idx < NUM_SYS_CONFIG; idx++)
+			{
+				value = sys_config_get(idx);
+				memcpy(p, &value, sizeof(value));
+				p += sizeof(value);
+			}
+			break;
+
+		case FTDI_CMD_ALL_SET_POINTS:
+			for (uint16_t idx = 0; idx < NUM_SP; idx++)
+			{
+				value = sys_setpoint_get(idx);
+				memcpy(p, &value, sizeof(value));
+				p += sizeof(value);
+			}
+			break;
+
+		case FTDI_CMD_ALL_FB_VALS:
+			for (uint16_t idx = 0; idx < NUM_FB; idx++)
+			{
+				value = sys_fb_vals_get(idx);
+				memcpy(p, &value, sizeof(value));
+				p += sizeof(value);
+			}
+			break;
+
+		default:
+			return; /* invalid command */
+	}
+
+	*p++ = '\n';
+
+	ftdi_write_bytes(ftdi_tx_buf, (size_t)(p - ftdi_tx_buf));
 }
 
 static void process_ftdi_cmd(ftdi_cmd_t cmd_idx)
@@ -167,6 +220,18 @@ static void process_ftdi_cmd(ftdi_cmd_t cmd_idx)
 			break;
 		}
 
+		case FTDI_CMD_ALL_CONFIG_VALS:
+			ftdi_send_all_vals(FTDI_CMD_ALL_CONFIG_VALS);
+			break;
+
+		case FTDI_CMD_ALL_SET_POINTS:
+			ftdi_send_all_vals(FTDI_CMD_ALL_SET_POINTS);
+			break;
+
+		case FTDI_CMD_ALL_FB_VALS:
+			ftdi_send_all_vals(FTDI_CMD_ALL_FB_VALS);
+			break;
+
 		default:
 			break;
 	}
@@ -176,6 +241,12 @@ void ftdi_rx_cb()
 {
 	if(process_ftdi_rx)
 	{
+		/* Previous frame hasn't been drained by process_ftdi() yet.
+		 * Re-arm reception regardless so we never stall the UART --
+		 * we just have nowhere to safely stash this byte, so it's
+		 * dropped. (See prior note: failing to re-arm here was a
+		 * separate bug where RX would stop permanently.) */
+		HAL_UART_Receive_IT(&huart3, ftdi_rx_in, 1);
 		return;
 	}
 
@@ -185,14 +256,50 @@ void ftdi_rx_cb()
 	}
 	else
 	{
-		ftdi_rx_buf[ftdi_rx_idx++] = ftdi_rx_in[0];
-		if(ftdi_rx_in[0] == '\n')
+		if(ftdi_rx_idx < FTDI_RX_MAX_BYTES)
 		{
+			ftdi_rx_buf[ftdi_rx_idx++] = ftdi_rx_in[0];
+		}
+
+		if(ftdi_rx_idx == (1 + FTDI_RX_CMD_BYTES))
+		{
+			/* Header ('*' + 5-char command name) is complete.
+			 * Look up how long this specific frame is supposed to
+			 * be so the rest of the payload can be framed by byte
+			 * count instead of scanning for '\n' -- binary payload
+			 * bytes (e.g. a float in a SET) can legitimately equal
+			 * 0x0A and must never be mistaken for a terminator. */
+			ftdi_rx_expected_len = 0;
+
+			for(size_t i = 0; i < ARRAY_SIZE(command_table); i++)
+			{
+				if(memcmp(&ftdi_rx_buf[1],
+				          command_table[i].cmd,
+				          FTDI_RX_CMD_BYTES) == 0)
+				{
+					ftdi_rx_expected_len = command_table[i].expected_len;
+					break;
+				}
+			}
+
+			if(ftdi_rx_expected_len == 0)
+			{
+				//Unrecognized command name -- resync on next '*'
+				ftdi_rx_idx = 0;
+			}
+		}
+		else if((ftdi_rx_expected_len != 0) &&
+		        (ftdi_rx_idx >= ftdi_rx_expected_len))
+		{
+			//Full frame received, length-verified
 			process_ftdi_rx = true;
+			ftdi_rx_expected_len = 0;
 		}
 		else if(ftdi_rx_idx >= FTDI_RX_MAX_BYTES)
 		{
+			//Safety net: never overrun the buffer
 			ftdi_rx_idx = 0;
+			ftdi_rx_expected_len = 0;
 		}
 	}
 
