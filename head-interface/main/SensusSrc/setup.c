@@ -8,6 +8,7 @@
 #include "timer.h"
 #include "sys_data.h"
 #include "dotstar.h"
+#include "led_ring.h"
 
 #if !defined(CALIBRATION_MODE)
 #include "buttons.h"
@@ -31,6 +32,7 @@ void run_setup()
 	init_1wire();
 #endif
 	init_rgb_strip();
+	init_led_ring();
 }
 
 void run_post()
@@ -55,6 +57,7 @@ void run_loop()
 	process_collimator();
 	process_qc();
 #endif
+	led_ring_tick(20);
 }
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)

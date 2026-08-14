@@ -3,7 +3,7 @@
 
 #include "stm32f4xx_hal.h"
 
-#define DEBOUNCE_MS	50
+#define DEBOUNCE_MS	30
 
 enum
 {

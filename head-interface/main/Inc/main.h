@@ -63,6 +63,8 @@ extern UART_HandleTypeDef huart2;
 #define I2C_BUS3               (&hi2c3)
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -107,8 +109,6 @@ void Error_Handler(void);
 #define IO_MAG_SCL_GPIO_Port GPIOA
 #define IO_SPI_CSn_Pin GPIO_PIN_9
 #define IO_SPI_CSn_GPIO_Port GPIOA
-#define IO_LASER_CTRL_Pin GPIO_PIN_15
-#define IO_LASER_CTRL_GPIO_Port GPIOA
 #define IO_LED_AMBER_Pin GPIO_PIN_10
 #define IO_LED_AMBER_GPIO_Port GPIOC
 #define IO_LED_BLUE_Pin GPIO_PIN_11

@@ -14,6 +14,7 @@ extern volatile int32_t update_led_ms;
 extern volatile int32_t collim_ms;
 extern volatile bool button_process_ready;
 extern volatile int32_t qc_reset_count_ms;
+extern volatile int32_t led_ring_ms; 
 #endif
 void update_system_timers();
 
