@@ -78,17 +78,24 @@ void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	//TBD TODO differentiate by handler
-	control_comm_rx_cb();
+	if (huart->Instance == USART2)
+	{
+		control_comm_rx_cb();
+	}
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	//TBD TODO differentiate by handler
-	control_comm_tx_cb();
+	if (huart->Instance == USART2)
+	{
+		control_comm_tx_cb();
+	}
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-	adc_cb();
+	if(hadc->Instance == ADC1)
+	{
+		adc_cb();
+	}
 }

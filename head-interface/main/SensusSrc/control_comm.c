@@ -13,16 +13,21 @@ volatile int32_t control_comm_ms = 50;
 volatile bool control_comm_tx_busy = false;
 volatile int control_comm_rx_timeout = 0;
 volatile int control_comm_tx_timeout = 0;
-volatile bool control_comm_rx_recv = false;
 uint32_t control_comm_rx_idx = 0;
-uint8_t control_comm_rx_in = 0;
 uint8_t control_comm_rx_val = 0;
 uint8_t control_comm_rx_buf[CC_RX_NUM];
 
+//RX ring buffer: filled by control_comm_rx_cb() (ISR context), drained by
+//process_control_comm() (main loop). head = next slot the ISR will write,
+//tail = next slot the main loop will read. Empty when head == tail.
+#define CC_RX_QUEUE_SIZE 32
+volatile uint8_t control_comm_rx_in[CC_RX_QUEUE_SIZE];
+volatile uint32_t control_comm_rx_in_head = 0;
+volatile uint32_t control_comm_rx_in_tail = 0;
+volatile bool control_comm_rx_overflow = false;
+
 uint8_t control_tx_out[CC_TX_NUM_FIELDS * CC_FIELD_SIZE];
 uint8_t mag_cal_tx_out[NUM_MAG_TX_CAL*sizeof(uint32_t)];
-
-int rx_cal_counter = -1;
 
 bool mag_rolling = true;
 
@@ -40,9 +45,6 @@ void init_control_comm()
 		control_tx_out[i] = CC_SYNC_VAL;
 	}
 
-	//Initialize info
-	//TBD TODO
-
 	//Initialize delimiter values
 	for(int i = 1; i < CC_TX_NUM_FIELDS; i++)
 	{
@@ -53,19 +55,20 @@ void init_control_comm()
 	control_tx_out[(CC_TX_NUM_FIELDS * CC_FIELD_SIZE)-1] = CC_TERM_VAL;
 
 	//Initialize RX reception
-	control_comm_rx_recv = false;
-	HAL_UART_Receive_IT(&huart2, &control_comm_rx_val, sizeof(uint8_t));
+	control_comm_rx_in_head = 0;
+	control_comm_rx_in_tail = 0;
+	control_comm_rx_overflow = false;
+	HAL_UART_Receive_IT(&huart2, (uint8_t *)&control_comm_rx_in[control_comm_rx_in_head], 1);
 }
 
 void process_control_comm()
 {
-	//If byte has been received, parse it to try and
-	if(control_comm_rx_recv)
+	//Drain any bytes the ISR has queued up since we last ran
+	while(control_comm_rx_in_tail != control_comm_rx_in_head)
 	{
 		control_comm_rx_timeout = 0;
-		control_comm_rx_val = control_comm_rx_in;
-		control_comm_rx_recv = false;
-		HAL_UART_Receive_IT(&huart2, &control_comm_rx_in, 1);
+		control_comm_rx_val = control_comm_rx_in[control_comm_rx_in_tail];
+		control_comm_rx_in_tail = (control_comm_rx_in_tail + 1) % CC_RX_QUEUE_SIZE;
 		parse_comm_rx();
 	}
 
@@ -99,7 +102,7 @@ void process_control_comm()
 	if(++control_comm_rx_timeout > 5)
 	{
 		control_comm_rx_timeout = 0;
-		HAL_UART_Receive_IT(&huart2, &control_comm_rx_in, 1);
+		HAL_UART_Receive_IT(&huart2, (uint8_t *)&control_comm_rx_in[control_comm_rx_in_head], 1);
 	}
 	control_comm_ms += 100;
 
@@ -229,7 +232,22 @@ static void copy_sys_data(uint32_t field_idx)
 
 void control_comm_rx_cb()
 {
-	control_comm_rx_recv = true;
+	//A byte just landed in control_comm_rx_in[control_comm_rx_in_head].
+	//Advance the write index to claim it, then re-arm reception into the
+	//next free slot.
+	uint32_t next_head = (control_comm_rx_in_head + 1) % CC_RX_QUEUE_SIZE;
+
+	if(next_head == control_comm_rx_in_tail)
+	{
+		//Queue is full - drop the oldest unread byte to make room rather
+		//than stalling reception.
+		control_comm_rx_in_tail = (control_comm_rx_in_tail + 1) % CC_RX_QUEUE_SIZE;
+		control_comm_rx_overflow = true;
+	}
+
+	control_comm_rx_in_head = next_head;
+
+	HAL_UART_Receive_IT(&huart2, (uint8_t *)&control_comm_rx_in[control_comm_rx_in_head], 1);
 	//HAL_GPIO_TogglePin(IO_LED_BLUE_GPIO_Port, IO_LED_BLUE_Pin);
 }
 
@@ -237,5 +255,3 @@ void control_comm_tx_cb()
 {
 	control_comm_tx_busy = false;
 }
-
-
