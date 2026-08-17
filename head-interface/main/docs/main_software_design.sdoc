@@ -186,6 +186,8 @@ the following peripherals of the microcontroller:
 
 - ADC peripheral
 
+- Pulse width modulation (PWM)
+
 - GPIO
 <<<
 RELATIONS:
@@ -385,8 +387,7 @@ STATEMENT: >>>
 After monitoring for debouncing, the firmware also performs specific actions based on which
 buttons were pressed. The following actions are mapped to specific button presses:
 
-- LED button release results in the illumination LED output signal toggling (alternating between
-  illumination LEDs on and off)
+- Detection of a release of the LED button shall result in the head interface firmware advancing the illumination LED output to the next mode in the sequence: Dim Brightness → Normal Brightness → High Brightness → Breathing Effect → Off → Dim Brightness (repeat).
 <<<
 RELATIONS:
 - TYPE: Parent

@@ -6,7 +6,7 @@
 #include "timer.h"
 #include "sys_data.h"
 #include "control_comm.h"
-
+#include "led_ring.h"
 
 volatile bool button_process_ready = false;
 
@@ -90,6 +90,8 @@ static void check_button(int idx)
 	}
 }
 
+static led_ring_mode_t	s_current_mode = LED_RING_MODE_OFF;
+
 //If specific functionality is needed on button press/release, execute here
 static void execute_button_function(int idx, GPIO_PinState new_state)
 {
@@ -98,13 +100,14 @@ static void execute_button_function(int idx, GPIO_PinState new_state)
 		case BTN_LASER:
 			if(new_state == GPIO_PIN_RESET)
 			{
-				HAL_GPIO_TogglePin(IO_LASER_CTRL_GPIO_Port, IO_LASER_CTRL_Pin);
+
 			}
 			break;
 		case BTN_LED:
 			if(new_state == GPIO_PIN_RESET)
 			{
-				HAL_GPIO_TogglePin(IO_WHITE_LEDS_GPIO_Port, IO_WHITE_LEDS_Pin);
+				s_current_mode = (s_current_mode + 1) % LED_RING_MODE_COUNT;
+				led_ring_set_mode(s_current_mode);
 			}
 			break;
 		case BTN_FUNC_1:

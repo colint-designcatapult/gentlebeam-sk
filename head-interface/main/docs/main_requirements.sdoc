@@ -115,8 +115,7 @@ UID: RQ-H1FHI-6
 TYPE: Functional
 TITLE: Illumination LEDs
 STATEMENT: >>>
-The head interface firmware shall alternately enable and disable the illumination LEDs on the head
-LED board after detection of a user pressing the associated membrane button
+The head interface firmware shall, upon detection of each press of the associated membrane button, cycle the illumination LEDs on the head LED board through the following modes in sequence: Dim Brightness → Normal Brightness → High Brightness → Breathing Effect → Off → Dim Brightness (repeat).
 <<<
 
 [REQUIREMENT]
