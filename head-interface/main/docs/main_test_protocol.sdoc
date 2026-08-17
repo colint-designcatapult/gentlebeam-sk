@@ -205,7 +205,7 @@ RELATIONS:
 UID: TC-H1FHI-17
 TITLE: Illumination LEDs - Test Case
 STATEMENT: >>>
-When user press and release the laser membrane key several times, verify the head interface firmware should enable / disable the illumination LEDs.
+When the user presses and releases the illumination membrane key several times, verify that the head interface firmware cycles the illumination LEDs through the following modes in sequence: Dim Brightness → Normal Brightness → High Brightness → Breathing Effect → Off → Dim Brightness (repeat).
 <<<
 PREREQUISITES: >>>
 1. System is ready to run.
@@ -214,16 +214,20 @@ PREREQUISITES: >>>
 STEPS: >>>
 1. Check the system when is powered on.
 2. Press membrane key.
-3. Check the illumination LEDs.
+3. Verify the illumination LEDs are in Dim Brightness mode.
 4. Press membrane key again.
-5. Check the illumination LEDs.
+5. Verify the illumination LEDs are in Normal Brightness mode.
+6. Press membrane key again.
+7. Verify the illumination LEDs are in High Brightness mode.
+8. Press membrane key again.
+9. Verify the illumination LEDs are in Breathing Effect mode.
+10. Press membrane key again.
+11. Verify the illumination LEDs are turned Off.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. Verify there is no treatment.
 2. Verify physically that the membrane key is pressed.
-3. Verify it’s disabled.
-4. Verify physically that the membrane key is pressed.
-5. Verify it’s enabled.
+3. Verify the current mode of the illumination LEDs.
 <<<
 RELATIONS:
 - TYPE: Parent
