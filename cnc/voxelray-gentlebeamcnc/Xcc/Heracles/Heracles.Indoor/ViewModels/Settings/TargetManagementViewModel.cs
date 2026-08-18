@@ -230,14 +230,16 @@ namespace Heracles.Indoor.ViewModels.Settings
                         SelectedCollimator = await CollimatorService.CreateCollimatorAsync(
                             collimatorToEdit.Serial,
                             collimatorToEdit.Configuration.Type,
-                            collimatorToEdit.Configuration.Energy);
+                            collimatorToEdit.Configuration.Energy,
+                            collimatorToEdit.IsActive);
                     }
                     else
                     {
                         SelectedCollimator = await CollimatorService.UpdateCollimatorAsync(
                             collimatorToEdit.Serial,
                             collimatorToEdit.Configuration.Type,
-                            collimatorToEdit.Configuration.Energy);
+                            collimatorToEdit.Configuration.Energy,
+                            collimatorToEdit.IsActive);
                     }
                     PopUpService.ShowMessage(
                             StringConstants.Common.SettingsDialogTitle,

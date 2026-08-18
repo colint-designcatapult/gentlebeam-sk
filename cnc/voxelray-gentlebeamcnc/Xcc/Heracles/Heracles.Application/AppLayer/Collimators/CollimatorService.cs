@@ -39,7 +39,7 @@ namespace Heracles.Application.AppLayer.Collimators
             }
         }
 
-        public async Task<ICollimator> CreateCollimatorAsync(string serial, TargetType targetType, Energy energy)
+        public async Task<ICollimator> CreateCollimatorAsync(string serial, TargetType targetType, Energy energy, bool isActive)
         {
             if (serial == null)
             {
@@ -59,17 +59,22 @@ namespace Heracles.Application.AppLayer.Collimators
             var storedCollimator = await collimatorRepository.CreateCollimatorAsync(
                 serial,
                 collimatorModel.ActiveHead,
-                configuration);
+                configuration,
+                isActive);
 
             return collimatorModel.AddCollimator(storedCollimator);
         }
 
-        public async Task<ICollimator> UpdateCollimatorAsync(string serial, TargetType targetType, Energy energy)
+        public async Task<ICollimator> UpdateCollimatorAsync(string serial, TargetType targetType, Energy energy, bool isActive)
         {
             var existingValue = collimatorModel.FindCollimatorBySerial(serial);
 
             ICollimatorConfiguration configuration = await FindOrCreateConfiguration(targetType, energy);
-            var newValue = new Collimator(existingValue) { CollimatorConfigurationId = configuration.Id };
+            var newValue = new Collimator(existingValue)
+            {
+                CollimatorConfigurationId = configuration.Id,
+                IsActive = isActive,
+            };
 
             var storedValue = await collimatorRepository.UpdateCollimatorAsync(existingValue, newValue);
 
