@@ -20,7 +20,11 @@ namespace Heracles.Application.Infra.DataManagement.System
         Task<ICollimatorConfiguration> UpdateCollimatorConfigurationAsync(ICollimatorConfiguration oldValue, ICollimatorConfiguration newValue);
 
         Task<ICollection<ICollimator>> FetchCollimatorsAsync(long configurationId);
-        Task<ICollimator> CreateCollimatorAsync(string collimatorSerial, IHead head, ICollimatorConfiguration configuration);
+        Task<ICollimator> CreateCollimatorAsync(
+            string collimatorSerial,
+            IHead head,
+            ICollimatorConfiguration configuration,
+            bool isActive);
         Task<ICollimator> UpdateCollimatorAsync(ICollimator oldValue, ICollimator newValue);
     }
 
@@ -101,13 +105,18 @@ namespace Heracles.Application.Infra.DataManagement.System
                 presets: oldValue?.Presets);
         }
 
-        public Task<ICollimator> CreateCollimatorAsync(string collimatorSerial, IHead head, ICollimatorConfiguration configuration)
+        public Task<ICollimator> CreateCollimatorAsync(
+            string collimatorSerial,
+            IHead head,
+            ICollimatorConfiguration configuration,
+            bool isActive)
         {
             var collimatorToCreate = new Collimator()
             {
                 HeadId = head.Id,
                 CollimatorConfigurationId = configuration.Id,
-                Serial = collimatorSerial
+                Serial = collimatorSerial,
+                IsActive = isActive,
             };
 
             return collimatorCommands.CreateAsync(collimatorToCreate);
