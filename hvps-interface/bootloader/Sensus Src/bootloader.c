@@ -217,7 +217,7 @@ static void erase_app_flash()
 	FLASH_EraseInitTypeDef flash_erase;
 	flash_erase.TypeErase = FLASH_TYPEERASE_PAGES;
 	flash_erase.PageAddress =  CRC_ADDR_START;
-	flash_erase.NbPages = MAX_APP_PAGE_COUNT+1;
+	flash_erase.NbPages = MAX_APP_PAGE_COUNT/2 + 1; 
 
 	HAL_FLASH_Unlock();
 
