@@ -74,27 +74,28 @@ uint32_t get_app_crc()
 	return *stored_crc;	
 }
 
-static uint8_t get_ftdi_rx_cmd()
+static uint8_t get_ftdi_rx_cmd(void)
 {
 	uint8_t ret_cmd = FTDI_CMD_NONE;
 	memcpy(cmd_string_comp, ftdi_rx_buf+1, FTDI_RX_CMD_BYTES);
+
 	//Check if PC requests app to go into bootloader mode
-	if(strcmp(cmd_string_comp, ftdi_boot_cmd) == 0 && ftdi_rx_idx == FTDI_MIN_RX_BYTES)
+	if(memcmp(cmd_string_comp, ftdi_boot_cmd, FTDI_RX_CMD_BYTES) == 0 && ftdi_rx_idx == FTDI_MIN_RX_BYTES)
 	{
 		ret_cmd = FTDI_CMD_BOOTLOADER;
 	}
 	//Check if PC requests debug "get" command
-	else if(strcmp(cmd_string_comp, ftdi_get_cmd) == 0 && ftdi_rx_idx == FTDI_MIN_RX_BYTES)
+	else if(memcmp(cmd_string_comp, ftdi_get_cmd, FTDI_RX_CMD_BYTES) == 0 && ftdi_rx_idx == FTDI_MIN_RX_BYTES)
 	{
 		ret_cmd = FTDI_CMD_GET;
 	}
 	//Check if PC requests debug "set" command
-	else if(strcmp(cmd_string_comp, ftdi_set_cmd) == 0 && ftdi_rx_idx == FTDI_MIN_RX_BYTES)
+	else if(memcmp(cmd_string_comp, ftdi_set_cmd, FTDI_RX_CMD_BYTES) == 0 && ftdi_rx_idx == FTDI_MIN_RX_BYTES)
 	{
 		ret_cmd = FTDI_CMD_SET;
 	}
 	//Check if PC requests debug "go" command
-	else if(strcmp(cmd_string_comp, ftdi_go_cmd) == 0 && ftdi_rx_idx == FTDI_MIN_RX_BYTES)
+	else if(memcmp(cmd_string_comp, ftdi_go_cmd, FTDI_RX_CMD_BYTES) == 0 && ftdi_rx_idx == FTDI_MIN_RX_BYTES)
 	{
 		ret_cmd = FTDI_CMD_GO;
 	}
