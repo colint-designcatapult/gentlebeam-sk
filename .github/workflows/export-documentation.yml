@@ -1,0 +1,118 @@
+name: Export documentation
+
+on:
+  workflow_call:
+    secrets:
+      STRICTDOC_UTILS_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Export DOCX documentation
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check out dcdoc
+        uses: actions/checkout@v7
+        with:
+          repository: DesignCatapult/strictdoc-utils
+          token: ${{ secrets.STRICTDOC_UTILS_TOKEN }}
+          path: strictdoc-utils
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Resolve documentation release version
+        id: version
+        shell: bash
+        run: echo "value=$(python tools/resolve_dcdoc_version.py --component .)" >> "$GITHUB_OUTPUT"
+
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Pandoc
+        uses: pandoc/actions/setup@v1
+        with:
+          version: "3.6.4"
+
+      - name: Set up Mermaid CLI
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install and configure Mermaid CLI
+        shell: bash
+        run: |
+          npm install --global @mermaid-js/mermaid-cli
+          mmdc_path="$(command -v mmdc)"
+          wrapper_dir="$RUNNER_TEMP/mmdc-wrapper"
+          puppeteer_config="$RUNNER_TEMP/puppeteer-config.json"
+          mkdir -p "$wrapper_dir"
+          printf '%s\n' '{"args":["--no-sandbox"]}' > "$puppeteer_config"
+          printf '#!/usr/bin/env bash\nexec %q --puppeteerConfigFile %q "$@"\n' "$mmdc_path" "$puppeteer_config" > "$wrapper_dir/mmdc"
+          chmod +x "$wrapper_dir/mmdc"
+          echo "$wrapper_dir" >> "$GITHUB_PATH"
+
+      - name: Verify Mermaid rendering
+        shell: bash
+        run: |
+          printf 'graph TD\n  A[CI] --> B[DOCX]\n' > "$RUNNER_TEMP/mermaid-smoke.mmd"
+          mmdc --input "$RUNNER_TEMP/mermaid-smoke.mmd" --output "$RUNNER_TEMP/mermaid-smoke.svg"
+          test -s "$RUNNER_TEMP/mermaid-smoke.svg"
+
+      - name: Install dcdoc
+        run: uv tool install --editable ./strictdoc-utils
+
+      - name: Verify documentation
+        id: verify-documentation
+        continue-on-error: true
+        run: dcdoc verify
+
+      - name: Export documentation
+        shell: bash
+        run: |
+          set -o pipefail
+          dcdoc export 2>&1 | tee "$RUNNER_TEMP/dcdoc-export.log"
+          if grep -q 'mmdc:.*does not exist' "$RUNNER_TEMP/dcdoc-export.log"; then
+            echo "dcdoc could not invoke Mermaid CLI."
+            exit 1
+          fi
+
+      - name: Verify DOCX output
+        shell: bash
+        run: |
+          shopt -s nullglob globstar
+          docx_files=(docs/output/docx/**/*.docx)
+          if (( ${#docx_files[@]} == 0 )); then
+            echo "dcdoc export did not produce DOCX files."
+            exit 1
+          fi
+          printf 'Generated DOCX files:\n%s\n' "${docx_files[@]}"
+
+      - name: Package DOCX documentation
+        shell: bash
+        run: |
+          package_basename="docs.${{ steps.version.outputs.value }}"
+          python tools/package_release.py \
+            --output "release/${package_basename}.zip" \
+            --tree "docs/output/docx=docx"
+          python -m zipfile -e "release/${package_basename}.zip" "cache-payload/docs"
+
+
+      - name: Upload individual documentation package
+        uses: actions/upload-artifact@v7
+        with:
+          name: docs.${{ steps.version.outputs.value }}
+          path: cache-payload/docs
+          if-no-files-found: error
+
+      - name: Fail on documentation verification errors
+        if: steps.verify-documentation.outcome == 'failure'
+        run: exit 1

@@ -154,7 +154,7 @@ namespace Heracles.External.ViewModels
             {
                 var gcbVersionInfo = await MainBoardApi.GetVersionInfo();
 
-                return $"{gcbVersionInfo.Major}.{gcbVersionInfo.Minor}.{gcbVersionInfo.Level}";
+                return gcbVersionInfo.FirmwareVersion;
             }
             catch(Exception ex)
             {

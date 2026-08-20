@@ -1,0 +1,113 @@
+name: Build HVPS interface firmware
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build-firmware:
+    name: Firmware package (${{ matrix.configuration }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - configuration: Debug
+            preset: Debug
+            bootloader-preset: Debug
+          - configuration: Release
+            preset: Release
+            bootloader-preset: Release
+          - configuration: CalibrationDebug
+            preset: CalibrationDebug
+            bootloader-preset: Debug
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Resolve HVPS release versions
+        id: versions
+        shell: bash
+        run: |
+          echo "main=$(python tools/resolve_dcdoc_version.py --component hvps-interface/main)" >> "$GITHUB_OUTPUT"
+          echo "bootloader=$(python tools/resolve_dcdoc_version.py --component hvps-interface/bootloader)" >> "$GITHUB_OUTPUT"
+
+      - name: Build bootloader
+        uses: uoohyo/action-stm32-cmake@v1.21.0
+        with:
+          project-path: hvps-interface/bootloader
+          build-target: all
+          cmake-args: --preset ${{ matrix.bootloader-preset }}
+
+      - name: Build main firmware
+        uses: uoohyo/action-stm32-cmake@v1.21.0
+        with:
+          project-path: hvps-interface/main
+          build-target: all
+          cmake-args: --preset ${{ matrix.preset }} -DFW_VERSION=${{ steps.versions.outputs.main }}
+
+      - name: Package firmware images
+        shell: bash
+        run: |
+          main_output_directory="hvps-interface/main/build/${{ matrix.preset }}"
+          bootloader_output_directory="hvps-interface/bootloader/build/${{ matrix.bootloader-preset }}"
+          sudo chown -R "$USER:$USER" "$main_output_directory" "$bootloader_output_directory"
+          python tools/firmware_hex.py inject-crc \
+            --input "$main_output_directory/gryphon-hvps-interface-fw.hex" \
+            --output "$main_output_directory/gryphon-hvps-interface-fw.with-crc.hex" \
+            --crc-output "$main_output_directory/gryphon-hvps-interface-fw.hex.crc" \
+            --application-start 0x08008000 \
+            --application-length 0x00016800 \
+            --crc-address 0x08007C00
+          python tools/firmware_hex.py combine \
+            --input "$bootloader_output_directory/hvps-interface-bootloader.hex" \
+            --input "$main_output_directory/gryphon-hvps-interface-fw.with-crc.hex" \
+            --output "$main_output_directory/gryphon-hvps-interface-fw.combined.hex"
+
+      - name: Verify firmware package outputs
+        shell: bash
+        run: |
+          main_output_directory="hvps-interface/main/build/${{ matrix.preset }}"
+          bootloader_output_directory="hvps-interface/bootloader/build/${{ matrix.bootloader-preset }}"
+          test -f "$main_output_directory/gryphon-hvps-interface-fw.elf"
+          test -f "$main_output_directory/gryphon-hvps-interface-fw.hex"
+          test -f "$main_output_directory/gryphon-hvps-interface-fw.hex.crc"
+          test -f "$main_output_directory/gryphon-hvps-interface-fw.with-crc.hex"
+          test -f "$main_output_directory/gryphon-hvps-interface-fw.combined.hex"
+          test -f "$bootloader_output_directory/hvps-interface-bootloader.elf"
+          test -f "$bootloader_output_directory/hvps-interface-bootloader.hex"
+
+      - name: Package firmware
+        shell: bash
+        run: |
+          main_output_directory="hvps-interface/main/build/${{ matrix.preset }}"
+          bootloader_output_directory="hvps-interface/bootloader/build/${{ matrix.bootloader-preset }}"
+          package_basename="hvps-interface.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}"
+          python tools/package_release.py \
+            --output "release/${package_basename}.zip" \
+            --file "$main_output_directory/gryphon-hvps-interface-fw.elf=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.elf" \
+            --file "$main_output_directory/gryphon-hvps-interface-fw.hex=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.hex" \
+            --file "$main_output_directory/gryphon-hvps-interface-fw.hex.crc=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.hex.crc" \
+            --file "$main_output_directory/gryphon-hvps-interface-fw.with-crc.hex=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.with-crc.hex" \
+            --file "$main_output_directory/gryphon-hvps-interface-fw.combined.hex=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.combined.hex" \
+            --file "$bootloader_output_directory/hvps-interface-bootloader.elf=hvps-interface-bootloader.${{ matrix.bootloader-preset }}.${{ steps.versions.outputs.bootloader }}.elf" \
+            --file "$bootloader_output_directory/hvps-interface-bootloader.hex=hvps-interface-bootloader.${{ matrix.bootloader-preset }}.${{ steps.versions.outputs.bootloader }}.hex"
+          python -m zipfile -e \
+            "release/${package_basename}.zip" \
+            "cache-payload/hvps/${{ matrix.configuration }}/Firmware/hvps-interface"
+
+
+      - name: Upload individual firmware package
+        uses: actions/upload-artifact@v7
+        with:
+          name: hvps-interface.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}
+          path: cache-payload/hvps/${{ matrix.configuration }}/Firmware/hvps-interface
+          if-no-files-found: error
+

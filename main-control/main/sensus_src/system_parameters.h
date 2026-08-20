@@ -14,6 +14,12 @@
 #define FW_NORMAL_MODE		0x0
 #define FW_CALIBRATION_MODE 0x494C4143 // Hex-encoded ASCII "CALI" 
 
+#ifndef FW_VERSION
+// Specify default version 
+// During CI/CD the actual version is injected as a preprocessor definition
+#define FW_VERSION "0.0.0-local.0"
+#endif
+
 #if defined(CALIBRATION_MODE)
 #define MRSRC 0
 #define GBSRC 1
@@ -45,10 +51,6 @@
 
 #define MAX_REPELLER_CURRENT_VAL	0.5
 #define REPELLER_TARGET				150
-
-#define FW_MAJOR_VERSION	1
-#define FW_MINOR_VERSION	0
-#define FW_LEVEL_VERSION	0
 
 #include "pc_comm_parser.h"
 #include <stdbool.h>
@@ -133,10 +135,6 @@ enum systemStatusFields
 
 #define QC_DATA_REQ_COUNT	2	
 #define QC_DATA_RES_COUNT	5
-
-#define FW_MAJOR_VERSION	02
-#define FW_MINOR_VERSION	00
-#define FW_LEVEL_VERSION	01
 
 #include "qc_well.h"
 #include "pc_comm_parser.h"
@@ -274,7 +272,7 @@ enum internalVoltages
 	INTERNAL_V_COUNT
 };
 
-extern uint32_t device_information[VERSION_RES_COUNT];
+extern pcVerRes device_information;
 extern VariableValue system_status[SS_COUNT];
 extern float hvps_config[HVPS_CONF_COUNT];
 extern VariableValue operational_points[MAX_OPERATIONAL_POINTS][OP_PARAM_COUNT];

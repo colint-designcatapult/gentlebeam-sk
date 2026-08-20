@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "configurePresets": [
+    {
+      "name": "debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/cmake/debug",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/microchip-studio-arm-gcc-6.3.1.cmake",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/cmake/release",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/microchip-studio-arm-gcc-6.3.1.cmake",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "calibration-debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/cmake/calibration-debug",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/microchip-studio-arm-gcc-6.3.1.cmake",
+        "CMAKE_BUILD_TYPE": "CalibrationDebug"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "targets": ["all"]
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "targets": ["all"]
+    },
+    {
+      "name": "calibration-debug",
+      "configurePreset": "calibration-debug",
+      "targets": ["all"]
+    }
+  ]
+}

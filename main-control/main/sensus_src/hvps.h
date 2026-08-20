@@ -23,6 +23,10 @@
 #define MAX_HVPS_CMDS		20
 #define MAX_HVPS_CMD_BYTES	(HVPS_TX_BYTE_COUNT * MAX_HVPS_CMDS)
 
+#define HVPS_VERSION_FRAME_MAGIC 0x5652534E
+#define HVPS_VERSION_FRAME_WORD_COUNT 13
+#define HVPS_VERSION_FRAME_BYTE_COUNT (HVPS_VERSION_FRAME_WORD_COUNT * sizeof(uint32_t))
+
 #if defined(CALIBRATION_MODE)
 #if MRSRC
 #define MAX_HEATER_MA	4000
@@ -80,7 +84,9 @@ typedef enum hvpsCmd
 	HVPS_CMD_CAL_STOP,
 #endif
 	NUM_HVPS_CMD
+
 } HvpsCmd;
+#define HVPS_CMD_VERSION_REQUEST 0x7F
 
 
 typedef enum hvpsStatus

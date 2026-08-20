@@ -52,7 +52,7 @@ internal class SystemTelemetryProcessorTests
         sut.Process(BuildVersionInfo(2, 0, 1, FirmwareMode.Normal));
         Assert.That(sut.Process(BuildNormalTelemetry(0)), Is.True);
 
-        Assert.That(sut.Process(BuildVersionInfo(2, 0, 2, FirmwareMode.Normal)), Is.False);
+        Assert.That(sut.Process(BuildVersionInfo(2, 0, 2, FirmwareMode.Demo)), Is.False);
         Assert.That(sut.Process(BuildNormalTelemetry(300)), Is.False);
         callback.Verify(x => x.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()), Times.Once);
     }
@@ -310,6 +310,27 @@ internal class SystemTelemetryProcessorTests
         store.Verify(value => value.ApplyFaultUpdate(It.IsAny<FaultUpdate>()), Times.Never);
     }
 
+    [Test]
+    public void VersionInfoParser_ParsesMainAndHvpsVersions()
+    {
+        var response = GcbXRayCmdResponseGenerator.GenerateVersionInfoResponse(0, new VersionInfo
+        {
+            FirmwareVersion = "3.0.0-deadbeef.1234",
+            FirmwareChecksum = 0x12345678,
+            Mode = FirmwareMode.Normal,
+            HvpsFirmwareVersion = "3.0.0-deadbeef.1234",
+            HvpsMode = FirmwareMode.Calibration,
+        });
+
+        var version = VersionInfoParser.Parse(response);
+
+        Assert.That(version.FirmwareVersion, Is.EqualTo("3.0.0-deadbeef.1234"));
+        Assert.That(version.FirmwareChecksum, Is.EqualTo(0x12345678));
+        Assert.That(version.Mode, Is.EqualTo(FirmwareMode.Normal));
+        Assert.That(version.HvpsFirmwareVersion, Is.EqualTo("3.0.0-deadbeef.1234"));
+        Assert.That(version.HvpsMode, Is.EqualTo(FirmwareMode.Calibration));
+    }
+
     private static SystemTelemetryProcessor CreateSut(
         ISystemTelemetryChanged callback,
         IGCBDataStore? store = null) =>
@@ -317,13 +338,14 @@ internal class SystemTelemetryProcessorTests
 
     private static byte[] BuildVersionInfo(int major, int minor, int level, FirmwareMode mode)
     {
-        var packet = new UdpPacket((uint)GCBPacketType.VersionInfoResponse, 0, 5);
-        packet[0] = major;
-        packet[1] = minor;
-        packet[2] = level;
-        packet[3] = 0;
-        packet[4] = (int)mode;
-        return packet.UpdateCRC().Buffer;
+        return GcbXRayCmdResponseGenerator.GenerateVersionInfoResponse(0, new VersionInfo
+        {
+            FirmwareVersion = $"{major}.{minor}.{level}",
+            FirmwareChecksum = 0,
+            Mode = mode,
+            HvpsFirmwareVersion = "unavailable",
+            HvpsMode = FirmwareMode.Normal,
+        });
     }
 
     private static byte[] BuildNormalTelemetry(

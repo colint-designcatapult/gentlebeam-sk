@@ -67,6 +67,11 @@ enum
 	NUM_CTRL_CMD
 };
 
+#define CTRL_CMD_VERSION_REQUEST 0x7F
+#define VERSION_FRAME_MAGIC 0x5652534E
+#define VERSION_FRAME_WORD_COUNT 13
+#define VERSION_FRAME_BYTE_COUNT (VERSION_FRAME_WORD_COUNT * sizeof(uint32_t))
+
 #define NUM_COMM_RX_BYTES	(NUM_COMM_RX_FIELDS*4)
 #define NUM_COMM_TX_BYTES	(NUM_COMM_TX_FIELDS*4)
 #define NUM_SYNC_BYTES	8
@@ -79,4 +84,5 @@ void process_control_comm();
 void comm_rx_cb();
 void comm_tx_cb();
 
+void send_hvps_version();
 #endif /* CONTROL_COMM_H_ */

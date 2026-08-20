@@ -20,12 +20,24 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
 
         public static byte[] GenerateVersionInfoResponse(uint packetCounter, VersionInfo info)
         {
-            return UdpPacketBuilder.BuildRawPacket(
-                packetType: (uint)GCBPacketType.VersionInfoResponse,
-                packetCounter: packetCounter,
-                payload: [
-                    info.Major, info.Minor, info.Level, info.FirmwareChecksum, (uint)info.Mode
-                    ]);
+            var payload = new uint[19];
+            WriteVersionString(payload, 0, info.FirmwareVersion);
+            payload[8] = info.FirmwareChecksum;
+            payload[9] = (uint)info.Mode;
+            WriteVersionString(payload, 10, info.HvpsFirmwareVersion);
+            payload[18] = (uint)info.HvpsMode;
+            var packet = new UdpPacket((uint)GCBPacketType.VersionInfoResponse, packetCounter, (uint)payload.Length);
+            for (var index = 0; index < payload.Length; index++)
+                packet[index] = payload[index];
+            return packet.UpdateCRC().Buffer;
+        }
+
+        private static void WriteVersionString(uint[] payload, int offset, string version)
+        {
+            var bytes = new byte[32];
+            Encoding.ASCII.GetBytes(version ?? string.Empty, bytes);
+            for (var index = 0; index < 8; index++)
+                payload[offset + index] = BitConverter.ToUInt32(bytes, index * sizeof(uint));
         }
 
         public static byte[] GenerateFaultInfoResponse(

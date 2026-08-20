@@ -1,0 +1,58 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "include-v-in-tag": false,
+  "include-v-in-release-name": false,
+  "packages": {
+    ".": {
+      "package-name": "GBSK",
+      "include-component-in-tag": false,
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "dcdoc.toml"
+        }
+      ]
+    },
+    "head-interface/main": {
+      "package-name": "head-interface",
+      "include-component-in-tag": true,
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "dcdoc.toml"
+        }
+      ]
+    },
+    "backup-timers": {
+      "package-name": "backup-timers",
+      "include-component-in-tag": true,
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "dcdoc.toml"
+        }
+      ]
+    },
+    "hvps-interface/bootloader": {
+      "package-name": "hvps-interface-bootloader",
+      "include-component-in-tag": true,
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "dcdoc.toml"
+        }
+      ]
+    },
+    "main-control/bootloader": {
+      "package-name": "main-control-bootloader",
+      "include-component-in-tag": true,
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "dcdoc.toml"
+        }
+      ]
+    }
+  }
+}

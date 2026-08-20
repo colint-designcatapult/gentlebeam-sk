@@ -32,6 +32,7 @@ VariableValue hvps_status[NUM_HVPS_STATUS];
 volatile uint32_t hvps_tx_idx = 0;
 volatile uint32_t hvps_rx_idx = 0;
 volatile bool hvps_rx_ready = false;
+volatile uint32_t hvps_rx_expected_bytes = HVPS_RX_BYTE_COUNT;
 volatile bool hvps_tx_ready = false;
 volatile bool hvps_read_req = false;
 volatile int hvps_read_incomplete = 0;
@@ -70,6 +71,7 @@ void init_hvps()
 	
 	//TBD TODO initialize HVPS parameters here
 	hvps_tx_ready = true;
+	queue_hvps_cmd(HVPS_CMD_VERSION_REQUEST, 0, 0);
 	
 	VTIMER_hvps_req_timer.interval = 100;
 	VTIMER_hvps_req_timer.cb = hvps_req_timer;
@@ -197,10 +199,29 @@ void process_hvps()
 		{
 			gpio_toggle_pin_level(IO_LED4);
 			
-			memcpy(hvps_status, hvps_rx_buf, HVPS_RX_BYTE_COUNT);
-			hvps_read_incomplete = 0;
-			
-			report_hvps_data(hvps_status);
+			if (*(uint32_t *)&hvps_rx_buf[HVPS_RX_SYNC_COUNT] == HVPS_VERSION_FRAME_MAGIC)
+			{
+				uint32_t *version_frame = (uint32_t *)hvps_rx_buf;
+				uint32_t checksum = 0;
+				for (int i = 2; i < 12; i++)
+				{
+					checksum += version_frame[i];
+				}
+				if (checksum == version_frame[12])
+				{
+					device_information.hvps_mode = version_frame[3];
+					memcpy(device_information.hvps_version_str, &version_frame[4],
+						sizeof(device_information.hvps_version_str));
+					device_information.hvps_version_str[sizeof(device_information.hvps_version_str) - 1] = '\0';
+				}
+			}
+			else if(check_hvps_status_checksum())
+			{
+				gpio_toggle_pin_level(IO_LED4);
+				memcpy(hvps_status, hvps_rx_buf, HVPS_RX_BYTE_COUNT);
+				hvps_read_incomplete = 0;
+				report_hvps_data(hvps_status);
+			}
 		}
 	}
 }
@@ -373,17 +394,26 @@ static void hvps_uart_rx_cb(const struct usart_async_descriptor *const io_descr)
 	io_read(hvps_io, &read_byte, 1);
 	
 	if(hvps_rx_idx < HVPS_RX_SYNC_COUNT && read_byte != 0xFF)
-	{	
+	{
 		hvps_rx_idx = 0;
+		hvps_rx_expected_bytes = HVPS_RX_BYTE_COUNT;
 	}
 	else
 	{
 		hvps_rx_buf[hvps_rx_idx++] = read_byte;
+		if (hvps_rx_idx == 12)
+		{
+			uint32_t marker;
+			memcpy(&marker, &hvps_rx_buf[HVPS_RX_SYNC_COUNT], sizeof(marker));
+			hvps_rx_expected_bytes = marker == HVPS_VERSION_FRAME_MAGIC
+				? HVPS_VERSION_FRAME_BYTE_COUNT
+				: HVPS_RX_BYTE_COUNT;
+		}
 	}
-	if(hvps_rx_idx >= HVPS_RX_BYTE_COUNT)
+	if(hvps_rx_idx >= hvps_rx_expected_bytes)
 	{
-		
 		hvps_rx_idx = 0;
+		hvps_rx_expected_bytes = HVPS_RX_BYTE_COUNT;
 		hvps_rx_ready = true;
 	}
 }

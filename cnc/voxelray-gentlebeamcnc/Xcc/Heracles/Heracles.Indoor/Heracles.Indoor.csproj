@@ -10,6 +10,7 @@
     <BuildNumber>0</BuildNumber>
     <InformationalVersion>$(AssemblyVersion) SP $(BuildNumber) </InformationalVersion>
     <ApplicationIcon>Heracles.ico</ApplicationIcon>
+    <Version>$(VersionPrefix)</Version>
   </PropertyGroup>
 
   <ItemGroup>

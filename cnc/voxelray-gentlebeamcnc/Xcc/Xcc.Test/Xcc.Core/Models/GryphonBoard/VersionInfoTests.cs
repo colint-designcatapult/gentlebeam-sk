@@ -10,56 +10,50 @@ namespace Xcc.Test.Xcc.Core.Models.GryphonBoard
         {
             var sut = new VersionInfo();
 
-            Assert.That(sut.Major, Is.EqualTo(0));
-            Assert.That(sut.Minor, Is.EqualTo(0));
-            Assert.That(sut.Level, Is.EqualTo(0));
+            Assert.That(sut.FirmwareVersion, Is.Null);
             Assert.That(sut.FirmwareChecksum, Is.EqualTo(0));
             Assert.That(sut.Mode, Is.EqualTo(FirmwareMode.Normal));
+            Assert.That(sut.HvpsFirmwareVersion, Is.Null);
+            Assert.That(sut.HvpsMode, Is.EqualTo(FirmwareMode.Normal));
         }
-        
+
         [Test]
         public void VersionInfo_GettersSetters()
         {
-            var major = 10;
-            var minor = 13;
-            var level = 16;
-            var firmwareChecksum = 42;
-            var mode = FirmwareMode.Demo;
-                
             var sut = new VersionInfo
             {
-                Major = major,
-                Minor = minor,
-                Level = level,
-                FirmwareChecksum = firmwareChecksum,
-                Mode = mode,
-            };
-
-            Assert.That(sut.Major, Is.EqualTo(major));
-            Assert.That(sut.Minor, Is.EqualTo(minor));
-            Assert.That(sut.Level, Is.EqualTo(level));
-            Assert.That(sut.FirmwareChecksum, Is.EqualTo(firmwareChecksum));
-            Assert.That(sut.Mode, Is.EqualTo(mode));
-        }
-        
-        [Test]
-        public void VersionInfo_ToString()
-        {   
-            var sut = new VersionInfo
-            {
-                Major = 10,
-                Minor = 13,
-                Level = 16,
+                FirmwareVersion = "3.0.0-deadbeef.42",
                 FirmwareChecksum = 42,
                 Mode = FirmwareMode.Demo,
+                HvpsFirmwareVersion = "3.0.0-deadbeef.42",
+                HvpsMode = FirmwareMode.Calibration,
+            };
+
+            Assert.That(sut.FirmwareVersion, Is.EqualTo("3.0.0-deadbeef.42"));
+            Assert.That(sut.FirmwareChecksum, Is.EqualTo(42));
+            Assert.That(sut.Mode, Is.EqualTo(FirmwareMode.Demo));
+            Assert.That(sut.HvpsFirmwareVersion, Is.EqualTo("3.0.0-deadbeef.42"));
+            Assert.That(sut.HvpsMode, Is.EqualTo(FirmwareMode.Calibration));
+        }
+
+        [Test]
+        public void VersionInfo_ToString()
+        {
+            var sut = new VersionInfo
+            {
+                FirmwareVersion = "3.0.0-deadbeef.42",
+                FirmwareChecksum = 42,
+                Mode = FirmwareMode.Demo,
+                HvpsFirmwareVersion = "3.0.0-deadbeef.42",
+                HvpsMode = FirmwareMode.Calibration,
             };
 
             var res = sut.ToString();
-            
-            Assert.That(res, Does.Contain("Version: 10.13"));
-            Assert.That(res, Does.Contain("Level: 16"));
+
+            Assert.That(res, Does.Contain("FirmwareVersion: 3.0.0-deadbeef.42"));
             Assert.That(res, Does.Contain("FirmwareChecksum: 42"));
             Assert.That(res, Does.Contain("Mode: Demo"));
+            Assert.That(res, Does.Contain("HvpsMode: Calibration"));
             Assert.That(res, Does.Contain(Environment.NewLine));
         }
     }

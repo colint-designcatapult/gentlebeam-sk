@@ -1,3 +1,5 @@
 /Debug/
 /CalibrationDebug/
 .settings/
+/build/
+.clangd

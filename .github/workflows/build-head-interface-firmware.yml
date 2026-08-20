@@ -1,0 +1,62 @@
+name: Build head interface firmware
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build-firmware:
+    name: Firmware (${{ matrix.configuration }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration:
+          - Debug
+          - Release
+          - CalibrationDebug
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Resolve head-interface release version
+        id: version
+        shell: bash
+        run: echo "value=$(python tools/resolve_dcdoc_version.py --component head-interface/main)" >> "$GITHUB_OUTPUT"
+
+
+      - name: Build firmware
+        uses: uoohyo/action-stm32-cmake@v1.21.0
+        with:
+          project-path: head-interface/main
+          build-target: all
+          cmake-args: --preset ${{ matrix.configuration }}
+
+      - name: Verify firmware outputs
+        shell: bash
+        run: |
+          output_directory="head-interface/main/build/${{ matrix.configuration }}"
+          test -f "$output_directory/gryphon-head-fw.elf"
+          test -f "$output_directory/gryphon-head-fw.hex"
+
+      - name: Package firmware
+        shell: bash
+        run: |
+          output_directory="head-interface/main/build/${{ matrix.configuration }}"
+          package_basename="head-interface.${{ matrix.configuration }}.${{ steps.version.outputs.value }}"
+          python tools/package_release.py \
+            --output "release/${package_basename}.zip" \
+            --file "$output_directory/gryphon-head-fw.elf=gryphon-head-fw.${{ matrix.configuration }}.${{ steps.version.outputs.value }}.elf" \
+            --file "$output_directory/gryphon-head-fw.hex=gryphon-head-fw.${{ matrix.configuration }}.${{ steps.version.outputs.value }}.hex"
+          python -m zipfile -e \
+            "release/${package_basename}.zip" \
+            "cache-payload/head/${{ matrix.configuration }}/Firmware/head-interface"
+
+
+      - name: Upload individual firmware package
+        uses: actions/upload-artifact@v7
+        with:
+          name: head-interface.${{ matrix.configuration }}.${{ steps.version.outputs.value }}
+          path: cache-payload/head/${{ matrix.configuration }}/Firmware/head-interface
+          if-no-files-found: error

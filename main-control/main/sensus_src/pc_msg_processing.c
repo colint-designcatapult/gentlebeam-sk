@@ -102,7 +102,7 @@ void init_response_pointers()
 	//comm_processing_func[] = ; //no additional processing needed for now
 	
 	//Initialize pointers for response values and function execution
-	return_data_pointers[PCCOM_VERSION_REQUEST] = (void *)device_information;
+	return_data_pointers[PCCOM_VERSION_REQUEST] = (void *)&device_information;
 	//comm_processing_func[PCCOM_VERSION_REQUEST] = ; //no additional processing needed for now
 	
 	return_data_pointers[PCCOM_FAULT_REQUEST] = (void *)fault_request_response;

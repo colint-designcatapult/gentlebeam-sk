@@ -1,0 +1,171 @@
+name: Build main-control firmware
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build-firmware:
+    name: Firmware package (${{ matrix.configuration }})
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - configuration: Release
+            preset: release
+          - configuration: Debug
+            preset: debug
+          - configuration: CalibrationDebug
+            preset: calibration-debug
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Resolve main-control release versions
+        id: versions
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          "main=$(python tools/resolve_dcdoc_version.py --component main-control/main)" | Add-Content -Path $env:GITHUB_OUTPUT
+          "bootloader=$(python tools/resolve_dcdoc_version.py --component main-control/bootloader)" | Add-Content -Path $env:GITHUB_OUTPUT
+
+
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/gentlebeam-firmware-dependencies
+          # If you ever change the compiler or pack versions, update this key to bust the cache
+          key: firmware-deps-gcc6.3.1-cmsis5.4.0-dfp2.4.166
+
+      - name: Download pinned ARM GCC and device packs
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dependencies = Join-Path $env:RUNNER_TEMP 'gentlebeam-firmware-dependencies'
+          $compilerDestination = Join-Path $dependencies 'arm-gcc'
+          $cmsisDestination = Join-Path $dependencies 'packs\ARM\CMSIS\5.4.0'
+          $dfpDestination = Join-Path $dependencies 'packs\Atmel\SAME70_DFP\2.4.166'
+
+          $compilerArchive = Join-Path $env:RUNNER_TEMP 'arm-gnu-toolchain-6.3.1.508-win32.any.x86.zip'
+          $cmsisArchive = Join-Path $env:RUNNER_TEMP 'ARM.CMSIS.5.4.0.zip'
+          $dfpArchive = Join-Path $env:RUNNER_TEMP 'Atmel.SAME70_DFP.2.4.166.atpack'
+
+          Invoke-WebRequest `
+            -Uri 'https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/arm-gnu-toolchain-6.3.1.508-win32.any.x86.zip' `
+            -OutFile $compilerArchive
+          Invoke-WebRequest `
+            -Uri 'https://keilpack.azureedge.net/pack/ARM.CMSIS.5.4.0.pack' `
+            -OutFile $cmsisArchive
+          Invoke-WebRequest `
+            -Uri 'http://packs.download.atmel.com/Atmel.SAME70_DFP.2.4.166.atpack' `
+            -OutFile $dfpArchive
+
+          Expand-Archive -Path $compilerArchive -DestinationPath $compilerDestination -Force
+          Expand-Archive -Path $cmsisArchive -DestinationPath $cmsisDestination -Force
+          Expand-Archive -Path $dfpArchive -DestinationPath $dfpDestination -Force
+
+      - name: Set up environment and verify paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dependencies = Join-Path $env:RUNNER_TEMP 'gentlebeam-firmware-dependencies'
+          $compilerDestination = Join-Path $dependencies 'arm-gcc'
+          $cmsisDestination = Join-Path $dependencies 'packs\ARM\CMSIS\5.4.0'
+          $dfpDestination = Join-Path $dependencies 'packs\Atmel\SAME70_DFP\2.4.166'
+
+          $compiler = Get-ChildItem -Path $compilerDestination -Recurse -Filter arm-none-eabi-gcc.exe | Select-Object -First 1
+          if ($null -eq $compiler) {
+            throw 'ARM GNU GCC archive does not contain arm-none-eabi-gcc.exe.'
+          }
+
+          $compilerBin = Split-Path -Parent $compiler.FullName
+          $cmsisCore = Join-Path $cmsisDestination 'CMSIS\Core\Include'
+          $cmsisDsp = Join-Path $cmsisDestination 'CMSIS\DSP\Include'
+          $same70Include = Join-Path $dfpDestination 'same70b\include'
+
+          foreach ($path in @($cmsisCore, $cmsisDsp, $same70Include)) {
+            if (-not (Test-Path $path)) {
+              throw "Dependency path is incomplete or cache is corrupted: $path"
+            }
+          }
+
+          "GENTLEBEAM_ARM_GCC_BIN=$compilerBin" | Add-Content -Path $env:GITHUB_ENV
+          "GENTLEBEAM_CMSIS_ROOT=$cmsisDestination" | Add-Content -Path $env:GITHUB_ENV
+          "GENTLEBEAM_SAME70_DFP_ROOT=$dfpDestination" | Add-Content -Path $env:GITHUB_ENV
+
+      - name: Configure and build firmware
+        shell: pwsh
+        working-directory: main-control
+        env:
+          PRESET: ${{ matrix.preset }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --preset $env:PRESET
+          cmake --build --preset $env:PRESET
+
+      - name: Verify firmware package outputs
+        shell: pwsh
+        env:
+          PRESET: ${{ matrix.preset }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $mainDirectory = Join-Path $env:GITHUB_WORKSPACE "main-control\out\cmake\$env:PRESET\main"
+          $bootloaderDirectory = Join-Path $env:GITHUB_WORKSPACE "main-control\out\cmake\$env:PRESET\bootloader"
+          $expectedFiles = @(
+            (Join-Path $mainDirectory 'Gryphon Control FW.elf'),
+            (Join-Path $mainDirectory 'Gryphon Control FW.hex'),
+            (Join-Path $mainDirectory 'Gryphon Control FW.hex.crc'),
+            (Join-Path $mainDirectory 'Gryphon Control FW.with-crc.hex'),
+            (Join-Path $mainDirectory 'Gryphon Control FW.combined.hex'),
+            (Join-Path $bootloaderDirectory 'Gryphon System Bootloader FW.elf'),
+            (Join-Path $bootloaderDirectory 'Gryphon System Bootloader FW.hex')
+          )
+          $missingFiles = $expectedFiles | Where-Object { -not (Test-Path $_) }
+          if ($missingFiles) {
+            throw "Missing expected firmware outputs: $($missingFiles -join ', ')"
+          }
+
+      - name: Package firmware
+        shell: pwsh
+        env:
+          CONFIGURATION: ${{ matrix.configuration }}
+          PRESET: ${{ matrix.preset }}
+          MAIN_VERSION: ${{ steps.versions.outputs.main }}
+          BOOTLOADER_VERSION: ${{ steps.versions.outputs.bootloader }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $mainDirectory = Join-Path $env:GITHUB_WORKSPACE "main-control\out\cmake\$env:PRESET\main"
+          $bootloaderDirectory = Join-Path $env:GITHUB_WORKSPACE "main-control\out\cmake\$env:PRESET\bootloader"
+          $packageBasename = "main-control.$env:CONFIGURATION.$env:MAIN_VERSION"
+          $arguments = @(
+            '--output', (Join-Path $env:GITHUB_WORKSPACE "release\$packageBasename.zip"),
+            '--file', "$mainDirectory\Gryphon Control FW.elf=Gryphon Control FW.$env:CONFIGURATION.$env:MAIN_VERSION.elf",
+            '--file', "$mainDirectory\Gryphon Control FW.hex=Gryphon Control FW.$env:CONFIGURATION.$env:MAIN_VERSION.hex",
+            '--file', "$mainDirectory\Gryphon Control FW.hex.crc=Gryphon Control FW.$env:CONFIGURATION.$env:MAIN_VERSION.hex.crc",
+            '--file', "$mainDirectory\Gryphon Control FW.with-crc.hex=Gryphon Control FW.$env:CONFIGURATION.$env:MAIN_VERSION.with-crc.hex",
+            '--file', "$mainDirectory\Gryphon Control FW.combined.hex=Gryphon Control FW.$env:CONFIGURATION.$env:MAIN_VERSION.combined.hex",
+            '--file', "$bootloaderDirectory\Gryphon System Bootloader FW.elf=Gryphon System Bootloader FW.$env:CONFIGURATION.$env:BOOTLOADER_VERSION.elf",
+            '--file', "$bootloaderDirectory\Gryphon System Bootloader FW.hex=Gryphon System Bootloader FW.$env:CONFIGURATION.$env:BOOTLOADER_VERSION.hex"
+          )
+          python tools/package_release.py @arguments
+          if ($LASTEXITCODE -ne 0) {
+            throw "Packaging failed with exit code $LASTEXITCODE."
+          }
+          python -m zipfile -e `
+            (Join-Path $env:GITHUB_WORKSPACE "release\$packageBasename.zip") `
+            (Join-Path $env:GITHUB_WORKSPACE "cache-payload\main-control\$env:CONFIGURATION\Firmware\main-control")
+          if ($LASTEXITCODE -ne 0) {
+            throw "Artifact staging failed with exit code $LASTEXITCODE."
+          }
+
+
+      - name: Upload individual firmware package
+        uses: actions/upload-artifact@v7
+        with:
+          name: main-control.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}
+          path: cache-payload/main-control/${{ matrix.configuration }}/Firmware/main-control
+          if-no-files-found: error

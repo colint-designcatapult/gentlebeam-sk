@@ -1,1 +1,6 @@
-Debug/
+/Debug/
+/Release/
+/build/
+.settings/
+.clangd
+.vscode/

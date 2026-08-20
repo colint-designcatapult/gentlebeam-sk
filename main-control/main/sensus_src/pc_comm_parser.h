@@ -89,15 +89,16 @@ enum pcVerReqFields
 	VERSION_REQ_COUNT
 };
 
-enum pcVerResFields
+typedef struct
 {
-	VERSION_RES_MAJ = 0,
-	VERSION_RES_MIN,
-	VERSION_RES_LVL,
-	VERSION_RES_CRC,
-	VERSION_RES_MODE,
-	VERSION_RES_COUNT
-};
+	char version_str[32];
+	uint32_t crc;
+	uint32_t mode;
+	char hvps_version_str[32];
+	uint32_t hvps_mode;
+} pcVerRes;
+
+#define VERSION_RES_COUNT (sizeof(pcVerRes) / sizeof(uint32_t))
 
 enum faultReqFields
 {

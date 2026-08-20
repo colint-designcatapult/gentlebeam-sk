@@ -122,11 +122,11 @@ namespace Xcc.Application.Domain.GryphonBoard
         {
             return Task.FromResult(new VersionInfo
             {
-                Major = 44,
-                Minor = 44,
+                FirmwareVersion = "0.0.0-dummy.0",
                 FirmwareChecksum = 55,
-                Level = 66,
-                Mode = FirmwareMode.Test
+                Mode = FirmwareMode.Test,
+                HvpsFirmwareVersion = "0.0.0-dummy.0",
+                HvpsMode = FirmwareMode.Test,
             });
         }
         

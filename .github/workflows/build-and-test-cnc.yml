@@ -1,0 +1,151 @@
+name: Build and test CNC
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: CNC tests
+    runs-on: windows-2025
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore CNC solution
+        run: dotnet restore Xcc.sln
+        working-directory: cnc/voxelray-gentlebeamcnc
+
+      - name: Run CNC tests
+        run: dotnet test Xcc.sln --configuration Release --no-restore --logger "console;verbosity=normal"
+        working-directory: cnc/voxelray-gentlebeamcnc
+
+  prepare-publish:
+    name: Select CNC products
+    runs-on: windows-2025
+    outputs:
+      matrix: ${{ steps.products.outputs.matrix }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build product matrix
+        id: products
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $products = @(
+            [ordered]@{
+              artifact = 'Heracles.Indoor'
+              project = 'Xcc/Heracles/Heracles.Indoor/Heracles.Indoor.csproj'
+            },
+            [ordered]@{
+              artifact = 'Heracles.External'
+              project = 'Xcc/Heracles/Heracles.Outdoor/Heracles.External.csproj'
+            }
+          )
+          $ucsiProject = 'Xcc/Heracles/Heracles.Ucsi/Heracles.Ucsi.csproj'
+          if (Test-Path (Join-Path 'cnc/voxelray-gentlebeamcnc' $ucsiProject)) {
+            $products += [ordered]@{
+              artifact = 'Heracles.Ucsi'
+              project = $ucsiProject
+            }
+          }
+
+          $include = @()
+          foreach ($product in $products) {
+            foreach ($configuration in @('Debug', 'Release')) {
+              $include += [ordered]@{
+                artifact = $product.artifact
+                project = $product.project
+                configuration = $configuration
+              }
+            }
+          }
+          $matrix = @{ include = $include } | ConvertTo-Json -Compress -Depth 4
+          "matrix=$matrix" | Add-Content -Path $env:GITHUB_OUTPUT
+
+  publish:
+    name: Publish ${{ matrix.artifact }} (${{ matrix.configuration }})
+    needs: prepare-publish
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare-publish.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Resolve CNC release version
+        id: version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $releaseVersion = python tools/resolve_dcdoc_version.py --component cnc/voxelray-gentlebeamcnc
+          $versionParts = $releaseVersion -split '-', 2
+          if ($versionParts.Count -ne 2 -or $versionParts[0] -notmatch '^\d+\.\d+\.\d+$' -or $versionParts[1] -notmatch '^[0-9A-Fa-f]{8}\.\d+$') {
+            throw "Release version '$releaseVersion' must be MAJOR.MINOR.PATCH-HASH.BUILD."
+          }
+          $buildNumber = [int64]($versionParts[1] -split '\.', 2)[1]
+          if ($buildNumber -gt [uint16]::MaxValue) {
+            throw "GitHub build number '$buildNumber' exceeds the maximum Windows file-version field value."
+          }
+          "release=$releaseVersion" | Add-Content -Path $env:GITHUB_OUTPUT
+          "prefix=$($versionParts[0])" | Add-Content -Path $env:GITHUB_OUTPUT
+          "suffix=$($versionParts[1])" | Add-Content -Path $env:GITHUB_OUTPUT
+          "file=$($versionParts[0]).$buildNumber" | Add-Content -Path $env:GITHUB_OUTPUT
+
+      - name: Restore ${{ matrix.artifact }}
+        run: dotnet restore ${{ matrix.project }} --runtime win-x64
+        working-directory: cnc/voxelray-gentlebeamcnc
+
+      - name: Publish ${{ matrix.artifact }} (${{ matrix.configuration }})
+        shell: pwsh
+        run: dotnet publish ${{ matrix.project }} --configuration ${{ matrix.configuration }} --runtime win-x64 --self-contained false --no-restore --output ${{ runner.temp }}\${{ matrix.artifact }}.${{ matrix.configuration }} -p:VersionPrefix=${{ steps.version.outputs.prefix }} -p:VersionSuffix=${{ steps.version.outputs.suffix }} -p:FileVersion=${{ steps.version.outputs.file }} -p:InformationalVersion=${{ steps.version.outputs.release }} -p:IncludeSourceRevisionInInformationalVersion=false -p:SourceRevisionId=
+        working-directory: cnc/voxelray-gentlebeamcnc
+
+      - name: Package ${{ matrix.artifact }} (${{ matrix.configuration }})
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.release }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $publishDirectory = Join-Path $env:RUNNER_TEMP '${{ matrix.artifact }}.${{ matrix.configuration }}'
+          $packageBasename = '${{ matrix.artifact }}.${{ matrix.configuration }}.' + $env:RELEASE_VERSION
+          python tools/package_release.py `
+            --output (Join-Path $env:GITHUB_WORKSPACE "release\$packageBasename.zip") `
+            --tree "$publishDirectory="
+          if ($LASTEXITCODE -ne 0) {
+            throw "Packaging failed with exit code $LASTEXITCODE."
+          }
+          python -m zipfile -e `
+            (Join-Path $env:GITHUB_WORKSPACE "release\$packageBasename.zip") `
+            (Join-Path $env:GITHUB_WORKSPACE "cache-payload\cnc\${{ matrix.configuration }}\PC Software\${{ matrix.artifact }}")
+          if ($LASTEXITCODE -ne 0) {
+            throw "Artifact staging failed with exit code $LASTEXITCODE."
+          }
+
+
+      - name: Upload individual ${{ matrix.artifact }} package
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}.${{ matrix.configuration }}.${{ steps.version.outputs.release }}
+          path: cache-payload/cnc/${{ matrix.configuration }}/PC Software/${{ matrix.artifact }}
+          if-no-files-found: error

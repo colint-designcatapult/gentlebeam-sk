@@ -1,0 +1,447 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  scope:
+    name: Determine build scope
+    runs-on: ubuntu-24.04
+    outputs:
+      all: ${{ steps.policy.outputs.all }}
+      head: ${{ steps.changes.outputs.head }}
+      hvps: ${{ steps.changes.outputs.hvps }}
+      main_control: ${{ steps.changes.outputs.main_control }}
+      cnc: ${{ steps.changes.outputs.cnc }}
+      docs: ${{ steps.changes.outputs.docs }}
+      shared_all: ${{ steps.changes.outputs.shared_all }}
+      shared_firmware: ${{ steps.changes.outputs.shared_firmware }}
+
+    steps:
+      - name: Select event policy
+        id: policy
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+        run: |
+          if [[ "$EVENT_NAME" != "push" || "$EVENT_REF" == "refs/heads/main" ]]; then
+            echo "all=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "all=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out selective push
+        if: steps.policy.outputs.all != 'true'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed components
+        if: steps.policy.outputs.all != 'true'
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            head:
+              - 'head-interface/**'
+              - '.github/workflows/build-head-interface-firmware.yml'
+            hvps:
+              - 'hvps-interface/**'
+              - '.github/workflows/build-hvps-interface-firmware.yml'
+            main_control:
+              - 'main-control/**'
+              - '.github/workflows/build-main-control-firmware.yml'
+            cnc:
+              - 'cnc/**'
+              - '.github/workflows/build-and-test-cnc.yml'
+            docs:
+              - 'docs/**'
+              - '**/*.sdoc'
+              - '**/dcdoc.toml'
+              - '.github/workflows/export-documentation.yml'
+            shared_all:
+              - 'dcdoc.toml'
+              - 'tools/resolve_dcdoc_version.py'
+              - 'tools/package_release.py'
+              - 'tools/tests/test_resolve_dcdoc_version.py'
+              - 'tools/tests/test_package_release.py'
+              - '.github/workflows/ci.yml'
+            shared_firmware:
+              - 'tools/firmware_hex.py'
+
+  head:
+    name: Head interface
+    needs: scope
+    if: ${{ needs.scope.outputs.all == 'true' || needs.scope.outputs.head == 'true' || needs.scope.outputs.shared_all == 'true' }}
+    uses: ./.github/workflows/build-head-interface-firmware.yml
+
+  hvps:
+    name: HVPS interface
+    needs: scope
+    if: ${{ needs.scope.outputs.all == 'true' || needs.scope.outputs.hvps == 'true' || needs.scope.outputs.shared_all == 'true' || needs.scope.outputs.shared_firmware == 'true' }}
+    uses: ./.github/workflows/build-hvps-interface-firmware.yml
+
+  main_control:
+    name: Main control
+    needs: scope
+    if: ${{ needs.scope.outputs.all == 'true' || needs.scope.outputs.main_control == 'true' || needs.scope.outputs.shared_all == 'true' || needs.scope.outputs.shared_firmware == 'true' }}
+    uses: ./.github/workflows/build-main-control-firmware.yml
+
+  cnc:
+    name: CNC desktop software
+    needs: scope
+    if: ${{ needs.scope.outputs.all == 'true' || needs.scope.outputs.cnc == 'true' || needs.scope.outputs.shared_all == 'true' }}
+    uses: ./.github/workflows/build-and-test-cnc.yml
+
+  docs:
+    name: Documentation
+    needs: scope
+    if: ${{ needs.scope.outputs.all == 'true' || needs.scope.outputs.docs == 'true' || needs.scope.outputs.shared_all == 'true' }}
+    uses: ./.github/workflows/export-documentation.yml
+    secrets: inherit
+
+  aggregate:
+    name: Assemble top-level artifacts
+    needs:
+      - head
+      - hvps
+      - main_control
+      - cnc
+      - docs
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out artifact tools
+        uses: actions/checkout@v7
+
+      - name: Resolve aggregate version
+        id: version
+        shell: bash
+        run: echo "value=$(python tools/resolve_dcdoc_version.py --component .)" >> "$GITHUB_OUTPUT"
+
+      - name: Download documentation artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: docs.*
+          path: individual/docs
+
+      - name: Download head Release artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: head-interface.Release.*
+          path: individual/head/Release
+
+      - name: Download head Debug artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: head-interface.Debug.*
+          path: individual/head/Debug
+
+      - name: Download head CalibrationDebug artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: head-interface.CalibrationDebug.*
+          path: individual/head/CalibrationDebug
+
+      - name: Download HVPS Release artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: hvps-interface.Release.*
+          path: individual/hvps/Release
+
+      - name: Download HVPS Debug artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: hvps-interface.Debug.*
+          path: individual/hvps/Debug
+
+      - name: Download HVPS CalibrationDebug artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: hvps-interface.CalibrationDebug.*
+          path: individual/hvps/CalibrationDebug
+
+      - name: Download main-control Release artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: main-control.Release.*
+          path: individual/main-control/Release
+
+      - name: Download main-control Debug artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: main-control.Debug.*
+          path: individual/main-control/Debug
+
+      - name: Download main-control CalibrationDebug artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: main-control.CalibrationDebug.*
+          path: individual/main-control/CalibrationDebug
+
+      - name: Download Indoor Release artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: Heracles.Indoor.Release.*
+          path: individual/cnc/Release/Heracles.Indoor
+
+      - name: Download Indoor Debug artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: Heracles.Indoor.Debug.*
+          path: individual/cnc/Debug/Heracles.Indoor
+
+      - name: Download External Release artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: Heracles.External.Release.*
+          path: individual/cnc/Release/Heracles.External
+
+      - name: Download External Debug artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: Heracles.External.Debug.*
+          path: individual/cnc/Debug/Heracles.External
+
+      - name: Download UCSI Release artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: Heracles.Ucsi.Release.*
+          path: individual/cnc/Release/Heracles.Ucsi
+
+      - name: Download UCSI Debug artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: Heracles.Ucsi.Debug.*
+          path: individual/cnc/Debug/Heracles.Ucsi
+
+      - name: Assemble aggregate directories
+        id: assemble
+        shell: python
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          import os
+          from pathlib import Path
+          import shutil
+
+          individual = Path("individual")
+          aggregate = Path("aggregate")
+          statuses: dict[str, bool] = {}
+
+          def has_files(path: Path) -> bool:
+              return path.is_dir() and any(child.is_file() for child in path.rglob("*"))
+
+          docs_source = individual / "docs"
+          docs_destination = aggregate / f"GBSK_Docs.{os.environ['VERSION']}"
+          if has_files(docs_source):
+              shutil.copytree(docs_source, docs_destination)
+              statuses["docs"] = True
+          else:
+              statuses["docs"] = False
+
+          firmware_components = {
+              "head-interface": individual / "head",
+              "hvps-interface": individual / "hvps",
+              "main-control": individual / "main-control",
+          }
+          products = (
+              "Heracles.Indoor",
+              "Heracles.External",
+              "Heracles.Ucsi",
+          )
+          modes = {
+              "release": ("Release", "Release"),
+              "debug": ("Debug", "Debug"),
+              "calibration": ("CalibrationDebug", "Debug"),
+          }
+          for output_name, (firmware_configuration, software_configuration) in modes.items():
+              destination = aggregate / (
+                  f"GBSK_{'CalibrationDebug' if output_name == 'calibration' else output_name.title()}."
+                  f"{os.environ['VERSION']}"
+              )
+              copied = False
+              for component, root in firmware_components.items():
+                  source = root / firmware_configuration
+                  if output_name == "calibration" and not has_files(source):
+                      source = root / "Debug"
+                  if has_files(source):
+                      shutil.copytree(
+                          source,
+                          destination / "Firmware" / component,
+                          dirs_exist_ok=True,
+                      )
+                      copied = True
+
+              for product in products:
+                  source = individual / "cnc" / software_configuration / product
+                  if has_files(source):
+                      shutil.copytree(
+                          source,
+                          destination / "PC Software" / product,
+                          dirs_exist_ok=True,
+                      )
+                      copied = True
+              statuses[output_name] = copied
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              for name, exists in statuses.items():
+                  output.write(f"{name}={str(exists).lower()}\n")
+
+      - name: Upload GBSK documentation
+        if: steps.assemble.outputs.docs == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: GBSK_Docs.${{ steps.version.outputs.value }}
+          path: aggregate/GBSK_Docs.${{ steps.version.outputs.value }}
+          if-no-files-found: error
+
+      - name: Upload GBSK Release
+        if: steps.assemble.outputs.release == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: GBSK_Release.${{ steps.version.outputs.value }}
+          path: aggregate/GBSK_Release.${{ steps.version.outputs.value }}
+          if-no-files-found: error
+
+      - name: Upload GBSK Debug
+        if: steps.assemble.outputs.debug == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: GBSK_Debug.${{ steps.version.outputs.value }}
+          path: aggregate/GBSK_Debug.${{ steps.version.outputs.value }}
+          if-no-files-found: error
+
+      - name: Upload GBSK CalibrationDebug
+        if: steps.assemble.outputs.calibration == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: GBSK_CalibrationDebug.${{ steps.version.outputs.value }}
+          path: aggregate/GBSK_CalibrationDebug.${{ steps.version.outputs.value }}
+          if-no-files-found: error
+
+  release_please:
+    name: Update or publish semantic release
+    needs:
+      - head
+      - hvps
+      - main_control
+      - cnc
+      - docs
+      - aggregate
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+
+    steps:
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  release:
+    name: Attach GBSK assets to semantic release
+    needs:
+      - aggregate
+      - release_please
+    if: ${{ success() && needs.release_please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Resolve build version
+        shell: bash
+        run: echo "BUILD_VERSION=$(python tools/resolve_dcdoc_version.py --component .)" >> "$GITHUB_ENV"
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v7
+        with:
+          pattern: GBSK_*
+          path: downloaded-artifacts
+
+      - name: Validate and collect release assets
+        shell: python
+        run: |
+          import os
+          from pathlib import Path
+
+          from tools.package_release import package_release
+
+          download_root = Path("downloaded-artifacts")
+          artifact_directories = sorted(path for path in download_root.iterdir() if path.is_dir())
+          version = os.environ["BUILD_VERSION"]
+          expected_names = {
+              f"GBSK_Docs.{version}",
+              f"GBSK_Release.{version}",
+              f"GBSK_Debug.{version}",
+              f"GBSK_CalibrationDebug.{version}",
+          }
+          actual_names = {path.name for path in artifact_directories}
+          if actual_names != expected_names:
+              raise SystemExit(
+                  f"Expected aggregate artifacts {sorted(expected_names)}, "
+                  f"found {sorted(actual_names)}."
+              )
+
+          asset_directory = Path("release-assets")
+          asset_directory.mkdir()
+          basenames: set[str] = set()
+          for artifact_directory in artifact_directories:
+              files = sorted(path for path in artifact_directory.rglob("*") if path.is_file())
+              if not files:
+                  raise SystemExit(f"Artifact {artifact_directory.name!r} is empty.")
+              embedded_zips = [
+                  str(path.relative_to(artifact_directory))
+                  for path in files
+                  if path.suffix.lower() == ".zip"
+              ]
+              if embedded_zips:
+                  raise SystemExit(
+                      f"Artifact {artifact_directory.name!r} contains nested ZIPs: "
+                      f"{embedded_zips}"
+                  )
+              asset_name = f"{artifact_directory.name}.zip"
+              if asset_name in basenames:
+                  raise SystemExit(f"Duplicate release asset basename: {asset_name}")
+              basenames.add(asset_name)
+              package_release(
+                  asset_directory / asset_name,
+                  trees=[(artifact_directory, "")],
+              )
+
+      - name: Attach assets to semantic release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.release_please.outputs.tag_name }}
+        run: |
+          shopt -s nullglob
+          assets=(release-assets/*.zip)
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber

@@ -2,16 +2,20 @@
 #include "stm32f3xx_hal.h"
 #include "stdbool.h"
 
+#include <string.h>
 #include "control_comm.h"
 #include "monitoring.h"
 #include "processing.h"
 #include "timers.h"
+#include "setup.h"
 
 
 VariableValue comm_tx_out[NUM_COMM_TX_FIELDS];
 VariableValue comm_rx_in[NUM_COMM_RX_FIELDS];
+uint32_t version_tx_out[VERSION_FRAME_WORD_COUNT];
 
 volatile bool comm_tx_busy = false;
+volatile bool version_response_pending = false;
 
 volatile bool comm_recv = false;
 volatile uint8_t comm_rx_recv = 0;
@@ -21,6 +25,7 @@ uint8_t *rx_ptr;
 
 static bool validate_comm_rx();
 static void send_comm_tx();
+static void send_version_frame();
 
 
 void setup_control_comm()
@@ -58,8 +63,12 @@ void process_control_comm()
 		comm_rx_recv = 0;
 	}
 
-	//Wait until comm timer expires to send new telemetry out
-	if(comm_ms < 0)
+	if(version_response_pending && !comm_tx_busy)
+	{
+		version_response_pending = false;
+		send_version_frame();
+	}
+	else if(comm_ms < 0)
 	{
 		comm_ms = 100;	//TBD TODO magic number
 		send_comm_tx();
@@ -98,8 +107,12 @@ static void send_comm_tx()
 #ifdef CALIBRATION_MODE
 		comm_tx_out[i].i = get_monitored_int_val(i);
 #else
-        comm_tx_out[i].u = get_monitored_int_val(i);
+		comm_tx_out[i].u = get_monitored_int_val(i);
 #endif
+	}
+
+	for(int i = COMM_HVPS_STATUS; i <= COMM_HVPS_RUNTIME; i++)
+	{
 		comm_check += comm_tx_out[i].u;
 	}
 
@@ -112,6 +125,38 @@ static void send_comm_tx()
 	comm_tx_out[COMM_TX_CRC].u = comm_check;
 	comm_tx_busy = true;
 	HAL_UART_Transmit_IT(&huart2, (uint8_t *)comm_tx_out, NUM_COMM_TX_BYTES);
+}
+
+void send_hvps_version()
+{
+	version_response_pending = true;
+}
+
+static void send_version_frame()
+{
+	if(comm_tx_busy)
+	{
+		return;
+	}
+
+	memset(version_tx_out, 0, sizeof(version_tx_out));
+	version_tx_out[0] = 0xFFFFFFFF;
+	version_tx_out[1] = 0xFFFFFFFF;
+	version_tx_out[2] = VERSION_FRAME_MAGIC;
+#ifdef CALIBRATION_MODE
+	version_tx_out[3] = HVPS_CALIBRATION_MODE;
+#else
+	version_tx_out[3] = HVPS_NORMAL_MODE;
+#endif
+	uint32_t checksum = VERSION_FRAME_MAGIC + version_tx_out[3];
+	memcpy(&version_tx_out[4], FW_VERSION, strlen(FW_VERSION));
+	for(int i = 4; i < 12; i++)
+	{
+		checksum += version_tx_out[i];
+	}
+	version_tx_out[12] = checksum;
+	comm_tx_busy = true;
+	HAL_UART_Transmit_IT(&huart2, (uint8_t *)version_tx_out, VERSION_FRAME_BYTE_COUNT);
 }
 
 void comm_rx_cb()

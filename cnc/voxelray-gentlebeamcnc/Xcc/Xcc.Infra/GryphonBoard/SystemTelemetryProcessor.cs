@@ -84,19 +84,25 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
 
     private void SelectTelemetryParser(UdpPacket packet)
     {
-        if (packet.PayloadLength != 5u)
+        if (packet.PayloadLength != 19u)
         {
             ClearSelection();
             return;
         }
 
         var version = VersionInfoParser.Parse(packet);
-        var signature = new FirmwareVersionSignature(
-            version.Major,
-            version.Minor,
-            version.Level,
-            version.Mode);
+        var signature = version.Mode switch
+        {
+            FirmwareMode.Normal => NormalSignature,
+            FirmwareMode.Calibration => CalibrationSignature,
+            _ => (FirmwareVersionSignature?)null,
+        };
 
+        if (signature is null)
+        {
+            ClearSelection();
+            return;
+        }
         if (signature == NormalSignature)
         {
             if (_selectedVersion != signature || _normalState is null)

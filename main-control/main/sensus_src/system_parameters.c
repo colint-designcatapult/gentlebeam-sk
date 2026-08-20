@@ -30,7 +30,7 @@
 #include "system_parameters.h"
 
 //Static system device information
-uint32_t device_information[VERSION_RES_COUNT];
+pcVerRes device_information;
 
 //System status for telemetry
 VariableValue system_status[SS_COUNT];
@@ -70,15 +70,15 @@ static void check_sd_network_config();
 void init_system_parameters()
 {
 	//Set device information
-	device_information[VERSION_RES_MAJ] = FW_MAJOR_VERSION;
-	device_information[VERSION_RES_MIN] = FW_MINOR_VERSION;
-	device_information[VERSION_RES_LVL] = FW_LEVEL_VERSION;
+	strcpy(device_information.version_str, FW_VERSION);
 #if defined(CALIBRATION_MODE)
-	device_information[VERSION_RES_MODE] = FW_CALIBRATION_MODE;
+	device_information.mode = FW_CALIBRATION_MODE;
 #else
-	device_information[VERSION_RES_MODE] = FW_NORMAL_MODE;
+	device_information.mode = FW_NORMAL_MODE;
 #endif
-	device_information[VERSION_RES_CRC] = get_app_crc();
+	strcpy(device_information.hvps_version_str, "unavailable");
+	device_information.hvps_mode = UINT32_MAX;
+	device_information.crc = get_app_crc();
 	
 	//Clear treatment plan
 	clear_treatment_plan();

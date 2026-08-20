@@ -2,6 +2,7 @@
 name = "GentleBeam SK"
 output_dir = "docs/output"
 grammars = { "@grammar" = "docs/meta/grammar.sgra" }
+version = "3.0.0-{HASH}.{BUILD}" # x-release-please-version
 
 [gen_docx]
 enabled = true

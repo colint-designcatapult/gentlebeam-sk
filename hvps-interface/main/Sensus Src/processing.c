@@ -72,6 +72,9 @@ void process_command(int32_t cmd, float param_f, int32_t param_i)
 		case CTRL_CMD_SET_CONFIG:
 			update_config_val(param_f, param_i);
 			break;
+		case CTRL_CMD_VERSION_REQUEST:
+			send_hvps_version();
+			break;
 #ifdef CALIBRATION_MODE
 		case CTRL_CMD_CAL_START:
 			calibration_start();
