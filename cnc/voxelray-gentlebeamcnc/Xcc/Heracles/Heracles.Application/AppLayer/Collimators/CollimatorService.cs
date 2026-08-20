@@ -17,6 +17,13 @@ namespace Heracles.Application.AppLayer.Collimators
         {
             // First we fetch all the data, and only when it succeeds, we reset the collimator model:
             var head = await collimatorRepository.FetchActiveHeadAsync();
+            
+            // If no active head exists, ensure one is created/activated
+            if (head is null)
+            {
+                head = await collimatorRepository.EnsureActiveHeadExistsAsync();
+            }
+            
             var configurations = await collimatorRepository.FetchCollimatorConfigurationsAsync();
             var collimators = new List<ICollimator>();
 

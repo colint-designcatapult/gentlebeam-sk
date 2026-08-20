@@ -2538,7 +2538,8 @@ namespace Heracles.Application.Protos
             var proto = new Com.Empyreanmed.Heracles.Head.V1.Head
             {
                 Serial = head.Serial,
-                IsActive = head.IsActive
+                IsActive = head.IsActive,
+                CreateDate = ToTimestamp(head.CreationDate)
             };
 
             if (!BaseEntry.IsBlankEntry(head))

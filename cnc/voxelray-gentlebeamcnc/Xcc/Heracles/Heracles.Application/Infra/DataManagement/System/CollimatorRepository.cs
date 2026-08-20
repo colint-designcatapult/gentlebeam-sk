@@ -14,6 +14,7 @@ namespace Heracles.Application.Infra.DataManagement.System
     public interface ICollimatorRepository
     {
         Task<IHead> FetchActiveHeadAsync();
+        Task<IHead> EnsureActiveHeadExistsAsync();
     
         Task<ICollection<ICollimatorConfiguration>> FetchCollimatorConfigurationsAsync();
         Task<ICollimatorConfiguration> CreateCollimatorConfigurationAsync(TargetType targetType, Energy energy);
@@ -46,6 +47,50 @@ namespace Heracles.Application.Infra.DataManagement.System
             catch (Exception ex)
             {
                 _ = logWriter.LogAsync($"Failed to fetch Head: {ex.Message}", LogRecordSeverity.Error, LogRecordType.System);
+                throw;
+            }
+        }
+
+        public async Task<IHead> EnsureActiveHeadExistsAsync()
+        {
+            try
+            {
+                var heads = await headCommands.ReadAllAsync();
+                
+                // Check if any active head already exists
+                var activeHead = heads.FirstOrDefault(h => h.IsActive);
+                if (activeHead != null)
+                {
+                    return activeHead;
+                }
+                
+                // No active head exists. Check if "00000" exists but is inactive
+                var defaultSerialHead = heads.FirstOrDefault(h => h.Serial == "00000");
+                if (defaultSerialHead != null)
+                {
+                    // Reactivate the existing "00000" head
+                    defaultSerialHead.IsActive = true;
+                    var updatedHead = await headCommands.UpdateAsync(defaultSerialHead, defaultSerialHead);
+                    _ = logWriter.LogAsync($"Reactivated existing head with serial: {updatedHead.Serial}", LogRecordSeverity.Info, LogRecordType.System);
+                    return updatedHead;
+                }
+                
+                // Neither an active head nor a "00000" head exists, create a new default one
+                var newDefaultHead = new Head
+                {
+                    CreationDate = DateTime.Now,
+                    Serial = "00000",
+                    IsActive = true
+                };
+                
+                var createdHead = await headCommands.CreateAsync(newDefaultHead);
+                _ = logWriter.LogAsync($"Created default head with serial: {createdHead.Serial}, CreationDate: {createdHead.CreationDate}", LogRecordSeverity.Info, LogRecordType.System);
+                
+                return createdHead;
+            }
+            catch (Exception ex)
+            {
+                _ = logWriter.LogAsync($"Failed to ensure active head exists: {ex.Message}", LogRecordSeverity.Error, LogRecordType.System);
                 throw;
             }
         }
