@@ -190,7 +190,7 @@ add_custom_command(TARGET gryphon_control_fw POST_BUILD
           --output "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.with-crc.hex"
           --crc-output "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.hex.crc"
           --application-start 0x00420000
-          --application-length 0x000E0000
+          --application-length 0x0013B000
           --crc-address 0x0041E000
   BYPRODUCTS
     "${CMAKE_CURRENT_BINARY_DIR}/Gryphon Control FW.hex"

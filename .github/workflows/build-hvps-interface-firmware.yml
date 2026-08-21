@@ -64,7 +64,7 @@ jobs:
             --output "$main_output_directory/gryphon-hvps-interface-fw.with-crc.hex" \
             --crc-output "$main_output_directory/gryphon-hvps-interface-fw.hex.crc" \
             --application-start 0x08008000 \
-            --application-length 0x00016800 \
+            --application-length 0x0002D000 \
             --crc-address 0x08007C00
           python tools/firmware_hex.py combine \
             --input "$bootloader_output_directory/hvps-interface-bootloader.hex" \

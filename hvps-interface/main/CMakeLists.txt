@@ -107,7 +107,7 @@ if(Python3_Interpreter_FOUND)
             --output $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.with-crc.hex
             --crc-output $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.hex.crc
             --application-start 0x08008000
-            --application-length 0x00016800
+            --application-length 0x0002D000
             --crc-address 0x08007C00
         BYPRODUCTS
             ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.with-crc.hex
