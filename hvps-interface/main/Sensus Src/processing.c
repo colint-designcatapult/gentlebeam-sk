@@ -8,6 +8,7 @@
 #include "ext_dacs.h"
 #include "io.h"
 #include "monitoring.h"
+#include "faults.h"
 
 #ifndef CALIBRATION_MODE
 static void set_warmup_speed(int32_t val);
@@ -43,7 +44,7 @@ void process_command(int32_t cmd, float param_f, int32_t param_i)
 	switch(cmd)
 	{
 		case CTRL_CMD_CLEAR_FAULTS:
-			//TBD TODO tell faults to clear
+			clear_all_faults(); 
 			break;
 		case CTRL_CMD_SET_PWR:
 			set_pwr_cmd(param_f);

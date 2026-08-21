@@ -137,7 +137,7 @@ void setup_system_monitoring()
 
 	hvps_fault_mask =
 			(1 << IN_FIL_CLK_FAULT) | (1 << IN_CAT_ARC) 	| (1 << IN_FAN_FAULT) 	| (1 << IN_OC_24_FAULT) | (1 << IN_MASTER_FAULT) |
-			(1 << IN_OC_HV_FAULT) 	| (1 << IN_TEMP_1_FAULT)| (1 << IN_OC_CAT_FAULT)| (1 << IN_TEMP_3_FAULT)| (1 << IN_TEMP_2_FAULT);
+			(1 << IN_OC_HV_FAULT) 	| (1 << IN_TEMP_1_FAULT)| (1 << IN_TEMP_3_FAULT)| (1 << IN_TEMP_2_FAULT);
 
 	TaskHandle_t control_task_handle = xTaskCreateStatic(
 		control_task,
@@ -391,11 +391,16 @@ void report_io_state(uint32_t io_bits)
         first_call = false;
         sys_io_bits = io_bits;   // establish baseline, no edges to compute yet
 
-        // const uint32_t boot_faults = io_bits & hvps_fault_mask;
-        // if (boot_faults != 0)
-        // {
-        //     report_fault(boot_faults);
-        // }
+        const uint32_t boot_faults = io_bits & hvps_fault_mask;
+        if (boot_faults != 0)
+        {
+            report_fault(boot_faults);
+        }
+
+		if ((io_bits & IO_BIT(IN_OC_CAT_FAULT)) == 0)
+        {
+            report_fault(IO_BIT(IN_OC_CAT_FAULT));
+        }
         return;
     }
 
@@ -408,6 +413,10 @@ void report_io_state(uint32_t io_bits)
     if (new_faults != 0)
     {
         report_fault(new_faults);
+    }
+	if (fell & IO_BIT(IN_OC_CAT_FAULT))
+    {
+        report_fault(IO_BIT(IN_OC_CAT_FAULT));
     }
 
     handle_hv_int(rose, fell);
