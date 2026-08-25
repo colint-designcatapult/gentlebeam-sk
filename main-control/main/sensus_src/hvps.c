@@ -215,9 +215,8 @@ void process_hvps()
 					device_information.hvps_version_str[sizeof(device_information.hvps_version_str) - 1] = '\0';
 				}
 			}
-			else if(check_hvps_status_checksum())
+			else
 			{
-				gpio_toggle_pin_level(IO_LED4);
 				memcpy(hvps_status, hvps_rx_buf, HVPS_RX_BYTE_COUNT);
 				hvps_read_incomplete = 0;
 				report_hvps_data(hvps_status);
