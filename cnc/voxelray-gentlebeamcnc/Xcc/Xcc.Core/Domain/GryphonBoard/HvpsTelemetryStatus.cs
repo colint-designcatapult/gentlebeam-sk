@@ -17,22 +17,22 @@ public readonly record struct HvpsTelemetryStatus(
     public bool FastWarmupEnabled => IsStatusSet(9);
 
     public bool GridClockStatus => IsIoSet(0);
-    public bool FilamentClockFault => IsIoSet(1);
+    public bool FilamentClockFault => IsStatusSet(10);
     public bool GridInterlock => IsIoSet(2);
     public bool BeamControl => IsIoSet(3);
     public bool GridStatus => IsIoSet(4);
-    public bool CathodeArc => IsIoSet(5);
-    public bool FanFault => IsIoSet(6);
+    public bool CathodeArc => IsStatusSet(11);
+    public bool FanFault => IsStatusSet(12);
     public bool PowerFactorCorrectionOk => IsIoSet(7);
     public bool HighVoltageInterlock => IsIoSet(8);
     public bool HighVoltageStatus => IsIoSet(9);
-    public bool Overcurrent24VoltFault => IsIoSet(10);
-    public bool MasterFault => IsIoSet(11);
-    public bool HighVoltageOvercurrentFault => IsIoSet(12);
-    public bool Temperature1Fault => IsIoSet(13);
-    public bool CathodeOvercurrentFault => IsIoSet(14);
-    public bool Temperature3Fault => IsIoSet(15);
-    public bool Temperature2Fault => IsIoSet(16);
+    public bool Overcurrent24VoltFault => IsStatusSet(13);
+    public bool MasterFault => IsStatusSet(14);
+    public bool HighVoltageOvercurrentFault => IsStatusSet(15);
+    public bool Temperature1Fault => IsStatusSet(16);
+    public bool CathodeOvercurrentFault => IsStatusSet(17);
+    public bool Temperature3Fault => IsStatusSet(18);
+    public bool Temperature2Fault => IsStatusSet(19);
 
     public uint UnknownStatusFlags => RawStatusFlags & 0xFFFFFC00u;
     public uint UnknownIoFlags => RawIoFlags & 0xFFFE0000u;
