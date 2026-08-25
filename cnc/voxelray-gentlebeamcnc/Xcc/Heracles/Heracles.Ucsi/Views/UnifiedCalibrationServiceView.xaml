@@ -99,15 +99,16 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
                                             <TextBlock Text="Connection" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Column="1" Text="{Binding ConnectionText}"/>
                                             <TextBlock Grid.Row="1" Text="Control state" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SystemStateText}"/>
                                             <TextBlock Grid.Row="2" Text="Runtime" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding RuntimeText}" Style="{StaticResource UcsiValueTextStyle}"/>
                                             <TextBlock Grid.Row="3" Text="Capture rate" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SampleRateText}"/>
-                                            <TextBlock Grid.Row="4" Text="GCB firmware" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="4" Grid.Column="1" Text="v3.0.0 abc123"/>
-                                            <TextBlock Grid.Row="5" Text="HVPS firmware" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="5" Grid.Column="1" Text="v3.0.0 def456"/>
-                                            <TextBlock Grid.Row="6" Text="Applicator ID" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding CurrentSample.Telemetry.CollimatorSerial, StringFormat={}0x{0:X}}" Style="{StaticResource UcsiValueTextStyle}"/>
+                                            <TextBlock Grid.Row="4" Text="GCB firmware" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding GcbFirmwareVersion}"/>
+                                            <TextBlock Grid.Row="5" Text="HVPS firmware" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding HvpsFirmwareVersion}"/>
+                                            <TextBlock Grid.Row="6" Text="CNC software" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding CncSoftwareVersion}"/>
+                                            <TextBlock Grid.Row="7" Text="Applicator ID" Foreground="{StaticResource UcsiMutedTextBrush}" Margin="0,0,8,0"/><TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding CurrentSample.Telemetry.CollimatorSerial, StringFormat={}0x{0:X}}" Style="{StaticResource UcsiValueTextStyle}"/>
                                         </Grid>
                                         <Separator Margin="10" Background="{StaticResource UcsiBorderBrush}"/>
                                         <TextBlock Text="HVPS &amp; Beam" Style="{StaticResource UcsiSectionTitleStyle}"/>

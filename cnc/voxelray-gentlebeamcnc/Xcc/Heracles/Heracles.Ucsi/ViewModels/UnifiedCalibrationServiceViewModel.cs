@@ -244,6 +244,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private string _sampleRateText = "0 samples/s";
     private string _recordingCountText = "0 samples";
     private string _errorText = string.Empty;
+    private string _gcbFirmwareVersion = "Unknown";
+    private string _hvpsFirmwareVersion = "Unknown";
+    private string _cncSoftwareVersion = "Unknown";
     private double _timelineSeconds;
     private double _timelineMaximumSeconds;
     private CancellationTokenSource? _seekCancellation;
@@ -273,6 +276,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private double _coilsCommandYCoil;
     private double _coilsCommandFocus;
     private bool _hvpsConnected = false;  // Backing field for HvpsConnected property
+    private bool _versionInfoFetched = false;  // Track whether we've fetched firmware versions
 
     public bool RefreshEnabled
     {
@@ -459,6 +463,17 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             foreach (SystemConfigItem item in ConfigItems)
                 item.SetCommand.RaiseCanExecuteChanged();
         }
+
+        // Initialize CNC software version from assembly
+        try
+        {
+            var version = typeof(UnifiedCalibrationServiceViewModel).Assembly.GetName().Version;
+            CncSoftwareVersion = version != null ? $"v{version}" : "Unknown";
+        }
+        catch
+        {
+            CncSoftwareVersion = "Unknown";
+        }
     }
 
     public ObservableCollection<CheckableParameterViewModel> ParameterOptions { get; }
@@ -506,6 +521,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     public string SampleRateText { get => _sampleRateText; private set => SetProperty(ref _sampleRateText, value); }
     public string RecordingCountText { get => _recordingCountText; private set => SetProperty(ref _recordingCountText, value); }
     public string ErrorText { get => _errorText; private set => SetProperty(ref _errorText, value); }
+    public string GcbFirmwareVersion { get => _gcbFirmwareVersion; private set => SetProperty(ref _gcbFirmwareVersion, value); }
+    public string HvpsFirmwareVersion { get => _hvpsFirmwareVersion; private set => SetProperty(ref _hvpsFirmwareVersion, value); }
+    public string CncSoftwareVersion { get => _cncSoftwareVersion; private set => SetProperty(ref _cncSoftwareVersion, value); }
     public string RecordButtonText => _coordinator.TransportState == SessionTransportState.Recording ? "Stop" : "Record";
     public string PlayPauseButtonText => _coordinator.TransportState == SessionTransportState.Playing ? "Pause" : "Play";
     public bool IsReplay => _coordinator.Mode == UcsiMode.Replay;
@@ -1056,11 +1074,53 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             TimelineSeconds = TimeSpan.FromTicks(_coordinator.CurrentElapsedTicks).TotalSeconds;
             _updatingTimeline = false;
             RaisePropertyChanged(nameof(TimelineText));
+            
+            // Fetch firmware versions if we haven't already and are connected
+            if (!_versionInfoFetched && sample != null)
+            {
+                _ = FetchVersionInfoAsync();
+            }
+
             RaiseStateProperties();
         }
         finally
         {
             _tickInProgress = false;
+        }
+    }
+
+    /// <summary>
+    /// Fetch firmware version information from GCB and HVPS.
+    /// Called once during initialization when telemetry is available.
+    /// </summary>
+    private async Task FetchVersionInfoAsync()
+    {
+        if (_versionInfoFetched)
+            return;
+
+        _versionInfoFetched = true;
+
+        try
+        {
+            var versionInfo = await _commandInterface.GetVersionInfo();
+            GcbFirmwareVersion = string.IsNullOrEmpty(versionInfo.FirmwareVersion) 
+                ? "Unknown" 
+                : versionInfo.FirmwareVersion;
+            HvpsFirmwareVersion = string.IsNullOrEmpty(versionInfo.HvpsFirmwareVersion) 
+                ? "Unknown" 
+                : versionInfo.HvpsFirmwareVersion;
+            
+            _logBuffer.Log(
+                $"Firmware versions retrieved - GCB: {GcbFirmwareVersion}, HVPS: {HvpsFirmwareVersion}",
+                LogRecordSeverity.Info,
+                LogRecordType.System);
+        }
+        catch (Exception ex)
+        {
+            _logBuffer.Log(
+                $"Failed to retrieve firmware versions: {ex.Message}",
+                LogRecordSeverity.Warn,
+                LogRecordType.System);
         }
     }
 
