@@ -261,6 +261,8 @@ static void process_pc_directive_command(uint32_t *data)
 		case PC_DIR_CLEAR_FAULTS:
 			//Queue a clear fault request
 			queue_sm_event(EVENT_PC_CLEAR_FAULT);
+			//Request HVPS to clear faults
+			queue_hvps_cmd(HVPS_CMD_CLEAR_FAULTS, 0, 0);
 			break;
 		case PC_DIR_WIPE_PLAN:
 			//Check that state for wiping plan is valid
