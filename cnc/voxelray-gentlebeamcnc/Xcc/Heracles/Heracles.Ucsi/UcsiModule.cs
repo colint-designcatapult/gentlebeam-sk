@@ -25,7 +25,7 @@ public static class UcsiRegistration
         containerRegistry.RegisterSingleton<ParquetTelemetrySessionReader>();
         containerRegistry.RegisterManySingleton<TelemetrySessionCoordinator>();
         containerRegistry.RegisterSingleton<UcsiLogBuffer>();
-        containerRegistry.RegisterSingleton<IUcsiHostCommands, UnavailableUcsiHostCommands>();
+        containerRegistry.RegisterSingleton<IUcsiHostCommands, StandaloneUcsiHostCommands>();
         
         // Direct HVPS UART communication interface for system configuration
         // Read COM port from configuration: Ucsi:Hardware:HvpsUartPort (default: COM1)

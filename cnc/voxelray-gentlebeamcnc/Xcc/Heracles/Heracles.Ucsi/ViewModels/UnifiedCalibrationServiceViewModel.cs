@@ -21,11 +21,27 @@ public interface IUcsiHostCommands
     Task ClearFaultsAsync();
 }
 
+/// <summary>
+/// Default stub implementation - disables fault clearing for safety.
+/// Used when UCSI is embedded in the main application to prevent accidental emission start.
+/// </summary>
 public sealed class UnavailableUcsiHostCommands : IUcsiHostCommands
 {
     public bool CanClearFaults => false;
     public string ClearFaultsUnavailableReason => "Clear Faults is unavailable in this host.";
     public Task ClearFaultsAsync() => Task.CompletedTask;
+}
+
+/// <summary>
+/// Standalone UCSI implementation of IUcsiHostCommands.
+/// Enables fault clearing for bench/standalone use.
+/// </summary>
+public sealed class StandaloneUcsiHostCommands(
+    IGcbCommandInterface gcbCommandInterface) : IUcsiHostCommands
+{
+    public bool CanClearFaults => true;
+    public string ClearFaultsUnavailableReason => string.Empty;
+    public Task ClearFaultsAsync() => gcbCommandInterface.ClearFaults();
 }
 
 public sealed class CheckableParameterViewModel : BindableBase

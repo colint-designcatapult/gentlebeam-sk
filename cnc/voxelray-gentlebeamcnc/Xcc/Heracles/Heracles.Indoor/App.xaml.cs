@@ -24,9 +24,11 @@ using Heracles.Core.Models;
 using Heracles.Indoor.Models;
 using Heracles.Indoor.Models.UseCases;
 using Heracles.Indoor.Modules;
+using Heracles.Indoor.Services;
 using Heracles.Indoor.Views;
 using UcsiRegistration = Heracles.Ucsi.UcsiRegistration;
 using Heracles.Ucsi.Services;
+using Heracles.Ucsi.ViewModels;
 using Microsoft.Extensions.Configuration;
 using Prism.Ioc;
 using Prism.Modularity;
@@ -147,6 +149,8 @@ namespace Heracles.Indoor
             containerRegistry.RegisterInstance<IDecodedTelemetryFrameSink>(decodedTelemetryFrameHub);
             containerRegistry.RegisterInstance<IDecodedTelemetryFrameSource>(decodedTelemetryFrameHub);
             UcsiRegistration.RegisterTypes(containerRegistry);
+            // Override UCSI host commands for embedded mode - disable Clear Faults for safety
+            containerRegistry.RegisterSingleton<IUcsiHostCommands, IndoorUcsiHostCommands>();
             containerRegistry.RegisterManySingleton<NetworkConnectionSupervisor>();
 
             // Services
