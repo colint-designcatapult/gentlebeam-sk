@@ -65,10 +65,11 @@ namespace Xcc.Infra.GryphonBoard.Comm
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     var result = await Connection.ReceiveAsync(cancellationToken);
+                    var receivedAtUtc = DateTimeOffset.UtcNow;
 
                     try
                     {
-                        if (result.Length > 0 && SystemTelemetryProcessor.Process(result))
+                        if (result.Length > 0 && SystemTelemetryProcessor.Process(result, receivedAtUtc))
                         {
                             lock (_expirationTimerLock)
                             {

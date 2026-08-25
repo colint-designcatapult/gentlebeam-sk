@@ -426,6 +426,12 @@ internal sealed class CalibrationTelemetryState
     private float _heatSinkTemperature;
     private float _peltierTemperature;
     private float _cabinetTemperature;
+    
+    // Setpoint values retrieved from calibration setpoint request command
+    private float? _kvSetpoint;
+    private float? _hvpsPowerSetpoint;
+    private float? _emissionCurrentLimit;
+    private float? _gridSetpoint;
 
     internal uint Runtime => unchecked((uint)_systemRuntime);
 
@@ -471,7 +477,7 @@ internal sealed class CalibrationTelemetryState
         _heaterCurrentFeedback = packet[24];
         _heaterCurrentSetpoint = packet[25];
         _xCoilCurrent = packet[29];
-        _yCoilCurrent = packet[30];
+        _yCoilCurrent = packet[31];
         _focusCurrent = packet[33];
         _ionPumpFeedback = packet[35];
         _waterPressure = packet[38];
@@ -480,6 +486,16 @@ internal sealed class CalibrationTelemetryState
         _heatSinkTemperature = packet[41];
         _peltierTemperature = packet[42];
         _cabinetTemperature = packet[43];
+    }
+
+    internal void UpdateSetpoints(CalibrationSetpointResponse setpointResponse)
+    {
+        _hvpsPowerSetpoint = setpointResponse.PowerSetpoint;
+        _kvSetpoint = setpointResponse.KvSetpoint;
+        _emissionCurrentLimit = setpointResponse.MaLimitSetpoint;
+        _gridSetpoint = setpointResponse.GridSetpoint;
+        // Note: (Heater/Filament Setpoint) is NOT updated here
+        // It comes from the base telemetry packet and is set during packet parsing
     }
 
     internal SystemCalibrationTelemetry Snapshot() => new()
@@ -504,6 +520,10 @@ internal sealed class CalibrationTelemetryState
         HeaterCurrentSetpoint = _heaterCurrentSetpoint,
         HeaterCurrentFeedback = _heaterCurrentFeedback,
         GridVoltage = _gridVoltage,
+        KvSetpoint = _kvSetpoint,
+        HvpsPowerSetpoint = _hvpsPowerSetpoint,
+        EmissionCurrentLimit = _emissionCurrentLimit,
+        GridSetpoint = _gridSetpoint,
         XCoilCurrent = _xCoilCurrent,
         YCoilCurrent = _yCoilCurrent,
         FocusCurrent = _focusCurrent,

@@ -1,0 +1,137 @@
+[DOCUMENT]
+TITLE: Heracles Unified Calibration and Service Interface Test Protocol
+UID: DHF-HRC-UCSI-0003-TP
+METADATA:
+  COMPONENT: heracles-ucsi
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+This protocol defines the minimum verification tests for the Heracles Unified Calibration and Service Interface (UCSI) Software Requirements Specification, DHF-HRC-UCSI-0001.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Test Configuration
+
+[TEXT]
+STATEMENT: >>>
+Unless a test specifies otherwise, execute it on a fully assembled Heracles system in its approved service/test configuration. A bench test uses the machine PCBs on a bench without machine peripherals.
+
+Manual X-ray emission testing shall be performed only by qualified personnel under the approved radiation-safety procedure and in the approved service/test configuration.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+===================  ==========================================
+Abbreviation/Term    Definition
+===================  ==========================================
+GCB                  Gryphon Control Board
+HVPS                 High Voltage Power Supply
+UCSI                 Unified Calibration and Service Interface
+===================  ==========================================
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: TP-UCSI-
+TITLE: Test Cases
+
+[TEST_CASE]
+UID: TP-UCSI-001
+TITLE: UCSI deployment and telemetry monitoring
+STATEMENT: >>>
+Verify that UCSI presents current telemetry and status information and supports numerical and graphical monitoring of selected parameters in both supported deployment modes.
+<<<
+PREREQUISITES: >>>
+Bench test setup with the GCB and HVPS telemetry channels available.
+
+The standalone UCSI application and the system PC application containing the hosted UCSI module are installed.
+<<<
+STEPS: >>>
+1. Start the standalone UCSI application and connect the bench test setup.
+2. Confirm that current operating-parameter values, communication status, system status, interlock status, and active faults are displayed.
+3. Select a telemetry parameter for the monitored-parameter list and for a graph; confirm that its current numerical value and telemetry history are displayed.
+4. Close the standalone application, start the system PC application, and open the hosted UCSI module.
+5. Repeat steps 2 and 3.
+<<<
+EXPECTED_BEHAVIOR: >>>
+In both deployment modes, UCSI displays the current system operating parameters, communication status, system status, interlock status, and active faults received from the bench test setup. A selected parameter appears in the monitored-parameter list with its current value and in a graph with its telemetry history.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-001
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-UCSI-002
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-UCSI-003
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TP-UCSI-002
+TITLE: Manual HVPS service control
+STATEMENT: >>>
+Verify that UCSI commands HVPS service operating parameters and manually enables and disables X-ray emission while showing HVPS feedback and interlock status.
+<<<
+PREREQUISITES: >>>
+Fully assembled Heracles system in the approved service/test configuration.
+
+Qualified personnel have completed the approved radiation-safety procedure for manual emission testing.
+<<<
+STEPS: >>>
+1. Start UCSI and open the HVPS view.
+2. Confirm that the HVPS feedback values and interlock indicators are displayed.
+3. Command permitted HVPS operating parameters using the approved service procedure and confirm that the displayed setpoint and feedback update accordingly.
+4. With the required interlocks satisfied, enable manual X-ray emission using the approved service procedure; observe the emission feedback and interlock indicators.
+5. Disable manual X-ray emission and confirm that the emission feedback returns to the non-emitting state.
+<<<
+EXPECTED_BEHAVIOR: >>>
+UCSI displays HVPS feedback and interlock status throughout the test. Each permitted command is reflected by the displayed HVPS setpoint and feedback. UCSI enables and disables manual X-ray emission when directed by the qualified operator under the approved procedure.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-004
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TP-UCSI-003
+TITLE: Coil control and control system configuration
+STATEMENT: >>>
+Verify that UCSI commands coil operating parameters and views and sets control system configuration values.
+<<<
+PREREQUISITES: >>>
+Bench test setup with the GCB and HVPS communication channels available.
+<<<
+STEPS: >>>
+1. Start UCSI and open the Coils view.
+2. Confirm that the X, Y, and focus coil feedback values are displayed.
+3. Command permitted values for each coil using the approved service procedure and confirm that the corresponding displayed feedback values update.
+4. Open the System Config view and refresh the control system configuration values.
+5. Confirm that current configuration values are displayed, set one permitted configuration value using the approved service procedure, and confirm that the displayed current value updates.
+<<<
+EXPECTED_BEHAVIOR: >>>
+UCSI displays the feedback value for each coil and updates the displayed feedback after each permitted coil command. UCSI displays current control system configuration values and updates the displayed current value after setting a permitted configuration value.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-005
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-UCSI-006
+  ROLE: Verifies
+
+[[/SECTION]]

@@ -29,12 +29,14 @@ namespace Heracles.Application.Services
             IAppGlobals appGlobals,
             IEventAggregator eventAggregator,
             ISystemTelemetryChanged systemTelemetryChangedCallback,
+            IDecodedTelemetryFrameSink decodedTelemetryFrameSink,
             IDebugSettings debugSettings)
         {
             LogWriter = logWriter;
             AppGlobals = appGlobals;
             EventAggregator = eventAggregator;
             SystemTelemetryChangedCallback = systemTelemetryChangedCallback;
+            DecodedTelemetryFrameSink = decodedTelemetryFrameSink;
             DebugSettings = debugSettings;
             _mainCollimatorSerial = string.IsNullOrEmpty(DebugSettings.DummyCollimatorSerial) ? _mainCollimatorSerial : Convert.ToUInt64(DebugSettings.DummyCollimatorSerial, 16);
             _serial = _mainCollimatorSerial;
@@ -71,6 +73,7 @@ namespace Heracles.Application.Services
         public IAppGlobals AppGlobals { get; }
         public IEventAggregator EventAggregator { get; }
         public ISystemTelemetryChanged SystemTelemetryChangedCallback { get; }
+        public IDecodedTelemetryFrameSink DecodedTelemetryFrameSink { get; }
         public IDebugSettings DebugSettings { get; }
 
         private int _currentOperationalPoint = 0;
@@ -604,6 +607,15 @@ namespace Heracles.Application.Services
 
         private void SetTelemetry(ISystemTelemetry? telemetry)
         {
+            if (telemetry is not null && DecodedTelemetryFrameSink.IsEnabled)
+            {
+                DecodedTelemetryFrameSink.Publish(
+                    new DecodedTelemetryFrame(
+                        DateTimeOffset.UtcNow,
+                        telemetry,
+                        ReadOnlyMemory<byte>.Empty));
+            }
+
             SystemTelemetryChangedCallback.OnSystemTelemetryChanged(telemetry);
         }
 

@@ -1,0 +1,3 @@
+[component]
+name = "cnc/voxelray-gentlebeamcnc/ucsi"
+include_docs = ["*.sdoc"]

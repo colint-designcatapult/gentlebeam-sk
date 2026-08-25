@@ -1,0 +1,18 @@
+<prism:PrismApplication x:Class="Heracles.Ucsi.App"
+                        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                        xmlns:prism="http://prismlibrary.com/">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/BaseStyle.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/FontSizeDefault.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/ColorResources.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/BaseStyle.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ButtonStyle.xaml"/>
+                <ResourceDictionary Source="/Heracles.Ucsi;component/Resources/UcsiStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</prism:PrismApplication>

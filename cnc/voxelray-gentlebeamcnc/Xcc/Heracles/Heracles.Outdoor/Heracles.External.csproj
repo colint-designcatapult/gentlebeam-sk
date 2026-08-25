@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Xcc.Shared\Xcc.Shared.csproj" />
     <ProjectReference Include="..\Heracles.Application\Heracles.Application.csproj" />
+    <ProjectReference Include="..\Heracles.Ucsi\Heracles.Ucsi.csproj" />
   </ItemGroup>
 
   <ItemGroup>

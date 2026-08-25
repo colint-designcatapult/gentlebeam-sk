@@ -1,0 +1,99 @@
+[DOCUMENT]
+TITLE: Heracles Unified Calibration and Service Interface Software Requirements Specification
+UID: DHF-HRC-UCSI-0001
+METADATA:
+  COMPONENT: heracles-ucsi
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+This document defines the software requirements for the Heracles Unified Calibration and Service Interface (UCSI).
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+UCSI is a technician-facing service interface for the Heracles superficial radiation therapy system. It is available as a standalone application and as a module hosted by the system PC software. It presents system telemetry, status, and servicing information and provides manual high-voltage power supply (HVPS) control for service activities, including manually initiated X-ray emission.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+===================  ==========================================
+Abbreviation/Term    Definition
+===================  ==========================================
+HVPS                 High Voltage Power Supply
+SDS                  Software Design Specification
+SRS                  Software Requirements Specification
+UCSI                 Unified Calibration and Service Interface
+===================  ==========================================
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: RQ-UCSI-
+TITLE: Requirements
+
+[REQUIREMENT]
+UID: RQ-UCSI-001
+TYPE: Interface
+TITLE: Deployment modes
+STATEMENT: >>>
+The software shall provide the UCSI service interface when operated as a standalone application and when hosted by the system PC software.
+<<<
+
+[REQUIREMENT]
+UID: RQ-UCSI-002
+TYPE: Functional
+TITLE: System telemetry and status
+STATEMENT: >>>
+The software shall allow the operator to view current system operating parameters, communication status, system status, interlock status, and active faults.
+<<<
+
+[REQUIREMENT]
+UID: RQ-UCSI-003
+TYPE: Functional
+TITLE: Telemetry monitoring
+STATEMENT: >>>
+The software shall allow the operator to select system operating parameters for numerical monitoring and graphical display of their telemetry history.
+<<<
+
+[REQUIREMENT]
+UID: RQ-UCSI-004
+TYPE: Functional
+TITLE: Manual HVPS service control
+STATEMENT: >>>
+The software shall allow the operator to command HVPS operating parameters and to enable and disable manual X-ray emission for service activities. The software shall display the associated HVPS feedback and interlock status to the operator.
+<<<
+
+[REQUIREMENT]
+UID: RQ-UCSI-005
+TYPE: Functional
+TITLE: Coil service control
+STATEMENT: >>>
+The software shall allow the operator to command coil operating parameters for service activities and to view the associated coil feedback values.
+<<<
+
+[REQUIREMENT]
+UID: RQ-UCSI-006
+TYPE: Functional
+TITLE: Control system configuration
+STATEMENT: >>>
+The software shall allow the operator to view and set control system configuration values for service activities.
+<<<
+
+[[/SECTION]]

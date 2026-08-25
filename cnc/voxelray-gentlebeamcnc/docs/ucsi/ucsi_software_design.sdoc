@@ -1,0 +1,127 @@
+[DOCUMENT]
+TITLE: Heracles Unified Calibration and Service Interface Software Design Specification
+UID: DHF-HRC-UCSI-0002
+METADATA:
+  COMPONENT: heracles-ucsi
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+This document describes the architectural design of the Heracles Unified Calibration and Service Interface (UCSI).
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes the UCSI application and module architecture that implements the UCSI Software Requirements Specification, DHF-HRC-UCSI-0001.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+===================  ==========================================
+Abbreviation/Term    Definition
+===================  ==========================================
+GCB                  Gryphon Control Board
+HVPS                 High Voltage Power Supply
+MVVM                 Model-View-ViewModel
+UCSI                 Unified Calibration and Service Interface
+===================  ==========================================
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Architecture Overview
+
+[TEXT]
+STATEMENT: >>>
+The UCSI user interface is implemented as WPF views bound to an MVVM view model. The same view model and service registrations are used by the standalone application and by the UCSI module hosted in the Heracles system PC software. Telemetry and command services connect the interface to the control-board and HVPS communication channels.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+PREFIX: SDS-UCSI-
+TITLE: Design Items
+
+[DESIGN_ITEM]
+UID: SDS-UCSI-001
+TITLE: Shared UCSI composition
+STATEMENT: >>>
+The UcsiRegistration composition root registers the UCSI views, view model, telemetry services, storage services, and command interfaces. The standalone application creates this composition directly; the UcsiModule exposes the same registration for the hosted system-PC application.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-001
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SDS-UCSI-002
+TITLE: Telemetry status presentation
+STATEMENT: >>>
+TelemetrySessionCoordinator receives system telemetry and makes the current sample available to UnifiedCalibrationServiceViewModel. The view model maps the sample into the system-status, interlock, HVPS-state, fault, and monitored-parameter views through the telemetry parameter catalog.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-002
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SDS-UCSI-003
+TITLE: Telemetry monitoring and history
+STATEMENT: >>>
+TelemetryHistoryBuffer retains telemetry samples for live display. The operator selects parameters from TelemetryParameterCatalog for the monitored-parameter list and one or more GraphPaneView instances. TelemetrySessionCoordinator records and reads telemetry sessions through the Parquet session storage services so that recorded telemetry can be replayed in the same interface.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-003
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SDS-UCSI-004
+TITLE: HVPS service commands
+STATEMENT: >>>
+The HVPS view presents command, setpoint, and feedback values together with HVPS interlock indicators. UnifiedCalibrationServiceViewModel sends operator HVPS commands through the GCB command interface and the UCSI HVPS UART command interface; returned telemetry updates the displayed feedback and interlock state. The emission control uses the same command path to request emission enable and disable.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-004
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SDS-UCSI-005
+TITLE: Coil service commands
+STATEMENT: >>>
+The Coils view presents operator command values and telemetry feedback values for the X, Y, and focus coils. UnifiedCalibrationServiceViewModel sends coil commands through the GCB command interface; returned telemetry updates the displayed coil feedback.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-005
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SDS-UCSI-006
+TITLE: Control system configuration
+STATEMENT: >>>
+The System Config view presents current control system configuration values with editable input values. UnifiedCalibrationServiceViewModel requests current configuration values and sends operator updates through the UCSI HVPS UART command interface.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-006
+  ROLE: Refines
+
+[[/SECTION]]

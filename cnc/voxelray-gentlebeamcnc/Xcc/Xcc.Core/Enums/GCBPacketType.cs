@@ -16,6 +16,10 @@
         WaitForButtonCmd = 13,
         QcbPing = 14,
         QcbReadingsCommand = 15,
+        CalibrationCoilsCmd = 30,
+        CalibrationHvpsCmd = 31,
+        CalibrationEmissionCmd = 32,
+        CalibrationSetpointCmd = 33,
 
         InvalidPacket = 100,
         VersionInfoResponse = 101,
@@ -32,5 +36,9 @@
         WaitForButtonResponse = 113,
         QcbPingResponse = 114,
         QcbReadingsCommandResponse = 115,
+        CalibrationCoilsResponse = 130,
+        CalibrationHvpsResponse = 131,
+        CalibrationEmissionResponse = 132,
+        CalibrationSetpointResponse = 133,
     }
 }

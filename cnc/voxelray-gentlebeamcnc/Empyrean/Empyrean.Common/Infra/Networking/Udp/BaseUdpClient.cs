@@ -183,6 +183,7 @@ namespace Empyrean.Common.Infra.Networking.Udp
             if (disposing)
             {
                 _recvCancellationTokenSource?.Cancel();
+                _recvTask?.Wait();
                 _recvCancellationTokenSource?.Dispose();
                 Connection?.Dispose(); 
             }

@@ -1,3 +1,4 @@
+using System;
 using Empyrean.Common.Infra.Networking.Udp;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
@@ -9,7 +10,9 @@ namespace Xcc.Infra.GryphonBoard;
 public interface ISystemTelemetryProcessor
 {
     bool Process(byte[] datagram);
+    bool Process(byte[] datagram, DateTimeOffset receivedAtUtc);
     void NotifyTelemetryExpired();
+    void RequestSetpointPollingNow();
 }
 
 public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
@@ -20,21 +23,30 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
 
     private readonly ISystemTelemetryChanged _systemTelemetryChangedCallback;
     private readonly IGCBDataStore _gcbDataStore;
+    private readonly IDecodedTelemetryFrameSink _decodedTelemetryFrameSink;
+    private readonly IGcbCommandInterface? _gcbCommandInterface;
     private readonly UdpPacket _packet = new();
     private FirmwareVersionSignature? _selectedVersion;
     private NormalTelemetryState? _normalState;
     private CalibrationTelemetryState? _calibrationState;
     private uint? _lastPublishedRuntime;
+    private bool _setpointPollingRequested;
 
     public SystemTelemetryProcessor(
         ISystemTelemetryChanged systemTelemetryChangedCallback,
-        IGCBDataStore gcbDataStore)
+        IGCBDataStore gcbDataStore,
+        IDecodedTelemetryFrameSink decodedTelemetryFrameSink,
+        IGcbCommandInterface? gcbCommandInterface = null)
     {
         _systemTelemetryChangedCallback = systemTelemetryChangedCallback;
         _gcbDataStore = gcbDataStore;
+        _decodedTelemetryFrameSink = decodedTelemetryFrameSink;
+        _gcbCommandInterface = gcbCommandInterface;
     }
 
-    public bool Process(byte[] datagram)
+    public bool Process(byte[] datagram) => Process(datagram, default);
+
+    public bool Process(byte[] datagram, DateTimeOffset receivedAtUtc)
     {
         if (!_packet.TryReset(datagram))
             return false;
@@ -62,7 +74,7 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
             }
 
             _normalState!.Update(_packet);
-            PublishIfDue(_normalState);
+            Publish(_normalState, datagram, receivedAtUtc);
             return true;
         }
 
@@ -72,7 +84,7 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
                 return false;
 
             _calibrationState!.Update(_packet);
-            PublishIfDue(_calibrationState);
+            Publish(_calibrationState, datagram, receivedAtUtc);
             return true;
         }
 
@@ -81,6 +93,11 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
 
     public void NotifyTelemetryExpired() =>
         _systemTelemetryChangedCallback.OnSystemTelemetryChanged(null);
+
+    public void RequestSetpointPollingNow()
+    {
+        _setpointPollingRequested = true;
+    }
 
     private void SelectTelemetryParser(UdpPacket packet)
     {
@@ -128,22 +145,82 @@ public sealed class SystemTelemetryProcessor : ISystemTelemetryProcessor
         ClearSelection();
     }
 
-    private void PublishIfDue(NormalTelemetryState state)
+    private void Publish(NormalTelemetryState state, byte[] datagram, DateTimeOffset receivedAtUtc)
     {
-        if (!IsPublicationDue(state.Runtime))
+        (bool publishCurrentValue, bool publishDecodedFrame) = GetPublicationTargets(state.Runtime);
+        if (!publishCurrentValue && !publishDecodedFrame)
             return;
 
-        _systemTelemetryChangedCallback.OnSystemTelemetryChanged(state.Snapshot());
-        _lastPublishedRuntime = state.Runtime;
+        PublishSnapshot(
+            state.Runtime,
+            state.Snapshot(),
+            datagram,
+            receivedAtUtc,
+            publishCurrentValue,
+            publishDecodedFrame);
     }
 
-    private void PublishIfDue(CalibrationTelemetryState state)
+    private void Publish(CalibrationTelemetryState state, byte[] datagram, DateTimeOffset receivedAtUtc)
     {
-        if (!IsPublicationDue(state.Runtime))
+        // On-demand setpoint polling: request setpoints when ViewModel signals
+        if (_setpointPollingRequested && _gcbCommandInterface is not null)
+        {
+            _setpointPollingRequested = false;
+            _ = RequestCalibrationSetpointsAsync(state);
+        }
+
+        (bool publishCurrentValue, bool publishDecodedFrame) = GetPublicationTargets(state.Runtime);
+        if (!publishCurrentValue && !publishDecodedFrame)
             return;
 
-        _systemTelemetryChangedCallback.OnSystemTelemetryChanged(state.Snapshot());
-        _lastPublishedRuntime = state.Runtime;
+        PublishSnapshot(
+            state.Runtime,
+            state.Snapshot(),
+            datagram,
+            receivedAtUtc,
+            publishCurrentValue,
+            publishDecodedFrame);
+    }
+
+    private async System.Threading.Tasks.Task RequestCalibrationSetpointsAsync(CalibrationTelemetryState state)
+    {
+        try
+        {
+            var setpointResponse = await _gcbCommandInterface!.RequestCalibrationSetpoints();
+            state.UpdateSetpoints(setpointResponse);
+        }
+        catch (Exception)
+        {
+            // Silently ignore setpoint request errors to avoid interrupting telemetry stream
+            // If this is failing, check GcbCommandInterface logs for network/parsing errors
+        }
+    }
+
+    private (bool CurrentValue, bool DecodedFrame) GetPublicationTargets(uint runtime) =>
+        (IsPublicationDue(runtime), _decodedTelemetryFrameSink.IsEnabled);
+
+    private void PublishSnapshot(
+        uint runtime,
+        ISystemTelemetry snapshot,
+        byte[] datagram,
+        DateTimeOffset receivedAtUtc,
+        bool publishCurrentValue,
+        bool publishDecodedFrame)
+    {
+        if (publishDecodedFrame)
+        {
+            DateTimeOffset timestamp = receivedAtUtc == default
+                ? DateTimeOffset.UtcNow
+                : receivedAtUtc;
+            _decodedTelemetryFrameSink.Publish(
+                new DecodedTelemetryFrame(timestamp, snapshot, datagram));
+        }
+
+        if (publishCurrentValue)
+        {
+            _systemTelemetryChangedCallback.OnSystemTelemetryChanged(snapshot);
+            _lastPublishedRuntime = runtime;
+        }
     }
 
     private bool IsPublicationDue(uint runtime) =>

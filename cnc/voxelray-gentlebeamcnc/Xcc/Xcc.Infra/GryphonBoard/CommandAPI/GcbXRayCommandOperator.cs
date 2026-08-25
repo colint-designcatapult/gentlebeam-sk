@@ -65,6 +65,133 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
         }
 
         /// <summary>
+        /// This command is used in calibration mode to set HVPS kilovoltage.
+        /// Payload: [cmd_id=5 (SET_KV), kv_value, flags]
+        /// </summary>
+        /// <param name="kvSetpoint">[kV] Kilovoltage setpoint (0-100)</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsKvCmd(float kvSetpoint)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(5), new UdpPacket.Field(kvSetpoint), new UdpPacket.Field(0) });
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to set HVPS power.
+        /// Payload: [cmd_id=4 (SET_PWR), power_value, flags]
+        /// </summary>
+        /// <param name="powerSetpoint">[W] Power setpoint</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsPowerCmd(float powerSetpoint)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(4), new UdpPacket.Field(powerSetpoint), new UdpPacket.Field(0) });
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to set HVPS mA limit.
+        /// Payload: [cmd_id=6 (SET_MA_LIM), ma_limit_value, flags]
+        /// </summary>
+        /// <param name="maSetpoint">[mA] mA current limit setpoint</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsMaLimitCmd(float maSetpoint)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(6), new UdpPacket.Field(maSetpoint), new UdpPacket.Field(0) });
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to set HVPS grid voltage.
+        /// Payload: [cmd_id=7 (SET_GRID), grid_value, flags]
+        /// </summary>
+        /// <param name="gridVoltage">[V] Grid voltage setpoint (0-600)</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsGridCmd(float gridVoltage)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(7), new UdpPacket.Field(gridVoltage), new UdpPacket.Field(0) });
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to set HVPS filament current.
+        /// Payload: [cmd_id=8 (SET_FIL), filament_value, flags]
+        /// </summary>
+        /// <param name="filamentCurrent">[mA] Filament heater current setpoint (0-4000)</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsFilamentCmd(float filamentCurrent)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(8), new UdpPacket.Field(filamentCurrent), new UdpPacket.Field(0) });
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to enable/disable PID controller.
+        /// Payload: [cmd_id=10 (SET_CONFIG), enable_value, flags=0x18]
+        /// </summary>
+        /// <param name="enable">true to enable PID, false to disable</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationHvpsPidCmd(bool enable)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationHvpsCmd,
+                packetCounter: ++packetCounter,
+                payload: new UdpPacket.Field[] { new UdpPacket.Field(10), new UdpPacket.Field(enable ? 1.0f : 0.0f), new UdpPacket.Field(0x18) });
+        }
+        /// <summary>
+        /// This command is used in calibration mode to set coil currents (X, Y, Focus).
+        /// Payload: [x_coil_amps, y_coil_amps, focus_coil_amps]
+        /// Valid ranges: X/Y Coil [-2.0, 2.0] A, Focus [0.0, 3.0] A
+        /// </summary>
+        /// <param name="xCoil">X Deflection Coil current [A]</param>
+        /// <param name="yCoil">Y Deflection Coil current [A]</param>
+        /// <param name="fCoil">Focus Coil current [A]</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationCoilsCmd(float xCoil, float yCoil, float fCoil)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationCoilsCmd,
+                packetCounter: ++packetCounter,
+                payload: [xCoil, yCoil, fCoil]);
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to request the current HVPS setpoints.
+        /// Response contains 5 float values: Power, KV, MA Limit, Grid, Filament
+        /// </summary>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationSetpointRequest()
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationSetpointCmd,
+                packetCounter: ++packetCounter,
+                payload: [0 /* reserved field */]);
+        }
+
+        /// <summary>
+        /// This command is used in calibration mode to control HVPS emission (beam on/off).
+        /// Payload: 0x03 = HVPS_CMD_CAL_START (turn on), 0x04 = HVPS_CMD_CAL_STOP (turn off)
+        /// </summary>
+        /// <param name="command">0x03 for START, 0x04 for STOP</param>
+        /// <returns></returns>
+        public byte[] GenerateCalibrationEmissionCmd(uint command)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.CalibrationEmissionCmd,
+                packetCounter: ++packetCounter,
+                payload: [command]);
+        }
+
+        /// <summary>
         /// This command is used to begin staging a new treatment plan. If successful, the firmware responds with a new session ID.
         /// </summary>
         /// <param name="totalPoints">The total requested number of points for the new plan</param>

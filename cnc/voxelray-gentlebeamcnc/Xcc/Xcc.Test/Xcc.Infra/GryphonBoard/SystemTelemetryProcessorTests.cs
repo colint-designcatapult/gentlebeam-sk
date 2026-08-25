@@ -241,6 +241,36 @@ internal class SystemTelemetryProcessorTests
     }
 
     [Test]
+    public void Process_PublishesEveryDecodedFrameWithoutChangingLegacyPublicationRate()
+    {
+        var publishedRuntimes = new List<int>();
+        var callback = new Mock<ISystemTelemetryChanged>();
+        callback.Setup(value => value.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()))
+            .Callback<ISystemTelemetry?>(value => publishedRuntimes.Add(value!.SystemRuntime));
+        var frameSink = new CollectingFrameSink();
+        var sut = CreateSut(callback.Object, decodedTelemetryFrameSink: frameSink);
+        var receivedAt = DateTimeOffset.UtcNow;
+        sut.Process(BuildVersionInfo(2, 0, 1, FirmwareMode.Normal));
+
+        foreach (int runtime in new[] { 0, 100, 200, 300 })
+            Assert.That(sut.Process(BuildNormalTelemetry(runtime), receivedAt.AddMilliseconds(runtime)), Is.True);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(frameSink.Frames.Select(frame => frame.Telemetry.SystemRuntime), Is.EqualTo(new[] { 0, 100, 200, 300 }));
+            Assert.That(frameSink.Frames.Select(frame => frame.ReceivedAtUtc), Is.EqualTo(new[]
+            {
+                receivedAt,
+                receivedAt.AddMilliseconds(100),
+                receivedAt.AddMilliseconds(200),
+                receivedAt.AddMilliseconds(300),
+            }));
+            Assert.That(frameSink.Frames, Has.All.Matches<DecodedTelemetryFrame>(frame => !frame.RawDatagram.IsEmpty));
+            Assert.That(publishedRuntimes, Is.EqualTo(new[] { 0, 300 }));
+        });
+    }
+
+    [Test]
     public void Process_SteadyState_DoesNotAllocate()
     {
         var callback = new Mock<ISystemTelemetryChanged>();
@@ -333,8 +363,27 @@ internal class SystemTelemetryProcessorTests
 
     private static SystemTelemetryProcessor CreateSut(
         ISystemTelemetryChanged callback,
-        IGCBDataStore? store = null) =>
-        new(callback, store ?? Mock.Of<IGCBDataStore>());
+        IGCBDataStore? store = null,
+        IDecodedTelemetryFrameSink? decodedTelemetryFrameSink = null) =>
+        new(
+            callback,
+            store ?? Mock.Of<IGCBDataStore>(),
+            decodedTelemetryFrameSink ?? DisabledFrameSink.Instance);
+
+    private sealed class DisabledFrameSink : IDecodedTelemetryFrameSink
+    {
+        public static readonly DisabledFrameSink Instance = new();
+        public bool IsEnabled => false;
+        public void Publish(DecodedTelemetryFrame frame) =>
+            throw new InvalidOperationException("A disabled sink cannot receive frames.");
+    }
+
+    private sealed class CollectingFrameSink : IDecodedTelemetryFrameSink
+    {
+        public bool IsEnabled => true;
+        public List<DecodedTelemetryFrame> Frames { get; } = [];
+        public void Publish(DecodedTelemetryFrame frame) => Frames.Add(frame);
+    }
 
     private static byte[] BuildVersionInfo(int major, int minor, int level, FirmwareMode mode)
     {
