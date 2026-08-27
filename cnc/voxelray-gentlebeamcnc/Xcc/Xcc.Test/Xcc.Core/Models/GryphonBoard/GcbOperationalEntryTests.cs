@@ -65,19 +65,19 @@ namespace Xcc.Test.Xcc.Core.Models.GryphonBoard
         {   
             var sut = new VersionInfo
             {
-                Major = 10,
-                Minor = 13,
-                Level = 16,
+                FirmwareVersion = "10.13.16",
                 FirmwareChecksum = 42,
                 Mode = FirmwareMode.Demo,
+                HvpsFirmwareVersion = "1.0.0",
+                HvpsMode = FirmwareMode.Normal,
             };
 
             var res = sut.ToString();
             
-            Assert.That(res, Does.Contain("Version: 10.13"));
-            Assert.That(res, Does.Contain("Level: 16"));
+            Assert.That(res, Does.Contain("FirmwareVersion: 10.13.16"));
             Assert.That(res, Does.Contain("FirmwareChecksum: 42"));
             Assert.That(res, Does.Contain("Mode: Demo"));
+            Assert.That(res, Does.Contain("HvpsMode: Normal"));
             Assert.That(res, Does.Contain(Environment.NewLine));
         }
     }

@@ -34,8 +34,8 @@ public readonly record struct HvpsTelemetryStatus(
     public bool Temperature3Fault => IsStatusSet(18);
     public bool Temperature2Fault => IsStatusSet(19);
 
-    public uint UnknownStatusFlags => RawStatusFlags & 0xFFFFFC00u;
-    public uint UnknownIoFlags => RawIoFlags & 0xFFFE0000u;
+    public uint UnknownStatusFlags => RawStatusFlags & 0xFFF00000u;
+    public uint UnknownIoFlags => RawIoFlags & 0xFFFFFC00u;
     public bool HasActiveFaultInput => (RawIoFlags & 0x0001FC62u) != 0;
 
     private bool IsStatusSet(int bit) => (RawStatusFlags & (1u << bit)) != 0;

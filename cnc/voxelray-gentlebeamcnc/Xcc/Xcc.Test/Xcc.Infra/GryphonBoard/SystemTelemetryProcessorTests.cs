@@ -169,7 +169,7 @@ internal class SystemTelemetryProcessorTests
                 faultFlags: 1u << (int)SystemFault.VoltageFault,
                 interlockFlags: 0b11u,
                 requiredInterlockFlags: 1u,
-                statusFlags: 0x80000209,
+                statusFlags: 0x80080609,
                 ioFlags: 0x80010182,
                 kvFeedback: 51.5f));
         }
@@ -182,7 +182,7 @@ internal class SystemTelemetryProcessorTests
                 faultFlags: 1u << (int)SystemFault.VoltageFault,
                 interlockFlags: 0b11u,
                 requiredInterlockFlags: 1u,
-                statusFlags: 0x80000209,
+                statusFlags: 0x80080609,
                 ioFlags: 0x80010182,
                 errorFlags: 0xDEADBEEF,
                 kvFeedback: 51.5f));
@@ -234,7 +234,7 @@ internal class SystemTelemetryProcessorTests
             Assert.That(hvps.CathodeOvercurrentFault, Is.False);
             Assert.That(hvps.Temperature3Fault, Is.False);
             Assert.That(hvps.UnknownStatusFlags, Is.EqualTo(0x80000000));
-            Assert.That(hvps.UnknownIoFlags, Is.EqualTo(0x80000000));
+            Assert.That(hvps.UnknownIoFlags, Is.EqualTo(0x80010000));
             Assert.That(hvps.HasActiveFaultInput, Is.True);
             Assert.That(hvps.RawErrorFlags, Is.EqualTo(mode == FirmwareMode.Normal ? null : 0xDEADBEEFu));
         });

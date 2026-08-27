@@ -6,6 +6,7 @@ using Xcc.Core.Logging;
 using Xcc.Infra.GryphonBoard;
 using Xcc.Infra.GryphonBoard.Comm;
 using Xcc.Infra.GryphonBoard.CommandAPI;
+using Xcc.Test.Xcc.Infra;
 
 namespace Xcc.Test.Xcc.Infra.Services.XRayServices
 {
@@ -58,6 +59,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void GetVersionInfoTest()
         {
             VersionInfo versionInfo = new()
@@ -86,6 +88,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void SendOperationalPoint_PositiveTest([Values] OperationalPointCmdType commandType)
         {
             var fieldStatuses = Enumerable.Repeat(0, 11).ToList();
@@ -106,6 +109,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void SendOperationalPoint_WrongPointStatusTest([Values] OperationalPointCmdType commandType)
         {
             var fieldStatuses = Enumerable.Repeat(0, 11).ToList();
@@ -125,6 +129,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void SendOperationalPoint_InvalidResponsePacketTest()
         {
             var invalidPointResponsePacket = UdpPacketBuilder.BuildPacket(
@@ -146,6 +151,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void SendOperationalPoint_NullResponsePacketTest()
         {
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>())).Returns(Task.FromResult((byte[])null!));
@@ -162,6 +168,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
 
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void SendDirectiveCommand_PositiveTest()
         {
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
@@ -182,6 +189,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         [TestCase(GcbProcessingStatus.OutOfBounds)]
         [TestCase(GcbProcessingStatus.AccessError)]
         [TestCase(GcbProcessingStatus.InvalidValue)]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void SendDirectiveCommand_NegativeProcessingStatusTest(GcbProcessingStatus processingStatus)
         {
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
@@ -203,6 +211,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         [TestCase(GcbProcessingStatus.InvalidValue, GcbProcessingStatus.OK, true)]
         [TestCase(GcbProcessingStatus.OK, GcbProcessingStatus.InvalidValue, true)]
         [TestCase(GcbProcessingStatus.InvalidValue, GcbProcessingStatus.InvalidValue, true)]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void ReleasePlanTest(GcbProcessingStatus scopeStatus, GcbProcessingStatus authStatus, bool throwsException)
         {
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
@@ -225,6 +234,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void NewSessionCommandTest([Values] GcbProcessingStatus responseStatus)
         {
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
@@ -243,6 +253,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void GetFaultsCommandTest()
         {
             FaultEntry entry = MakeFaultEntry(SystemFault.FilamentFault);
@@ -258,6 +269,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void GetFaultsCommand_NullResponseTest()
         {
             // Return null response
@@ -270,6 +282,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void GetFaultsCommand_EmptyResponseTest()
         {
             // Return null response
@@ -282,6 +295,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void ConditioningCommandTest([Values] GcbProcessingStatus responseStatus)
         {
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
@@ -300,6 +314,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void WarmupCommandTest([Values] GcbProcessingStatus responseStatus)
         {
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
@@ -321,6 +336,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         [TestCase(GcbProcessingStatus.OK)]
         [TestCase(GcbProcessingStatus.AccessError)]
         [TestCase(GcbProcessingStatus.OutOfBounds)]
+        [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void OperationalPointQueryCommandTest(GcbProcessingStatus responseStatus)
         {
             GcbOperationalPoint point = MakeOperationalPoint(1);

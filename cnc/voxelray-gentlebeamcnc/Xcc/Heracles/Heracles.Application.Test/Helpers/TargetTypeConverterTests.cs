@@ -8,9 +8,9 @@ namespace Heracles.Application.Test.Helpers
         [Test]
         public void GetIndexToTreatmentFieldNameMappingTest([Values]TargetType targetType)
         {
-            // We don't have any field mapping only for the QC type and for the technical 'None' type
+            // We don't have any field mapping only for the technical 'None' type and the 61_Fields type
+            // QC_Collimator does have mapping (returns TargetType_CircularCell)
             if (targetType == TargetType.TargetType_None ||
-                targetType == TargetType.TargetType_QC_Collimator ||
                 targetType == TargetType.TargetType_61_Fields)
             {
                 Assert.That(TargetTypeConverter.GetIndexToTreatmentFieldNameMapping(targetType), Is.Null);
