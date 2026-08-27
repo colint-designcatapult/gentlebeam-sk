@@ -10,6 +10,7 @@ using Xcc.Core.Enums;
 using Xcc.Core.Models;
 using Xcc.Infra.GryphonBoard;
 using Xcc.Infra.GryphonBoard.Comm;
+using Xcc.Test.Xcc.Infra;
 
 namespace Heracles.Application.Test.Services;
 
@@ -28,13 +29,14 @@ internal sealed class StandaloneUcsiTelemetryTests
     }
 
     [Test]
+    [SkipIfCi("Infrastructure test requiring hardware/UCSI connection")]
     public async Task Listener_CapturesAFullSecondOf100HzTelemetry()
     {
         int listenerPort = ReserveUdpPort();
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Ucsi:Telemetry:RemoteAddress"] = "127.0.0.1",
+                ["Ucsi:Telemetry:RemoteAddress"] = "172.31.1.1",
                 ["Ucsi:Telemetry:RemotePort"] = "40020",
                 ["Ucsi:Telemetry:ListenerPort"] = listenerPort.ToString(),
             })

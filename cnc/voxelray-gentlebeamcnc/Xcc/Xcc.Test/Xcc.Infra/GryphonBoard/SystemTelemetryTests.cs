@@ -152,7 +152,7 @@ internal class SystemTelemetryTests
         packet[13] = 0xA5A5A5A5u;
         packet[14] = 0xDFFFFu;
         packet[15] = 0x80010182u;
-        packet[16] = 0x80000209u;
+        packet[16] = 0x80080609u;
         packet[17] = 0xDEADBEEFu;
         packet[18] = 118.5f;
         packet[19] = 119.5f;
@@ -163,7 +163,7 @@ internal class SystemTelemetryTests
         packet[24] = 124.5f;
         packet[25] = 125.5f;
         packet[29] = 129.5f;
-        packet[30] = 130.5f;
+        packet[31] = 130.5f;
         packet[33] = 133.5f;
         packet[35] = 135.5f;
         packet[38] = 138.5f;
@@ -203,7 +203,7 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.Interlocks.IsRequired(SystemInterlock.SpareInterlock2), Is.True);
             Assert.That(telemetry.Interlocks.IsRequired(SystemInterlock.McuFaultClear), Is.False);
             Assert.That(telemetry.Hvps.RawIoFlags, Is.EqualTo(0x80010182u));
-            Assert.That(telemetry.Hvps.RawStatusFlags, Is.EqualTo(0x80000209u));
+            Assert.That(telemetry.Hvps.RawStatusFlags, Is.EqualTo(0x80080609u));
             Assert.That(telemetry.Hvps.RawErrorFlags, Is.EqualTo(0xDEADBEEFu));
             Assert.That(telemetry.PrimaryTimerValue, Is.EqualTo(118.5f));
             Assert.That(telemetry.SecondaryTimer1Value, Is.EqualTo(119.5f));

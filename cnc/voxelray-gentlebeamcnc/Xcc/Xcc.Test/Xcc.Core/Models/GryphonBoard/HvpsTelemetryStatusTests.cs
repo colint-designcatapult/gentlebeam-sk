@@ -7,7 +7,7 @@ internal class HvpsTelemetryStatusTests
     [Test]
     public void NamedProperties_DecodeEveryKnownBit()
     {
-        var status = new HvpsTelemetryStatus(0x000003FF, 0x0001FFFF, 0x12345678);
+        var status = new HvpsTelemetryStatus(0x000FFFFF, 0x000003FF, 0x12345678);
 
         Assert.Multiple(() =>
         {
@@ -48,12 +48,12 @@ internal class HvpsTelemetryStatusTests
     [Test]
     public void UnknownMasks_PreserveBitsOutsideKnownRanges()
     {
-        var status = new HvpsTelemetryStatus(0xFFFFFC00, 0xFFFE0000, null);
+        var status = new HvpsTelemetryStatus(0xFFF00000, 0xFFF00000, null);
 
         Assert.Multiple(() =>
         {
-            Assert.That(status.UnknownStatusFlags, Is.EqualTo(0xFFFFFC00u));
-            Assert.That(status.UnknownIoFlags, Is.EqualTo(0xFFFE0000u));
+            Assert.That(status.UnknownStatusFlags, Is.EqualTo(0xFFF00000u));
+            Assert.That(status.UnknownIoFlags, Is.EqualTo(0xFFF00000u));
             Assert.That(status.HasActiveFaultInput, Is.False);
             Assert.That(status.RawErrorFlags, Is.Null);
         });

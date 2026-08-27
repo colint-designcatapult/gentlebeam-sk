@@ -108,18 +108,14 @@ namespace Xcc.Test.Xcc.Core.Constants
         public void StringConstants_TreatmentConsole_SingleLine()
         {
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.ClearErrorsTitle), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.ClearErrorsErrorMessage), Is.False);
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.ConditioningConfirmationTitle), Is.False);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.ConditioningConfirmationMessage), Is.False);
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.FullWarmupEventDialogTitle), Is.False);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.FullWarmupSaveToDbFailedError), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.FullWarmupFailedError), Is.False);
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.EmissionErrorTitle), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.TelemetryLostErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.EmissionFaultErrorMessage), Is.False);
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.EmissionInterruptNotificationTitle), Is.False);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.EmissionStoppedNotificationMessage), Is.False);
@@ -144,8 +140,7 @@ namespace Xcc.Test.Xcc.Core.Constants
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.PlanPreparationErrorTitle), Is.False);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.PlanPreparationErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.PlanPreparationForQcErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.PlanPreparationAfterFaultErrorMessage), Is.False);
+
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.FailedToClearPlan), Is.False);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.FailedToCreateEmissionPlan), Is.False);
@@ -156,6 +151,11 @@ namespace Xcc.Test.Xcc.Core.Constants
         [Test]
         public void StringConstants_TreatmentConsole_MultiLine()
         {
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.ClearErrorsErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.FullWarmupFailedError), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.TelemetryLostErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.EmissionFaultErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.PlanPreparationAfterFaultErrorMessage), Is.True);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.TreatmentPlanCompletionConfirmationMessage), Is.True);
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.PlanRecoveryUpdateFromBoardConfirmation), Is.True);
@@ -166,8 +166,6 @@ namespace Xcc.Test.Xcc.Core.Constants
         {
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.TreatmentPlanNotDefined), Is.False);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.ApplicatorErrorDialogTitle), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.ApplicatorInterlockError), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.LowConsoleBatteryError), Is.False);
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.EmissionRecordingDbErrorUiMessage), Is.False);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.LookForIncomingPlanErrorMessage), Is.False);
@@ -180,28 +178,34 @@ namespace Xcc.Test.Xcc.Core.Constants
         [Test]
         public void StringConstants_TreatmentConsole_Treatment_MultiLine()
         {
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.ApplicatorInterlockError), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.LowConsoleBatteryError), Is.True);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.IgnoreMissingQcConfirmation), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.QcTestFailedErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.FailedQcErrorMessage), Is.True);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.MissingQcErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.MissingQcReferenceErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.Treatment.TreatmentRetryUiMessage), Is.True);
         }
         
         [Test]
         public void StringConstants_TreatmentConsole_SafetyCheck_SingleLine()
         {
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.SafetyCheck.ErrorTitle), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.SafetyCheck.StartErrorMessage), Is.False);
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.SafetyCheck.CompletionConfirmationTitle), Is.False);
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.SafetyCheck.HistoryListLoadError), Is.False);
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.SafetyCheck.CreatePlanErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.SafetyCheck.SaveDataErrorMessage), Is.False);
         }
         
         [Test]
         public void StringConstants_TreatmentConsole_SafetyCheck_MultiLine()
         {
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.SafetyCheck.StartErrorMessage), Is.True);
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.SafetyCheck.CompletionConfirmationMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.SafetyCheck.SaveDataErrorMessage), Is.True);
         }
         
         [Test]
@@ -221,10 +225,14 @@ namespace Xcc.Test.Xcc.Core.Constants
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.QualityCheck.CreateCollectionError), Is.False);
             
             Assert.That(IsMultiline(StringConstants.TreatmentConsole.QualityCheck.FieldOperationErrorTitle), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.QualityCheck.AddFieldErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.QualityCheck.RemoveFieldErrorMessage), Is.False);
-            
-            Assert.That(IsMultiline(StringConstants.TreatmentConsole.QualityCheck.BoardConnectionCheckFailed), Is.False);
+        }
+        
+        [Test]
+        public void StringConstants_TreatmentConsole_QualityCheck_MultiLine()
+        {
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.QualityCheck.AddFieldErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.QualityCheck.RemoveFieldErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.TreatmentConsole.QualityCheck.BoardConnectionCheckFailed), Is.True);
         }
         
         [Test]
@@ -280,7 +288,12 @@ namespace Xcc.Test.Xcc.Core.Constants
         {
             Assert.That(IsMultiline(StringConstants.EMR.PlanUnloadFromConsoleError), Is.False);
             Assert.That(IsMultiline(StringConstants.EMR.PlanUnloadFromConsoleErrorLogMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.EMR.PatientIsNotSelectedErrorMessage), Is.False);
+        }
+        
+        [Test]
+        public void StringConstants_EMR_MultiLine()
+        {
+            Assert.That(IsMultiline(StringConstants.EMR.PatientIsNotSelectedErrorMessage), Is.True);
         }
         
         [Test]
@@ -295,11 +308,9 @@ namespace Xcc.Test.Xcc.Core.Constants
             Assert.That(IsMultiline(StringConstants.EMR.Plan.LoadForTreatmentErrorMessage), Is.False);
             Assert.That(IsMultiline(StringConstants.EMR.Plan.LoadForTreatmentUiErrorMessage), Is.False);
             
-            Assert.That(IsMultiline(StringConstants.EMR.Plan.UpdateTreatmentFieldErrorMessage), Is.False);
             Assert.That(IsMultiline(StringConstants.EMR.Plan.PlanIsNotSetErrorMessage), Is.False);
             Assert.That(IsMultiline(StringConstants.EMR.Plan.HandleSelectionEventErrorMessage), Is.False);
             Assert.That(IsMultiline(StringConstants.EMR.Plan.PlanStreamErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.EMR.Plan.HandlePlanEventErrorMessage), Is.False);
             
             Assert.That(IsMultiline(StringConstants.EMR.Plan.PlanEventReceivedMessage), Is.False);
             
@@ -325,7 +336,8 @@ namespace Xcc.Test.Xcc.Core.Constants
         [Test]
         public void StringConstants_EMR_Plan_MultiLine()
         {
-            Assert.Pass();
+            Assert.That(IsMultiline(StringConstants.EMR.Plan.UpdateTreatmentFieldErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.EMR.Plan.HandlePlanEventErrorMessage), Is.True);
         }
 
         [Test]
@@ -356,8 +368,13 @@ namespace Xcc.Test.Xcc.Core.Constants
         [Test]
         public void StringConstants_EMR_PatientProfile_SingleLine()
         {
-            Assert.That(IsMultiline(StringConstants.EMR.PatientProfile.SaveErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.EMR.PatientProfile.SaveUiErrorMessage), Is.False);
+        }
+
+        [Test]
+        public void StringConstants_EMR_PatientProfile_MultiLine()
+        {
+            Assert.That(IsMultiline(StringConstants.EMR.PatientProfile.SaveErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.EMR.PatientProfile.SaveUiErrorMessage), Is.True);
         }
 
         [Test]
@@ -505,8 +522,6 @@ namespace Xcc.Test.Xcc.Core.Constants
                 Assert.That(IsMultiline(StringConstants.Physics.OutputFactorResetWarning), Is.False);
                 Assert.That(IsMultiline(StringConstants.Physics.OutputFactorSubmitError), Is.False);
 
-                Assert.That(IsMultiline(StringConstants.Physics.LeaveConfigurationTabConfirmationMessage), Is.False);
-
                 Assert.That(IsMultiline(StringConstants.Physics.StoreCsvDialogTitle), Is.False);
 
                 Assert.That(IsMultiline(StringConstants.Physics.PhysicsDataIsModified), Is.False);
@@ -516,6 +531,7 @@ namespace Xcc.Test.Xcc.Core.Constants
         [Test]
         public void StringConstants_Calibration_MultiLine()
         {
+            Assert.That(IsMultiline(StringConstants.Physics.LeaveConfigurationTabConfirmationMessage), Is.True);
             Assert.That(IsMultiline(StringConstants.Physics.CoilConfigurationSaveErrorMessage), Is.True);
             Assert.That(IsMultiline(StringConstants.Physics.TargetPointsSaveErrorMessage), Is.True);
             Assert.That(IsMultiline(StringConstants.Physics.OutputFactorsSaveErrorMessage), Is.True);
@@ -631,21 +647,26 @@ namespace Xcc.Test.Xcc.Core.Constants
         [Test]
         public void StringConstants_SystemSettings_UserManagement_SingleLine()
         {
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.FetchUsersErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.FetchUsersUiErrorMessage), Is.False);
-            
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.SaveUserErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.SaveUserUiErrorMessage), Is.False);
-            
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.CreateUserErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.CreateUserUiErrorMessage), Is.False);
-            
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.DeleteUserErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.DeleteUserUiErrorMessage), Is.False);
             Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.DeleteUserConfirmationUiMessage), Is.False);
             Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.DeleteAuthorizedUserUiMessage), Is.False);
             
             Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.UserIsNotSelectedErrorMessage), Is.False);
+        }
+        
+        [Test]
+        public void StringConstants_SystemSettings_UserManagement_MultiLine()
+        {
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.FetchUsersErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.FetchUsersUiErrorMessage), Is.True);
+            
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.SaveUserErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.SaveUserUiErrorMessage), Is.True);
+            
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.CreateUserErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.CreateUserUiErrorMessage), Is.True);
+            
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.DeleteUserErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserManagement.DeleteUserUiErrorMessage), Is.True);
         }
 
         [Test]
@@ -672,21 +693,26 @@ namespace Xcc.Test.Xcc.Core.Constants
         [Test]
         public void StringConstants_SystemSettings_UserRoles_SingleLine()
         {
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.FetchUserRolesErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.FetchUserRolesUiErrorMessage), Is.False);
-            
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.SaveUserRoleErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.SaveUserRoleUiErrorMessage), Is.False);
-            
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.CreateUserRoleErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.CreateUserRoleUiErrorMessage), Is.False);
-            
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.DeleteUserRoleErrorMessage), Is.False);
-            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.DeleteUserRoleUiErrorMessage), Is.False);
             Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.DeleteRoleConfirmationUiMessage), Is.False);
             Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.DeleteAuthorizedUserRoleUiMessage), Is.False);
             
             Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.UserRoleIsNotSelectedErrorMessage), Is.False);
+        }
+        
+        [Test]
+        public void StringConstants_SystemSettings_UserRoles_MultiLine()
+        {
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.FetchUserRolesErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.FetchUserRolesUiErrorMessage), Is.True);
+            
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.SaveUserRoleErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.SaveUserRoleUiErrorMessage), Is.True);
+            
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.CreateUserRoleErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.CreateUserRoleUiErrorMessage), Is.True);
+            
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.DeleteUserRoleErrorMessage), Is.True);
+            Assert.That(IsMultiline(StringConstants.SystemSettings.UserRoles.DeleteUserRoleUiErrorMessage), Is.True);
         }
 
         [Test]

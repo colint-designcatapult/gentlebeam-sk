@@ -1,9 +1,40 @@
-﻿using Xcc.Shared.Views;
+﻿using System.Windows;
+using Xcc.Shared.Views;
 
 namespace Xcc.Test.Xcc.Shared.Views
 {
     public class ViewsTests
     {
+        [OneTimeSetUp]
+        public void SetUpResourceDictionaries()
+        {
+            // Ensure an Application instance exists for WPF resource resolution
+            if (System.Windows.Application.Current == null)
+            {
+                new System.Windows.Application();
+            }
+
+            // Load the required resource dictionaries
+            var colorResourcesUri = new Uri("pack://application:,,,/Xcc.Application;component/UI/Resources/ColorResources.xaml");
+            var defaultStylesUri = new Uri("pack://application:,,,/Xcc.Styles;component/Styles/DefaultStylesDictionary.xaml");
+            var fontSizeUri = new Uri("pack://application:,,,/Xcc.Styles;component/Styles/FontSizeDefault.xaml");
+
+            try
+            {
+                var colorResources = new ResourceDictionary { Source = colorResourcesUri };
+                var defaultStyles = new ResourceDictionary { Source = defaultStylesUri };
+                var fontResources = new ResourceDictionary { Source = fontSizeUri };
+
+                System.Windows.Application.Current.Resources.MergedDictionaries.Add(colorResources);
+                System.Windows.Application.Current.Resources.MergedDictionaries.Add(defaultStyles);
+                System.Windows.Application.Current.Resources.MergedDictionaries.Add(fontResources);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to load resource dictionaries for View tests.", ex);
+            }
+        }
+
         [Apartment(ApartmentState.STA)]
         [TestCase(typeof(CreateFilterDialogView))]
         [TestCase(typeof(DatePickerDialogView))]

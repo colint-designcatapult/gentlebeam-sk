@@ -18,7 +18,6 @@ namespace Xcc.Test.Xcc.Core.Exceptions
         }
 
         [TestCase(typeof(GcbNoConnectionException))]
-        [TestCase(typeof(DataServiceException))]
         [TestCase(typeof(DetectorExecption))]
         [TestCase(typeof(PatientExistsException))]
         [TestCase(typeof(PlanForTreatmentException))]
@@ -41,6 +40,34 @@ namespace Xcc.Test.Xcc.Core.Exceptions
             var message = "My message";
             var inner = new InvalidOperationException("My inner exception");
             var sut = (Exception)Activator.CreateInstance(exceptionType, message, inner);
+
+            Assert.That(sut.Message, Is.EqualTo(message));
+            Assert.That(sut.InnerException, Is.SameAs(inner));
+        }
+
+        [Test]
+        public void DataServiceException_Ctor_Defaults()
+        {
+            var sut = new DataServiceException();
+            Assert.That(sut, Is.Not.Null);
+            Assert.That(sut.Message, Is.Not.Null);
+        }
+
+        [Test]
+        public void DataServiceException_Ctor_WithMessage()
+        {
+            var message = "My message";
+            var sut = new DataServiceException(message);
+
+            Assert.That(sut.Message, Is.EqualTo(message));
+        }
+
+        [Test]
+        public void DataServiceException_Ctor_WithMessageAndInnerException()
+        {
+            var message = "My message";
+            var inner = new InvalidOperationException("My inner exception");
+            var sut = new DataServiceException(message, inner);
 
             Assert.That(sut.Message, Is.EqualTo(message));
             Assert.That(sut.InnerException, Is.SameAs(inner));

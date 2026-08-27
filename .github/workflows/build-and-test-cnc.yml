@@ -26,6 +26,8 @@ jobs:
       - name: Run CNC tests
         run: dotnet test Xcc.sln --configuration Release --no-restore --logger "console;verbosity=normal"
         working-directory: cnc/voxelray-gentlebeamcnc
+        env:
+          CI_ENVIRONMENT: "true"
 
   prepare-publish:
     name: Select CNC products
