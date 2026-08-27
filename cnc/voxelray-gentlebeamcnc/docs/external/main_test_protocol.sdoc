@@ -130,6 +130,10 @@ Upon completion of the preparation process:
 
 System status: READY
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-43
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-121
@@ -147,6 +151,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3 - The warmup process is performed, and a new record is added to the warmup report.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-1
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-62
@@ -173,6 +181,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 A visible indicator is displayed to indicate a system error.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-5
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-98
@@ -193,6 +205,10 @@ The treatment console shall display details about the treated patient and its tr
 
 The patient details shall includes all required data
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-85
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-101
@@ -219,6 +235,10 @@ The System Status shall show - NO-COMM
 
 Timers, Energy, and Current shall show - ~0 ( around 0)
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-82
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-114
@@ -240,6 +260,13 @@ Simulate error ( i.e. activate interlock)
 EXPECTED_BEHAVIOR: >>>
 4 - Error indicator should be displayed on the view, and the user can click on it and see the error.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-1
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-53
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-295
@@ -281,6 +308,13 @@ EXPECTED_BEHAVIOR: >>>
 11 - An alert message should be displayed informing the user that the treatment was not delivered completely and it will resume the 
 emission for the remaining time.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-161
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-160
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-131
@@ -302,6 +336,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 5 - An alert message pops up, advising the user that the treatment is not enabled if the daily safety checks are not completed.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-97
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-152
@@ -325,6 +363,10 @@ EXPECTED_BEHAVIOR: >>>
 
 5 - Verify that when emission is completed, the timer has reached the plan’s duration
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-35
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-285
@@ -346,6 +388,22 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3 - The action of QualityCheck triggered by the user is logged.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-1
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-89
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-280
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-66
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-53
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-116
@@ -369,6 +427,13 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 6 - An error about the DB communication lost during emission should be displayed in the log list.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-283
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-285
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-80
@@ -401,6 +466,10 @@ Warm Up - Test Case
 
 13.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-57
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-65
@@ -440,6 +509,13 @@ Upon completion of the process:
 
 System status: Primed
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-2
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-13
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-104
@@ -462,6 +538,16 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 1. The button label should transition to "Launching", and subsequently to "Beaming on" with a progress bar.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-95
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-10
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-4
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-294
@@ -479,6 +565,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 2 - The Physics tab should not be available.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-279
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-293
@@ -520,6 +610,19 @@ System status at the top of the screen should be "Emission".
 
 Upon completion, a pop-up message should be displayed to confirm successful emission.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-9
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-13
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-280
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-43
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-292
@@ -535,6 +638,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 2 - The Treatment menu item should not be available.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-279
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-124
@@ -552,6 +659,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3 - Verify that the button shows the progress of the warmup process.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-12
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-46
@@ -582,6 +693,10 @@ Upon approving the pop-up, the system status should change to "Termination" and 
 
 6 - The button label should revert to "Beam On", and the system status should update to "Primed".
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-9
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-136
@@ -605,6 +720,19 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 6 - The table shows the intensities measured for the selected Applicator, Energy level performed on a specific date.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-93
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-66
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-91
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-280
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-142
@@ -622,6 +750,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3 - The Prepare and Beam-On button should be disabled, and the operator can not activate emission
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-36
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-149
@@ -639,6 +771,13 @@ White box testing:
 EXPECTED_BEHAVIOR: >>>
 2 - verify that this function is being called with operation = confirmation for each operational point before starting a plan.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-34
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-35
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-78
@@ -669,6 +808,10 @@ EXPECTED_BEHAVIOR: >>>
 
 2. The layout should be unlocked so the user can navigate to all views.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-52
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-112
@@ -695,6 +838,10 @@ reset and the plan will unload.
 
 6. The timers in the telemetry block will show 0, and the plan will disappear from the view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-105
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-118
@@ -714,6 +861,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 4 - There should be a plus of half a second on/off audible sound.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-87
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-100
@@ -740,6 +891,10 @@ The results will include the current and the intensity for each operational poin
 
 The operator will be able to filter the results by the collimator type, energy level, and the date the test was performed.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-93
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-102
@@ -763,6 +918,13 @@ EXPECTED_BEHAVIOR: >>>
 
 4.The user shall be able to view the errors that occurred .
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-1
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-53
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-144
@@ -780,6 +942,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3- The Prepare and Beam-On button should be disabled, and the operator can not activate emission
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-36
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-70
@@ -802,6 +968,13 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 1. The user should be able to navigate to the Log view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-49
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-52
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-148
@@ -819,6 +992,13 @@ White box testing:
 EXPECTED_BEHAVIOR: >>>
 2 - Verify that the command is sent after the plan is staged and the state is GcbStateNew.Staged
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-35
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-34
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-81
@@ -851,6 +1031,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 When the resume process is triggered, the emission should resume for the remaining duration (4 Seconds).
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-73
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-132
@@ -872,6 +1056,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 5 - An alert message pops up, advising the user that the treatment is not enabled if the daily safety checks are not completed.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-97
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-60
@@ -901,6 +1089,10 @@ Click the Stop button (during the beaming process)
 EXPECTED_BEHAVIOR: >>>
 A partial treatment record should appear in the treatment table.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-22
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-130
@@ -922,6 +1114,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 6 - An alert message pops up, advising the user that the treatment is not enabled if the daily safety checks are not completed.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-97
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-141
@@ -939,6 +1135,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3 - The Prepare and Beam-On button should be disabled, and the operator can not activate emission
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-36
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-145
@@ -956,6 +1156,10 @@ White box testing:
 EXPECTED_BEHAVIOR: >>>
 2 - Verify that it is used as a condition for staging the treatment
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-31
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-151
@@ -971,6 +1175,13 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 2 - Verify that the status changed from Startup to Cold.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-26
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-32
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-44
@@ -1010,6 +1221,10 @@ System Signal icon
 
 Live Camera view to monitor the patient.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-13
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-289
@@ -1027,6 +1242,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The keyboard position should be changed according to the selected arrow.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-281
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-126
@@ -1048,6 +1267,13 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 5 - Verify that the error from FW is logged in the system log.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-283
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-285
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-69
@@ -1074,6 +1300,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 1. After the user presses the stop button, an information pop-up message shall indicate that the emission has been halted.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-97
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-133
@@ -1095,6 +1325,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 5 - The Prepare process starts.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-97
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-143
@@ -1112,6 +1346,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3 - The Prepare and Beam-On button should be disabled, and the operator can not activate emission
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-36
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-79
@@ -1134,6 +1372,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The plan should be unloaded and view should be cleared
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-52
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-150
@@ -1151,6 +1393,10 @@ White box testing:
 EXPECTED_BEHAVIOR: >>>
 2 - verify that the application checks that the input Conditioning function is within the valid operational limits.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-29
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-59
@@ -1172,6 +1418,16 @@ EXPECTED_BEHAVIOR: >>>
 
 \*There shall be a visual indicator, a progress bar, representing the progress of radiation.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-95
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-10
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-4
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-111
@@ -1201,6 +1457,22 @@ EXPECTED_BEHAVIOR: >>>
 
 7 - Make sure the result is saved and displayed in the report.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-91
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-92
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-106
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-93
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-66
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-153
@@ -1226,6 +1498,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • Remaining equal to duration
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-8
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-64
@@ -1255,6 +1531,10 @@ EXPECTED_BEHAVIOR: >>>
 
 7 - After clearing the error and pressing the button, the fault condition is reset, and the error disappears.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-284
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-135
@@ -1295,6 +1575,22 @@ EXPECTED_BEHAVIOR: >>>
 
 14 - The table shows the deviation from the intensities of the reference QC for the selected Applicator, Energy level.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-93
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-66
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-94
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-91
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-280
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-113
@@ -1314,6 +1610,10 @@ The Treatment Plan parameters: Energy level [kVp], Duration [sec], Current [mA],
 
 Remaining duration [sec].
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-8
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-77
@@ -1338,6 +1638,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 1. The user should be able to navigate to Log view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-49
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-288
@@ -1369,6 +1673,13 @@ EXPECTED_BEHAVIOR: >>>
 
 9 - After approving the QC test, the prepare button is successfully triggered and the treatment can be delivered.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-282
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-247
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-103
@@ -1393,6 +1704,13 @@ It should Clear latched fault flags that occurred during the daily (Full) Warmup
 
 This capability will allow the application to reset fault conditions after the fault is addressed or reviewed.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-1
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-53
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-296
@@ -1438,6 +1756,13 @@ emission for the remaining time.
 
 12 - The emission should run for the remining time.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-161
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-160
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-120
@@ -1455,6 +1780,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3 - Verify that the warmup button shows the progress of the warmup process.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-53
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-63
@@ -1491,6 +1820,10 @@ This information shall include:
 
 • A comparison of the expected versus the actual conditions that triggered the fault.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-284
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-115
@@ -1512,6 +1845,13 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 5 - An error message should be displayed about the DB communication error during emission.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-283
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-22
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-108
@@ -1535,6 +1875,13 @@ EXPECTED_BEHAVIOR: >>>
 
 4 - The date is the current date, and the performed-by shows the logged-in user.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-106
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-91
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-99
@@ -1558,6 +1905,10 @@ EXPECTED_BEHAVIOR: >>>
 The interface should display the history of test results which includes the following system safety features: X-Ray light, X-Ray sound, door 
 interlock, e-stop, normal stop, live video stream, and live audio stream between the patient and operator.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-92
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-287
@@ -1575,6 +1926,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 An error message appears, alerting the user that the treatment cannot be delivered without approved physics data.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-283
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-117
@@ -1592,6 +1947,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3 - An error message should be displayed about the DB communication error.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-8
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-140
@@ -1637,6 +1996,10 @@ EXPECTED_BEHAVIOR: >>>
 
 Ion pump
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-139
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-129
@@ -1664,6 +2027,10 @@ EXPECTED_BEHAVIOR: >>>
 
 7 - The Prepare process starts.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-96
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-109
@@ -1689,6 +2056,10 @@ EXPECTED_BEHAVIOR: >>>
 
 5 - The stop action is shown in the log view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-89
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-290
@@ -1712,6 +2083,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 6 - Validate that the values loaded are the ones configured in the physics configuration ( in the internal application)
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-280
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-147
@@ -1741,6 +2116,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 System status becomes HVSetup, without going through Warmup and Energy is ramped up.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-30
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-127
@@ -1766,6 +2145,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The delivered dose is recorded and displayed in the table.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-21
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-291
@@ -1781,6 +2164,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 A message should be displayed alerting the user that QC cannot be performed without a QC collimator.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-279
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-128
@@ -1800,6 +2187,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 4 - Verify that the camera shows the camera view located on the base of the device.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-86
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-50
@@ -1837,6 +2228,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • System status shall change to: Staged
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-3
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-125
@@ -1858,6 +2253,13 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 5 - After the error is cleared, the Prepare button can be re-triggered and complete the process.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-75
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-73
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-51
@@ -1877,6 +2279,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 There shall be a visible visual indicator in the interface for the entire duration of emission, appearing as an amber-colored radiation icon.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-5
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-123
@@ -1896,6 +2302,16 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 4 - A visual indicator is displayed in the table to reflect the emission progress.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-95
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-10
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-4
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-61
@@ -1928,6 +2344,13 @@ EXPECTED_BEHAVIOR: >>>
 
 5 - After stopping the emission at 5 seconds, restarting it, and then stopping it again after 2 seconds (out of total of 12 seconds), the stopped treatment field should appear in the treatment field view with Duration: 12, Remaining[sec]: 5. The remaining time should be specified with a resolution of 0.01 minutes (600msec) and marked as partial in the database.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-22
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-13
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-110
@@ -1949,6 +2372,10 @@ White box testing:
 EXPECTED_BEHAVIOR: >>>
 4 - The command should be sent only after the state is GcbStateNew.Staging.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-90
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-119
@@ -1981,6 +2408,13 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 8 - The calculated deviations should be identical to the one presented in the report.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-94
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-93
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-134
@@ -2001,6 +2435,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3 - An alert message pops up alerting the user that the connected collimator mismatches the plan's collimator.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-279
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-146
@@ -2018,5 +2456,9 @@ White box testing:
 EXPECTED_BEHAVIOR: >>>
 2 - Verify that the session id is created and that the request includes the total of operational points.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-31
+  ROLE: Verifies
 
 [[/SECTION]]

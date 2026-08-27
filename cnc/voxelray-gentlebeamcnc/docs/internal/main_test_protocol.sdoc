@@ -127,6 +127,10 @@ The application shall not enable treatment delivery if the plan’s Applicator s
 
 The application shall present an error message when the user attempts to load the plan into the external application.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-14
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-325
@@ -155,6 +159,19 @@ EXPECTED_BEHAVIOR: >>>
 The application should validate the treatment field parameters fetched from the DB, including duration and dose, and alert the user that the 
 values in the prescription are inconsistent with the calculated parameters.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-15
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-24
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-23
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-80
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-181
@@ -189,6 +206,16 @@ the form should include the following fields:
 
 • Patient’s Demographic Notes
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-86
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-48
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-17
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-163
@@ -210,6 +237,13 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 5.The "Save Patient" button should be disabled and grayed out, preventing the addition of a new patient.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-51
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-48
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-133
@@ -243,6 +277,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The patients with DOB: 01/01/1980 should appear in the box and be highlighted.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-82
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-323
@@ -268,6 +306,16 @@ EXPECTED_BEHAVIOR: >>>
 The application shall present the user with a warning message when the retrieval of Quality assurance history fails due to a communication 
 error with the database. The message should ask the user to retry after a few seconds.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-190
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-344
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-741
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-409
@@ -289,6 +337,10 @@ EXPECTED_BEHAVIOR: >>>
 
 Query for Series table and verify the created series references to this visit.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-377
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-158
@@ -320,6 +372,13 @@ Create a new patient by pressing "New patient" and filing the following details 
 EXPECTED_BEHAVIOR: >>>
 3.The new patient registration form should close. The new patient with the filled-in data should appear in the patients list view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-51
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-48
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-299
@@ -365,6 +424,13 @@ The newly created user should appear in the user management list view.
 EXPECTED_BEHAVIOR: >>>
 The newly created user should appear in the user management list view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-125
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-126
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-750
@@ -412,6 +478,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • The list view refreshes correctly after each search operation
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-67
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-303
@@ -445,6 +515,10 @@ Active: mark as active
 EXPECTED_BEHAVIOR: >>>
 The updated target should appear with Type 30MM_SSD_7_FIELDS cells in the Targets Management list view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-383
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-401
@@ -464,6 +538,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 4. The depth should be shown on the view. (It should be compared to other DICOM viewer)
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-383
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-263
@@ -551,6 +629,22 @@ EXPECTED_BEHAVIOR: >>>
 16.The application shall present the user with a warning message when saving a patient’s prescription fails due to a communication error 
 with the database. The message should ask the user to retry after a few seconds.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-24
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-23
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-80
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-37
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-16
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-395
@@ -584,6 +678,13 @@ Observed behavior
 
 As expected.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-383
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-127
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-778
@@ -661,6 +762,10 @@ EXPECTED_BEHAVIOR: >>>
 
 13. Clicking Close/Cancel dismisses the alert without loading the plan
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-422
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-327
@@ -685,6 +790,10 @@ EXPECTED_BEHAVIOR: >>>
 The user interface should enable the user to view the images captured by the device camara, filtered by the visit during which they were 
 captured.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-23
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-202
@@ -708,6 +817,13 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The prescription edit box should be disabled, preventing the user from editing the values of a prescription in an approved plan.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-191
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-192
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-390
@@ -745,6 +861,10 @@ Rapid growth
 
 Extension into hair follicle
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-389
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-257
@@ -761,6 +881,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 1.The application shall have an interface (pop-up) allowing the user to enter the device serial ID.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-249
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-135
@@ -803,6 +927,10 @@ The updated patient’s First name should appear as "UpdatedFirstName" in the pa
 EXPECTED_BEHAVIOR: >>>
 The updated patient’s First name should appear as "UpdatedFirstName" in the patient’s list.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-83
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-749
@@ -940,6 +1068,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • Signal values update in real-time, reflecting the current board telemetry
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-65
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-758
@@ -1001,6 +1133,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • The list should load without errors or missing information.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-40
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-312
@@ -1042,6 +1178,10 @@ The user interface shall allow users to configure the magnetometer parameters be
 
 The parameters include the Correction Matrix and the Reference Fields for the back and front magnetometer.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-111
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-762
@@ -1161,6 +1301,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • The prescription persists after navigating away and returning
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-80
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-765
@@ -1266,6 +1410,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • Clicking different simulations in the master list updates the detail view correctly
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-81
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-251
@@ -1367,6 +1515,13 @@ EXPECTED_BEHAVIOR: >>>
 When the user triggers the Load for Treatment action, a modal pop-up will be displayed, disabling the user from editing the plan. The Plan 
 status will be changed to Pending.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-185
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-184
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-142
@@ -1407,6 +1562,10 @@ details:
 EXPECTED_BEHAVIOR: >>>
 The updated patient's Email address should be and appear as "patient@test.com" in the Patients list.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-83
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-767
@@ -1500,6 +1659,13 @@ EXPECTED_BEHAVIOR: >>>
 
 • The layout is clear and readable
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-89
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-88
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-783
@@ -1589,6 +1755,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • Saved Field Size values persist after navigation
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-740
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-262
@@ -1689,6 +1859,10 @@ EXPECTED_BEHAVIOR: >>>
 18.The application shall present the user with a warning message when retrieving a patient’s plan fails due to a communication error with 
 the database. The message should ask the user to retry after a few seconds.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-49
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-781
@@ -1758,6 +1932,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • Users with modified roles experience appropriate access control (enabled/disabled features match permissions)
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-618
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-309
@@ -1804,6 +1982,10 @@ EXPECTED_BEHAVIOR: >>>
 The application shall present the user with a warning message that retrieving calibration data has failed due to a communication error with 
 the database. The pop-up message should enable the user to retry or ignore.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-49
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-785
@@ -1875,6 +2057,13 @@ EXPECTED_BEHAVIOR: >>>
 
 • Multiple test sessions can be selected and viewed via the Performed date filter
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-190
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-344
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-751
@@ -1928,6 +2117,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • Single-day selection displays only entries from that day
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-67
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-311
@@ -1956,6 +2149,10 @@ EXPECTED_BEHAVIOR: >>>
 The application shall present the user with a warning message that it has failed to save any settings data due to a communication error with 
 the database. The pop-up message should enable the user to retry or ignore.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-249
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-166
@@ -1993,6 +2190,10 @@ EXPECTED_BEHAVIOR: >>>
 
 " MRN/ID \* "
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-51
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-306
@@ -2028,6 +2229,13 @@ Active : mark as active
 EXPECTED_BEHAVIOR: >>>
 The target should appear with an empty checkbox under the Active column in the Targets list view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-128
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-383
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-770
@@ -2079,6 +2287,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • Clicking Details for different treatments updates the panel with the correct corresponding data
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-95
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-250
@@ -2167,6 +2379,10 @@ EXPECTED_BEHAVIOR: >>>
 
 21.The plan should be sent to the Heracles External unit. Additionally, the plan should be visible in the external application.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-185
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-763
@@ -2248,6 +2464,10 @@ As expected.
 
 Need a better message when entering a non-numeric number. (instead of e could not converted)
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-80
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-137
@@ -2286,6 +2506,10 @@ details:
 EXPECTED_BEHAVIOR: >>>
 The updated patient's MRN should be 654321 in the patients list.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-83
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-308
@@ -2312,6 +2536,10 @@ EXPECTED_BEHAVIOR: >>>
 The application shall present the user with a warning message that saving calibration data has failed due to a communication error with the 
 database. The pop-up message should enable the user to retry or ignore.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-49
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-768
@@ -2413,6 +2641,13 @@ EXPECTED_BEHAVIOR: >>>
 
 • All entered data displays correctly when viewing the simulation
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-89
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-88
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-416
@@ -2438,6 +2673,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The table should include a record of the acquired image, including the date it was created.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-344
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-748
@@ -2471,6 +2710,16 @@ EXPECTED_BEHAVIOR: >>>
 
 • The updated status appears in the plan view (e.g., displayed in the top-right corner or designated status field).
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-88
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-89
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-24
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-252
@@ -2490,6 +2739,10 @@ Click the Load For Treatment button.
 EXPECTED_BEHAVIOR: >>>
 The application UI should be blocked, and the only thing the user can press is a Cancel button.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-186
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-131
@@ -2523,6 +2776,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The searched patient should appear in the box and be highlighted.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-187
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-307
@@ -2566,6 +2823,13 @@ EXPECTED_BEHAVIOR: >>>
 The application shall present the user with a warning message that loading the patient demographic data fails due to a communication error 
 with the database
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-83
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-55
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-411
@@ -2597,6 +2861,10 @@ EXPECTED_BEHAVIOR: >>>
 
 6 - The alert message should disappear.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-332
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-391
@@ -2622,6 +2890,10 @@ EXPECTED_BEHAVIOR: >>>
 
 6. Verify the presence of an edit box labeled "Referring Provider”.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-388
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-754
@@ -2665,6 +2937,10 @@ EXPECTED_BEHAVIOR: >>>
 
 locked).
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-23
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-134
@@ -2698,6 +2974,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The patients with full name: "FirstNameTest MiddleNameTest LastNameTest" should appear in the box and be highlighted.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-82
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-304
@@ -2728,6 +3008,13 @@ EXPECTED_BEHAVIOR: >>>
 The target should have a checkmark in the "Active" checkbox within the Targets Management list view, and it should not be displayed in the 
 collimator list in the Calibration tab
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-128
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-383
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-396
@@ -2747,6 +3034,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 4—An alert message should be displayed informing the user that unsaved data will be lost if he opens a view without saving data first.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-382
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-227
@@ -2771,6 +3062,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 3.The sign in shall succeed, the login menu shall close, and the application's main window shall open.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-648
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-130
@@ -2804,6 +3099,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The searched patient should appear in the box and be highlighted.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-187
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-322
@@ -2917,6 +3216,10 @@ i.e. 1.05 * 200* 60/ 60 = 210
 
 The Actual dose should appear under Actual Dose column for the relevant treatment field.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-231
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-266
@@ -2970,6 +3273,10 @@ EXPECTED_BEHAVIOR: >>>
 The application shall present the user with a warning message when saving a patient’s site(field) list fails due to a communication 
 error with the database. The message should ask the user to retry after a few seconds.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-49
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-165
@@ -3002,6 +3309,10 @@ the following details:
 EXPECTED_BEHAVIOR: >>>
 4.The registration form should close; the newly created patient should appear highlighted in the patients list view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-50
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-320
@@ -3085,6 +3396,10 @@ Duration 1.
 EXPECTED_BEHAVIOR: >>>
 The application shall alert the user of an invalid plan; Energy level of a prescription is edited.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-193
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-261
@@ -3181,6 +3496,22 @@ EXPECTED_BEHAVIOR: >>>
 16.The application shall present the user with a warning message when retrieving a patient’s prescription fails due to a communication error 
 with the database. The message should ask the user to retry after a few seconds.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-24
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-23
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-80
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-37
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-16
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-755
@@ -3228,6 +3559,19 @@ EXPECTED_BEHAVIOR: >>>
 
 • The prescription remains linked to the selected simulation.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-88
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-89
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-24
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-23
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-129
@@ -3261,6 +3605,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The searched patient should appear in the box and be highlighted.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-187
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-302
@@ -3288,6 +3636,13 @@ Active: mark as active
 EXPECTED_BEHAVIOR: >>>
 The newly created target should appear int the Targets Management list view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-383
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-125
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-259
@@ -3333,6 +3688,10 @@ EXPECTED_BEHAVIOR: >>>
 
 the database. The message should ask the user to retry after a few seconds.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-40
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-348
@@ -3376,6 +3735,10 @@ Mandatory fields are:
 
 The user should not be able to save the new Collimator data if even one mandatory filed is not filled in.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-321
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-228
@@ -3395,6 +3758,13 @@ EXPECTED_BEHAVIOR: >>>
 
 All application functionalities expect exit, or login shall be disabled.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-648
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-74
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-140
@@ -3433,6 +3803,10 @@ details:
 EXPECTED_BEHAVIOR: >>>
 The updated patient's Middle Name should appear as "UpdatedMiddleName" Patients list.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-83
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-138
@@ -3475,6 +3849,10 @@ Observed behavior
 
 As expected.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-83
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-394
@@ -3606,6 +3984,10 @@ Other
 
 8 - When Basosquamous is selected in Pathology, the Subcell dropdown should be disabled.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-386
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-222
@@ -3646,6 +4028,10 @@ EXPECTED_BEHAVIOR: >>>
 
 All columns should appear in the patients list view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-39
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-780
@@ -3725,6 +4111,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • Users can be assigned to the newly created custom role
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-619
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-756
@@ -3750,6 +4140,10 @@ EXPECTED_BEHAVIOR: >>>
 
 selected patient.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-37
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-760
@@ -3823,6 +4217,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • The new user has appropriate access based on the assigned role
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-68
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-220
@@ -3859,6 +4257,10 @@ following details:
 EXPECTED_BEHAVIOR: >>>
 1. The DOB Column should not appear in the patients list view, all other check columns should appear in the patients list view
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-39
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-132
@@ -3892,6 +4294,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The patient with MRN:12345 should appear in the box and be highlighted.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-82
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-170
@@ -3911,6 +4317,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 4.There shall be a drop-down list with options (Male/Female/Intersex) for choosing the new patient Sex .
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-52
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-139
@@ -3949,6 +4359,10 @@ details:
 EXPECTED_BEHAVIOR: >>>
 The updated patient's DOB should be and appear as 02/02/2002 Patients list.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-83
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-328
@@ -3980,6 +4394,10 @@ EXPECTED_BEHAVIOR: >>>
 For each treatment record, the application should provide a view of the actual treatment fields delivered by the device. Each treatment field 
 record will include the actual energy.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-95
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-149
@@ -4015,6 +4433,10 @@ EXPECTED_BEHAVIOR: >>>
 
 including its MRN, first, middle, and last name, Gender, DOB, and Last visit.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-42
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-769
@@ -4148,6 +4570,13 @@ Dose, and Details link
 
 • Details button/link is functional for viewing individual treatment details
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-81
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-94
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-316
@@ -4235,6 +4664,10 @@ Current should appear as 0.5 in the treatment filed list view.
 
 (The device shall operate at a constant power of 50W)
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-232
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-141
@@ -4289,6 +4722,10 @@ details:
 EXPECTED_BEHAVIOR: >>>
 The updated patient's details should appear in the form
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-83
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-404
@@ -4314,6 +4751,10 @@ The ICD code should be shown at the top of the details’ view. For example, the
 EXPECTED_BEHAVIOR: >>>
 The ICD code should be shown at the top of the details’ view. For example, the code should be c44.511
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-345
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-772
@@ -4405,6 +4846,10 @@ Import from CSV control is visible with text field and upload button
 
 • Approve and Save buttons are visible and accessible at the bottom
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-120
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-330
@@ -4427,6 +4872,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The application shall alert the user that an inconsistency exists between the planned Target Type and the actual connected Target.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-15
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-265
@@ -4500,6 +4949,16 @@ EXPECTED_BEHAVIOR: >>>
 The application shall present the user with a warning message when saving a patient’s simulation fails due to a communication 
 error with the database. The message should ask the user to retry after a few seconds.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-88
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-89
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-49
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-753
@@ -4539,6 +4998,16 @@ EXPECTED_BEHAVIOR: >>>
 
 • The updated status appears in the plan view (e.g., displayed in the top-right corner or a status field).
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-88
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-89
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-24
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-776
@@ -4592,6 +5061,13 @@ EXPECTED_BEHAVIOR: >>>
 
 • The dose rate configuration is associated with the correct applicator type and energy level
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-114
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-162
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-774
@@ -4637,6 +5113,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • The alert appears consistently for all navigation attempts (clicking different tabs)
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-118
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-761
@@ -4704,6 +5184,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • All edited information is correctly saved in the system
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-68
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-198
@@ -4758,6 +5242,10 @@ And by clicking again:
 
 \*Aaaa
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-40
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-151
@@ -4799,6 +5287,10 @@ EXPECTED_BEHAVIOR: >>>
 8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its Last Name to 
 "NewLastName"), including the corresponding patient ID number, and the user who made the change, specifying the user ID number
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-45
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-777
@@ -4852,6 +5344,19 @@ EXPECTED_BEHAVIOR: >>>
 
 • Coil configuration is properly associated with the selected applicator type and energy level
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-110
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-112
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-120
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-115
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-406
@@ -4879,6 +5384,10 @@ EXPECTED_BEHAVIOR: >>>
 
 7. The Measured lesion depth is listed in the table of images for the corresponding acquired image.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-88
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-771
@@ -4932,6 +5441,13 @@ Invalid input (non-numeric values) disables the Save button and prevents saving
 
 • Save button returns to disabled state after successful save
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-119
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-120
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-152
@@ -4973,6 +5489,10 @@ EXPECTED_BEHAVIOR: >>>
 8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its MRN to "5050"), including 
 the corresponding patient ID number, and the user who made the change, specifying the user ID number
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-45
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-782
@@ -5048,6 +5568,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • No rounding errors occur in the calculation
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-739
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-393
@@ -5121,6 +5645,10 @@ Eyelid (Left Upper)
 
 Eyelid (Left Lower)
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-384
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-171
@@ -5142,6 +5670,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 5.The 'Sex' drop-down should close, and the field should be updated to Male.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-52
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-410
@@ -5163,6 +5695,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 Open pgAdmin. Query for Patients' data. Verify that data is encrypted
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-55
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-217
@@ -5203,6 +5739,10 @@ Observed behavior
 
 As expected.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-39
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-786
@@ -5262,6 +5802,10 @@ Energy (kV)
 
 2.6 - 3.0
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-738
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-779
@@ -5319,6 +5863,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • The eye icon visual state changes to reflect current visibility status
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-648
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-408
@@ -5350,6 +5898,10 @@ Query for Treatment table and verify the created treatment references to this vi
 
 8- Open pgAdmin and verify that no new visit was created and series references to the previously created visit.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-377
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-150
@@ -5391,6 +5943,10 @@ EXPECTED_BEHAVIOR: >>>
 8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its First name to 
 "NewFirstName"), including the corresponding patient ID number, and the user who made the change, specifying the user ID number
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-45
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-773
@@ -5440,6 +5996,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • The system prevents data corruption by rejecting improperly formatted files
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-121
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-223
@@ -5476,6 +6036,10 @@ following details:
 EXPECTED_BEHAVIOR: >>>
 1. The Sex column should not appear in the patients list view; all other checked columns should appear in the patients list view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-39
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-347
@@ -5556,6 +6120,19 @@ Energy [kV]: 50 (Select from the drop-down menu)
 EXPECTED_BEHAVIOR: >>>
 The Energy of the added treatment field should match the prescribed energy (e.g., 50kV as specified in the prescription).
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-738
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-80
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-193
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-331
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-310
@@ -5583,6 +6160,10 @@ EXPECTED_BEHAVIOR: >>>
 The application shall present the user with a warning message that it has failed to retrieve any setting data due to a communication error 
 with the database. The pop-up message should enable the user to retry or ignore.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-249
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-260
@@ -5659,6 +6240,16 @@ EXPECTED_BEHAVIOR: >>>
 16.The application shall present the user with a warning message when the retrieval of a patient’s simulation fails due to a communication 
 error with the database. The message should ask the user to retry after a few seconds.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-88
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-89
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-49
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-221
@@ -5699,6 +6290,10 @@ Observed behavior
 
 As expected.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-39
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-267
@@ -5757,6 +6352,10 @@ EXPECTED_BEHAVIOR: >>>
 
 error with the database. The message should ask the user to retry after a few seconds.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-37
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-211
@@ -5844,6 +6443,10 @@ EXPECTED_BEHAVIOR: >>>
 
 was performed.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-16
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-168
@@ -5863,6 +6466,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 There shall be error message asking the user to enter a valid date in the format: MM/DD/YY
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-52
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-313
@@ -5880,6 +6487,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The user interface shall allow users to configure the DAC value for the filament-preheat level, one for each kV.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-112
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-300
@@ -5922,6 +6533,10 @@ Email address:test@email.com
 EXPECTED_BEHAVIOR: >>>
 The user should be removed from the list,
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-125
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-775
@@ -5983,6 +6598,10 @@ Imported data can be saved successfully
 
 • All imported and saved data persists after navigation
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-115
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-784
@@ -6088,6 +6707,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • All status information is accurate and synchronized with actual system state
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-54
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-407
@@ -6117,6 +6740,10 @@ Query for Simulation Table and verify the created simulation references to this 
 
 7 - Open pgAdmin and verify that no new visit was created and series references to the previously created visit.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-377
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-298
@@ -6134,6 +6761,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 The interface shall allow the user to configure the system endpoints to enable communication between system components.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-124
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-752
@@ -6185,6 +6816,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • Removing filters restores the full log view
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-67
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-315
@@ -6273,6 +6908,10 @@ Current should appear as 0.71 in the treatment filed list view.
 
 (The device shall operate at a constant power of 50W)
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-232
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-258
@@ -6312,6 +6951,19 @@ EXPECTED_BEHAVIOR: >>>
 The application shall present the user with a warning message when saving a patient fails due to a communication error with the 
 database. The message should ask the user to retry after few seconds.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-49
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-48
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-86
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-47
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-392
@@ -6341,6 +6993,10 @@ Keloid
 
 Basosquamous
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-385
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-757
@@ -6390,6 +7046,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • All columns can be toggled independently.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-39
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-415
@@ -6415,6 +7075,13 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 7 - The Quality Checks result performed using the external application is visible with the intensity data read from the QC panel.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-190
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-344
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-154
@@ -6461,6 +7128,10 @@ EXPECTED_BEHAVIOR: >>>
 8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its Sex to "Female"), including 
 the corresponding patient ID number, and the user who made the change, specifying the user ID number.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-45
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-305
@@ -6490,6 +7161,10 @@ Energy - The collimator energy
 
 Active - The collimator will be created active by default.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-383
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-157
@@ -6512,6 +7187,16 @@ EXPECTED_BEHAVIOR: >>>
 4.After clicking the "x" (cancel) button, the new patient registration form should closed. The new patient with the First name " testFirstName" 
 should not appear in the patients list view.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-47
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-86
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-48
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-759
@@ -6565,6 +7250,10 @@ EXPECTED_BEHAVIOR: >>>
 
 • The deleted user account cannot be used to log in to the system
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-68
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-169
@@ -6584,6 +7273,10 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 4.There shall be error message asking the user to enter only digits or dashes.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-52
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-264
@@ -6621,6 +7314,10 @@ database. The message should ask the user to retry after a few seconds.
 
 8 - The retry should succeed, and the new data should be saved.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-49
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-136
@@ -6659,6 +7356,10 @@ details:
 EXPECTED_BEHAVIOR: >>>
 The updated patient’s Last name should appear as "UpdatedLastName" in the patients list.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-83
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10SG-164
@@ -6694,5 +7395,9 @@ STEPS: >>>
 EXPECTED_BEHAVIOR: >>>
 6.The application shall display an error message saying the patient already exists.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-49
+  ROLE: Verifies
 
 [[/SECTION]]
