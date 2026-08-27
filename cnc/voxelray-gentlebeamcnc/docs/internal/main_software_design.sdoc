@@ -122,6 +122,10 @@ The list of API functions is defined in the following protocol document:
 
 Heracles DB API
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-55
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-12
@@ -145,6 +149,9 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-55
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-377
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-13
@@ -158,6 +165,10 @@ The Heracles Device Control console is integrated within the Heracles device. Th
 
 The Treatment Control application must be located in a console outside the treatment room. This is to provide the operator with a safe work environment. It should allow healthcare professionals e.g., radiation therapists (RTT), and physicians to activate the radiation emission for the patient's treatment and to provide tools for physicists to program the system's calibration values.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-54
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-99
@@ -347,6 +358,10 @@ The application shall include a centralized and secure data repository for stori
 The data shall be managed in a relational database.
 
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-126
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-333
@@ -369,7 +384,7 @@ RELATIONS:
 UID: SW-H10SG-378
 TITLE: Patient - Plan View - Auto-calculate the ICDCode - ICD Code table
 STATEMENT: >>>
-ICD Code will be generated based on the lesion location (Field Location) and the Pathology as set by the operator:
+ICD Code will be generated based on the lesion location (Field Location) and the Pathology as set by the operator. This design also covers auto-calculations for Field Size, Emission Duration, and Energy Level/TDF based on clinical parameters.
 
 The calculation will use the following table:
 
@@ -423,6 +438,12 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-345
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-740
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-738
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-622
@@ -436,6 +457,9 @@ STATEMENT: >>>
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-74
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-648
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -482,6 +506,9 @@ RELATIONS:
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H10SG-15
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-191
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -595,6 +622,10 @@ Fulfilled requirements:
 - RQ-H10SG-18-#9: Patients - Plan view - Refresh Patient's Treatment Fields from the database
 - RQ-H10SG-21-#11: Patients - Plan view - View Patient's Plan's Treatment Fields
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-162
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-628
@@ -664,6 +695,10 @@ Fulfilled requirements:
 Attachments:
 - H10SG-22.sequence.mermaid.drawio.png (121.61 kB)
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-67
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-630
@@ -698,6 +733,9 @@ Fulfilled requirements:
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-23
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-331
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -783,6 +821,10 @@ STATEMENT: >>>
 
 Note: The design specification for sorting patient's list view is not available. This appears to be a placeholder item. Refer to the requirements for SW-H10SG-632 for expected functionality.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-39
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-633
@@ -999,6 +1041,9 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-382
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-110
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-676
@@ -1134,6 +1179,9 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-231
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-739
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-684
@@ -1192,6 +1240,9 @@ The report will be retrieved from the database using the QcSampleService.
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-190
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-344
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1253,6 +1304,12 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-125
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-619
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-618
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-690
@@ -1288,6 +1345,10 @@ STATEMENT: >>>
 Output Factors hould support multiple collimators.
 
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-332
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-693
@@ -1443,6 +1504,9 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-88
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-422
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-702
@@ -1517,6 +1581,10 @@ STATEMENT: >>>
     deactivate TreatmentHistoryModel
    </pre>
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-94
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-705
@@ -1572,6 +1640,10 @@ TITLE: Show message for DB communication error
 STATEMENT: >>>
 The application will show a DB Communication error when the gRPC command throws a timeout exception. The exception will be populated through the MVVM model.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-162
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10SG-711
@@ -1585,6 +1657,15 @@ RELATIONS:
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H10SG-50
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-82
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-37
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-42
   ROLE: Refines
 
 [DESIGN_ITEM]

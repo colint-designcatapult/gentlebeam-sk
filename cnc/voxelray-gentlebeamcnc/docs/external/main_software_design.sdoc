@@ -792,6 +792,9 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-66
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-280
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-260
@@ -995,6 +998,12 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-97
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-282
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-283
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-250
@@ -1137,6 +1146,9 @@ STATEMENT: >>>
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-9
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-247
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1646,6 +1658,10 @@ The application will show a DB Communication error when the gRPC command throws 
         deactivate View
     </pre>
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-73
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-263
@@ -1779,6 +1795,9 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-10
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-95
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-248
@@ -1849,6 +1868,9 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-13
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-281
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-276
@@ -1857,6 +1879,10 @@ STATEMENT: >>>
 The flow for validating the active collimator when performing Quality Checks should be implemented as described in the following sequence diagram:
 
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-279
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-256
@@ -1919,6 +1945,10 @@ STATEMENT: >>>
         end
     </pre>
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-93
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-279

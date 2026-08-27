@@ -1667,6 +1667,10 @@ EXPECTED_BEHAVIOR: >>>
 2. Verify the color of the LED of the head ring is changing accordingly via communication of firmware and head interface board
 3. Verify the color of the LED of the head ring is changing accordingly via communication of firmware and head interface board after emission ends
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-2
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWMC-153
@@ -1716,6 +1720,9 @@ EXPECTED_BEHAVIOR: >>>
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWMC-48
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-306
   ROLE: Verifies
 
 [TEST_CASE]
