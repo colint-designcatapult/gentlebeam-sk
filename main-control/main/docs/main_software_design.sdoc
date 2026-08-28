@@ -1080,6 +1080,13 @@ The transmitted data to the head interface board is the desired indicator LED ou
 
 The received data from the head interface board are cooling system feedback values monitored at the system's x-ray head, as well as the reported values of other x-ray head peripherals such as the state of the buttons, and the values from the magnetometers and collimator. All values are reported in 4-byte fields separated by delimiters. As the collimator ID value is a 64-bit value, there are two 4byte fields which together represent the 64-bit ID.
 <<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-2
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-305
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWMC-295
