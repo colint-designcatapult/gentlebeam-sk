@@ -1462,7 +1462,32 @@ RELATIONS:
 UID: SW-H10SG-698
 TITLE: Retrieve Treatment History Sequence
 STATEMENT: >>>
-TBD
+Sequence diagram for retrieving treatment data:
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+    participant TreatmentsView
+    participant TreatmentsViewModel
+    participant TreatmentHistoryModel
+    participant EmrGrpcTreatmentCommands
+
+    Note over TreatmentsView: OnLoad
+    TreatmentsView->>TreatmentsViewModel: FetchTreatmentsDataAsync
+    activate TreatmentsViewModel
+    TreatmentsViewModel->>TreatmentHistoryModel: FetchTreatmentsAsync
+    activate TreatmentHistoryModel
+    TreatmentHistoryModel->>EmrGrpcTreatmentCommands: QueryTreatmentsListAsync
+    activate EmrGrpcTreatmentCommands
+    EmrGrpcTreatmentCommands->>EmrGrpcTreatmentCommands: ReadAsync
+    EmrGrpcTreatmentCommands-->>TreatmentHistoryModel: Return Treatments History
+    deactivate EmrGrpcTreatmentCommands
+    TreatmentHistoryModel-->>TreatmentsViewModel: Return Treatments History
+    deactivate TreatmentHistoryModel
+    TreatmentsViewModel-->>TreatmentsView: Test
+    deactivate TreatmentsViewModel
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1473,7 +1498,32 @@ RELATIONS:
 UID: SW-H10SG-699
 TITLE: Retrieve Actual Treatment Fields
 STATEMENT: >>>
-TBD
+Sequence diagram for retrieving treatment history from the external system:
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+    participant TreatmentsView
+    participant TreatmentsViewModel
+    participant TreatmentHistoryModel
+    participant EmrGrpcTreatmentFieldCommands
+
+    Note over TreatmentsView: OnLoad
+    TreatmentsView->>TreatmentsViewModel: ShowActualFieldsCommand
+    activate TreatmentsViewModel
+    TreatmentsViewModel->>TreatmentHistoryModel: FetchTreatmentsAsync
+    activate TreatmentHistoryModel
+    TreatmentHistoryModel->>EmrGrpcTreatmentFieldCommands: QueryTreatmentsListAsync
+    activate EmrGrpcTreatmentFieldCommands
+    EmrGrpcTreatmentFieldCommands->>EmrGrpcTreatmentFieldCommands: ReadListAsync
+    EmrGrpcTreatmentFieldCommands-->>TreatmentHistoryModel: Return Actual Treatments Fields List
+    deactivate EmrGrpcTreatmentFieldCommands
+    TreatmentHistoryModel-->>TreatmentsViewModel: Return Actual Treatments Fields List
+    deactivate TreatmentHistoryModel
+    TreatmentsViewModel-->>TreatmentsView: Return Treatments History
+    deactivate TreatmentsViewModel
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1498,7 +1548,41 @@ RELATIONS:
 UID: SW-H10SG-701
 TITLE: Retrieve Patient's Treatment Simulation
 STATEMENT: >>>
-TBD
+Sequence diagram for retrieving patient's treatment simulation:
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+    box rgb(245, 245, 245) Application
+        participant SimulationViewModel
+        participant TreatmentInfoStore
+        participant SimulationRepository
+        participant IEmrGrpcSimulationCommands
+    end
+    
+    box rgb(245, 245, 245) Server
+        participant SimulationService
+    end
+
+    Note over SimulationViewModel,IEmrGrpcSimulationCommands: User selects a site or refreshes its simulation
+    SimulationViewModel->>SimulationRepository: fetch simulation
+    activate SimulationRepository
+    SimulationRepository->>IEmrGrpcSimulationCommands: fetch site's simulation list
+    activate IEmrGrpcSimulationCommands
+    IEmrGrpcSimulationCommands->>SimulationService: grpc:ListSimulationsRequest
+    activate SimulationService
+    SimulationService->>SimulationService: handle request
+    SimulationService-->>IEmrGrpcSimulationCommands: grpc:ListSimulationsResponse
+    deactivate SimulationService
+    IEmrGrpcSimulationCommands-->>SimulationRepository: list of simulations
+    deactivate IEmrGrpcSimulationCommands
+    Note over SimulationRepository: select latest simulation
+    SimulationRepository-->>SimulationViewModel: [optional] simulation
+    deactivate SimulationRepository
+    SimulationViewModel->>TreatmentInfoStore: set current simulation
+    SimulationViewModel->>SimulationViewModel: update simulation form
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1590,7 +1674,64 @@ RELATIONS:
 UID: SW-H10SG-705
 TITLE: Save log records sequence
 STATEMENT: >>>
-TBD
+Sequence diagram for saving audit log records during patient operations:
+
+.. raw:: html
+
+   <pre class="mermaid">
+   sequenceDiagram
+    box rgb(245, 245, 245) Application
+        participant PatientsViewModel
+        participant PatientListModel
+        participant ActionAuditService
+    end
+    
+    box rgb(245, 245, 245) Server
+        participant PatientService
+        participant LogService
+    end
+
+    PatientsViewModel->>PatientListModel: register action start
+    activate PatientListModel
+    PatientListModel->>ActionAuditService: register action start
+    activate ActionAuditService
+    ActionAuditService->>LogService: grpc:CreateRecord
+    activate LogService
+    Note over LogService: save log record
+    LogService-->>ActionAuditService: 
+    deactivate LogService
+    deactivate ActionAuditService
+    
+    PatientsViewModel->>PatientListModel: save patient
+    activate PatientService
+    
+    alt [create new patient]
+        PatientListModel->>PatientService: grpc:CreatePatient
+        activate PatientService
+        Note over PatientService: create new record
+        PatientService-->>PatientListModel: saved patient
+        deactivate PatientService
+    else [update existing patient]
+        PatientListModel->>PatientService: grpc:UpdatePatient
+        activate PatientService
+        Note over PatientService: update patient record
+        PatientService-->>PatientListModel: updated patient
+        deactivate PatientService
+    end
+    
+    PatientListModel-->>PatientsViewModel: saved patient
+    deactivate PatientService
+    
+    PatientsViewModel->>ActionAuditService: register action end
+    activate ActionAuditService
+    ActionAuditService->>LogService: grpc: CreateRecord
+    activate LogService
+    Note over LogService: save log record
+    LogService-->>ActionAuditService: 
+    deactivate LogService
+    deactivate ActionAuditService
+    deactivate PatientListModel
+   </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
