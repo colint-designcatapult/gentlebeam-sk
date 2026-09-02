@@ -33,7 +33,6 @@ namespace Heracles.Core.Commands
 
     public interface IEmrTreatmentFieldCommands : IAsyncChildEntryCommands<ITreatmentField>
     {
-        Task<ICollection<ITreatmentField>> CreateBunchAsync(ICollection<ITreatmentField> fields);
     }
 
     public interface IEmrActualTreatmentFieldCommands : IAsyncChildEntryCommands<IActualTreatmentField>

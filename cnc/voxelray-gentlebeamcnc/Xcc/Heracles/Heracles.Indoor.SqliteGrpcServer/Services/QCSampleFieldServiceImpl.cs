@@ -12,7 +12,9 @@ public sealed class QCSampleFieldServiceImpl : QCSampleFieldService.QCSampleFiel
     public override async Task<ListQCSampleFieldsResponse> ListQCSampleFields(
         ListQCSampleFieldsRequest request, ServerCallContext context)
     {
-        var items = await _repo.ReadAllAsync();
+        IList<QCSampleField> items = request.HasQcsampleId
+            ? await _repo.ReadByParentIdAsync(request.QcsampleId)
+            : await _repo.ReadAllAsync();
         var r = new ListQCSampleFieldsResponse();
         r.Qcsamplefields.AddRange(items);
         return r;

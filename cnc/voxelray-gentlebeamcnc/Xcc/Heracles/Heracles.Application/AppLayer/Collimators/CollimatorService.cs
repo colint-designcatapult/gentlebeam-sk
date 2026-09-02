@@ -34,16 +34,8 @@ namespace Heracles.Application.AppLayer.Collimators
             }
             collimators = collimators.OrderBy(x => x.Id).ToList();
 
-            // Now we can fill the model:
-            collimatorModel.Reset(head);
-            foreach (var configuration in configurations)
-            {
-                collimatorModel.AddConfiguration(configuration);
-            }
-            foreach (var collimator in collimators)
-            {
-                collimatorModel.AddCollimator(collimator);
-            }
+            // Publish one complete snapshot so consumers never observe a partially rebuilt model.
+            collimatorModel.Reset(head, configurations, collimators);
         }
 
         public async Task<ICollimator> CreateCollimatorAsync(string serial, TargetType targetType, Energy energy, bool isActive)

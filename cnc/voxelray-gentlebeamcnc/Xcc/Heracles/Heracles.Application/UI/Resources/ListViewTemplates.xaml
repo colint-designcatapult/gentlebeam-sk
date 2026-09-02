@@ -785,7 +785,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="4" SharedSizeGroup="LeftMargin"/>
                             <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="0*"/>
+                            <ColumnDefinition Width="1*"/>
                             <ColumnDefinition Width="1*"/>
                             <ColumnDefinition Width="1*"/>
                             <ColumnDefinition Width="1*"/>

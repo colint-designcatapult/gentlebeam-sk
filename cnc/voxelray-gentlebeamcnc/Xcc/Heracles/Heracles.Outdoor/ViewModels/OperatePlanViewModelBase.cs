@@ -173,7 +173,7 @@ namespace Heracles.External.ViewModels
         public bool IsCurrentViewModelRunning { get => _isCurrentViewModelRunning; set => SetProperty(ref _isCurrentViewModelRunning, value); }
         protected double XrayTime { get; set; } = 0.0;
         protected double XrayPointStartTime { get; set; } = 0.0;
-        protected int PreviousOperationPointIndex { get; set; } = 0;
+        public int ActiveEmissionIndex { get; protected set; } = -1;
         protected bool IsPreparing { get; set; }
 
         private bool _isResuming;
@@ -408,7 +408,7 @@ namespace Heracles.External.ViewModels
                     if (UIStateMachine.IsPlanLoadedForTreatment == false)
                         UIStateMachine.IsPlanLoadedForTreatment = true;
 
-                    await MainBoardModel.ResumePlan();
+                    await MainBoardModel.ResumeEmission();
                 }
                 catch (Exception ex)
                 {
@@ -470,7 +470,8 @@ namespace Heracles.External.ViewModels
         /// </summary>
         protected abstract void RecalculateInitialXrayTime();
 
-        protected abstract GcbEmissionPlan BuildGcbEmissionPlan();
+        protected abstract GcbOperationalPoint BuildGcbOperationalPoint(int fieldIndex);
+        protected abstract int FindNextPendingEmissionIndex(int startIndex);
         protected abstract Task SetPlanUnloadTaskAsync();
         #endregion
 
@@ -488,7 +489,7 @@ namespace Heracles.External.ViewModels
             }
         }
 
-        protected async Task UpdateAfterEmission(CancellationToken token)
+        protected virtual async Task UpdateAfterEmission(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
@@ -511,7 +512,7 @@ namespace Heracles.External.ViewModels
 
         protected bool IsPlanCompleted()
         {
-            return MainBoardModel.CurrentPlan?.IsCompleted(PlanCompletedThreshold) ?? false;
+            return MainBoardModel.CurrentEmission?.RemainingPointTime < PlanCompletedThreshold;
         }
 
         protected virtual void SwitchExternalTab(ExternalTabName tabName)
@@ -572,30 +573,20 @@ namespace Heracles.External.ViewModels
             try
             {
                 UIStateMachine.IsPlanStaged = MainBoardModel.IsPlanStaged;
-
-                // TODO: what if Prepare fails? We probably need to switch back to StandBy state?
                 UIStateMachine.RequestStateSwitch(UIMacroState.Preparation);
                 Debug.WriteLine($"Update UI state machine: State={UIStateMachine.State}, LB=({UIStateMachine.LeftButton.State}, {UIStateMachine.LeftButton.IsEnabled})" +
                     $"CB=({UIStateMachine.CentralButton.State}, {UIStateMachine.CentralButton.IsEnabled}), Stop={UIStateMachine.RightButton.IsEnabled}");
 
-                GcbEmissionPlan plan = BuildGcbEmissionPlan();
-
-                bool loadedPlanFromScratch = await MainBoardModel.PreparePlan(plan, tryKeepPrevPlan);
-                RecalculateInitialXrayTime();
-                GcbIndicators.BeamOnProgress.Reset();
-
-                if (!loadedPlanFromScratch)
+                bool loadedEmissionFromScratch = await PrepareEmissionAsync(
+                    GetInitialEmissionIndex(),
+                    tryKeepPrevPlan);
+                if (!loadedEmissionFromScratch)
                 {
-                    // We went into staged state and found that this exact plan is on the board already,
-                    // so we want to try to resume it manually or just clear it
                     UIStateMachine.RequestStateSwitch(UIMacroState.ResumePlan);
                 }
             }
-            // TODO: add custom exception for plan mismatch (board vs loaded for treatment)
-            // Show warning and clear the plan from the board only
             catch
             {
-                // To prevent error loop on preparation callback, go to StandBy
                 if (MainBoardModel.IsPlanStaged)
                 {
                     UIStateMachine.RequestStateSwitch(UIMacroState.ResumePlan);
@@ -609,19 +600,39 @@ namespace Heracles.External.ViewModels
             }
             finally
             {
-                // In case if PreparePlan failed after plan was staged:
                 UIStateMachine.IsPlanStaged = MainBoardModel.IsPlanStaged;
             }
         }
+        protected virtual int GetInitialEmissionIndex() =>
+            FindNextPendingEmissionIndex(0);
 
-        /// <summary>
-        /// Returns flag value indicating if plan auto-execution should be applied
-        /// </summary>
-        /// <returns></returns>
-        protected virtual bool GetPlanAutoExecutionFlag()
+        protected async Task<bool> PrepareEmissionAsync(
+            int emissionIndex,
+            bool tryKeepPreviousEmission = false)
         {
-            return true;
+            if (emissionIndex < 0)
+            {
+                ActiveEmissionIndex = -1;
+                return false;
+            }
+
+            var emission = BuildGcbOperationalPoint(emissionIndex);
+            ActiveEmissionIndex = emissionIndex;
+            bool loadedFromScratch = await MainBoardModel.PrepareEmission(
+                emission,
+                tryKeepPreviousEmission);
+            RecalculateInitialXrayTime();
+            GcbIndicators.BeamOnProgress.Reset();
+            return loadedFromScratch;
         }
+
+        protected Task<bool> PrepareNextEmissionAsync(
+            int startIndex,
+            bool tryKeepPreviousEmission = false) =>
+            PrepareEmissionAsync(
+                FindNextPendingEmissionIndex(startIndex),
+                tryKeepPreviousEmission);
+
 
         protected async Task UpdateCollimatorPreset(Energy energy, TargetType collimatorType)
         {
@@ -850,7 +861,7 @@ namespace Heracles.External.ViewModels
 
                     ValidateCanExecuteCommands();
 
-                    if (state is GcbStateNew.Fault or GcbStateNew.ColdFault or GcbStateNew.WarmupFault)
+                    if (state is GcbStateNew.FaultDischarge or GcbStateNew.Fault or GcbStateNew.ColdFault or GcbStateNew.WarmupFault)
                     {
                         MainBoardModel.CancelCurrentTask();
                     }
@@ -882,7 +893,7 @@ namespace Heracles.External.ViewModels
                 {
                     // No plan should be on board, try to proceed with plan reload
                     UIStateMachine.RequestStateSwitch(UIMacroState.StandBy);
-                    // or we can just call PreparePlanAsync to force plan reload
+                    // or force the emission to be loaded again
                 }
             }
         }

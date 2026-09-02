@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Heracles.Application.Common
@@ -15,7 +15,7 @@ namespace Heracles.Application.Common
             public const string DeleteDialogTitle = "Delete";
             public const string ReloadDialogTitle = "Reload";
             public const string DatabaseErrorTitle = "Database connection error";
-            public const string CalibrationModeServiceRequiredMessage = "The device is operating in calibration mode and needs to be serviced.";
+            public const string CalibrationStateServiceRequiredMessage = "The device is in the calibration state and needs to be serviced.";
         }
 
         public static class Authentication
@@ -300,11 +300,10 @@ namespace Heracles.Application.Common
             public const string QualityCheckFullModeConfirmationMessage = "Do you want to discard the changes and generate the full set of fields?";
 
             public const string QualityCheckNotificationTitle = "QC Execution";
-            public const string QualityCheckCompletionNotification = "The QC plan completed successfully.";
+            public const string QualityCheckCompletionNotification = "The selected QC emission completed successfully.";
             public const string SwitchToReportsSuggestionMessage = "To check the details, you can switch to the report view.";
 
-            public const string QualityCheckConsistencyErrorTitle = "QC Execution Consistency Error";
-            public const string QualityCheckConsistencyErrorMessage = "The emission is done, but the QC plan is not completed.";
+            public const string QualityCheckIncompleteEmissionErrorMessage = "The selected QC emission did not complete.";
 
             public const string QualityCheckDiscardChangesConfirmationTitle = "Unsaved Data Will Be Lost";
             public const string QualityCheckDiscardChangesConfirmationMessage = "Do you want to proceed and discard the changes?";
@@ -312,7 +311,7 @@ namespace Heracles.Application.Common
             public const string QualityCheckSaveErrorMessage = "Failed to save QC data"; // common SaveError
 
             public const string QualityCheckTitle = "Quality Check";
-            public const string QualityCheckStartErrorMessage = "Failed to perform the QC emission plan";
+            public const string QualityCheckStartErrorMessage = "Failed to perform the selected QC emission";
 
             public const string PlanCreateCollectionError = "Failed to create a new collection of fields";
             public const string PlanDeleteFieldConfirmationMessage = "Do you want to delete the selected fields?";

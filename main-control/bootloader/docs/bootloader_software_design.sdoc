@@ -201,12 +201,12 @@ RELATIONS:
 UID: SW-H1FWMCBOOT-13
 TITLE: Application Program Handling
 STATEMENT: >>>
-At the beginning of bootloader firmware execution, the program will parse a predesignated area of
-application memory on the microcontroller and calculate a checksum over the existing values
-present in flash memory. The firmware then compares the calculated value to a designated location
-where the application checksum value is stored. If the calculated value matches the stored value,
-then this indicates to the firmware that a valid application exists in memory, and the firmware will
-then jump to the application firmware for execution.
+At the beginning of bootloader firmware execution, the program parses the predetermined application
+region in flash memory and calculates a CRC over the complete region. The application firmware build
+calculates and stores the programmed CRC over that same region, treating unprogrammed bytes as erased
+flash. The bootloader compares its calculated CRC to the programmed CRC in the designated storage
+location. If the values match, the bootloader considers the application valid and jumps to the
+application firmware for execution.
 
 If the calculated value does not match the stored value, then the firmware will not jump to the
 application for execution but will instead wait for PC communication for commands to update the
@@ -214,7 +214,7 @@ application memory.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWMCBOOT-3
+  VALUE: RQ-H1FWMCBOOT-1
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -252,10 +252,12 @@ STATEMENT: >>>
 The firmware can both erase and write to the flash memory of the microcontroller. The flash
 memory of the microcontroller is organized into sectors and pages. Each sector is comprised of a
 given number of pages, and each page is 512 bytes in size. When the firmware receives an ‘erase’
-command from the PC, it will erase several pages in flash memory which have been predesignated
-for application memory. For writing to flash, the communication protocol can transmit
-512 bytes for each flash page size. As such, the firmware simply writes each page with data
-provided by the PC write command.
+command from the PC, it erases 2520 pages beginning at flash page 240.
+
+Application firmware begins at flash page 256. The PC write command supplies a four-character
+hexadecimal application-relative page index and 512 bytes of data. The firmware accepts page
+indices from 0 through 2519, adds the application start page offset, and writes the data to the
+resulting flash page.
 <<<
 RELATIONS:
 - TYPE: Parent

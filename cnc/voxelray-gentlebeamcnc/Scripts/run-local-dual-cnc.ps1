@@ -35,6 +35,34 @@ foreach ($path in @($relayExecutable, $externalExecutable, $indoorExecutable, $e
         throw "Required local-development artifact was not found: $path"
     }
 }
+function Wait-ForTcpPort {
+    param(
+        [string]$HostName,
+        [int]$Port,
+        [int]$TimeoutSeconds = 30
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while ([DateTime]::UtcNow -lt $deadline) {
+        $client = [System.Net.Sockets.TcpClient]::new()
+        try {
+            $connectTask = $client.ConnectAsync($HostName, $Port)
+            if ($connectTask.Wait(250) -and $client.Connected) {
+                return
+            }
+        }
+        catch {
+            # The server may still be starting.
+        }
+        finally {
+            $client.Dispose()
+        }
+        Start-Sleep -Milliseconds 100
+    }
+
+    throw "Timed out waiting for the local database server at ${HostName}:$Port."
+}
+
 
 $processes = [System.Collections.Generic.List[System.Diagnostics.Process]]::new()
 
@@ -47,13 +75,14 @@ try {
         throw "The telemetry relay could not bind UDP port 40020. Ensure no Heracles application is already using it."
     }
 
-    $externalArgument = "--appsettings=`"$externalSettings`""
-    $external = Start-Process -FilePath $externalExecutable -ArgumentList $externalArgument -WorkingDirectory $externalDirectory -PassThru
-    $processes.Add($external)
-
     $indoorArgument = "--appsettings=`"$indoorSettings`""
     $indoor = Start-Process -FilePath $indoorExecutable -ArgumentList $indoorArgument -WorkingDirectory $indoorDirectory -PassThru
     $processes.Add($indoor)
+    Wait-ForTcpPort -HostName "127.0.0.1" -Port 5199
+
+    $externalArgument = "--appsettings=`"$externalSettings`""
+    $external = Start-Process -FilePath $externalExecutable -ArgumentList $externalArgument -WorkingDirectory $externalDirectory -PassThru
+    $processes.Add($external)
 
     Write-Host "Local dual-CNC configuration started."
     Write-Host "  Firmware telemetry: UDP 40020 -> one relay socket"

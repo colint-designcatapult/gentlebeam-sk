@@ -45,6 +45,24 @@ internal sealed class UcsiTelemetrySessionTests
         foreach (string component in new[] { nameof(TelemetryVector3.X), nameof(TelemetryVector3.Y), nameof(TelemetryVector3.Z) })
             Assert.That(catalog.ById, Contains.Key($"system.{vector}.{component}"));
 
+        TelemetryParameterDescriptor qc0 = catalog.GetRequired("system.QcChannel0Reading");
+        TelemetryParameterDescriptor qc1 = catalog.GetRequired("system.QcChannel1Reading");
+        TelemetryParameterDescriptor qcAdc1 = catalog.GetRequired("system.QcAdc1Connected");
+        TelemetryParameterDescriptor qcAdc2 = catalog.GetRequired("system.QcAdc2Connected");
+        Assert.Multiple(() =>
+        {
+            Assert.That(qc0.DisplayName, Is.EqualTo("QC Channel 0 Reading"));
+            Assert.That(qc1.DisplayName, Is.EqualTo("QC Channel 1 Reading"));
+            Assert.That(qcAdc1.DisplayName, Is.EqualTo("QC ADC 1 Connected"));
+            Assert.That(qcAdc2.DisplayName, Is.EqualTo("QC ADC 2 Connected"));
+            Assert.That(qc0.Group, Is.EqualTo("Quality Control"));
+            Assert.That(qc1.Group, Is.EqualTo("Quality Control"));
+            Assert.That(qcAdc1.Group, Is.EqualTo("Quality Control"));
+            Assert.That(qcAdc2.Group, Is.EqualTo("Quality Control"));
+            Assert.That(qc0.Unit, Is.EqualTo("counts"));
+            Assert.That(qc1.Unit, Is.EqualTo("counts"));
+        });
+
         Assert.That(catalog.All, Has.Some.Matches<TelemetryParameterDescriptor>(parameter => parameter.IsMock));
         Assert.That(catalog.All.Select(parameter => parameter.Id), Is.Unique);
         Assert.That(catalog.All.Select(parameter => parameter.ParquetColumnName), Is.Unique);

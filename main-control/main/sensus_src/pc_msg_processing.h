@@ -45,10 +45,6 @@ typedef enum buttonResult
 void process_command(PacketType_t ptype, void* data);
 void *get_response_data(PacketType_t ptype);
 void init_response_pointers();
-#if defined(CALIBRATION_MODE)
-void signal_hvps_stop();
-void signal_emission_stop();
-#endif
 
 extern uint32_t network_config[NETWORK_CMD_COUNT];
 

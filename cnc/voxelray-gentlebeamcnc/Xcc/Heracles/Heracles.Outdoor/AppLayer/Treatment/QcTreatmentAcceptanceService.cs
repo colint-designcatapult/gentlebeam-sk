@@ -1,4 +1,4 @@
-﻿using Heracles.Application.AppLayer.QualityAssurance.QualityCheck;
+﻿﻿using Heracles.Application.AppLayer.QualityAssurance.QualityCheck;
 using Heracles.Application.Domain.DataManagement.System.QualityCheck;
 using Heracles.Application.Infra.DataManagement.System;
 
@@ -18,7 +18,7 @@ namespace Heracles.External.AppLayer.Treatment
     public class QcTreatmentAcceptanceService(
         IQcRepository qcRepository)
     {
-        public const double QcDeviationThreshold = 5; // 5% deviation is critical
+        public const double QcDeviationThreshold = 3;
 
         /// <summary>
         /// Tests for matching Qc deviation limits for a particular head configuration (energy)
@@ -26,10 +26,12 @@ namespace Heracles.External.AppLayer.Treatment
         /// <returns>true if </returns>
         public async Task<QcAcceptanceStatus> QcDeviationAcceptanceTestAsync(long configurationId)
         {
-            var samples = await qcRepository.FetchQcSampleListAsync(configurationId);
-            samples = samples.OrderBy(x => x.CreationDate);
+            var samples = (await qcRepository.FetchQcSampleListAsync(configurationId))
+                .OrderBy(x => x.CreationDate)
+                .ThenBy(x => x.Id)
+                .ToList();
 
-            var qcHeaderReferenced = samples.FirstOrDefault(x => x.Referenced);
+            var qcHeaderReferenced = samples.LastOrDefault(x => x.Referenced);
             var qcHeaderLatest = samples.LastOrDefault();
 
             // We need to have non-zero sample within last 24 hours
@@ -45,22 +47,41 @@ namespace Heracles.External.AppLayer.Treatment
             {
                 return QcAcceptanceStatus.NoReference;
             }
-            else
-            {
-                QcSampleBindable qcSampleReferenced = await GetQcSampleWithDataAsync(qcHeaderReferenced);
-                QcSampleBindable qcSampleLatest = await GetQcSampleWithDataAsync(qcHeaderLatest);
-                qcSampleLatest.ApplyReference(qcSampleReferenced);
 
-                bool isAcceptable = qcSampleLatest.IsDeviationAcceptable(QcDeviationThreshold);
-                return isAcceptable ? QcAcceptanceStatus.Accepted : QcAcceptanceStatus.Failed;
+            var qcSampleReferenced = await GetQcSampleWithDataAsync(qcHeaderReferenced);
+            var qcSampleLatest = await GetQcSampleWithDataAsync(qcHeaderLatest);
+            if (!HaveMatchingFieldShapes(qcSampleReferenced, qcSampleLatest))
+            {
+                return QcAcceptanceStatus.Failed;
             }
+
+            qcSampleLatest.ApplyReference(qcSampleReferenced);
+            var isAcceptable = qcSampleLatest.IsDeviationAcceptable(QcDeviationThreshold);
+            return isAcceptable ? QcAcceptanceStatus.Accepted : QcAcceptanceStatus.Failed;
         }
 
         private async Task<QcSampleBindable> GetQcSampleWithDataAsync(IQcSampleHeader sample)
         {
             var fields = await qcRepository.FetchQcFieldsAsync(sample.Id);
-            var reportFields = fields.Select(x => new QcReportField(x, sample.EmissionCurrent)).OrderBy(x => x.FieldName).ToList();
+            var reportFields = fields
+                .Select(x => new QcReportField(x, sample.EmissionCurrent))
+                .OrderBy(x => x.FieldName)
+                .ToList();
             return new QcSampleBindable(sample, reportFields);
+        }
+
+        private static bool HaveMatchingFieldShapes(
+            QcSampleBindable reference,
+            QcSampleBindable latest)
+        {
+            return reference.Fields.Count > 0
+                && reference.Fields.Count == latest.Fields.Count
+                && reference.Fields.Zip(
+                    latest.Fields,
+                    (referenceField, latestField) =>
+                        referenceField.FieldName == latestField.FieldName
+                        && referenceField.Values.Count == latestField.Values.Count)
+                    .All(matches => matches);
         }
     }
 }

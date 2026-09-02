@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Prism.Mvvm;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
@@ -8,15 +7,13 @@ namespace Xcc.Application.Domain.GryphonBoard.Model.Indicators
 {
     public class LaunchingProgress : BindableBase
     {
-        readonly struct Context 
+        readonly struct Context
         {
-            public int PointIndex { get; } = 0;
-            public float TargetCurrentValue { get; } = 0;
-            private float InitialCurrentValue { get; } = 0;
+            public float TargetCurrentValue { get; }
+            private float InitialCurrentValue { get; }
 
-            public Context(int pointIndex, float targetCurrentValue, float initialCurrentValue)
+            public Context(float targetCurrentValue, float initialCurrentValue)
             {
-                PointIndex = pointIndex;
                 TargetCurrentValue = targetCurrentValue;
                 InitialCurrentValue = initialCurrentValue;
             }
@@ -57,18 +54,15 @@ namespace Xcc.Application.Domain.GryphonBoard.Model.Indicators
                 var actualValue = systemTelemetry.HeaterCurrentFeedback;
                 if (actualValue != 0)
                 {
-                    if (_context?.PointIndex != systemTelemetry.CurrentOperationalPoint)
+                    if (_context is null)
                     {
-                        var pointIndex = systemTelemetry.CurrentOperationalPoint;
                         Value = 0;
                         _context = new Context(
-                            pointIndex,
-                            targetCurrentValue: GetCurrentSetpoint(pointIndex),
-                            initialCurrentValue: actualValue
-                            );
+                            targetCurrentValue: GetCurrentSetpoint(),
+                            initialCurrentValue: actualValue);
                     }
 
-                    // On the second point, actual value can already be above the target value
+                    // Feedback can already be above the target value.
                     if (actualValue < _context?.TargetCurrentValue)
                     {
                         Value = Math.Max(Value,
@@ -92,9 +86,10 @@ namespace Xcc.Application.Domain.GryphonBoard.Model.Indicators
                 Value = 100; // emission, so launching is done
             }
         }
-        private float GetCurrentSetpoint(int pointIndex)
+        private float GetCurrentSetpoint()
         {
-            return MainBoardModel.CurrentPlan.Points.ElementAt(pointIndex).FilamentSetpoint;
+            return MainBoardModel.CurrentEmission?.FilamentSetpoint
+                ?? throw new InvalidOperationException("No current emission.");
         }
     }
 }

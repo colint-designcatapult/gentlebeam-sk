@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:prism="http://prismlibrary.com/"
              xmlns:views="clr-namespace:Heracles.Ucsi.Views"
+             xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+             xmlns:ucx="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
              prism:ViewModelLocator.AutoWireViewModel="True"
              Background="{DynamicResource UcsiBackgroundBrush}"
              Foreground="{DynamicResource UcsiTextBrush}"
@@ -28,6 +30,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="Unified Calibration &amp; Service Interface" FontSize="20" FontWeight="SemiBold"/>
@@ -38,6 +41,15 @@
                 </StackPanel>
                 <TextBlock Grid.Column="1" Text="{Binding ErrorText}" Foreground="{StaticResource UcsiFaultBrush}"
                            MaxWidth="650" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                <ucx:RadiationHazardControl
+                    x:Name="RadiationHazardIndicator"
+                    Grid.Column="2"
+                    Width="38"
+                    Height="38"
+                    Margin="12,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    IsActive="{Binding CurrentSample.Telemetry, Converter={convx:GcbStatusToRadiationHazardActiveStateConverter}}"/>
             </Grid>
         </Border>
 
@@ -130,6 +142,172 @@
                                         </UniformGrid>
                                     </StackPanel>
                                 </ScrollViewer>
+                            </TabItem>
+
+                            <!-- Normal one-point emission workflow -->
+                            <TabItem Header="Emission">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="10">
+
+                                            <UniformGrid Columns="4">
+                                                <Border Background="#1FFFFFFF" CornerRadius="4" Padding="8" Margin="0,0,6,0">
+                                                    <StackPanel>
+                                                        <TextBlock Text="HV [kV]" HorizontalAlignment="Center" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                                        <Slider Orientation="Vertical" Minimum="0" Maximum="100" Height="130"
+                                                                Value="{Binding EmissionKv, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBox Text="{Binding EmissionKv, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}"
+                                                                 Style="{StaticResource UcsiTextBoxStyle}" Margin="0,5,0,0" KeyDown="OnEmissionInputKeyDown"/>
+                                                        <TextBlock Text="{Binding EmissionFeedbackKv, StringFormat=FB {0:F2} kV}"
+                                                                   Style="{StaticResource UcsiValueTextStyle}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <Border Background="#1FFFFFFF" CornerRadius="4" Padding="8" Margin="0,0,6,0">
+                                                    <StackPanel>
+                                                        <TextBlock Text="e- [mA]" HorizontalAlignment="Center" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                                        <Slider Orientation="Vertical" Minimum="0" Maximum="6" Height="130"
+                                                                Value="{Binding EmissionMa, Mode=OneWay}" IsEnabled="False" Opacity="0.6"/>
+                                                        <TextBox Text="{Binding EmissionMa, Mode=OneWay, StringFormat={}{0:F3}}" IsReadOnly="True"
+                                                                 Style="{StaticResource UcsiTextBoxStyle}" Margin="0,5,0,0"/>
+                                                        <TextBlock Text="{Binding EmissionFeedbackMa, StringFormat=FB {0:F3} mA}"
+                                                                   Style="{StaticResource UcsiValueTextStyle}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <Border Background="#1FFFFFFF" CornerRadius="4" Padding="8" Margin="0,0,6,0">
+                                                    <StackPanel>
+                                                        <TextBlock Text="Power [W]" HorizontalAlignment="Center" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                                        <Slider Orientation="Vertical" Minimum="0" Maximum="400" Height="130"
+                                                                Value="{Binding EmissionPower, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBox Text="{Binding EmissionPower, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}"
+                                                                 Style="{StaticResource UcsiTextBoxStyle}" Margin="0,5,0,0" KeyDown="OnEmissionInputKeyDown"/>
+                                                        <TextBlock Text="{Binding EmissionFeedbackPower, StringFormat=FB {0:F1} W}"
+                                                                   Style="{StaticResource UcsiValueTextStyle}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <Border Background="#1FFFFFFF" CornerRadius="4" Padding="8">
+                                                    <StackPanel>
+                                                        <TextBlock Text="Filament [mA]" HorizontalAlignment="Center" Foreground="{StaticResource UcsiMutedTextBrush}"/>
+                                                        <Slider Orientation="Vertical" Minimum="1000" Maximum="3250" Height="130"
+                                                                Value="{Binding EmissionFilament, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        <TextBox Text="{Binding EmissionFilament, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F0}}"
+                                                                 Style="{StaticResource UcsiTextBoxStyle}" Margin="0,5,0,0" KeyDown="OnEmissionInputKeyDown"/>
+                                                        <TextBlock Text="{Binding EmissionFeedbackFilament, StringFormat=FB {0:F1} mA}"
+                                                                   Style="{StaticResource UcsiValueTextStyle}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </UniformGrid>
+
+                                            <Separator Margin="0,12" Background="{StaticResource UcsiBorderBrush}"/>
+                                            <TextBlock Text="Coils and timer" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,0,0,6"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="115"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <TextBlock Text="X coil [A]" VerticalAlignment="Center"/>
+                                                <Slider x:Name="EmissionXSlider" Grid.Column="1" Minimum="-1.5" Maximum="1.5" TickFrequency="0.1"
+                                                        Value="{Binding EmissionXCoilAmps, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="8,6"/>
+                                                <TextBox Grid.Column="2" Text="{Binding EmissionXCoilAmps, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F3}}"
+                                                         Style="{StaticResource UcsiTextBoxStyle}" Margin="4" KeyDown="OnEmissionInputKeyDown"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding EmissionFeedbackXCoil, StringFormat=FB {0:F3} A}"
+                                                           Style="{StaticResource UcsiValueTextStyle}" VerticalAlignment="Center" Margin="8,0"/>
+
+                                                <TextBlock Grid.Row="1" Text="Y coil [A]" VerticalAlignment="Center"/>
+                                                <Slider x:Name="EmissionYSlider" Grid.Row="1" Grid.Column="1" Minimum="-1.5" Maximum="1.5" TickFrequency="0.1"
+                                                        Value="{Binding EmissionYCoilAmps, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="8,6"/>
+                                                <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding EmissionYCoilAmps, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F3}}"
+                                                         Style="{StaticResource UcsiTextBoxStyle}" Margin="4" KeyDown="OnEmissionInputKeyDown"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding EmissionFeedbackYCoil, StringFormat=FB {0:F3} A}"
+                                                           Style="{StaticResource UcsiValueTextStyle}" VerticalAlignment="Center" Margin="8,0"/>
+
+                                                <TextBlock Grid.Row="2" Text="Focus [A]" VerticalAlignment="Center"/>
+                                                <Slider x:Name="EmissionFocusSlider" Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="3" TickFrequency="0.1"
+                                                        Value="{Binding EmissionFocusCoilAmps, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="8,6"/>
+                                                <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding EmissionFocusCoilAmps, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F3}}"
+                                                         Style="{StaticResource UcsiTextBoxStyle}" Margin="4" KeyDown="OnEmissionInputKeyDown"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding EmissionFeedbackFocusCoil, StringFormat=FB {0:F3} A}"
+                                                           Style="{StaticResource UcsiValueTextStyle}" VerticalAlignment="Center" Margin="8,0"/>
+
+                                                <TextBlock Grid.Row="3" Text="Timer [s]" VerticalAlignment="Center"/>
+                                                <Slider x:Name="EmissionTimerSlider" Grid.Row="3" Grid.Column="1" Minimum="0.1" Maximum="180" TickFrequency="1"
+                                                        Value="{Binding EmissionDurationSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="8,6"/>
+                                                <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding EmissionDurationSeconds, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}"
+                                                         Style="{StaticResource UcsiTextBoxStyle}" Margin="4" KeyDown="OnEmissionInputKeyDown"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding EmissionFeedbackElapsedSeconds, StringFormat=FB {0:F1} s}"
+                                                           Style="{StaticResource UcsiValueTextStyle}" VerticalAlignment="Center" Margin="8,0"/>
+                                            </Grid>
+
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                    <ScrollViewer Grid.Column="1" Margin="10" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Width="180" VerticalAlignment="Top">
+                                            <Button x:Name="EmissionRunStopButton"
+                                                    Content="{Binding EmissionButtonText}"
+                                                    Command="{Binding EmissionRunStopCommand}"
+                                                    Foreground="{StaticResource UcsiTextBrush}"
+                                                    Background="{StaticResource UcsiAccentBrush}"
+                                                    Padding="10,8" Margin="0,0,0,8"
+                                                    FontSize="12" FontWeight="Bold"/>
+                                            <TextBlock Text="Sequence" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,0,0,4"/>
+                                            <TextBlock x:Name="EmissionSequenceStatusText"
+                                                       Text="{Binding EmissionSequenceStatus}"
+                                                       Foreground="{StaticResource UcsiMutedTextBrush}"
+                                                       TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+                                            <TextBlock Text="Interlocks" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,0,0,8"/>
+                                            <StackPanel Margin="0,0,0,8">
+                                                <Grid Margin="0,2" Height="20">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Ellipse Width="10" Height="10" Fill="{Binding InterlockHvColor}" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="HV Interlock" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                </Grid>
+                                                <Grid Margin="0,2" Height="20">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Ellipse Width="10" Height="10" Fill="{Binding InterlockGridColor}" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="Grid Interlock" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                </Grid>
+                                                <Grid Margin="0,2" Height="20">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Ellipse Width="10" Height="10" Fill="{Binding InterlockGridWatchdogColor}" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="Grid Watchdog" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                </Grid>
+                                            </StackPanel>
+
+                                            <TextBlock Text="State" Style="{StaticResource UcsiSectionTitleStyle}" Margin="0,8,0,8"/>
+                                            <TextBlock x:Name="EmissionStateText"
+                                                       Text="{Binding SystemStateText, StringFormat=Control state: {0}}"
+                                                       FontWeight="Bold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                            <Grid Margin="0,2" Height="20">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Ellipse Width="10" Height="10" Fill="{Binding WarmingIndicatorColor}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="Warming" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            </Grid>
+                                            <Grid Margin="0,2" Height="20">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Ellipse Width="10" Height="10" Fill="{Binding HvRampingIndicatorColor}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="HV Ramping" Foreground="{StaticResource UcsiMutedTextBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                    <Border x:Name="EmissionUnavailableOverlay" Grid.ColumnSpan="2" Panel.ZIndex="10" Background="#E610171B"
+                                            Visibility="{Binding EmissionTabUnavailable, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock Text="{Binding EmissionTabUnavailableReason}" FontWeight="Bold" TextWrapping="Wrap"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" Margin="24"/>
+                                    </Border>
+                                </Grid>
                             </TabItem>
 
                             <!-- HVPS Tab -->
@@ -338,6 +516,13 @@
                                         <StackPanel Width="180" VerticalAlignment="Top">
                                         <!-- Emission Button -->
                                         <Button Content="▶ Emission" Foreground="{StaticResource UcsiTextBrush}" Background="{Binding EmissionButtonBrush}" Padding="10,8" Margin="0,0,0,4" FontSize="12" Cursor="Hand" IsEnabled="{Binding CanClickEmission}" Focusable="False" Click="OnEmissionButtonClick"/>
+                                        <Button x:Name="StopCalibrationButton"
+                                                Content="Stop Calibration"
+                                                Command="{Binding StopCalibrationCommand}"
+                                                Foreground="{StaticResource UcsiTextBrush}"
+                                                Background="{StaticResource UcsiFaultBrush}"
+                                                Padding="10,8" Margin="0,0,0,8"
+                                                FontSize="12" FontWeight="Bold"/>
 
                                         
                                         <!-- Interlocks Section -->
@@ -401,6 +586,11 @@
                                         </Grid>
                                     </StackPanel>
                                     </ScrollViewer>
+                                    <Border x:Name="HvpsUnavailableOverlay" Grid.ColumnSpan="2" Panel.ZIndex="10" Background="#E610171B"
+                                            Visibility="{Binding CalibrationControlsUnavailable, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock Text="{Binding CalibrationControlsUnavailableReason}" FontWeight="Bold" TextWrapping="Wrap"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" Margin="24"/>
+                                    </Border>
                                 </Grid>
                             </TabItem>
 
@@ -525,6 +715,11 @@
                                             </Grid>
                                         </StackPanel>
                                     </ScrollViewer>
+                                    <Border x:Name="CoilsUnavailableOverlay" Panel.ZIndex="10" Background="#E610171B"
+                                            Visibility="{Binding CalibrationControlsUnavailable, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock Text="{Binding CalibrationControlsUnavailableReason}" FontWeight="Bold" TextWrapping="Wrap"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" Margin="24"/>
+                                    </Border>
                                 </Grid>
                             </TabItem>
 

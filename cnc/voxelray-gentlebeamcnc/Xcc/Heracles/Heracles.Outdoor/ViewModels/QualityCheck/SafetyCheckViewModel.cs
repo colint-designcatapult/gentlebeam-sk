@@ -364,8 +364,15 @@ namespace Heracles.External.ViewModels.QualityCheck
             return Task.FromResult(false);
         }
 
-        protected override GcbEmissionPlan BuildGcbEmissionPlan()
+        protected override GcbOperationalPoint BuildGcbOperationalPoint(int fieldIndex)
         {
+            if (fieldIndex != 0 || SafetyCheckModel.Fields.Count != 1)
+            {
+                throw new InvalidOperationException(
+                    "Safety Check requires exactly one emission field.");
+            }
+
+            var field = SafetyCheckModel.Fields[0];
             var coilConfigurations = CollimatorConfigurationStore.CoilConfigurations;
             double? heaterCurrent = CollimatorConfigurationStore.HeaterCurrent.HeaterCurrent;
             if (heaterCurrent is null)
@@ -373,37 +380,35 @@ namespace Heracles.External.ViewModels.QualityCheck
                 throw new NullReferenceException("Invalid applicator configuration, heater current value is missing");
             }
 
-            GcbEmissionPlan plan = new();
-
-            foreach (var field in SafetyCheckModel.Fields)
+            var coilSetpoints = coilConfigurations.FirstOrDefault(c => c.FieldName == field.Name);
+            if (coilSetpoints is null)
             {
-                var coilSetpoints = coilConfigurations.FirstOrDefault(c => c.FieldName == field.Name);
-                if (coilSetpoints is null)
-                {
-                    throw new NullReferenceException("Invalid applicator configuration, coil configuration data is missing");
-                }
-
-                float totalTime = (float)field.Duration;
-                float remainingTime = totalTime - (float)field.Actual;
-
-                GcbOperationalPoint op = new GcbOperationalPoint
-                {
-                    PointIndex = plan.TotalPoints,
-                    TotalPointTime = totalTime,
-                    RemainingPointTime = remainingTime,
-                    SetpointKv = EnergyConverter.Convert(field.Energy),
-                    TargetMA = Convert.ToSingle(field.Current),
-
-                    XCoilSetpoint = Convert.ToSingle(coilSetpoints.XDeflectionCurrent),
-                    YCoilSetpoint = Convert.ToSingle(coilSetpoints.YDeflectionCurrent),
-                    FocusCoilSetpoint = Convert.ToSingle(coilSetpoints.FocusCurrent),
-                    FilamentSetpoint = (float)heaterCurrent.Value,
-                    AutoExecution = GetPlanAutoExecutionFlag()
-                };
-
-                plan.AddPoint(op);
+                throw new NullReferenceException("Invalid applicator configuration, coil configuration data is missing");
             }
-            return plan;
+
+            float totalTime = (float)field.Duration;
+            return new GcbOperationalPoint
+            {
+                TotalPointTime = totalTime,
+                RemainingPointTime = totalTime - (float)field.Actual,
+                SetpointKv = EnergyConverter.Convert(field.Energy),
+                TargetMA = Convert.ToSingle(field.Current),
+                XCoilSetpoint = Convert.ToSingle(coilSetpoints.XDeflectionCurrent),
+                YCoilSetpoint = Convert.ToSingle(coilSetpoints.YDeflectionCurrent),
+                FocusCoilSetpoint = Convert.ToSingle(coilSetpoints.FocusCurrent),
+                FilamentSetpoint = (float)heaterCurrent.Value
+            };
+        }
+
+        protected override int FindNextPendingEmissionIndex(int startIndex)
+        {
+            if (startIndex > 0 || SafetyCheckModel.Fields.Count != 1)
+            {
+                return -1;
+            }
+
+            var field = SafetyCheckModel.Fields[0];
+            return field.Duration - field.Actual >= PlanCompletedThreshold ? 0 : -1;
         }
 
         protected override void RecalculateInitialXrayTime()
@@ -431,46 +436,32 @@ namespace Heracles.External.ViewModels.QualityCheck
             try
             {
                 await Semaphore.WaitAsync();
-
-                if (GcbState == GcbStateNew.Emission ||
-                    PreviousGcbState == GcbStateNew.Emission)
+                if (SafetyCheckModel.Fields.Count != 1)
                 {
-                    int operationalPointIndex = telemetry.CurrentOperationalPoint;
+                    return;
+                }
+
+                var field = SafetyCheckModel.Fields[0];
+                if (GcbState == GcbStateNew.Emission)
+                {
                     float timerValue = telemetry.PrimaryTimerValue;
-
-                    if (operationalPointIndex != PreviousOperationPointIndex)
+                    field.Actual = Convert.ToSingle(XrayPointStartTime + timerValue);
+                    UpdateBeamOnProgress(
+                        SafetyCheckModel.TotalDuration,
+                        Convert.ToSingle(XrayTime + timerValue));
+                }
+                else if (PreviousGcbState == GcbStateNew.Emission)
+                {
+                    await MainBoardModel.UpdateCurrentEmissionFromGCB();
+                    if (MainBoardModel.CurrentEmission is { } emission)
                     {
-                        var fields = SafetyCheckModel.Fields;
-                        if (PreviousOperationPointIndex >= 0 && fields is not null && fields.Count > PreviousOperationPointIndex)
-                        {
-                            var previousTf = fields[PreviousOperationPointIndex];
-                            previousTf.Actual = Convert.ToSingle(previousTf.Duration);
-                            RecalculateInitialXrayTime();
-                            XrayPointStartTime = 0;
-
-                            var previousPoint = await MainBoardModel.QueryPointFromGCB(PreviousOperationPointIndex);
-
-                            if (previousPoint.RemainingPointTime > 0)
-                            {
-                                previousTf.Actual = previousPoint.TotalPointTime - previousPoint.RemainingPointTime;
-                                _ = LogWriter.LogAsync($"Query point response: TotalPointTime={previousPoint.TotalPointTime} RemainingPointTime={previousPoint.RemainingPointTime} Actual={previousTf.Actual}", LogRecordSeverity.Info, LogRecordType.System);
-                            }
-                        }
-                    }
-
-                    if (operationalPointIndex < SafetyCheckModel.Fields?.Count)
-                    {
-                        var tf = SafetyCheckModel.Fields[operationalPointIndex];
-
-                        if (operationalPointIndex != PreviousOperationPointIndex)
-                        {
-                            PreviousOperationPointIndex = operationalPointIndex;
-                            XrayPointStartTime = tf.Actual;
-                        }
-
-                        UpdateBeamOnProgress(SafetyCheckModel.TotalDuration, Convert.ToSingle(XrayTime + timerValue));
-
-                        tf.Actual = Convert.ToSingle(XrayPointStartTime + timerValue);
+                        field.Actual = emission.ActualDuration;
+                        RecalculateInitialXrayTime();
+                        UpdateBeamOnProgress(SafetyCheckModel.TotalDuration, XrayTime);
+                        _ = LogWriter.LogAsync(
+                            $"Query emission response: TotalPointTime={emission.TotalPointTime} RemainingPointTime={emission.RemainingPointTime} Actual={field.Actual}",
+                            LogRecordSeverity.Info,
+                            LogRecordType.System);
                     }
                 }
             }
@@ -496,19 +487,19 @@ namespace Heracles.External.ViewModels.QualityCheck
             Task updateAfterEmissionTask = Task.CompletedTask;
             try
             {
-                var telemetry = GCBDataStore.SystemTelemetry ?? throw new Exception("GCB telemetry connection lost.");
+                _ = GCBDataStore.SystemTelemetry
+                    ?? throw new Exception("GCB telemetry connection lost.");
+                if (SafetyCheckModel.Fields.Count != 1)
+                {
+                    throw new InvalidOperationException(
+                        "Safety Check requires exactly one emission field.");
+                }
 
-                // Store what was the current point before emission
-                PreviousOperationPointIndex = telemetry.CurrentOperationalPoint;
-
-                // Store initial emission time of the current point to calc progress over the plan
                 RecalculateInitialXrayTime();
-
-                XrayPointStartTime = (PreviousOperationPointIndex < SafetyCheckModel.Fields.Count)
-                    ? SafetyCheckModel.Fields[PreviousOperationPointIndex].Actual
-                            : 0.0;
-
-                UpdateBeamOnProgress(SafetyCheckModel.TotalDuration, Convert.ToSingle(XrayTime));
+                XrayPointStartTime = SafetyCheckModel.Fields[0].Actual;
+                UpdateBeamOnProgress(
+                    SafetyCheckModel.TotalDuration,
+                    Convert.ToSingle(XrayTime));
 
                 UIStateMachine.RequestStateSwitch(UIMacroState.Emission);
                 Debug.WriteLine($"Update UI state machine: State={UIStateMachine.State}, LB=({UIStateMachine.LeftButton.State}, {UIStateMachine.LeftButton.IsEnabled}), " +
@@ -525,6 +516,12 @@ namespace Heracles.External.ViewModels.QualityCheck
                 await MainBoardModel.BeamOn();
 
                 await updateAfterEmissionTask;
+                await MainBoardModel.UpdateCurrentEmissionFromGCB();
+                if (MainBoardModel.CurrentEmission is { } completedEmission)
+                {
+                    var field = SafetyCheckModel.Fields[0];
+                    field.Actual = completedEmission.ActualDuration;
+                }
 
                 if (GetUserCleanupConfirmation(
                     SafetyCheckConstants.CompletionConfirmationTitle,

@@ -203,9 +203,17 @@ static void debug_test_report_state()
 			ftdi_debug_str_array[2] = 'D';
 			ftdi_debug_str_array[3] = 'C';
 			break;
+		case STATE_FAULT_DISCHARGE:
+			ftdi_debug_str_array[2] = 'F';
+			ftdi_debug_str_array[3] = 'D';
+			break;
 		case STATE_FAULT:
 			ftdi_debug_str_array[2] = 'F';
 			ftdi_debug_str_array[3] = 'F';
+			break;
+		case STATE_CALIBRATION:
+			ftdi_debug_str_array[2] = 'C';
+			ftdi_debug_str_array[3] = 'A';
 			break;
 		default:
 			ftdi_debug_str_array[2] = 'X';

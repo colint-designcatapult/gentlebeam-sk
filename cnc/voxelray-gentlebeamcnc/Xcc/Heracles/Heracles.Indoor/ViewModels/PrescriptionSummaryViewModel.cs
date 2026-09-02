@@ -49,7 +49,7 @@ public class PrescriptionSummaryViewModel : BindableBase
 
                 if (collimatorConfig is not null)
                     ActualDose = TreatmentDoseCalculation.CalculateDose(
-                        Application.Models.PlanModel.DefaultTreatmentFieldName,
+                        TreatmentPlanFieldRules.RequiredFieldName,
                         collimatorConfig,
                         prescription!.DwellTime);
             }

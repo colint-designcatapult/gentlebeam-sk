@@ -9,92 +9,55 @@ namespace Heracles.Outdoor.Test.Models.GryphonBoard.Indicators
 {
     internal class HVSetupProgressTests
     {
-        private const float KV_SETPOINT_VALUE = 50.0f;
-        private static GcbEmissionPlan emissionPlan = MakeTestPlan(points: 3, setpointKv: KV_SETPOINT_VALUE);
-        private Mock<IMainBoardModel> mockMainBoardModel;
-        public HVSetupProgress HVSetupProgress { get; private set; }
+        private const float KvSetpoint = 50.0f;
+        private HVSetupProgress progress;
 
-        private static GcbEmissionPlan MakeTestPlan(int points, float setpointKv)
-        {
-            GcbEmissionPlan plan = new GcbEmissionPlan();
-            for (int i = 0; i < points; i++)
-            {
-                plan.AddPoint(new GcbOperationalPoint { SetpointKv = setpointKv, PointIndex = i });
-            }
-            return plan;
-        }
-
-        private static ISystemTelemetry MakeSystemTelemetry(GcbStateNew state, int pointIndex, float kvFeedback) =>
+        private static ISystemTelemetry MakeSystemTelemetry(
+            GcbStateNew state,
+            float kvFeedback) =>
             new SystemNormalTelemetry
             {
                 ControlBoardState = state,
-                CurrentOperationalPoint = pointIndex,
                 KvFeedback = kvFeedback,
             };
 
         [SetUp]
         public void Setup()
         {
-            mockMainBoardModel = new();
-            mockMainBoardModel.SetupGet(m => m.CurrentPlan).Returns(emissionPlan);
-            HVSetupProgress = new HVSetupProgress(mockMainBoardModel.Object);
+            var mainBoard = new Mock<IMainBoardModel>();
+            mainBoard.SetupGet(model => model.CurrentEmission)
+                .Returns(new GcbOperationalPoint { SetpointKv = KvSetpoint });
+            progress = new HVSetupProgress(mainBoard.Object);
         }
 
         [Test]
-        public void NoLoadingTelemetryTest()
+        public void IgnoresMissingAndNonSetupTelemetry()
         {
-            HVSetupProgress.OnSystemTelemetryChanged(null);
-            Assert.That(HVSetupProgress.Value, Is.EqualTo(0));
+            progress.OnSystemTelemetryChanged(null);
+            progress.OnSystemTelemetryChanged(
+                MakeSystemTelemetry(GcbStateNew.Cold, 0));
 
-            HVSetupProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Cold, 0, 0));
-            Assert.That(HVSetupProgress.Value, Is.EqualTo(0));
+            Assert.That(progress.Value, Is.Zero);
         }
 
         [Test]
-        public void HVSetupTelemetryZeroSetpointTest()
+        public void ReportsScalarEmissionSetupProgress()
         {
-            HVSetupProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.HVSetup, 0, 0));
-            Assert.That(HVSetupProgress.Value, Is.EqualTo(0));
+            progress.OnSystemTelemetryChanged(
+                MakeSystemTelemetry(GcbStateNew.HVSetup, KvSetpoint / 2));
+
+            Assert.That(progress.Value, Is.EqualTo(50).Within(1));
         }
 
         [Test]
-        public void HVSetupTelemetryPositiveIncrementTest()
+        public void ResetsAfterSetup()
         {
-            float initial_kV = 0.1f;
-            float setpoint50percent = KV_SETPOINT_VALUE / 2;
+            progress.OnSystemTelemetryChanged(
+                MakeSystemTelemetry(GcbStateNew.HVSetup, KvSetpoint / 2));
+            progress.OnSystemTelemetryChanged(
+                MakeSystemTelemetry(GcbStateNew.Ready, KvSetpoint));
 
-            HVSetupProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.HVSetup, 0, initial_kV));
-            Assert.That(HVSetupProgress.Value, Is.EqualTo(0));
-
-            HVSetupProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.HVSetup, 0, setpoint50percent));
-            Assert.That(Math.Abs(HVSetupProgress.Value - 50), Is.LessThan(2)); // value is close to 50%
-        }
-
-        [Test]
-        public void ResetAfterLaunchingTest()
-        {
-            float setpoint50percent = KV_SETPOINT_VALUE / 2;
-
-            HVSetupProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.HVSetup, 0, setpoint50percent));
-            Assert.That(HVSetupProgress.Value, Is.GreaterThan(0));
-
-            HVSetupProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Ready, 0, KV_SETPOINT_VALUE));
-            Assert.That(HVSetupProgress.Value, Is.EqualTo(0));
-        }
-
-        [Test]
-        public void HVSetupTelemetryPointSwitchTest()
-        {
-            float setpoint50percent = KV_SETPOINT_VALUE / 2;
-
-            // Set and update progress for point #0
-            HVSetupProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.HVSetup, 0, 0));
-            HVSetupProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.HVSetup, 0, setpoint50percent));
-            Assert.That(HVSetupProgress.Value, Is.GreaterThan(0));
-
-            // Set progress for point #1
-            HVSetupProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.HVSetup, 1, 0));
-            Assert.That(HVSetupProgress.Value, Is.EqualTo(0));
+            Assert.That(progress.Value, Is.Zero);
         }
     }
 }

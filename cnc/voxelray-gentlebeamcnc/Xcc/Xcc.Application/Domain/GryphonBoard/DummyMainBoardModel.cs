@@ -80,28 +80,20 @@ namespace Xcc.Application.Domain.GryphonBoard
                 entry));
         }
 
-        protected override void UpdateCurrentPlanState(ISystemTelemetry? systemTelemetry)
+        protected override void UpdateCurrentEmissionState(ISystemTelemetry? systemTelemetry)
         {
-            if (systemTelemetry?.IsEmissionState() == true
-                || systemTelemetry?.ControlBoardState == GcbStateNew.Termination)
+            if ((systemTelemetry?.IsEmissionState() != true
+                 && systemTelemetry?.ControlBoardState != GcbStateNew.Termination)
+                || CurrentEmission is not { } emission)
             {
-                int currentPoint = systemTelemetry.CurrentOperationalPoint;
-                var index = currentPoint < CurrentPlan.TotalPoints ? currentPoint : CurrentPlan.TotalPoints - 1;
-
-                var currentPointValue = CurrentPlan[index];
-
-                if (systemTelemetry is { ControlBoardState: GcbStateNew.Emission or GcbStateNew.Termination })
-                {
-                    currentPointValue.RemainingPointTime = currentPointValue.InitialRemainingPointTime - systemTelemetry.PrimaryTimerValue;
-                }
-                else
-                {
-                    // in imaging, timers run in reverse, as a countdown:
-                    currentPointValue.RemainingPointTime = systemTelemetry!.PrimaryTimerValue;
-                }
-
-                CurrentPlan.UpdatePoint(currentPointValue);
+                return;
             }
+
+            emission.RemainingPointTime =
+                systemTelemetry.ControlBoardState is GcbStateNew.Emission or GcbStateNew.Termination
+                    ? emission.InitialRemainingPointTime - systemTelemetry.PrimaryTimerValue
+                    : systemTelemetry.PrimaryTimerValue;
+            CurrentEmission = emission;
         }
 
         public override Task ClearFaults()
@@ -130,29 +122,19 @@ namespace Xcc.Application.Domain.GryphonBoard
             });
         }
         
-        public override async Task ResumePlan()
+        public override async Task ResumeEmission()
         {
-            float energy = 0.0f;
-            GcbOperationalPoint? point = CurrentPlan?.Points.FirstOrDefault();
-            if (point != null)
-            {
-                energy = point.Value.SetpointKv;
-            }
-
-            var gcbPlanState = await QueryPlanFromGCB();
-            foreach (var pt in gcbPlanState.Points)
-            {
-                CurrentPlan?.UpdatePoint(pt);
-            }
+            var emission = await QueryEmissionFromGCB();
+            SetCurrentEmission(emission);
 
             EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
             {
                 Status = DummyXrayStatus.Loading,
-                Parameter = energy
+                Parameter = emission.SetpointKv
             });
 
             OnGcbActionCompletion(GcbActionType.ReleasePlan);
-            _ = LogWriter.LogAsync($"XRay ResumePlan successfully: steps={CurrentPlan?.TotalPoints}", LogRecordSeverity.Info, LogRecordType.System);
+            _ = LogWriter.LogAsync("XRay ResumeEmission successfully", LogRecordSeverity.Info, LogRecordType.System);
         }
         
         public override Task<bool> Stop()
@@ -183,6 +165,7 @@ namespace Xcc.Application.Domain.GryphonBoard
             {
                 IsPlanStaged = false;
                 Session = null;
+                CurrentEmission = null;
 
                 OnGcbActionCompletion(GcbActionType.ClearPlan);
 
@@ -200,6 +183,7 @@ namespace Xcc.Application.Domain.GryphonBoard
 
             IsPlanStaged = false;
             Session = null;
+            CurrentEmission = null;
             OnGcbActionCompletion(GcbActionType.ClearPlan);
 
             _= LogWriter.LogAsync("XRay source stopped successfully", LogRecordSeverity.Info, LogRecordType.System);
@@ -207,30 +191,13 @@ namespace Xcc.Application.Domain.GryphonBoard
             return Task.CompletedTask;
         }
 
-        public override Task<GcbOperationalPoint> QueryPointFromGCB(int index)
+        public override Task<GcbOperationalPoint> QueryEmissionFromGCB()
         {
-            var gcbPoint = CurrentPlan[index];
-            gcbPoint.RemainingPointTime = gcbPoint.TotalPointTime - gcbPoint.ActualDuration;
-
-            return Task.FromResult(gcbPoint);
+            var emission = CurrentEmission
+                ?? throw new InvalidOperationException("No dummy emission is loaded.");
+            return Task.FromResult(emission);
         }
 
-        public override async Task<GcbEmissionPlan> QueryPlanFromGCB()
-        {
-            var telemetry = SystemTelemetry;
-            if (telemetry == null)
-                return null!;
-
-            var totalPoints = telemetry.TotalOperationalPoints;
-
-            GcbEmissionPlan plan = new();
-            for (int i = 0; i < totalPoints; i++)
-            {
-                var point = await QueryPointFromGCB(i);
-                plan.AddPoint(point);
-            }
-            return plan;
-        }
 
         protected override async Task<bool> WarmUp(float heaterCurrentSetpoint, CancellationToken cancellationToken)
         {
@@ -310,112 +277,81 @@ namespace Xcc.Application.Domain.GryphonBoard
             return Task.CompletedTask;
         }
         
-        protected override Task StartPoint()
+        protected override Task StartEmission()
         {
-            var telemetry = SystemTelemetry;
-            if (telemetry is null)
+            if (CurrentEmission is not { } emission)
             {
-                throw new NullReferenceException(nameof(telemetry));
-            }
-            else
-            {
-                int currentPoint = telemetry.CurrentOperationalPoint;
-                if (currentPoint < CurrentPlan.TotalPoints)
-                {
-                    var currentPointValue = CurrentPlan[currentPoint];
-                    currentPointValue.InitialRemainingPointTime = currentPointValue.RemainingPointTime;
-                    CurrentPlan.UpdatePoint(currentPointValue);
-                }
+                return Task.CompletedTask;
             }
 
-            if (CurrentPlan == null || CurrentPlan.TotalPoints == 0)
-                return Task.CompletedTask;
-            
+            emission.InitialRemainingPointTime = emission.RemainingPointTime;
+            CurrentEmission = emission;
+
             EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
             {
                 Status = DummyXrayStatus.Started,
-                Parameter = new List<GcbOperationalPoint>(CurrentPlan.Points)
+                Parameter = emission
             });
 
             OnGcbActionCompletion(GcbActionType.StartBeamOn);
-            _= LogWriter.LogAsync("XRay source started successfully", LogRecordSeverity.Info, LogRecordType.System);
-
+            _ = LogWriter.LogAsync("XRay source started successfully", LogRecordSeverity.Info, LogRecordType.System);
             return Task.CompletedTask;
         }
 
         protected override Task<bool> StartPlan()
         {
-            //if (EmissionPlanStepDurations != null && EmissionPlanStepDurations.Count > 0)
-            //{
-            //    int duration = EmissionPlanStepDurations[0] * 1000;
-            //}
-
-            if (CurrentPlan == null || CurrentPlan.TotalPoints == 0)
-                return Task.FromResult(false); 
+            if (CurrentEmission is not { } emission)
+            {
+                return Task.FromResult(false);
+            }
 
             EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
             {
                 Status = DummyXrayStatus.Started,
-                Parameter = new List<GcbOperationalPoint>(CurrentPlan.Points)
+                Parameter = emission
             });
 
             OnGcbActionCompletion(GcbActionType.ReleasePlan);
-            _= LogWriter.LogAsync("XRay source started successfully", LogRecordSeverity.Info, LogRecordType.System);
-
-            return Task.FromResult(true); 
+            _ = LogWriter.LogAsync("XRay source started successfully", LogRecordSeverity.Info, LogRecordType.System);
+            return Task.FromResult(true);
         }
 
-        protected override async Task<bool> LoadAndStartPlan(
+        protected override async Task<bool> LoadAndStartEmission(
             CancellationToken cancellationToken)
         {
+            var emission = CurrentEmission
+                ?? throw new InvalidOperationException("No dummy emission is loaded.");
 
             EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
             {
                 Status = DummyXrayStatus.SetPlan,
-                Parameter = new List<GcbOperationalPoint>(CurrentPlan.Points)
+                Parameter = emission
             });
 
-            _ = LogWriter.LogAsync($"SendOperationalPoints", LogRecordSeverity.Info, LogRecordType.System);
-            foreach (var op in CurrentPlan.Points)
+            _ = LogWriter.LogAsync("SendOperationalPoint", LogRecordSeverity.Info, LogRecordType.System);
+            LogOperationalPoint(emission);
+
+            float duration = emission.ActualDuration > 0
+                ? emission.TotalPointTime - emission.ActualDuration
+                : emission.TotalPointTime;
+            if (duration > 0)
             {
-                LogOperationalPoint(op);
-            }
-
-            foreach (var step in CurrentPlan.Points)
-            {
-                float duration;
-                if (step.ActualDuration > 0)
-                    duration = step.TotalPointTime - step.ActualDuration; // if it was interrupted
-                else
-                    duration = step.TotalPointTime;
-
-                if (duration <= 0)
-                    continue;
-
-                await Task.Delay(300);
-            }
-
-            float energy = 0.0f;
-            GcbOperationalPoint? point = CurrentPlan.Points.FirstOrDefault();
-            if (point != null)
-            {
-                energy = point.Value.SetpointKv;
+                await Task.Delay(300, cancellationToken);
             }
 
             EventAggregator.GetEvent<DummyXrayStatusChangedEvent>().Publish(new DummyXrayStatusChangedEventArgs
             {
                 Status = DummyXrayStatus.Loading,
-                Parameter = energy
+                Parameter = emission.SetpointKv
             });
 
-            Session = new GcbSession(1, CurrentPlan.Points.Count());
+            Session = new GcbSession(1);
             OnGcbActionCompletion(GcbActionType.NewSession);
 
             IsPlanStaged = true;
             OnGcbActionCompletion(GcbActionType.ReleasePlan);
 
-            _= LogWriter.LogAsync($"XRay LoadPlan successfully: steps={CurrentPlan.TotalPoints}", LogRecordSeverity.Info, LogRecordType.System);
-
+            _ = LogWriter.LogAsync("XRay LoadEmission successfully", LogRecordSeverity.Info, LogRecordType.System);
             return true;
         }
     }

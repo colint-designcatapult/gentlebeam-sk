@@ -30,12 +30,8 @@ enum
 	HB_RX_SYNC = 0,
 	HB_RX_INFO,
 	HB_RX_IO,
-#if defined(CALIBRATION_MODE)
-	HB_RX_RUNTIME,
-#else
 	HB_RX_COL_LOW,
 	HB_RX_COL_HIGH,
-#endif
 	HB_RX_PRESSURE,
 	HB_RX_FLOW,
 	HB_RX_TEMP,
@@ -45,9 +41,7 @@ enum
 	HB_RX_MAG_X_2,
 	HB_RX_MAG_Y_2,
 	HB_RX_MAG_Z_2,
-#if !defined(CALIBRATION_MODE)
 	HB_RX_QC_VAL,
-#endif
 	HB_RX_CRC,
 	HB_RX_NUM_FIELDS
 };

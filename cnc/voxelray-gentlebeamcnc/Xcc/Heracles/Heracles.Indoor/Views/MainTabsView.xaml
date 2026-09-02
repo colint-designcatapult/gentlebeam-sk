@@ -71,8 +71,8 @@
 
             <!--Patients Tab-->
             <TabItem
-                IsEnabled="{Binding GcbDataStore.SystemTelemetry.FirmwareMode, Converter={convx:ObjectIsNotEqualConverter}, ConverterParameter={x:Static coreEnums:FirmwareMode.Calibration}, FallbackValue=True, TargetNullValue=True}"
-                ToolTip="{x:Static common:StringConstants+Common.CalibrationModeServiceRequiredMessage}"
+                IsEnabled="{Binding GcbDataStore.SystemTelemetry.ControlBoardState, Converter={convx:ObjectIsNotEqualConverter}, ConverterParameter={x:Static coreEnums:GcbStateNew.Calibration}, FallbackValue=True, TargetNullValue=True}"
+                ToolTip="{x:Static common:StringConstants+Common.CalibrationStateServiceRequiredMessage}"
                 ToolTipService.ShowOnDisabled="True"
                 Visibility="{Binding AuthorizedUserStore.AuthorizedUser.Role.Permissions.ClinicalData, Converter={convx:BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
                 <TabItem.Header>
@@ -84,7 +84,7 @@
 
                 <Grid>
                     <local:PatientsView VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
-                    <heraclesControls:CalibrationModeLockoutOverlay Panel.ZIndex="10" />
+                    <heraclesControls:CalibrationStateLockoutOverlay Panel.ZIndex="10" />
                 </Grid>
             </TabItem>
 

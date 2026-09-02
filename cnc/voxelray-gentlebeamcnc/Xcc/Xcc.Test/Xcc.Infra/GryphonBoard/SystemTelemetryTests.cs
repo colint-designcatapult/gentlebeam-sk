@@ -20,8 +20,6 @@ internal class SystemTelemetryTests
         packet[(int)NormalTelemetryField.Collimator1] = 0x89ABCDEFu;
         packet[(int)NormalTelemetryField.Collimator2] = 0x01234567u;
         packet[(int)NormalTelemetryField.Buttons] = 108;
-        packet[(int)NormalTelemetryField.CurrentPoint] = 109;
-        packet[(int)NormalTelemetryField.TotalPoints] = 110;
         packet[(int)NormalTelemetryField.InternalTimerState] = 111;
         packet[(int)NormalTelemetryField.InternalTimerValue] = 112.5f;
         packet[(int)NormalTelemetryField.Timer1State] = 113;
@@ -53,11 +51,13 @@ internal class SystemTelemetryTests
         packet[(int)NormalTelemetryField.Mag2X] = 139.5f;
         packet[(int)NormalTelemetryField.Mag2Y] = 140.5f;
         packet[(int)NormalTelemetryField.Mag2Z] = 141.5f;
-        packet[(int)NormalTelemetryField.Reserved1] = 5u;
+        packet[(int)NormalTelemetryField.QcChannel0Reading] = 142.5f;
         packet[(int)NormalTelemetryField.KvSetpoint] = 143.5f;
         packet[(int)NormalTelemetryField.EmissionCurrentLimit] = 144.5f;
         packet[(int)NormalTelemetryField.HvpsPowerSetpoint] = 145.5f;
         packet[(int)NormalTelemetryField.RequiredInterlockFlags] = (1u << 0) | (1u << 4);
+        packet[(int)NormalTelemetryField.QcChannel1Reading] = 146.5f;
+        packet[(int)NormalTelemetryField.QcAdcI2cStatus] = 3u;
 
         var telemetry = SystemNormalTelemetry.Parse(packet.UpdateCRC().Buffer);
 
@@ -89,8 +89,6 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.CollimatorId2, Is.EqualTo(0x01234567u));
             Assert.That(telemetry.CollimatorSerial, Is.EqualTo(0x0123456789ABCDEFul));
             Assert.That(telemetry.ButtonsState, Is.EqualTo(108));
-            Assert.That(telemetry.CurrentOperationalPoint, Is.EqualTo(109));
-            Assert.That(telemetry.TotalOperationalPoints, Is.EqualTo(110));
             Assert.That(telemetry.InternalTimerState, Is.EqualTo(111));
             Assert.That(telemetry.PrimaryTimerValue, Is.EqualTo(112.5f));
             Assert.That(telemetry.Timer1State, Is.EqualTo(113));
@@ -119,6 +117,10 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.CabinetTemperature, Is.EqualTo(135.5f));
             Assert.That(telemetry.Mag1, Is.EqualTo(new TelemetryVector3(136.5f, 137.5f, 138.5f)));
             Assert.That(telemetry.Mag2, Is.EqualTo(new TelemetryVector3(139.5f, 140.5f, 141.5f)));
+            Assert.That(telemetry.QcChannel0Reading, Is.EqualTo(142.5f));
+            Assert.That(telemetry.QcChannel1Reading, Is.EqualTo(146.5f));
+            Assert.That(telemetry.QcAdc1Connected, Is.True);
+            Assert.That(telemetry.QcAdc2Connected, Is.True);
             Assert.That(telemetry.KvSetpoint, Is.EqualTo(143.5f));
             Assert.That(telemetry.EmissionCurrentLimit, Is.EqualTo(144.5f));
             Assert.That(telemetry.HvpsPowerSetpoint, Is.EqualTo(145.5f));
@@ -138,41 +140,51 @@ internal class SystemTelemetryTests
     [Test]
     public void CalibrationParser_MapsAuthoritativeLayoutAndUnavailableValues()
     {
-        var packet = NewTelemetryPacket(47);
-        packet[1] = (int)GcbStateNew.WarmupFault;
-        packet[2] = 102;
-        packet[3] = 103;
-        packet[4] = 104;
-        packet[5] = 105;
-        packet[6] = 106;
-        packet[7] = 107;
-        packet[8] = 108;
-        packet[11] = 111;
-        packet[12] = (1u << 5) | (1u << 22);
-        packet[13] = 0xA5A5A5A5u;
-        packet[14] = 0xDFFFFu;
-        packet[15] = 0x80010182u;
-        packet[16] = 0x80080609u;
-        packet[17] = 0xDEADBEEFu;
-        packet[18] = 118.5f;
-        packet[19] = 119.5f;
-        packet[20] = 120.5f;
-        packet[21] = 121.5f;
-        packet[22] = 122.5f;
-        packet[23] = 123.5f;
-        packet[24] = 124.5f;
-        packet[25] = 125.5f;
-        packet[29] = 129.5f;
-        packet[31] = 130.5f;
-        packet[33] = 133.5f;
-        packet[35] = 135.5f;
-        packet[38] = 138.5f;
-        packet[39] = 139.5f;
-        packet[40] = 140.5f;
-        packet[41] = 141.5f;
-        packet[42] = 142.5f;
-        packet[43] = 143.5f;
-        packet[10] = 0xC3FFFu;
+        var packet = NewTelemetryPacket((uint)CalibrationTelemetryField.PayloadFields);
+        packet[(int)CalibrationTelemetryField.SystemState] =
+            (int)GcbStateNew.WarmupFault;
+        packet[(int)CalibrationTelemetryField.InternalTimerState] = 104;
+        packet[(int)CalibrationTelemetryField.Timer1State] = 105;
+        packet[(int)CalibrationTelemetryField.Timer2State] = 106;
+        packet[(int)CalibrationTelemetryField.SystemRuntime] = 107;
+        packet[(int)CalibrationTelemetryField.HvpsRuntime] = 108;
+        packet[(int)CalibrationTelemetryField.Buttons] = 111;
+        packet[(int)CalibrationTelemetryField.SystemFaultFlags] =
+            (1u << 5) | (1u << 22);
+        packet[(int)CalibrationTelemetryField.CommunicationFaultFlags] =
+            0xA5A5A5A5u;
+        packet[(int)CalibrationTelemetryField.InterlockFlags] = 0xDFFFFu;
+        packet[(int)CalibrationTelemetryField.HvpsIO] = 0x80010182u;
+        packet[(int)CalibrationTelemetryField.HvpsStatusFlags] = 0x80080609u;
+        packet[(int)CalibrationTelemetryField.HvpsErrorFlags] = 0xDEADBEEFu;
+        packet[(int)CalibrationTelemetryField.InternalTimerValue] = 118.5f;
+        packet[(int)CalibrationTelemetryField.Timer1Value] = 119.5f;
+        packet[(int)CalibrationTelemetryField.Timer2Value] = 120.5f;
+        packet[(int)CalibrationTelemetryField.KvFeedback] = 121.5f;
+        packet[(int)CalibrationTelemetryField.MaFeedback] = 122.5f;
+        packet[(int)CalibrationTelemetryField.GridFeedback] = 123.5f;
+        packet[(int)CalibrationTelemetryField.FilamentFeedback] = 124.5f;
+        packet[(int)CalibrationTelemetryField.FilamentSetpoint] = 125.5f;
+        packet[(int)CalibrationTelemetryField.XCoilCurrent] = 129.5f;
+        packet[(int)CalibrationTelemetryField.YCoilCurrent] = 130.5f;
+        packet[(int)CalibrationTelemetryField.FocusCoilCurrent] = 133.5f;
+        packet[(int)CalibrationTelemetryField.IonPumpFeedback] = 135.5f;
+        packet[(int)CalibrationTelemetryField.WaterPressure] = 138.5f;
+        packet[(int)CalibrationTelemetryField.WaterFlow] = 139.5f;
+        packet[(int)CalibrationTelemetryField.WaterTemp] = 140.5f;
+        packet[(int)CalibrationTelemetryField.HeatsinkTemp] = 141.5f;
+        packet[(int)CalibrationTelemetryField.PeltierTemp] = 142.5f;
+        packet[(int)CalibrationTelemetryField.CabinetTemp] = 143.5f;
+        packet[(int)CalibrationTelemetryField.RequiredInterlockFlags] =
+            0xC3FFFu;
+        packet[(int)CalibrationTelemetryField.Collimator1] = 0x89ABCDEFu;
+        packet[(int)CalibrationTelemetryField.Collimator2] = 0x01234567u;
+        packet[(int)CalibrationTelemetryField.Mag1X] = 149.5f;
+        packet[(int)CalibrationTelemetryField.Mag1Y] = 150.5f;
+        packet[(int)CalibrationTelemetryField.Mag1Z] = 151.5f;
+        packet[(int)CalibrationTelemetryField.Mag2X] = 152.5f;
+        packet[(int)CalibrationTelemetryField.Mag2Y] = 153.5f;
+        packet[(int)CalibrationTelemetryField.Mag2Z] = 154.5f;
 
         var telemetry = SystemCalibrationTelemetry.Parse(packet.UpdateCRC().Buffer);
 
@@ -180,8 +192,6 @@ internal class SystemTelemetryTests
         {
             Assert.That(telemetry.FirmwareMode, Is.EqualTo(FirmwareMode.Calibration));
             Assert.That(telemetry.ControlBoardState, Is.EqualTo(GcbStateNew.WarmupFault));
-            Assert.That(telemetry.CurrentOperationalPoint, Is.EqualTo(102));
-            Assert.That(telemetry.TotalOperationalPoints, Is.EqualTo(103));
             Assert.That(telemetry.InternalTimerState, Is.EqualTo(104));
             Assert.That(telemetry.Timer1State, Is.EqualTo(105));
             Assert.That(telemetry.Timer2State, Is.EqualTo(106));
@@ -225,22 +235,26 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.CabinetTemperature, Is.EqualTo(143.5f));
             Assert.That(telemetry.RingLedState, Is.Null);
             Assert.That(telemetry.BaseLedState, Is.Null);
-            Assert.That(telemetry.CollimatorId1, Is.Null);
-            Assert.That(telemetry.CollimatorId2, Is.Null);
-            Assert.That(telemetry.CollimatorSerial, Is.Null);
+            Assert.That(telemetry.CollimatorId1, Is.EqualTo(0x89ABCDEFu));
+            Assert.That(telemetry.CollimatorId2, Is.EqualTo(0x01234567u));
+            Assert.That(telemetry.CollimatorSerial, Is.EqualTo(0x0123456789ABCDEFuL));
             Assert.That(telemetry.KvSetpoint, Is.Null);
             Assert.That(telemetry.EmissionCurrentLimit, Is.Null);
             Assert.That(telemetry.HvpsPowerSetpoint, Is.Null);
             Assert.That(telemetry.GridSetpoint, Is.Null);
-            Assert.That(telemetry.Mag1, Is.Null);
-            Assert.That(telemetry.Mag2, Is.Null);
+            Assert.That(telemetry.Mag1, Is.EqualTo(new TelemetryVector3(149.5f, 150.5f, 151.5f)));
+            Assert.That(telemetry.Mag2, Is.EqualTo(new TelemetryVector3(152.5f, 153.5f, 154.5f)));
+            Assert.That(telemetry.QcChannel0Reading, Is.Null);
+            Assert.That(telemetry.QcChannel1Reading, Is.Null);
+            Assert.That(telemetry.QcAdc1Connected, Is.Null);
+            Assert.That(telemetry.QcAdc2Connected, Is.Null);
             Assert.That(telemetry.IsFaultState(), Is.True);
         });
     }
 
-    [TestCase(46)]
-    [TestCase(48)]
-    public void CalibrationParser_RequiresExactlyFortySevenFields(int fieldCount)
+    [TestCase(52)]
+    [TestCase(54)]
+    public void CalibrationParser_RequiresExactFieldCount(int fieldCount)
     {
         var packet = NewTelemetryPacket((uint)fieldCount).UpdateCRC();
         Assert.That(() => SystemCalibrationTelemetry.Parse(packet.Buffer), Throws.ArgumentException);

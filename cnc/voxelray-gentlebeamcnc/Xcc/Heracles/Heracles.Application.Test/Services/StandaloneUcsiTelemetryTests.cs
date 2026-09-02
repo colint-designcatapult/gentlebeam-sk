@@ -107,7 +107,7 @@ internal sealed class StandaloneUcsiTelemetryTests
             (uint)NormalTelemetryField.PayloadFields);
         packet[(int)NormalTelemetryField.SystemState] = (int)GcbStateNew.StandBy;
         packet[(int)NormalTelemetryField.SystemRuntime] = runtime;
-        packet[(int)NormalTelemetryField.Reserved1] = 1u;
+        packet[(int)NormalTelemetryField.QcChannel0Reading] = 1.0f;
         return packet.UpdateCRC().Buffer;
     }
 }

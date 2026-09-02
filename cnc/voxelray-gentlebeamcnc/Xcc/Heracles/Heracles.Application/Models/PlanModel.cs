@@ -43,12 +43,12 @@ namespace Heracles.Application.Models
     {
         IPrescription Prescription { get; }
         IPlan Plan { get; }
-        TreatmentFieldEntryObservableCollection TreatmentFields { get; }
+        ReadOnlyObservableCollection<ITreatmentFieldEntry> TreatmentFields { get; }
         ITreatmentFieldEntry TreatmentField { get; }
 
         Task<IPlan> OnUpdatePrescriptionAsync(IPrescription? prescription);
 
-        Task<TreatmentFieldEntryObservableCollection> FetchTreatmentFieldsAsync();
+        Task<ReadOnlyObservableCollection<ITreatmentFieldEntry>> FetchTreatmentFieldsAsync();
         Task<IPlan> SubmitAsync();
 
         Task<IPlan> ChangeStatusAsync(string username, string password, PlanStatus planStatus);
@@ -56,7 +56,7 @@ namespace Heracles.Application.Models
         IPlan OnDatabasePlanChanged(IPlan plan); 
         void ValidatePlanDosesAndEmissionCurrent();
         ICollimatorConfiguration GetCollimatorConfiguration(TargetType collimatorType, Energy energy);
-        ITreatmentFieldEntry AddOrUpdateField(ITreatmentField fieldData);
+        ITreatmentFieldEntry UpdateTreatmentField(ITreatmentField fieldData);
         void AddOrUpdateTreatmentField(IPrescription prescription);
         ICollimatorConfiguration SetCollimatorConfiguration(TargetType collimatorType, Energy energy);
         void ShowVerifyDialog();
@@ -132,8 +132,6 @@ namespace Heracles.Application.Models
 
     public class PlanModel : DirtyFlaggedBindableBase, IPlanModel
     {
-        public const TreatmentFieldName DefaultTreatmentFieldName = TreatmentFieldName.PlusC;
-
         public PlanModel(
             ITreatmentInfoStore treatmentInfoStore,
             ICollimatorModel collimatorModel,
@@ -160,13 +158,14 @@ namespace Heracles.Application.Models
             PlanRepository = planRepository;
             EventAggregator = eventAggregator;
             TreatmentDoseCalculation = treatmentDoseCalculation;
+            TreatmentFields = new ReadOnlyObservableCollection<ITreatmentFieldEntry>(_treatmentFields);
             IsModified = false;
         }
 
         private IPlan _plan;
         private IPrescription _prescription;
         private ISimulation _simulation;
-        private TreatmentFieldEntryObservableCollection _treatmentFields = new();
+        private readonly TreatmentFieldEntryObservableCollection _treatmentFields = new();
         private ICollimatorConfiguration? _collimatorConfiguration;
         private IDictionary<int, TreatmentFieldName> _fieldNameMapping = null;
         private CancellationTokenSource _cancellationTokenSource = null;
@@ -209,13 +208,9 @@ namespace Heracles.Application.Models
 
         private Dictionary<ITreatmentFieldEntry, OutgoingActionStateMachine> TreatmentFieldActions { get; } = new();
 
-        public TreatmentFieldEntryObservableCollection TreatmentFields
-        {
-            get => _treatmentFields;
-            private set => SetProperty(ref _treatmentFields, value);
-        }
+        public ReadOnlyObservableCollection<ITreatmentFieldEntry> TreatmentFields { get; }
 
-        public ITreatmentFieldEntry TreatmentField => TreatmentFields.FirstOrDefault();
+        public ITreatmentFieldEntry TreatmentField => _treatmentFields.SingleOrDefault();
 
         public ITreatmentInfoStore TreatmentInfoStore { get; }
         public ICollimatorModel CollimatorModel { get; }
@@ -239,7 +234,7 @@ namespace Heracles.Application.Models
             // add one field for one-field collimators
             var treatmentField = new TreatmentField
             {
-                Name = Application.Models.PlanModel.DefaultTreatmentFieldName,
+                Name = TreatmentPlanFieldRules.RequiredFieldName,
                 DwellTime = prescription.DwellTime
             };
 
@@ -250,32 +245,37 @@ namespace Heracles.Application.Models
             treatmentField.Current = CurrentCalculator.CalculateCurrent(prescription.Energy);
             treatmentField.Energy = prescription.Energy;
 
-            AddOrUpdateField(treatmentField);
+            if (_treatmentFields.Count == 0)
+            {
+                AddField(treatmentField);
+            }
+            else
+            {
+                UpdateTreatmentField(treatmentField);
+            }
         }
 
-        public ITreatmentFieldEntry AddOrUpdateField(ITreatmentField fieldData)
+        public ITreatmentFieldEntry UpdateTreatmentField(ITreatmentField fieldData)
         {
-            if (fieldData == null)
+            TreatmentPlanFieldRules.EnsureValid(_treatmentFields);
+            TreatmentPlanFieldRules.EnsureValid(new[] { fieldData });
+
+            var existingFieldEntry = _treatmentFields[0];
+            fieldData.Id = existingFieldEntry.Id;
+            fieldData.Plan = Plan;
+            fieldData.PlanId = Plan.Id;
+            fieldData.CreationDate = existingFieldEntry.CreationDate;
+            fieldData.IsActive = existingFieldEntry.IsActive;
+            fieldData.DisplayValue = existingFieldEntry.DisplayValue;
+            fieldData.CopyProperties(existingFieldEntry);
+
+            if (existingFieldEntry.Id != Empyrean.Common.Core.Domain.DataManagement.Common.BaseEntry.NewEntryId)
             {
-                throw new ArgumentNullException(nameof(fieldData), StringConstants.EMR.TreatmentFieldIsNullMessage);
+                TreatmentFieldActions[existingFieldEntry].AddAction(OutgoingActionType.Update);
             }
 
-            if (TreatmentFields.TryGetValue(fieldData.Name, out var existingFieldEntry))
-            {
-                if (existingFieldEntry.Id != Empyrean.Common.Core.Domain.DataManagement.Common.BaseEntry.NewEntryId)
-                {
-                    fieldData.Id = existingFieldEntry.Id;
-                    return UpdateField(fieldData);
-                }
-                else
-                {
-                    // Need to remove a blank field that we're updating now to not have a duplicate
-                    // TODO: use state machine properly instead, or refactor all this
-                    DeleteField(existingFieldEntry);
-                }
-            }
-
-            return AddField(fieldData);
+            IsModified = true;
+            return existingFieldEntry;
         }
 
         public void ShowVerifyDialog()
@@ -306,10 +306,7 @@ namespace Heracles.Application.Models
 
         private ITreatmentFieldEntry AddField(ITreatmentField fieldData)
         {
-            if (fieldData == null)
-            {
-                throw new ArgumentNullException(nameof(fieldData), StringConstants.EMR.TreatmentFieldIsNullMessage);
-            }
+            TreatmentPlanFieldRules.EnsureValid(new[] { fieldData });
 
             fieldData.PlanId = Plan.Id;
             var fieldEntry = AddTreatmentField(fieldData, OutgoingActionType.Create);
@@ -317,23 +314,6 @@ namespace Heracles.Application.Models
             IsModified = true;
 
             return fieldEntry;
-        }
-
-        private void DeleteField(ITreatmentFieldEntry field)
-        {
-            if (field == null)
-            {
-                throw new ArgumentNullException(nameof(field), "Input field is null");
-            }
-
-            if (!TreatmentFields.Contains(field) || !TreatmentFieldActions.ContainsKey(field))
-            {
-                throw new ArgumentException("Cannot delete the treatment field");
-            }
-
-            TreatmentFieldActions[field].AddAction(OutgoingActionType.Delete);
-            TreatmentFields.Remove(field);
-            IsModified = true;
         }
 
         public ICollimatorConfiguration GetCollimatorConfiguration(TargetType collimatorType, Energy energy)
@@ -361,7 +341,7 @@ namespace Heracles.Application.Models
         public async Task<IPlan> FetchLatestPlanAsync()
         {
             Plan = null;
-            TreatmentFields.Clear();
+            _treatmentFields.Clear();
             TreatmentFieldActions.Clear();
 
             if (Prescription == null)
@@ -400,22 +380,18 @@ namespace Heracles.Application.Models
             return Plan;
         }
 
-        public async Task<TreatmentFieldEntryObservableCollection> FetchTreatmentFieldsAsync()
+        public async Task<ReadOnlyObservableCollection<ITreatmentFieldEntry>> FetchTreatmentFieldsAsync()
         {
             if (Prescription?.Energy is null)
                 throw new NullReferenceException(StringConstants.EMR.EnergyNotSet);
 
-            TreatmentFields.Clear();
-            TreatmentFieldActions.Clear();
             if (Plan != null && !BaseEntry.IsBlankEntry(Plan))
             {
                 var fields = await PlanRepository.FetchOrderedTreatmentFieldsAsync(Plan.Id);
-                // TODO: workaround - if we have more than one field, we keep only first one and remove all the others
-                if (fields.Count > 1)
-                {
-                    fields = fields.Take(1).ToList();
-                }
+                TreatmentPlanFieldRules.EnsureValid(fields);
 
+                _treatmentFields.Clear();
+                TreatmentFieldActions.Clear();
                 foreach (var field in fields)
                 {
                     // todo: why do we update the energy here?
@@ -423,6 +399,11 @@ namespace Heracles.Application.Models
                     AddTreatmentField(field);
                 }
                 IsValid = false; // consider invalid until explicit validation
+            }
+            else
+            {
+                _treatmentFields.Clear();
+                TreatmentFieldActions.Clear();
             }
 
             IsModified = false;
@@ -495,6 +476,8 @@ namespace Heracles.Application.Models
             {
                 throw new InvalidOperationException("Failed to submit a verified plan");
             }
+            TreatmentPlanFieldRules.EnsureValid(_treatmentFields);
+
 
             // save plan if necessary
             if (BaseEntry.IsBlankEntry(Plan))
@@ -534,11 +517,6 @@ namespace Heracles.Application.Models
                     updatedField.CopyProperties(field.Key);
                     ActionAuditService.RegisterAction($"Update treatment field id={updatedField.Id} in plan id={Plan.Id}");
                 }
-                else if (field.Value.Action == OutgoingActionType.Delete)
-                {
-                    await PlanRepository.DeleteTreatmentFieldAsync(field.Key.Id);
-                    ActionAuditService.RegisterAction($"Delete treatment field id={field.Key.Id} in plan id={Plan.Id}");
-                }
             }
 
             // We need to reset treatment field actions now,
@@ -551,10 +529,6 @@ namespace Heracles.Application.Models
                 TreatmentFieldActions.Add(field, new OutgoingActionStateMachine());
             }
 
-            if (TreatmentFields.Count > 1)
-            {
-                System.Diagnostics.Debug.WriteLine($"PlanModel.SubmitAsync: too many treatment fields - {TreatmentFields.Count}");
-            }
 
             IsModified = false;
             return Plan;
@@ -562,6 +536,11 @@ namespace Heracles.Application.Models
 
         public async Task<IPlan> ChangeStatusAsync(string username, string password, PlanStatus planStatus)
         {
+            if (planStatus == PlanStatus.APPROVED)
+            {
+                TreatmentPlanFieldRules.EnsureValid(_treatmentFields);
+            }
+
             return planStatus switch
             {
                 PlanStatus.PENDING_APPROVAL => await UpdateStatusAsync(username, password, PlanStatus.PENDING_APPROVAL),
@@ -626,6 +605,11 @@ namespace Heracles.Application.Models
 
         public bool ValidateDosesAndEmissionCurrent(IEnumerable<ITreatmentFieldEntry> fields)
         {
+            if (!TreatmentPlanFieldRules.IsValid(fields))
+            {
+                return false;
+            }
+
             bool isActualDoseValid = false;
             bool isCurrentValid = false;
 
@@ -658,34 +642,6 @@ namespace Heracles.Application.Models
         #endregion
 
         #region Private methods
-        private ITreatmentFieldEntry UpdateField(ITreatmentField fieldData)
-        {
-            if (TreatmentFields.RemoveField(fieldData.Name))
-            {
-                ITreatmentFieldEntry entryToRemove = null;
-                foreach (var action in TreatmentFieldActions)
-                {
-                    if (action.Key.Name == fieldData.Name)
-                    {
-                        entryToRemove = action.Key;
-                        break;
-                    }
-                }
-
-                if (entryToRemove != null)
-                    TreatmentFieldActions.Remove(entryToRemove);
-            }
-            else
-            {
-                throw new InvalidOperationException(string.Format(StringConstants.EMR.TreatmentFieldNotExistStringFormat, fieldData.Name));
-            }
-
-            fieldData.PlanId = Plan.Id;
-            var fieldEntry = AddTreatmentField(fieldData, OutgoingActionType.Update);
-            IsModified = true;
-
-            return fieldEntry;
-        }
 
         private ITreatmentFieldEntry AddTreatmentField(
             ITreatmentField safeFieldData, 
@@ -698,7 +654,7 @@ namespace Heracles.Application.Models
             };
             //fieldEntry.PropertyChanged += OnTreatmentFieldChanged;
             
-            TreatmentFields.Add(fieldEntry);
+            _treatmentFields.Add(fieldEntry);
             TreatmentFieldActions.Add(fieldEntry, new OutgoingActionStateMachine(action));
 
             return fieldEntry;
@@ -730,7 +686,7 @@ namespace Heracles.Application.Models
 
         private IPlan SetBlankPlan()
         {
-            TreatmentFields.Clear();
+            _treatmentFields.Clear();
             TreatmentFieldActions.Clear();
 
             var plan = MakeNewBlankPlan();

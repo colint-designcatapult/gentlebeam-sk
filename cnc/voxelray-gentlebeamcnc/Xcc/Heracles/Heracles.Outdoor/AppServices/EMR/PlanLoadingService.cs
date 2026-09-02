@@ -35,21 +35,30 @@ namespace Heracles.External.AppServices.Plan
             // This will save us some time: don't reload the same plan if not asked to
             if (plan?.Id == TreatmentInfoStore.Plan?.Id && TreatmentInfoStore.IsComplete() && !forceReload)
             {
+                TreatmentPlanFieldRules.EnsureValid(TreatmentInfoStore.Plan.TreatmentFields);
                 return TreatmentInfoStore;
             }
 
-            TreatmentInfoStore.Reset();
-            if (plan != null)
+            if (plan is null)
             {
-                TreatmentInfoStore.Plan = new Application.Models.RDBMS.EMR.Plan(
-                    plan,
-                    await PlanRepository.FetchTreatmentFieldsAsync(plan.Id, plan.CollimatorType));
-
-                TreatmentInfoStore.Prescription = await PrescriptionCommands.ReadAsync(TreatmentInfoStore.Plan.PrescriptionId);
-                TreatmentInfoStore.Simulation = await SimulationCommands.ReadAsync(TreatmentInfoStore.Prescription.SimulationId);
-                TreatmentInfoStore.Diagnosis = await DiagnosisCommands.ReadAsync(TreatmentInfoStore.Simulation.DiagnosisId);
-                TreatmentInfoStore.Patient = await PatientRepository.FetchAsync(TreatmentInfoStore.Diagnosis.PatientId);
+                TreatmentInfoStore.Reset();
+                return TreatmentInfoStore;
             }
+
+            var treatmentFields = await PlanRepository.FetchTreatmentFieldsAsync(plan.Id, plan.CollimatorType);
+            TreatmentPlanFieldRules.EnsureValid(treatmentFields);
+            var hydratedPlan = new Application.Models.RDBMS.EMR.Plan(plan, treatmentFields);
+            var prescription = await PrescriptionCommands.ReadAsync(hydratedPlan.PrescriptionId);
+            var simulation = await SimulationCommands.ReadAsync(prescription.SimulationId);
+            var diagnosis = await DiagnosisCommands.ReadAsync(simulation.DiagnosisId);
+            var patient = await PatientRepository.FetchAsync(diagnosis.PatientId);
+
+            TreatmentInfoStore.Reset();
+            TreatmentInfoStore.Plan = hydratedPlan;
+            TreatmentInfoStore.Prescription = prescription;
+            TreatmentInfoStore.Simulation = simulation;
+            TreatmentInfoStore.Diagnosis = diagnosis;
+            TreatmentInfoStore.Patient = patient;
 
             return TreatmentInfoStore;
         }

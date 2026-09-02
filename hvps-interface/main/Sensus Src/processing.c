@@ -199,27 +199,7 @@ static void calibration_start()
 
 static void calibration_stop()
 {
-	if(sys_stat_check(SYS_HV_CTRL_EN))
-	{
-		clear_sys_bit(SYS_HV_CTRL_EN);
-		HAL_GPIO_WritePin(GPIOE, IO_PFC_ALLOWED_Pin|IO_HV_ALLOWED_Pin, GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(GPIOD, IO_SEND_READY_Pin, GPIO_PIN_RESET);
-
-		HAL_Delay(20);
-
-		clear_sys_bit(SYS_EMISSION_ON);
-		HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_RESET);
-
-		HAL_Delay(20);
-
-		set_sys_bit(SYS_HV_CTRL_EN);
-		HAL_GPIO_WritePin(GPIOE, IO_PFC_ALLOWED_Pin|IO_HV_ALLOWED_Pin, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(GPIOD, IO_SEND_READY_Pin, GPIO_PIN_SET);
-	}
-	else
-	{
-		clear_sys_bit(SYS_EMISSION_ON);
-		HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_RESET);
-	}
+	// Unconditionally kill KV on stop
+	shutdown_beam();
 }
 #endif

@@ -116,7 +116,7 @@ STEPS: >>>
 1. Power on the system.
 2. Load a treatment plan.
 3. Observe the grid-clock output with the measurement instrument.
-4. Measure the grid-clock frequency and duty cycle.
+4. Measure the grid-clock frequency.
 5. Disable the grid clock using the approved service or test control.
 6. Observe the grid-clock output after disabling it.
 7. Re-enable the grid clock and observe the output.
@@ -137,30 +137,48 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-19
-TITLE: High voltage setpoint 1 - Test Case
+TITLE: Elapsed-time high-voltage regulation - Test Case
 STATEMENT: >>>
-When user loads a treatment plan and it is ready for running, make sure the firmware provides and
-sets the high voltage setpoint.
+Verify that high-voltage closed-loop commands use elapsed-time ramp rates, bounded output, feedback
+stability timing, and feedback-discrepancy cancellation.
 <<<
 PREREQUISITES: >>>
-* The system is powered on and ready to use.
-* A treatment plan should be ready to load.
+* The system is powered on with high-voltage control unlocked and emission inactive.
+* An HVPS test fixture can control high-voltage feedback independently of the requested setpoint.
+* An approved diagnostic trace can capture requested voltage, feedback, DAC command,
+  high-voltage-ramping status, and timestamps with at most 1 ms resolution.
+* The default high-voltage configuration values are loaded.
 <<<
 STEPS: >>>
-1. Power on the system.
-2. Load a 20 second treatment plan.
-3. Check the state of the system.
-4. Check the value of the reported high voltage.
+1. Request increasing and decreasing high-voltage targets while using the fixture to produce
+   absolute feedback errors below 5 kV, from 5 kV through less than 20 kV, and at least 20 kV.
+2. Capture consecutive high-voltage commands and their timestamps in each error band.
+3. Drive feedback through the requested target, then supply samples within +/-2% interspersed with
+   samples outside that tolerance, and observe the high-voltage-ramping status immediately before
+   and after 4000 ms of accumulated in-tolerance sample time.
+4. Request values that exercise the lower and configured 100 kV upper command limits.
+5. During an increasing ramp, hold feedback so the command is at least 50 kV and exceeds feedback by
+   more than 50 kV.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is powered on successfully.
-2. Verify the plan is loaded successfully.
-3. Verify its state is Ready.
-4. Record the value and verify it's within 10% of loaded treatment target.
+1. Verify the firmware evaluates the ramp on the 5 ms feedback-control cadence in both directions.
+2. Verify the default command changes by 0.025 kV per cycle below 5 kV error and 0.1 kV per cycle in
+   both larger error bands, corresponding to 5 kV/s and 20 kV/s elapsed-time rates.
+3. Verify only samples within +/-2% add 5 ms to stability time, the ramping status remains set
+   before the accumulator reaches 4000 ms, and the status clears on the first sample at or above
+   that threshold.
+4. Verify the command never falls below 0 kV or exceeds the configured 100 kV maximum.
+5. Verify the feedback-discrepancy condition sets the command to zero and clears the ramping status.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWHVPS-17
+  VALUE: RQ-H1FWHVPS-8
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-11
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-14
   ROLE: Verifies
 
 [TEST_CASE]
@@ -192,27 +210,50 @@ RELATIONS:
 UID: TC-H1FWHVPS-21
 TITLE: HVPS digital status signals - Test Case
 STATEMENT: >>>
-When the system is powered, the service user should check the reported value of HVPS digital
-signals in the Service screen with / without a running treatment plan.
+Verify that the firmware reports HVPS digital signals, reports a distinct latched status for each
+monitored fault source, and interprets the OC_CAT fault input as active-low both during startup and
+during operation.
 <<<
 PREREQUISITES: >>>
-* The system is powered on and ready to use.
-* The user of the system needs to be a service user.
-* A treatment plan should be ready to load.
+* The system is connected to a test fixture capable of holding or toggling each HVPS fault input.
+* The user of the system has service-user access.
+* A treatment plan is ready to load.
+* The service screen and an approved fault report or diagnostic trace are available.
+* The approved clear-fault control is available.
 <<<
 STEPS: >>>
-1. Power on the system.
-2. Click Services symbol in the left side of the screen.
-3. Look for HVPS digital signal's value in the service screen.
-4. Load a treatment plan.
-5. Look for HVPS digital signal's value in the service screen.
+1. Hold all HVPS fault inputs inactive and power on the system.
+2. Open the service screen.
+3. Record the reported HVPS digital status before emission.
+4. Load a treatment plan and record the reported HVPS digital status during emission.
+5. In turn, assert the FIL_CLK, CAT_ARC, FAN, OC_24, MASTER, OC_HV, TEMP_1, TEMP_3, and TEMP_2
+   fault inputs, observe the report or diagnostic trace, and then deassert each input.
+6. After each input is deasserted, record its reported fault status.
+7. Use the approved clear-fault control and observe the fault status and diagnostic trace.
+8. Confirm that OC_CAT is high, drive it from high to low, observe the report, and then return it
+   high.
+9. Record the cathode-overcurrent fault status after OC_CAT returns high.
+10. Clear the reported fault.
+11. Power off the system, hold OC_CAT low, and power on the system again.
+12. Observe the fault report or diagnostic trace produced during startup.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is powered on successfully.
-2. Verify the service screen displayed.
-3. Record the value and verify HV status should indicate no HV.
-4. Verify the plan is loaded successfully.
-5. Record the value and verify HV status should indicate HV.
+1. Verify the system starts successfully with no fault status reported while the inputs are
+   inactive.
+2. Verify the service screen is displayed.
+3. Verify the reported HVPS status indicates no high voltage before emission.
+4. Verify the plan loads and the reported HVPS status indicates high voltage during emission.
+5. Verify each asserted active-high source sets its own status bit and produces a diagnostic entry
+   identifying that source and its status and input bit positions.
+6. Verify each fault status remains latched after its input is deasserted.
+7. Verify the explicit clear removes all latched fault flags and produces a diagnostic cleared entry
+   for each cleared source.
+8. Verify the high-to-low transition is interpreted as OC_CAT assertion and reports a distinct
+   cathode-overcurrent fault.
+9. Verify the cathode-overcurrent status remains latched after OC_CAT is deasserted.
+10. Verify the cathode-overcurrent status clears.
+11. Verify the low startup level is interpreted as OC_CAT assertion.
+12. Verify a cathode-overcurrent fault is reported during initial input sampling.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -472,35 +513,56 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-30
-TITLE: Control loop - Test Case
+TITLE: Emission-current grid regulation - Test Case
 STATEMENT: >>>
-When the system is operating with grid control enabled, the firmware shall
-adjust the grid output in response to the difference between requested and
-measured emission current while keeping the output within its configured limits.
+Verify the 5 ms proportional-integral grid controller, including requested-voltage gain selection,
+the current-error hold band, asymmetric slew limits, output bounds, anti-windup, and controller
+activation and reset behavior.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and ready to use.
-* A treatment plan should be ready to load.
-* Grid control is enabled.
-* Instruments are connected to observe emission-current feedback and grid output.
+* A treatment plan is ready to load and grid control is enabled.
+* A fixture can control cathode-current feedback above and below the requested current.
+* An approved diagnostic trace can capture requested power and voltage, requested and measured
+  cathode current, proportional gain, integral state, grid command, DAC writes, and timestamps with
+  at most 1 ms resolution.
+* Instruments can observe the four external DAC chip-select signals.
+* The default grid-controller configuration values are loaded.
 <<<
 STEPS: >>>
-1. Power on the system.
-2. Load a treatment plan.
-3. Record the requested emission-current setpoint.
-4. Start the emission.
-5. Record the measured emission-current feedback and grid output.
-6. Observe the feedback error and subsequent grid-output commands.
-7. Repeat with different approved operating setpoints.
+1. Power on the system and observe the four DAC chip-select signals after initialization and while
+   no DAC transaction is active.
+2. Load a plan and record the requested power, requested high voltage, derived cathode-current
+   target, and default grid-controller configuration.
+3. Start emission and capture the initial grid command.
+4. At requested voltages at or below 50 kV, above 50 kV through 70 kV, and above 70 kV, apply
+   positive and negative cathode-current errors greater than 1% and capture consecutive commands.
+5. After moving the output away from its maximum, reverse the error to exercise both decreasing and
+   increasing command slew.
+6. Apply errors within +/-1% of the requested current and observe the grid command and DAC writes.
+7. Drive the calculated command to each output or slew limit, then reverse the error and observe
+   integral recovery.
+8. During active control, exchange main-control commands and observe I/O, ADC, DAC, and inactive DAC
+   chip-select signals between transactions.
+9. End emission or disable grid control, observe the command, and then start emission again.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is powered on successfully.
-2. Verify the plan is loaded successfully.
-3. Verify the requested setpoint is reported correctly.
-4. Verify the emission started.
-5. Verify emission feedback and grid output are available.
-6. Verify grid output changes in response to the feedback error.
-7. Verify the grid output remains within its configured minimum and maximum.
+1. Verify all four DAC chip-select signals initialize inactive high and remain high while idle.
+2. Verify requested cathode current equals requested power divided by requested high voltage and the
+   defaults are: gains -25, -35, and -150; integral time 0.2 s; downward slew 3000 units/s; upward
+   slew 1000 units/s; and output limits 50 to 600 units.
+3. Verify activation clears controller history and writes the 600-unit maximum-grid command.
+4. Verify 5 ms calculations use the gain for each requested-voltage band and apply the integral
+   increment `(Kp / 0.2 s) * 0.005 s * error`.
+5. Verify consecutive commands decrease by no more than 15 units and increase by no more than
+   5 units per 5 ms cycle.
+6. Verify no grid DAC command is issued while the absolute current error is within 1% of target.
+7. Verify the command remains from 50 through 600 units and the integral changes only when the
+   candidate is reachable or unwinds saturation.
+8. Verify communication, I/O, and ADC/DAC servicing continues during regulation and all inactive DAC
+   chip-select signals remain high between transactions.
+9. Verify disabling control restores 600 units and clears controller history so reactivation starts
+   from 600 units.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -509,27 +571,24 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-31
-TITLE: PC Communication 1 - Test Case
+TITLE: FTDI bootloader entry - Test Case
 STATEMENT: >>>
-When the system is powered on, the user can send a request through firmware to run bootloader
-application and load a new set of firmware through the USB.
+A valid FTDI bootloader request shall cause the application firmware to reset into the bootloader.
 <<<
 PREREQUISITES: >>>
-* The system is powered on and ready to use.
-* Bootloader application should be loaded in the USB and should be present for user to run it.
-* A new set of firmware should be in the USB.
+* The system is powered on and running the application firmware.
+* A USB FTDI host tool that can transmit the seven-byte bootloader frame is connected to USART3.
+* An approved method is available to observe the system reset and confirm that the bootloader is active.
 <<<
 STEPS: >>>
-1. Power on the system.
-2. Run bootloader application through USB.
-3. Click Logs symbol in the left-hand side of screen.
-4. Check the utility log.
+1. Confirm that the application firmware is running and responding normally.
+2. Send the seven-byte `*B00TL\n` frame over the FTDI interface.
+3. Observe the reset and interrogate the bootloader with the approved host tool.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is powered on successfully and there is not any treatment plan loaded into system.
-2. Verify the application started to run.
-3. Verify the logs displayed in the middle of screen.
-4. Record the utility log and verify system enters into bootloader mode.
+1. Verify the application is operational before the request.
+2. Verify the application resets after receiving the valid bootloader frame.
+3. Verify the bootloader becomes active and accepts the approved host interaction.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -538,29 +597,26 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-32
-TITLE: PC Communication 2 - Test Case
+TITLE: Bootloader request CRC-page erasure - Test Case
 STATEMENT: >>>
-When the system is powered on, the user can send a request through firmware to erase a
-predetermined area of flash memory, corresponding to application CRC verification area when
-requested by the PC.
+Before resetting into the bootloader, a valid FTDI bootloader request shall erase the application CRC
+flash page without erasing adjacent pages.
 <<<
 PREREQUISITES: >>>
-* The system is powered on and ready to use.
-* A new set of firmware should be in the USB.
+* The system is powered on and running the application firmware.
+* A USB FTDI host tool is connected to USART3.
+* An approved flash-memory inspection method is available, and the application CRC page contains known
+  non-erased data.
 <<<
 STEPS: >>>
-1. Power on the system.
-2. Run bootloader application through USB.
-3. Click Logs symbol in the left-hand side of screen.
-4. Check the utility log.
-5. Check the USB free space.
+1. Record the contents of the application CRC page and its adjacent flash pages.
+2. Send the seven-byte `*B00TL\n` frame over the FTDI interface.
+3. After the reset enters the bootloader, inspect the same flash pages before restarting the application.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is powered on successfully and there is not any treatment plan loaded into system.
-2. Verify the application started to run.
-3. Verify the logs displayed in the middle of screen.
-4. Record the utility log and verify system enters into bootloader mode.
-5. Verify an area in the USB which was corresponded to application CRC verification area was erased.
+1. Verify the CRC page contains the known data and retain the adjacent-page contents for comparison.
+2. Verify the system resets after receiving the valid bootloader frame.
+3. Verify the complete CRC page is erased to `0xFF` and the adjacent pages are unchanged.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -571,23 +627,42 @@ RELATIONS:
 UID: TC-H1FWHVPS-38
 TITLE: PC Communication 3 - Test Case
 STATEMENT: >>>
-When the system is powered on, the user can send a request through firmware to get or set any configuration parameters.
+When the system is powered on, the user can retrieve or update an individual configuration
+parameter through the FTDI GET and SET protocol. Binary payload bytes do not end a frame early, and
+the receiver remains available after traffic arrives while a complete frame awaits processing.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and ready to use.
-* The USB connection is established between the PC and the HVPS board
+* A USB FTDI host tool that can transmit and capture binary frames is connected to the HVPS board.
+* A valid configuration index and an approved value whose little-endian float encoding contains a
+  `0x0A` payload byte are available.
+* An approved FTDI timing harness can delay deferred command processing while UART receive
+  interrupts continue.
 <<<
 STEPS: >>>
-1. Power on the system.
-2. Navigate to the Service page
-3. Select a configuration parameter and enter a new value.
-4. Save or apply the new value.
-5. Verify that the displayed value matches the value entered in Step 3.
+1. Power on the system and begin capturing FTDI traffic.
+2. Send an 11-byte GET frame containing `*GET..`, configuration category 0 as a little-endian
+   16-bit value, the valid index as a little-endian 16-bit value, and a newline terminator.
+3. Record the returned value and response bytes.
+4. Send a 15-byte SET frame containing `*..SET`, the same category and index fields, the approved
+   value containing the `0x0A` payload byte, and a newline terminator.
+5. Record the SET response, then repeat the GET request and record its response.
+6. Use the timing harness to deliver one additional byte after a complete valid GET frame while
+   deferred processing of that frame remains pending. Release processing, wait for it to complete,
+   then send and capture another valid GET request.
+7. Send separate requests with an unrecognized command header, an unsupported category, a SET index
+   outside the configuration table, and an index of 64 or greater.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system accepts the new value entered for the selected configuration parameter.
-2. Verify the system updates the configuration parameter successfully.
-3. Verify the displayed value matches the value entered by the user.
+1. Verify the valid GET returns a 15-byte frame containing `*GET..`, the requested category and
+   index, the selected value as a little-endian IEEE-754 32-bit float, and a newline terminator.
+2. Verify the `0x0A` payload byte does not terminate the SET frame early. The SET updates the
+   selected configuration parameter and returns the corresponding 15-byte `*..SET` confirmation.
+3. Verify the repeated GET returns the updated value.
+4. Verify the additional byte received while processing is pending is discarded without stalling
+   reception, and the final valid GET returns the expected response.
+5. Verify each unsupported request is ignored without a response and does not change the selected
+   configuration parameter.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -598,26 +673,33 @@ RELATIONS:
 UID: TC-H1FWHVPS-39
 TITLE: PC Communication 4 - Test Case
 STATEMENT: >>>
-When the system is powered on, the user can send a request through firmware to retrieve all configuration values, setpoints, or feedback values in a single bulk-read response.
+When the system is powered on, the user can retrieve every configuration value, setpoint, or
+feedback value with the corresponding FTDI bulk-read command.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and ready to use.
-* The USB connection is established between the PC and the HVPS board
+* A USB FTDI host tool that can transmit and capture binary frames is connected to the HVPS board.
+* The expected 32 configuration values and six setpoints are available by index.
+* Stable feedback inputs are applied and the expected five feedback values are independently
+  observable.
 <<<
 STEPS: >>>
-1. Power on the system.
-2. Navigate to the Service page.
-3. Issue a bulk-read request for all configuration values.
-4. Verify that all returned configuration values match the currently stored values on the device.
-5. Issue a bulk-read request for all setpoints.
-6. Verify that all returned setpoint values match the currently stored values on the device.
-7. Issue a bulk-read request for all feedback values.
-8. Verify that all returned feedback values match the currently stored values on the device.
+1. Power on the system and begin capturing FTDI traffic.
+2. Send the seven-byte `*ACFGS\n` request and capture the complete response.
+3. Send the seven-byte `*ASPTS\n` request and capture the complete response.
+4. Record the five stable feedback values, send the seven-byte `*AFBVS\n` request, and capture the
+   complete response.
+5. Decode the bytes after each response's six-byte `*` and command header as consecutive
+   little-endian IEEE-754 32-bit floats through the final newline.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system accepts each bulk-read request.
-2. Verify the system returns a single response frame containing all values for the requested parameter category, packed sequentially in index order.
-3. Verify the returned values match the currently stored values on the device for each category (configuration values, setpoints, feedback values).
+1. Verify `ACFGS` produces exactly one 135-byte response beginning with `*ACFGS`, followed by all 32
+   configuration values in increasing index order, and ending with a newline.
+2. Verify `ASPTS` produces exactly one 31-byte response beginning with `*ASPTS`, followed by all six
+   setpoints in increasing index order, and ending with a newline.
+3. Verify `AFBVS` produces exactly one 27-byte response beginning with `*AFBVS`, followed by all five
+   feedback values in increasing index order, and ending with a newline.
+4. Verify every decoded value matches the corresponding expected value for its category and index.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -626,34 +708,47 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-33
-TITLE: Filament current ramping - Test Case
+TITLE: Elapsed-time filament-current ramping - Test Case
 STATEMENT: >>>
-The user powered on the system, loaded a treatment plan. Then after warmup procedure, user has
-to make sure the warm up is logged in the system.
+Verify the filament command's elapsed-time ramp rate, output limits, feedback stability time, and
+command-to-feedback discrepancy response during warmup.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and ready to use.
 * A treatment plan is ready to load.
+* An HVPS test fixture can control filament-current feedback independently of the requested current.
+* An approved diagnostic trace can capture requested current, feedback, filament command, warming
+  status, and timestamps with at most 1 ms resolution.
 <<<
 STEPS: >>>
-1. Power on the system.
-2. Load a treatment plan.
-3. Check the state of the system.
-4. Wait till the Warmup procedure is finished.
-5. Click the Logs symbol in the left side of the screen.
-6. Check the logs.
+1. Load the treatment plan and begin capturing the filament command and feedback during warmup.
+2. Keep feedback below the target and capture consecutive command updates.
+3. Supply feedback from the target through 2% above it, interspersed with feedback more than 2%
+   above the target, and observe warming status around 4000 ms of accumulated qualifying sample
+   time.
+4. Start another warmup and, after the command reaches the configured minimum, hold feedback more
+   than 300 mA below the command around 6000 ms of accumulated qualifying sample time.
+5. Request a filament target below the configured minimum.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is powered on successfully.
-2. Verify the plan is loaded successfully.
-3. Verify its state is Warmup.
-4. Verify the status of the system is not Warmup anymore.
-5. Verify the logs displayed in the screen.
-6. Verify the log for readings of the filament current ramp up during the warmup procedure. Values in the log should indicate a ramp rate of less than 1A/sec.
+1. Verify warmup starts and the filament command remains within the configured limits.
+2. Verify the command increases by 2.25 mA every 3 ms, corresponding to 750 mA/s.
+3. Verify only samples from the target through 2% above it add 3 ms to stability time, warming
+   remains active before the accumulator reaches 4000 ms, and warming clears on the first sample at
+   or above that threshold.
+4. Verify the command and warming status remain active before 6000 ms of qualifying discrepancy
+   samples, then the command becomes zero and warming clears at the threshold.
+5. Verify a target below the configured minimum sets the target and filament command to zero and clears warming.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWHVPS-8
+  VALUE: RQ-H1FWHVPS-6
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-13
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-17
   ROLE: Verifies
 
 [TEST_CASE]
@@ -688,30 +783,39 @@ RELATIONS:
 UID: TC-H1FWHVPS-35
 TITLE: External ADC feedback acquisition - Test Case
 STATEMENT: >>>
-The firmware shall acquire high-voltage and cathode-current feedback through
-the external ADC interfaces and publish valid paired feedback results.
+The firmware shall acquire high-voltage and cathode-current feedback as 16-sample paired bursts
+every 5 ms, convert each valid channel average to engineering units, and publish the paired result.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and ready to use.
-* A calibrated external signal source or suitable HVPS test fixture is connected.
+* An external signal source or suitable HVPS test fixture with accuracy appropriate for the
+  approved measurement tolerance is connected.
 * A logic analyzer or oscilloscope can observe both external ADC interfaces.
 * The feedback display or approved diagnostic trace is available.
+* Main-control communication, I/O activity, and external DAC transfers can be observed.
 <<<
 STEPS: >>>
 1. Power on the system.
-2. Observe both external ADC chip-select signals and SPI activity.
-3. Capture a complete feedback acquisition sequence.
-4. Verify that both feedback channels are acquired through DMA.
-5. Record the published high-voltage and cathode-current feedback values.
-6. Repeat with known input values across the approved operating range.
+2. Observe both external ADC chip-select signals while acquisition is idle.
+3. Capture consecutive complete feedback acquisition sequences.
+4. For each burst, measure the SPI clock rate, count the paired samples, and measure the burst
+   interval and completion time.
+5. Record the 16 raw samples and published result for each feedback channel.
+6. While repeated bursts and feedback-control processing run, send main-control commands, exercise
+   I/O, and issue DAC output changes.
+7. Repeat with known input values across the approved operating range.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. Verify the system starts successfully.
 2. Verify both ADC chip-select signals are inactive while idle.
-3. Verify both ADC channels are sampled without requiring blocking application processing.
-4. Verify a valid paired feedback result is published.
-5. Verify high-voltage and cathode-current values are available.
-6. Verify the published values are within the approved measurement tolerance.
+3. Verify both ADC channels are acquired through nonblocking DMA transfers.
+4. Verify both SPI clocks operate at 2.25 Mbit/s and each burst contains 16 paired samples, starts
+   every 5 ms, and completes within 2 ms.
+5. Verify each published engineering-unit feedback value corresponds to its channel's averaged
+   16-bit code using the 4.096 V reference and documented channel scaling.
+6. Verify communication, I/O, and DAC requests continue to be serviced within approved timing
+   limits without repeated ADC acquisition-timing failures.
+7. Verify the published values are within the approved measurement tolerance.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -719,6 +823,9 @@ RELATIONS:
   ROLE: Verifies
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-11
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-14
   ROLE: Verifies
 
 [TEST_CASE]
@@ -738,7 +845,7 @@ STEPS: >>>
 1. Capture a valid external ADC result.
 2. Inject an invalid ADC framing condition.
 3. Repeat with an ADC DMA-transfer error.
-4. Repeat with an ADC completion-timing failure.
+4. Delay or suppress ADC completion so a complete result is not available within 2 ms.
 5. Observe the result status and feedback-control outputs.
 6. Restore valid ADC communication and capture the next result.
 <<<
@@ -746,7 +853,7 @@ EXPECTED_BEHAVIOR: >>>
 1. Verify the valid result is accepted.
 2. Verify the framing error is reported as invalid.
 3. Verify the DMA error is reported as invalid.
-4. Verify the timing failure is reported as invalid.
+4. Verify the burst is reported as invalid when a complete result is not available within 2 ms.
 5. Verify invalid feedback is not used for feedback processing or output control.
 6. Verify valid feedback processing resumes after communication is restored.
 <<<
@@ -762,22 +869,122 @@ RELATIONS:
 UID: TC-H1FWHVPS-37
 TITLE: Logging - Test Case
 STATEMENT: >>>
-When the system is powered, the service user should check the reported logging voltage in the Service screen with / without a running treatment plan.
+Verify formatted, bounded, non-blocking diagnostic logging on FTDI_TX, including
+safety-input transition records, severity records, runtime disabling, and transmit-buffer
+exhaustion behavior.
 <<<
 PREREQUISITES: >>>
-* The system is powered on and ready to use.
-* The user of the system needs to be a service user.
+* The firmware is built with FTDI logging and all four severity levels enabled.
+* A serial capture tool is connected to FTDI_TX (USART3) using the configured UART settings.
+* A debugger or approved firmware test hook can invoke each severity macro, status reporting, enable or
+  disable runtime logging, generate an oversized formatted record, rapidly generate enough records to
+  fill the transmit buffer, and inject a recoverable USART3 error.
+* A heartbeat output or normal firmware command response is observable while logging is stressed.
+* The main-control HV interlock, grid interlock, and beam-control inputs can each be driven
+  through debounced rising and falling transitions.
 <<<
 STEPS: >>>
-1. Power the system
-2. Navigate to the logging console from the Service page
+1. Start serial capture, power the system, and retain the complete startup output.
+2. Drive the HV interlock, grid interlock, and beam-control inputs through one debounced
+   rising edge and one debounced falling edge each.
+3. Emit ERROR, WARN, INFO, and DEBUG records containing known formatted values, then
+   request a status record with known `sys_stat` and `sys_io_bits` values.
+4. Emit a formatted record whose content exceeds the 256-byte working-buffer capacity.
+5. Disable runtime logging, emit a unique marker, re-enable logging, and emit a second
+   unique marker.
+6. While observing the heartbeat or normal command processing, generate records faster
+   than FTDI_TX can transmit until the transmit ring buffer is full; then stop generating
+   records and allow it to drain.
+7. Inject a recoverable USART3 error and emit another unique marker.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify that log messages are transmitted successfully.
+1. Startup output contains the INFO severity marker and `Sensus setup complete`, terminated by CRLF.
+2. Each input edge produces exactly one WARN record: `Hv int rose`, `Hv int fell`,
+   `Grid int rose`, `Grid int fell`, `Beam ctrl rose`, and `Beam ctrl fell`.
+3. The four known records contain the expected `[ERR]`, `[WRN]`, `[INF]`, and `[DBG]`
+   markers and correctly formatted values; every complete record is CRLF-terminated. The
+   status record is valid newline-delimited JSON containing `runtime_ms` and the expected
+   hexadecimal `sys_stat` and `sys_io_bits` values.
+4. The oversized record is truncated to no more than 255 transmitted bytes, including its
+   CRLF terminator, and logging continues with later records.
+5. No disabled-period marker is transmitted; the marker emitted after re-enabling logging
+   is transmitted.
+6. The heartbeat or command responses continue without a logging-induced stall. When
+   capacity is exhausted, excess bytes are dropped rather than blocking application
+   processing, and bytes accepted before exhaustion drain in order through
+   transmit-complete interrupts.
+7. UART error flags clear and the post-error marker is transmitted.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-18
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-40
+TITLE: Firmware version reporting - Test Case
+STATEMENT: >>>
+Verify that a version request returns the release version encoded in a valid response frame
+without disrupting periodic telemetry.
+<<<
+PREREQUISITES: >>>
+* The firmware is built with a known release version string.
+* A UART protocol fixture is connected between the HVPS interface and main control interfaces.
+<<<
+STEPS: >>>
+1. Power on the HVPS interface and capture periodic telemetry on the UART fixture.
+2. Send control command ``0x7F`` with a valid command checksum.
+3. Capture and decode the next version response.
+4. Continue capturing periodic telemetry after the response.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Periodic telemetry is present before the request.
+2. The request is accepted.
+3. Verify the response contains the synchronization words, ``VRSN`` marker, expected operating-mode
+   identifier, null-padded release version string, and a valid additive checksum.
+4. Periodic telemetry resumes after the version response.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-20
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPS-41
+TITLE: Development-build boot validation marker - Test Case
+STATEMENT: >>>
+Verify that FTDI initialization writes the development boot validation marker only in a build where
+``RELEASE`` is not defined and that the marker allows the bootloader to start that application after
+a reset.
+<<<
+PREREQUISITES: >>>
+* Application images built from the same source with and without the ``RELEASE`` definition are
+  available.
+* A debugger can erase and read the application CRC flash page, start the application directly at
+  its entry point, and observe application startup.
+<<<
+STEPS: >>>
+1. Program the non-``RELEASE`` application image and erase its application CRC flash page.
+2. Start the application directly with the debugger, allow FTDI initialization to complete, and read
+   the application CRC location.
+3. Reset the microcontroller through the bootloader and observe application startup.
+4. Program the ``RELEASE`` application image, erase its application CRC flash page, and start the
+   application directly with the debugger.
+5. Allow FTDI initialization to complete and read the application CRC location.
+6. Reset the microcontroller through the bootloader and observe whether the application starts.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The non-``RELEASE`` application starts with an erased application CRC location.
+2. FTDI initialization programs and verifies ``0xDEADBEEF`` at the application CRC location.
+3. The bootloader accepts the development marker and starts the non-``RELEASE`` application.
+4. The ``RELEASE`` application starts directly with an erased application CRC location.
+5. FTDI initialization leaves the application CRC location erased and does not write the development
+   marker.
+6. The bootloader does not accept the ``RELEASE`` application on the basis of a development marker.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-21
   ROLE: Verifies
 
 [[/SECTION]]

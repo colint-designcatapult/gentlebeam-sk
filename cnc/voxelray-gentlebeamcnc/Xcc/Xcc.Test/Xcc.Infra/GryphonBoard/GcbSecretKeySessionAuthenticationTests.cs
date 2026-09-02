@@ -7,7 +7,7 @@ namespace Xcc.Test.Xcc.Infra.GryphonBoard
 {
     internal class GcbSecretKeySessionAuthenticationTests
     {
-        readonly GcbSession SESSION = new GcbSession(id: 42, totalPoints: 2);
+        readonly GcbSession SESSION = new GcbSession(id: 42);
         const int PACKET_ID_VALUE = 1;
         const int SOME_PAYLOAD_VALUE = 2;
 

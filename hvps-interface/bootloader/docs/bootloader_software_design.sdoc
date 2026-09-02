@@ -126,12 +126,12 @@ TITLE: Design Items
 UID: SW-H1FWHVPSIB-11
 TITLE: Application Program Handling
 STATEMENT: >>>
-At the beginning of bootloader firmware execution, the program will parse a predesignated area of
-application memory on the microcontroller and calculate a checksum over the existing values
-present in flash memory. The firmware then compares the calculated value to a designated location
-where the application checksum value is stored. If the calculated value matches the stored value,
-then this indicates to the firmware that a valid application exists in memory, and the firmware will
-then jump to the application firmware for execution.
+At the beginning of bootloader firmware execution, the program parses the predetermined application
+region in flash memory and calculates a CRC over the complete region. The application firmware build
+calculates and stores the programmed CRC over that same region, treating unprogrammed bytes as erased
+flash. The bootloader compares its calculated CRC to the programmed CRC in the designated storage
+location. If the values match, the bootloader considers the application valid and jumps to the
+application firmware for execution.
 
 If the calculated value does not match the stored value, then the firmware will not jump to the
 application for execution but will instead wait for PC communication for commands to update the
@@ -139,21 +139,22 @@ application memory.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWHVPSIB-2
+  VALUE: RQ-H1FWHVPSIB-1
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPSIB-13
 TITLE: Flash Memory Processing
 STATEMENT: >>>
-The firmware can both erase and write to the flash memory of the microcontroller. The flash
-memory of the microcontroller is organized into pages which are 2048 bytes in size. When the
-firmware receives an erase command from the PC, it will erase a number of pages in flash memory
-which have been pre-designated for application memory. For writing to flash, the communication
-protocol is limited to fewer than 2048 bytes of each flash page size. As such, the firmware
-subdivides each flash page into 'sub-pages'. The firmware will program these 'sub-pages' by
-using the 'sub-page' index provided by the PC command. The firmware iterates word by word (32-
-bit value) for writing values.
+The firmware can both erase and write to the flash memory of the microcontroller. The physical flash
+erase pages are 2048 bytes in size. When the firmware receives an erase command from the PC, it
+erases 91 physical pages in the region pre-designated for application memory. The firmware derives
+this erase count by dividing the configured application-page limit of 180 by two and adding one.
+
+Each PC write command provides a 256-byte payload and an application-relative sub-page index. The
+firmware accepts indices from 0 through 180 and rejects greater indices. It calculates the destination
+from the application start address and the index, then programs the payload word by word as 32-bit
+values.
 
 The flash memory controller for the microcontroller requires that the firmware lock and unlock the
 flash memory for manipulation, as a way to protect against unwanted corruption of the flash
@@ -161,6 +162,9 @@ memory. When performing erase and write procedures, the firmware will appropriat
 lock the flash memory controller peripheral of the microcontroller.
 <<<
 RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-2
+  ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-3
   ROLE: Refines

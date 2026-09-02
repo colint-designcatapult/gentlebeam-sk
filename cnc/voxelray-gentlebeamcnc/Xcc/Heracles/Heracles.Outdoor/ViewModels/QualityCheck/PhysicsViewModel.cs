@@ -85,11 +85,10 @@ namespace Heracles.External.ViewModels.QualityCheck
             {
                 if (e.PropertyName == nameof(ICollimatorModel.CollimatorConfigurations))
                 {
-                    GetAvailableTargetTypesAndEnergyLevels();
+                    GetAvailableTargetTypesAndEnergyLevels(forceRefresh: true);
                 }
             };
 
-            MainBoardModel.GcbActionCompletionEvent += OnGcbActionCompletionEvent;
 
             GetAvailableTargetTypesAndEnergyLevels();
 
@@ -259,7 +258,6 @@ namespace Heracles.External.ViewModels.QualityCheck
             try
             {
                 await CollimatorService.UpdateCollimatorModelAsync();
-                GetAvailableTargetTypesAndEnergyLevels();
 
                 _selectedConfiguration?.ResetValues();
             }
@@ -339,10 +337,6 @@ namespace Heracles.External.ViewModels.QualityCheck
             }
         }
 
-        protected override bool GetPlanAutoExecutionFlag()
-        {
-            return false; // we don't auto-execute QC plans
-        }
 
         protected override void CheckForApplicatorCompatibility()
         {
@@ -363,54 +357,37 @@ namespace Heracles.External.ViewModels.QualityCheck
             try
             {
                 await Semaphore.WaitAsync();
-
-                if (GcbState == GcbStateNew.Emission ||
-                    PreviousGcbState == GcbStateNew.Emission)
+                if (ActiveEmissionIndex < 0
+                    || ActiveEmissionIndex >= PhysicsPlan.Fields.Count)
                 {
-                    int operationalPointIndex = telemetry.CurrentOperationalPoint;
+                    return;
+                }
+
+                var field = PhysicsPlan.Fields[ActiveEmissionIndex];
+                if (GcbState == GcbStateNew.Emission)
+                {
                     float timerValue = telemetry.PrimaryTimerValue;
-
-                    if (operationalPointIndex != PreviousOperationPointIndex)
+                    field.Actual = Convert.ToSingle(XrayPointStartTime + timerValue);
+                    UpdateBeamOnProgress(
+                        PhysicsPlan.TotalDuration,
+                        Convert.ToSingle(XrayTime + timerValue));
+                    Debug.WriteLine(
+                        $"Update treatment field {field.DisplayValue} with actual = {field.Actual}");
+                }
+                else if (PreviousGcbState == GcbStateNew.Emission)
+                {
+                    await MainBoardModel.UpdateCurrentEmissionFromGCB();
+                    if (MainBoardModel.CurrentEmission is { } emission)
                     {
-                        var fields = PhysicsPlan.Fields;
-                        if (PreviousOperationPointIndex >= 0 && fields is not null && fields.Count > PreviousOperationPointIndex)
-                        {
-                            var previousTf = fields[PreviousOperationPointIndex];
-                            previousTf.Actual = Convert.ToSingle(previousTf.Duration);
-                            RecalculateInitialXrayTime();
-                            XrayPointStartTime = 0;
-
-                            await MainBoardModel.UpdatePlanPointFromGCB(PreviousOperationPointIndex);
-                            var previousPoint = MainBoardModel.CurrentPlan[PreviousOperationPointIndex];
-
-                            if (previousPoint.RemainingPointTime > 0)
-                            {
-                                previousTf.Actual = previousPoint.TotalPointTime - previousPoint.RemainingPointTime;
-                                _ = LogWriter.LogAsync($"Query point response: TotalPointTime={previousPoint.TotalPointTime} RemainingPointTime={previousPoint.RemainingPointTime} Actual={previousTf.Actual}", LogRecordSeverity.Info, LogRecordType.System);
-                            }
-                            //_ = LogService.LogAsync($"UpdateEmissionTreatmetField: operationalPointIndex={operationalPointIndex}, timerValue {timerValue} _xrayTime {_xrayTime} TotalDuration {PlanModel.TotalDuration}", LogRecordSeverity.Info, LogRecordType.System);
-                        }
-                    }
-
-                    if (operationalPointIndex < PhysicsPlan.Fields?.Count)
-                    {
-                        var tf = PhysicsPlan.Fields[operationalPointIndex];
-
-                        if (operationalPointIndex != PreviousOperationPointIndex)
-                        {
-                            PreviousOperationPointIndex = operationalPointIndex;
-                            XrayPointStartTime = tf.Actual;
-                        }
-
-                        UpdateBeamOnProgress(PhysicsPlan.TotalDuration, Convert.ToSingle(XrayTime + timerValue));
-
-                        tf.Actual = Convert.ToSingle(XrayPointStartTime + timerValue);
-                        Debug.WriteLine($"Update treatment field {tf.DisplayValue} with actual = {tf.Actual}");
-
-                        if (tf.DwellTime - tf.Actual < PlanCompletedThreshold)
-                        {
-                            tf.IsDone = true;
-                        }
+                        field.Actual = emission.ActualDuration;
+                        field.IsDone =
+                            emission.RemainingPointTime < PlanCompletedThreshold;
+                        RecalculateInitialXrayTime();
+                        UpdateBeamOnProgress(PhysicsPlan.TotalDuration, XrayTime);
+                        _ = LogWriter.LogAsync(
+                            $"Query emission response: TotalPointTime={emission.TotalPointTime} RemainingPointTime={emission.RemainingPointTime} Actual={field.Actual}",
+                            LogRecordSeverity.Info,
+                            LogRecordType.System);
                     }
                 }
             }
@@ -429,65 +406,84 @@ namespace Heracles.External.ViewModels.QualityCheck
 
             try
             {
-                var telemetry = GCBDataStore.SystemTelemetry ?? throw new Exception("GCB telemetry connection lost.");
-
-                // Store what was the current point before emission
-                PreviousOperationPointIndex = telemetry.CurrentOperationalPoint;
-                var currentTreatmentFieldIndex = PreviousOperationPointIndex;
-
-                if (currentTreatmentFieldIndex < PhysicsPlan.Fields.Count)
+                if (ActiveEmissionIndex < 0
+                    || ActiveEmissionIndex >= PhysicsPlan.Fields.Count)
                 {
-                    var currentField = PhysicsPlan.Fields[currentTreatmentFieldIndex];
-
-                    // Store initial emission time of the current point to calc progress over the plan
-                    RecalculateInitialXrayTime();
-
-                    XrayPointStartTime = (PreviousOperationPointIndex < PhysicsPlan.Fields.Count)
-                        ? PhysicsPlan.Fields[PreviousOperationPointIndex].Actual
-                                : 0.0;
-
-                    UpdateBeamOnProgress(PhysicsPlan.TotalDuration, XrayTime);
-                    
-                    UIStateMachine.RequestStateSwitch(UIMacroState.Emission);
-                    Debug.WriteLine($"Update UI state machine: State={UIStateMachine.State}, LB=({UIStateMachine.LeftButton.State}, {UIStateMachine.LeftButton.IsEnabled}), " +
-                        $"CB=({UIStateMachine.CentralButton.State}, {UIStateMachine.CentralButton.IsEnabled}), Stop={UIStateMachine.RightButton.IsEnabled}");
-
-                    _ = LogWriter.LogAsync($"Run Physics by {UserStore.AuthorizedUser!.EmailAddress}", LogRecordSeverity.Info, LogRecordType.User);
-                    
-                    updateAfterEmissionTask = Task.Run(() => UpdateAfterEmission(tokenSource.Token), tokenSource.Token);
-
-                    await MainBoardModel.BeamOn();
-
-                    await updateAfterEmissionTask;
-                    
-                    // Check if plan is actually complete:
-                    PopUpService.LogAndShowMessage(
-                        Application.Common.StringConstants.TreatmentConsole.PhysicsNotificationTitle,
-                        Application.Common.StringConstants.TreatmentConsole.PhysicsExecutionCompletionNotification,
-                        ReportType.Info, LogRecordSeverity.Info, LogRecordType.System);
-
-                    await MainBoardModel.ResetTimers();
-                    await MainBoardModel.ClearPlan();
-
-                    UIStateMachine.IsPlanStaged = false;
-                    UIStateMachine.RequestStateSwitch(UIMacroState.StandBy);
-
-                    Debug.WriteLine($"Update UI state machine: State={UIStateMachine.State}, LB=({UIStateMachine.LeftButton.State}, {UIStateMachine.LeftButton.IsEnabled})" +
-                        $"CB=({UIStateMachine.CentralButton.State}, {UIStateMachine.CentralButton.IsEnabled}), Stop={UIStateMachine.RightButton.IsEnabled}");
-
-                    await SetPlanUnloadTaskAsync();
+                    throw new InvalidOperationException(
+                        "No physics emission is prepared.");
                 }
+
+                _ = GCBDataStore.SystemTelemetry
+                    ?? throw new Exception("GCB telemetry connection lost.");
+                var field = PhysicsPlan.Fields[ActiveEmissionIndex];
+                RecalculateInitialXrayTime();
+                XrayPointStartTime = field.Actual;
+                UpdateBeamOnProgress(PhysicsPlan.TotalDuration, XrayTime);
+
+                UIStateMachine.RequestStateSwitch(UIMacroState.Emission);
+                _ = LogWriter.LogAsync(
+                    $"Run Physics emission {ActiveEmissionIndex + 1} by {UserStore.AuthorizedUser!.EmailAddress}",
+                    LogRecordSeverity.Info,
+                    LogRecordType.User);
+
+                updateAfterEmissionTask = Task.Run(
+                    () => UpdateAfterEmission(tokenSource.Token),
+                    tokenSource.Token);
+                await MainBoardModel.BeamOn();
+                await updateAfterEmissionTask;
+                await MainBoardModel.UpdateCurrentEmissionFromGCB();
+
+                if (MainBoardModel.CurrentEmission is not { } completedEmission)
+                {
+                    throw new InvalidOperationException(
+                        "Main-control returned no completed physics emission.");
+                }
+
+                field.Actual = completedEmission.ActualDuration;
+                field.IsDone =
+                    completedEmission.RemainingPointTime < PlanCompletedThreshold;
+                RecalculateInitialXrayTime();
+
+                int nextIndex = FindNextPendingEmissionIndex(ActiveEmissionIndex + 1);
+                if (nextIndex >= 0)
+                {
+                    await WarmUpAsync();
+                    UIStateMachine.RequestStateSwitch(UIMacroState.Preparation);
+                    await PrepareNextEmissionAsync(nextIndex);
+                    UIStateMachine.IsPlanStaged = MainBoardModel.IsPlanStaged;
+                    return;
+                }
+
+                if (!PhysicsPlan.Fields.All(item => item.IsDone))
+                {
+                    throw new InvalidOperationException(
+                        "Physics emissions did not complete.");
+                }
+
+                PopUpService.LogAndShowMessage(
+                    Application.Common.StringConstants.TreatmentConsole.PhysicsNotificationTitle,
+                    Application.Common.StringConstants.TreatmentConsole.PhysicsExecutionCompletionNotification,
+                    ReportType.Info,
+                    LogRecordSeverity.Info,
+                    LogRecordType.System);
+
+                await MainBoardModel.ResetTimers();
+                await MainBoardModel.ClearPlan();
+                UIStateMachine.IsPlanStaged = false;
+                UIStateMachine.RequestStateSwitch(UIMacroState.StandBy);
+                await SetPlanUnloadTaskAsync();
             }
             catch (TaskCanceledException ex)
             {
                 await WaitAndIgnoreTaskExceptionsAsync(updateAfterEmissionTask);
-
                 PopUpService.ShowMessage(
                     Application.Common.StringConstants.TreatmentConsole.PhysicsErrorTitle,
                     StringConstants.TreatmentConsole.EmissionInterruptedError,
                     ReportType.Error);
-
-                _ = LogWriter.LogAsync($"Physics plan execution was cancelled: {ex.Message}", LogRecordSeverity.Info, LogRecordType.System);
+                _ = LogWriter.LogAsync(
+                    $"Physics emission was cancelled: {ex.Message}",
+                    LogRecordSeverity.Info,
+                    LogRecordType.System);
             }
             catch (InvalidOperationException ex)
             {
@@ -505,9 +501,7 @@ namespace Heracles.External.ViewModels.QualityCheck
             finally
             {
                 await tokenSource.CancelAsync();
-
                 await WaitAndIgnoreTaskExceptionsAsync(updateAfterEmissionTask);
-
                 IsCurrentViewModelRunning = false;
             }
         }
@@ -530,46 +524,47 @@ namespace Heracles.External.ViewModels.QualityCheck
                 XrayTime = fields.Sum(tf => tf.Actual);
         }
 
-        /// <summary>
-        /// Converts QcModel.Fields to our GcbOperationalDataPoint items
-        /// Requires Fields to be already ordered by TargetType to not switch heaterCurrent back and forth if it's different for diff. configs
-        /// It may require also to sort Fields by kV if we'll have it different
-        /// </summary>
-        protected override GcbEmissionPlan BuildGcbEmissionPlan()
+        protected override GcbOperationalPoint BuildGcbOperationalPoint(int fieldIndex)
         {
-            GcbEmissionPlan plan = new();
-
-            foreach (var field in PhysicsPlan.Fields)
+            if (fieldIndex < 0 || fieldIndex >= PhysicsPlan.Fields.Count)
             {
-                //var collimatorCalibConfig = _collimatorConfigurationsWithCalibInfo[field.Configuration];
-
-                //// TODO: we don't apply magnetometer now, just get calibrated coilX/Y
-                //var fieldCalibConfig = collimatorCalibConfig.GetCoilConfiguration(field.Name).Value;
-
-                float totalTime = (float)field.Duration;
-                float remainingTime = totalTime - (float)field.Actual;
-
-                var coilValues = _preparationEmissionConfigurationState.CoilConfiguration.GetValue();
-
-                GcbOperationalPoint op = new GcbOperationalPoint
-                {
-                    PointIndex = plan.TotalPoints,
-                    TotalPointTime = totalTime,
-                    RemainingPointTime = remainingTime,
-                    SetpointKv = EnergyConverter.Convert(field.Energy),
-                    TargetMA = Convert.ToSingle(field.Current),
-
-                    FilamentSetpoint = (float)_preparationEmissionConfigurationState!.HeaterCurrent.HeaterCurrent!,
-                    XCoilSetpoint = (float)coilValues.XDeflectionCurrent,
-                    YCoilSetpoint = (float)coilValues.YDeflectionCurrent,
-                    FocusCoilSetpoint = (float)coilValues.FocusCurrent,
-
-                    AutoExecution = GetPlanAutoExecutionFlag()
-                };
-
-                plan.AddPoint(op);
+                throw new ArgumentOutOfRangeException(nameof(fieldIndex));
             }
-            return plan;
+
+            var field = PhysicsPlan.Fields[fieldIndex];
+            var coilValues =
+                _preparationEmissionConfigurationState.CoilConfiguration.GetValue();
+            float totalTime = (float)field.Duration;
+
+            return new GcbOperationalPoint
+            {
+                TotalPointTime = totalTime,
+                RemainingPointTime = totalTime - (float)field.Actual,
+                SetpointKv = EnergyConverter.Convert(field.Energy),
+                TargetMA = Convert.ToSingle(field.Current),
+                FilamentSetpoint =
+                    (float)_preparationEmissionConfigurationState.HeaterCurrent.HeaterCurrent!,
+                XCoilSetpoint = (float)coilValues.XDeflectionCurrent,
+                YCoilSetpoint = (float)coilValues.YDeflectionCurrent,
+                FocusCoilSetpoint = (float)coilValues.FocusCurrent
+            };
+        }
+
+        protected override int FindNextPendingEmissionIndex(int startIndex)
+        {
+            for (int index = Math.Max(0, startIndex);
+                 index < PhysicsPlan.Fields.Count;
+                 index++)
+            {
+                var field = PhysicsPlan.Fields[index];
+                if (!field.IsDone
+                    && field.Duration - field.Actual >= PlanCompletedThreshold)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
 
         private bool GetUserConfirmation()
@@ -691,7 +686,7 @@ namespace Heracles.External.ViewModels.QualityCheck
             CreateEntryCollection();
         }
 
-        private void GetAvailableTargetTypesAndEnergyLevels()
+        private void GetAvailableTargetTypesAndEnergyLevels(bool forceRefresh = false)
         {
             try
             {
@@ -699,7 +694,7 @@ namespace Heracles.External.ViewModels.QualityCheck
                 AvailableTargetTypeValues = new List<TargetType>();
                 AvailableEnergyLevels = new List<Energy>();
 
-                CurrentTask = new ObservableTask(PrepareAvailableOptionsToSelect());
+                CurrentTask = new ObservableTask(PrepareAvailableOptionsToSelect(forceRefresh));
             }
             catch (Exception ex)
             {
@@ -710,7 +705,7 @@ namespace Heracles.External.ViewModels.QualityCheck
             }
         }
 
-        private Task PrepareAvailableOptionsToSelect()
+        private Task PrepareAvailableOptionsToSelect(bool forceRefresh)
         {
             return Task.Run(async () =>
             {
@@ -721,7 +716,7 @@ namespace Heracles.External.ViewModels.QualityCheck
 
                     var collimatorConfigurations = CollimatorModel.CollimatorConfigurations.Where(c => c.Type != TargetType.TargetType_QC_Collimator);
 
-                    var calibDataStore = await CollimatorCalibrationModel.FetchCalibrationDataAsync();
+                    var calibDataStore = await CollimatorCalibrationModel.FetchCalibrationDataAsync(forceRefresh);
 
                     // We select only those configurations that we have calibration data for (coil currents, heater current and mangnetometer refs)
                     // TODO: there are some concerns on persistency of these calib. data in future,
@@ -741,29 +736,6 @@ namespace Heracles.External.ViewModels.QualityCheck
             });
         }
         
-        protected virtual void OnGcbActionCompletionEvent(object? sender, GcbActionCompletionEventArgs e)
-        {
-            try
-            {
-                if (IsCurrentViewModelRunning)
-                {
-                    switch (e.ActionType)
-                    {
-                        case GcbActionType.OnePointCompleted:
-                            UIStateMachine.RequestStateSwitch(UIMacroState.ResumePlan);
-                            break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _ = LogWriter.LogAsync($"PrepareAvailableOptionsToSelect failed: {ex.Message}", LogRecordSeverity.Error, LogRecordType.System);
-            }
-            finally
-            {
-                ValidateCanExecuteCommands();
-            }
-        }
         #endregion Private methods
 
         /// <summary>

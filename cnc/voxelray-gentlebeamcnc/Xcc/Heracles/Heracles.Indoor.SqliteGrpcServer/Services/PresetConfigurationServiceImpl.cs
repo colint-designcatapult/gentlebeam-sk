@@ -12,7 +12,8 @@ public sealed class PresetConfigurationServiceImpl : PresetConfigurationService.
     public override async Task<ListPresetConfigurationsResponse> ListPresetConfigurations(
         ListPresetConfigurationsRequest request, ServerCallContext context)
     {
-        var items = await _repo.ReadAllAsync();
+        var items = (await _repo.ReadAllAsync())
+            .Where(item => item.CollimatorConfigurationId == request.CollimatorConfigurationId);
         var r = new ListPresetConfigurationsResponse();
         r.PresetConfigurations.AddRange(items);
         return r;

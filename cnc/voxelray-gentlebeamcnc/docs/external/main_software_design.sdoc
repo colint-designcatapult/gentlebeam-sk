@@ -102,7 +102,7 @@ The design of the application is based on the MVVM pattern. There are three core
 
 .. image:: _images/sds_arch_2.png
 
-The MVVN design pattern is implemented in the application as follows: the 4 th  layer is the gRPC wrapper for communication with the Record and Verify services.
+The MVVN design pattern is implemented in the application as follows: the 4 th layer is the gRPC wrapper for communication with the database services.
 
 .. image:: _images/sds_arch_3.png
 <<<
@@ -248,12 +248,10 @@ STATEMENT: >>>
        Note over MainBoardModel, Firmware: Board is in Staged state
        
        activate MainBoardModel
-       loop "for each operational point"
-           MainBoardModel->>Firmware: "[UDP] send operational parameters confirmation"
-           activate Firmware
-           Firmware-->>MainBoardModel: "[UDP] status response"
-           deactivate Firmware
-       end
+       MainBoardModel->>Firmware: "[UDP] confirm scalar operational parameters"
+       activate Firmware
+       Firmware-->>MainBoardModel: "[UDP] status response"
+       deactivate Firmware
 
        MainBoardModel->>Firmware: "[UDP] ReleasePlan command"
        activate Firmware
@@ -276,6 +274,12 @@ TITLE: Daily Warmup Process
 STATEMENT: >>>
 The flow for performing Daily Warmup should be implemented as described in the following sequence diagram:
 
+The external configurations provide the configured targets for fast warmup and conditioning.
+Before sending either command, the application validates the configured target. If a
+warmup command receives an access-error status, the command interface raises an error
+explaining that warmup cannot start in the current state and that both e-stops must be
+released. The view model logs and displays the failure rather than recording completion.
+
 .. raw:: html
 
    <pre class="mermaid">
@@ -290,7 +294,7 @@ The flow for performing Daily Warmup should be implemented as described in the f
        box ControlBoard
            participant Firmware
        end
-       box Record & Verify
+       box Database
            participant WarmupService
        end
 
@@ -349,15 +353,21 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-1
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-29
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-30
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H10TG-265
 TITLE: Display System Telemetry
 STATEMENT: >>>
 The receive-only telemetry service listens for unsolicited GCB datagrams. Device-information
-packets identify the firmware version and mode; the system telemetry processor selects the
-corresponding parser. Unsupported layouts and malformed packets are rejected without
-replacing the last valid state.
+packets identify the firmware mode; the system telemetry processor selects the corresponding
+parser. Unsupported modes and malformed packets are rejected without replacing the last
+valid state.
 
 Each parser translates the physical interlock bits once into the shared ``SystemInterlock``
 identity space. ``SystemInterlocks`` retains the raw status and required masks for service
@@ -377,7 +387,7 @@ telemetry is received for 1.5 seconds, the processor publishes an unavailable sn
         participant Firmware
 
         Firmware->>TelemetryService: [UDP] device information, 1 Hz
-        TelemetryService->>SystemTelemetryProcessor: Select parser by version and mode
+        TelemetryService->>SystemTelemetryProcessor: Select parser by firmware mode
         Firmware->>TelemetryService: [UDP] system telemetry, 100 Hz
         TelemetryService->>SystemTelemetryProcessor: Process datagram
         SystemTelemetryProcessor->>MainBoardModel: OnSystemTelemetryChanged(ISystemTelemetry?)
@@ -608,7 +618,7 @@ STATEMENT: >>>
        box ControlBoard
            participant Firmware
        end
-       box Record & Verify
+       box Database
            participant WarmupService
        end
 
@@ -719,7 +729,11 @@ RELATIONS:
 UID: SW-H10TG-259
 TITLE: Perform Quality Checks
 STATEMENT: >>>
-The flow for performing Daily Quality Checks should be implemented as described in the following sequence diagram:
+The external application routes QC-board ping, start, and stop commands through ``GcbCommandInterface`` and main control. A stop response contains accumulated channel 0 and channel 1 values, the firmware sample count, and two reserved fields. The command-response parser preserves the sample count as metadata and maps the remaining values into the application's five-position QC result contract, with unused intensity positions kept at zero.
+
+For service diagnosis, normal GCB telemetry is parsed into typed QC channel 0 and channel 1 readings in counts and ADC 1 and ADC 2 connection states. The UCSI telemetry catalog names and records these fields so detector input and connectivity can be inspected independently of the QC result report.
+
+The flow for performing Daily Quality Checks is:
 
 .. raw:: html
 
@@ -727,64 +741,72 @@ The flow for performing Daily Quality Checks should be implemented as described 
    sequenceDiagram
        autonumber
        actor User
-       
+
        box Application
            participant QualityCheckViewModel
            participant MainBoardModel
-           participant QcbReadingModel
+           participant GcbQcbService
+           participant GcbCommandInterface
+           participant QcReportService
        end
-       box QualityCheckBoard
-           participant Firmware
-       end
-
-       Note over QualityCheckViewModel: build list of QC configurations
-       QualityCheckViewModel->>QualityCheckViewModel: 
-       
-       User->>QualityCheckViewModel: select collimator type and energy
-       Note over QualityCheckViewModel: update view
-       QualityCheckViewModel-->>User: 
-       
-       User->>QualityCheckViewModel: select full/custom QC plan mode
-       
-       alt "[full QC plan mode]"
-           Note over QualityCheckViewModel: build a complete list of points
-           QualityCheckViewModel->>QualityCheckViewModel: 
-           Note over QualityCheckViewModel: make the list readonly
-           QualityCheckViewModel->>QualityCheckViewModel: 
-       else "[custom QC plan mode]"
-           Note over QualityCheckViewModel: build a list of central points
-           QualityCheckViewModel->>QualityCheckViewModel: 
-           Note over QualityCheckViewModel: make the list editable
-           QualityCheckViewModel->>QualityCheckViewModel: 
+       box Control system
+           participant MainControl
+           participant QcDetector
        end
 
-       Note over QualityCheckViewModel: enable Prepare button
-       
-       alt "[custom QC plan mode]"
-           User->>QualityCheckViewModel: add/delete points
-       end
+       Note over QualityCheckViewModel: build the list of calibrated QA emissions
+       User->>QualityCheckViewModel: select energy and exactly one emission
 
        User->>QualityCheckViewModel: Prepare
        activate QualityCheckViewModel
-       
-       QualityCheckViewModel->>QcbReadingModel: connection check
-       activate QcbReadingModel
-       QcbReadingModel->>Firmware: "[UDP] ping"
-       activate Firmware
-       Firmware-->>QcbReadingModel: "[UDP] status response"
-       deactivate Firmware
-       QcbReadingModel-->>QualityCheckViewModel: connection status
-       deactivate QcbReadingModel
+       QualityCheckViewModel->>GcbQcbService: PingBoardAsync
+       GcbQcbService->>GcbCommandInterface: PingQcb
+       GcbCommandInterface->>MainControl: [UDP] QC-board ping
+       MainControl->>QcDetector: check connection
+       QcDetector-->>MainControl: connection status
+       MainControl-->>GcbCommandInterface: validated ping response
+       GcbCommandInterface-->>GcbQcbService: connection status
+       GcbQcbService-->>QualityCheckViewModel: connection status
+       alt detector is unavailable
+           QualityCheckViewModel-->>User: return to StandBy and display preparation error
+       else detector is available
+           QualityCheckViewModel->>MainBoardModel: load selected emission
+           MainBoardModel-->>QualityCheckViewModel: selected emission confirmed
+           QualityCheckViewModel-->>User: enable Beam On
+       end
+       deactivate QualityCheckViewModel
 
-       QualityCheckViewModel->>MainBoardModel: Load plan
-       activate MainBoardModel
-       Note over MainBoardModel: "create session, stage and confirm the plan"
-       MainBoardModel->>MainBoardModel: 
-       MainBoardModel-->>QualityCheckViewModel: task result
-       deactivate MainBoardModel
-
-       Note over QualityCheckViewModel: enable BeamOn button
-       QualityCheckViewModel-->>User: 
+       User->>QualityCheckViewModel: Beam On
+       activate QualityCheckViewModel
+       QualityCheckViewModel->>MainBoardModel: Beam On selected emission
+       MainBoardModel-->>QualityCheckViewModel: emission entered
+       QualityCheckViewModel->>GcbQcbService: start detector acquisition, 1000 ms
+       GcbQcbService->>GcbCommandInterface: StartQcbReadings(1000)
+       GcbCommandInterface->>MainControl: [UDP] start QC readings, 1000 ms
+       MainControl->>QcDetector: acquire detector samples
+       MainControl-->>GcbCommandInterface: start confirmed
+       GcbCommandInterface-->>GcbQcbService: command accepted
+       GcbQcbService-->>QualityCheckViewModel: start confirmed
+       Note over QualityCheckViewModel: wait for the 1000 ms acquisition window
+       QualityCheckViewModel->>GcbQcbService: stop readings
+       GcbQcbService->>GcbCommandInterface: StopQcbReadings
+       GcbCommandInterface->>MainControl: [UDP] stop QC readings
+       MainControl->>QcDetector: stop and collect results
+       QcDetector-->>MainControl: channel 0 and channel 1 samples
+       MainControl-->>GcbCommandInterface: accumulated channels, sample count, two reserved fields
+       GcbCommandInterface-->>GcbQcbService: QcReadings with five positions and SampleCount
+       GcbQcbService-->>QualityCheckViewModel: selected-point readings
+       alt readings are missing
+           QualityCheckViewModel->>MainBoardModel: Stop
+           QualityCheckViewModel-->>User: display acquisition error
+       else readings are present
+           MainBoardModel-->>QualityCheckViewModel: selected emission completed
+           QualityCheckViewModel->>MainBoardModel: reset timers and clear plan
+           QualityCheckViewModel->>QcReportService: save selected emission and readings
+           QcReportService-->>QualityCheckViewModel: report saved
+           Note over QualityCheckViewModel: return to StandBy and clear selection
+           QualityCheckViewModel-->>User: selected emission completed
+       end
        deactivate QualityCheckViewModel
    </pre>
 <<<
@@ -792,6 +814,21 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-66
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-280
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-282
+TITLE: Authoritative Physics Configuration Synchronization
+STATEMENT: >>>
+``CollimatorService`` first fetches the active head, the complete collimator-configuration list, and the collimators. It then calls ``CollimatorModel.Reset`` once with all three results. Reset links each collimator to the configuration identified by its foreign key, replaces both observable collections, and raises the configuration-change notification only after the complete snapshot is available. Consumers therefore do not observe a partially rebuilt configuration list.
+
+The database list services enforce the request's parent identifier when reading the hierarchy: presets are filtered by collimator-configuration identifier; coils, correction matrices, heater-current configurations, output factors, and reference fields are filtered by preset identifier; and an optional collimator-configuration identifier filters collimators. Rows belonging to another parent are never returned as part of the requested configuration.
+
+The Physics view responds to the complete configuration-change notification by rebuilding its selectable applicator and energy options and forcing a refresh of their physics data. Refreshes are serialized. A successful refresh replaces the physics-data store so entries absent from the authoritative snapshot are removed. A failed configuration read is logged with its identifier, type, and energy; when every requested configuration fails, the refresh reports an error and remains retryable.
+<<<
+RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-280
   ROLE: Refines
@@ -814,7 +851,7 @@ The flow for performing System Safety Checks should be implemented as described 
            participant SafetyCheckModel
            participant MainBoardModel
        end
-       box Record & Verify
+       box Database
            participant SafetyCheckService
        end
 
@@ -829,15 +866,15 @@ The flow for performing System Safety Checks should be implemented as described 
        deactivate SafetyCheckModel
 
        alt "[SafetyCheck is allowed with current collimator type]"
-           Note over SafetyCheckViewModel: prepare SafetyCheck emission plan for single point
+           Note over SafetyCheckViewModel: prepare one scalar SafetyCheck emission
            SafetyCheckViewModel->>SafetyCheckViewModel: 
            Note over SafetyCheckViewModel: enable Prepare button
            
            User->>SafetyCheckViewModel: Prepare
-           SafetyCheckViewModel->>MainBoardModel: load emission plan
+           SafetyCheckViewModel->>MainBoardModel: load scalar emission
            activate MainBoardModel
            
-           Note over MainBoardModel: send plan and confirmation to ControlBoard
+           Note over MainBoardModel: send scalar point and confirmation to ControlBoard
            MainBoardModel->>MainBoardModel: 
            Note over MainBoardModel: wait for Ready state
            MainBoardModel->>MainBoardModel: 
@@ -999,10 +1036,48 @@ RELATIONS:
   VALUE: RQ-H10TG-97
   ROLE: Refines
 - TYPE: Parent
-  VALUE: RQ-H10TG-282
+  VALUE: RQ-H10TG-283
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-281
+TITLE: QC Result Persistence, Acceptance, and Approval
+STATEMENT: >>>
+``QcReportService`` creates one ``QcSampleHeader`` per collimator configuration with the
+current creation time and the authorized operator's email address. ``QcRepository`` persists
+that header, its QA-emission fields, and each field's diode intensities as a parent-child
+hierarchy. The SQLite gRPC repositories preserve the creation timestamps and parent identifiers
+and filter samples by collimator configuration, fields by sample, and intensities by field.
+When opening an existing table, the repository backfills an empty indexed parent identifier
+from the serialized record before serving the filtered reads.
+
+``QcTreatmentAcceptanceService`` orders the selected configuration's samples by creation time
+and identifier, uses the newest sample and newest referenced sample, and returns:
+
+* ``Missing`` when the newest sample does not exist or is older than 24 hours;
+* ``Accepted`` immediately when the newest sample has a persisted approver;
+* ``NoReference`` when an unapproved current sample has no reference;
+* otherwise, ``Accepted`` only when the two samples have the same non-empty ordered field and
+  value shape and every value's absolute deviation is less than 3 percent; all other cases
+  return ``Failed``.
+
+Deviation calculation returns zero for a zero value against a zero reference. A nonzero value
+against zero, a null value, a missing field, or a mismatched value count cannot pass acceptance.
+
+``QCSampleService`` authenticates an approval request against the persisted users before
+loading or updating the sample. Username matching is case-insensitive and the supplied password
+must match. Authentication failure returns ``Unauthenticated`` without modifying the sample;
+success stores the authenticated user's email address in ``ApprovedBy``.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-93
   ROLE: Refines
 - TYPE: Parent
-  VALUE: RQ-H10TG-283
+  VALUE: RQ-H10TG-94
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10TG-282
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1052,6 +1127,10 @@ RELATIONS:
 UID: SW-H10TG-72
 TITLE: Radiation Emission Control - Beam On process Sequence
 STATEMENT: >>>
+Before preparation, the treatment-plan validation requires one valid treatment field. A
+missing, additional, or invalid field is rejected before any firmware-session command is
+sent.
+
 .. raw:: html
 
    <pre class="mermaid">
@@ -1069,16 +1148,13 @@ STATEMENT: >>>
        ExtCC->>Boards: Release Point
        activate Boards
 
-       loop foreach operational point
-           ExtCC->>HVPS: Filament set point
-           activate HVPS
-           Note over ExtCC: "Button shows Launching progress"
-           Boards->>HVPS: Start Emission
-           HVPS-->>ExtCC: Operational point emission finished
-           deactivate HVPS
-           Note over ExtCC: "Button shows Beaming on progress"
-           Note over ExtCC: "Button shows Launching progress"
-       end
+       ExtCC->>HVPS: Filament set point
+       activate HVPS
+       Note over ExtCC: "Button shows Launching progress"
+       Boards->>HVPS: Start scalar emission
+       HVPS-->>ExtCC: Scalar emission finished
+       deactivate HVPS
+       Note over ExtCC: "Button shows Beaming on progress"
        deactivate Boards
 
        Note over ExtCC: "Button shows Clear Timers"
@@ -1198,11 +1274,9 @@ STATEMENT: >>>
        
        rect rgb(235, 247, 235)
            Note left of ExtCC: Reconfirm plan before resume emission
-           loop foreach operational point
-               ExtCC->>Boards: "Re-Send operational point info with new duration (confirmation)"
-               activate Boards
-               deactivate Boards
-           end
+           ExtCC->>Boards: "Re-send scalar emission info with remaining duration (confirmation)"
+           activate Boards
+           deactivate Boards
            ExtCC->>Boards: Release Plan Command
            activate Boards
            Boards->>HVPS: Ramp HV
@@ -1217,9 +1291,7 @@ STATEMENT: >>>
            Note left of ExtCC: Resume emission
            ExtCC->>Boards: Release point command
            activate Boards
-           loop Foreach operational point
-               Boards->>Boards: Run emission
-           end
+           Boards->>Boards: Run the same scalar emission
            deactivate Boards
        end
        deactivate ExtCC
@@ -1287,17 +1359,12 @@ RELATIONS:
 UID: SW-H10TG-33
 TITLE: Radiation Emission View - Treatment Plan Staging Operational Point Parameters
 STATEMENT: >>>
-The application shall implement functionality to initiate a new treatment staging request.
+The application shall initiate a new firmware session with an argument-free staging
+request, then send the parameters for exactly one scalar emission.
 
-This request shall include the following parameters for each point:
-
-- Acceleration potential (kV), range 0 to 100 kV
-- Emission current (mA), ranges from 0 to 1 mA
-- Total delivery time, range 0 to TBD
-- The remaining delivery time ranges from 0 to the total delivery time
-- Beam optic focus adjustment values range from 0 to 3A
-- Beam optic deflection adjustment values range -1.5A to +1.5A
-- Filament current (mA), ranges from 0 to 3999 mA
+The scalar emission includes acceleration potential, emission current, delivery time,
+remaining time, focus and deflection adjustments, and filament current. Each value must be
+within its configured operating range.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1325,7 +1392,7 @@ STATEMENT: >>>
        box ControlBoard
            participant Firmware
        end
-       box Record & Verify
+       box Database
            participant TreatmentService
            participant ActualTreatmentFieldService
        end
@@ -1348,28 +1415,28 @@ STATEMENT: >>>
            TelemetryService-->>OperatePlanViewModelBase: immutable telemetry snapshot
            deactivate TelemetryService
            
-           alt "[Emission state: update treatment field from telemetry]"
-               Note over OperatePlanViewModelBase: get telemetry CurrentOperationalPoint index
-               OperatePlanViewModelBase->>OperatePlanViewModelBase: 
-               Note over OperatePlanViewModelBase: get telemetry timer values
-               OperatePlanViewModelBase->>OperatePlanViewModelBase: 
-               OperatePlanViewModelBase->>ActualTreatmentFieldModel: "SaveActualTreatmentField(treatment, index, timer)"
+           alt "[Emission state: update the application-selected field from telemetry]"
+               Note over OperatePlanViewModelBase: use application-owned ActiveEmissionIndex
+               OperatePlanViewModelBase->>OperatePlanViewModelBase:
+               Note over OperatePlanViewModelBase: get scalar telemetry timer values
+               OperatePlanViewModelBase->>OperatePlanViewModelBase:
+               OperatePlanViewModelBase->>ActualTreatmentFieldModel: "SaveActualTreatmentField(treatment, ActiveEmissionIndex, timer)"
            end
        end
 
-       alt "[Leaving Emission state: update treatment field from the board]"
-           OperatePlanViewModelBase->>MainBoardModel: query last OperationalPoint data
+       alt "[Leaving Emission state: update the application-selected field from the board]"
+           OperatePlanViewModelBase->>MainBoardModel: query scalar emission data
            activate MainBoardModel
-           MainBoardModel->>Firmware: query operational point data
+           MainBoardModel->>Firmware: indexless query emission data
            activate Firmware
-           Firmware-->>MainBoardModel: data response
+           Firmware-->>MainBoardModel: scalar data response
            deactivate Firmware
-           MainBoardModel-->>OperatePlanViewModelBase: point data
+           MainBoardModel-->>OperatePlanViewModelBase: scalar emission data
            deactivate MainBoardModel
-           
-           Note over OperatePlanViewModelBase: get timer value from point data
-           OperatePlanViewModelBase->>OperatePlanViewModelBase: 
-           OperatePlanViewModelBase->>ActualTreatmentFieldModel: "SaveActualTreatmentField(treatment, index, timer)"
+
+           Note over OperatePlanViewModelBase: get timer value from scalar data
+           OperatePlanViewModelBase->>OperatePlanViewModelBase:
+           OperatePlanViewModelBase->>ActualTreatmentFieldModel: "SaveActualTreatmentField(treatment, ActiveEmissionIndex, timer)"
            activate ActualTreatmentFieldModel
            
            alt "[new actual treatment field data]"
@@ -1513,7 +1580,7 @@ The flow for retrieving Quality Checks Report should be implemented as described
             participant VM as QualityCheckReportsViewModel
             participant M as QcModel
         end
-        box Record & Verify
+        box Database
             participant S as QC Services
         end
 
@@ -1630,7 +1697,7 @@ The application will show a DB Communication error when the gRPC command throws 
             participant Model
             participant gRPCCommand
         end
-        box Record & Verify
+        box Database
             participant Object as :Object
         end
 
@@ -1660,7 +1727,7 @@ The application will show a DB Communication error when the gRPC command throws 
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-73
+  VALUE: RQ-H10TG-288
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1760,10 +1827,11 @@ RELATIONS:
 UID: SW-H10TG-254
 TITLE: Treatment Fields Emission Progress indicators
 STATEMENT: >>>
-Emission progress consumes the immutable semantic snapshots published from unsolicited
-telemetry. The operational-point index updates the selected treatment field and collimator.
-During emission the timer values determine emission progress; during launching the heater
-current setpoint determines launching progress.
+Emission progress consumes immutable semantic snapshots published from unsolicited
+telemetry. The application-owned ActiveEmissionIndex identifies the current business field;
+the firmware telemetry contains no point index or point count. During emission, scalar
+timer values determine emission progress; during launching, the heater-current setpoint
+determines launching progress.
 
 .. raw:: html
 
@@ -1776,9 +1844,9 @@ current setpoint determines launching progress.
         participant DS as GCBDataStore
 
         DS-->>VM: SystemTelemetryChanged(immutable snapshot)
-        VM->>VM: Read CurrentOperationalPoint
-        VM->>CC: Update selection
-        VM->>TFL: Update selection
+        VM->>VM: Read application-owned ActiveEmissionIndex
+        VM->>CC: Keep prepared field selection
+        VM->>TFL: Keep prepared field selection
         alt Emission state
             VM->>VM: Calculate emission progress from timers
             VM->>EP: Set emission progress
@@ -1817,19 +1885,17 @@ STATEMENT: >>>
 
         Note over M, F: Board is in Primed state, User initiates plan preparation
 
-        M->>F: [UDP] create a new session for N operational points
+        M->>F: [UDP] create an argument-free scalar session
         activate F
         F-->>M: [UDP] session key
         deactivate F
 
         M->>M: wait for Staging board state
 
-        loop for each operational point
-            M->>F: [UDP] send operational parameters
-            activate F
-            F-->>M: [UDP] status response
-            deactivate F
-        end
+        M->>F: [UDP] send scalar emission parameters
+        activate F
+        F-->>M: [UDP] status response
+        deactivate F
 
         M->>F: [UDP] Stage command
         activate F
@@ -1947,7 +2013,7 @@ STATEMENT: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-93
+  VALUE: RQ-H10TG-73
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1963,6 +2029,35 @@ Unknown or unavailable firmware mode does not lock the tabs.
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-285
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-280
+TITLE: Display Main Control Firmware Version
+STATEMENT: >>>
+The version-information parser accepts the 19-word control-board response and decodes its
+null-padded 32-byte ASCII version fields. When the user opens System Information, the
+external tab view requests device information and displays the decoded main-control
+``FirmwareVersion`` string.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-286
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10TG-283
+TITLE: Permission-Based Navigation Composition
+STATEMENT: >>>
+The external application derives the visible navigation items from the authenticated user's
+permissions when composing the left navigation menu and Quality Assurance tabs. The
+Treatment menu item requires treatment permission, and the Physics tab requires physics
+quality-assurance permission. Items for which the user lacks permission are omitted rather
+than displayed as actionable controls.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-287
   ROLE: Refines
 
 [[/SECTION]]

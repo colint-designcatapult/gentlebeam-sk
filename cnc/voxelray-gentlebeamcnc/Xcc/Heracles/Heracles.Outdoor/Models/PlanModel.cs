@@ -30,7 +30,7 @@ namespace Heracles.External.Models
         Task<IPlan> FindLoadedPlanAsync();
         Task LoadPlanForTreatment(long planId, bool isPartial);
 
-        void UpdateActualTime(GcbEmissionPlan currentPlan);
+        void UpdateActualTime(GcbOperationalPoint currentEmission);
     }
 
     public class PlanModel(
@@ -77,7 +77,7 @@ namespace Heracles.External.Models
         public ISimulation Simulation { get; set; }
 
 
-        private TreatmentFieldEntryObservableCollection _treatmentFields;
+        private TreatmentFieldEntryObservableCollection _treatmentFields = new();
         public TreatmentFieldEntryObservableCollection TreatmentFields
         {
             get => _treatmentFields;
@@ -116,22 +116,48 @@ namespace Heracles.External.Models
 
         public void SetPlan(ITreatmentInfoStore store)
         {
-            if (Plan == store.Plan)
+            var plan = store.Plan;
+            var prescription = store.Prescription;
+            var rawTreatmentFields = plan?.TreatmentFields;
+
+            if (plan is not null)
+            {
+                TreatmentPlanFieldRules.EnsureValid(rawTreatmentFields);
+                if (prescription is null || rawTreatmentFields.Single().Energy != prescription.Energy)
+                {
+                    throw new InvalidOperationException(
+                        "The PlusC treatment field energy must match the prescription energy.");
+                }
+            }
+
+            if (Plan == plan)
                 return;
+
+            var treatmentFields = new TreatmentFieldEntryObservableCollection();
+            ICollimatorConfiguration? collimatorConfiguration = null;
+            var totalDuration = 0.0;
+
+            if (plan is not null)
+            {
+                var fieldNameMapping =
+                    TargetTypeConverter.GetIndexToTreatmentFieldNameMapping(plan.CollimatorType);
+                var field = rawTreatmentFields.Single();
+                var treatmentField = new TreatmentFieldEntry(
+                    field,
+                    TargetTypeConverter.GetBackwardFieldNameMapping(fieldNameMapping, field.Name));
+                treatmentFields.Add(treatmentField);
+                totalDuration = field.DwellTime;
+                collimatorConfiguration =
+                    CollimatorModel.FindConfigurationByType(plan.CollimatorType, prescription!.Energy);
+            }
 
             Diagnosis = store.Diagnosis;
             Simulation = store.Simulation;
-            Prescription = store.Prescription;
-            Plan = store.Plan;
-
-            // TODO: do we need it here? 
-            // We use it only to retreive its ActualDose for TF updates or its Id for Qc check
-            if (Plan != null && Prescription != null)
-            {
-                CollimatorConfiguration = CollimatorModel.FindConfigurationByType(Plan.CollimatorType, Prescription.Energy);
-            }
-
-            SetTreatmentFields(Plan);
+            Prescription = prescription;
+            Plan = plan;
+            CollimatorConfiguration = collimatorConfiguration;
+            TreatmentFields = treatmentFields;
+            TotalDuration = totalDuration;
         }
 
         private Task FetchTreatmentFactors()
@@ -183,92 +209,16 @@ namespace Heracles.External.Models
 
         #region Private methods
 
-        private void CalculateTotalDuration()
-        {
-            if (Plan == null)
-            {
-                TotalDuration = 0.0;
-                return;
-            }
-
-            TotalDuration = TreatmentFields.Sum(tf => tf.DwellTime);
-        }
-
-        private void ClearTreatmentFieldLists()
-        {
-            TreatmentFields = new TreatmentFieldEntryObservableCollection();
-        }
-
-        private void SetTreatmentFields(IPlan plan)
-        {
-            if (BaseEntry.IsNullOrBlankEntry(plan))
-            {
-                ClearTreatmentFieldLists();
-                TotalDuration = 0.0;
-                return;
-            }
-
-
-            var fetchedTreatmentFields = plan.TreatmentFields;
-            // TODO: this is a workaround for inconsistent plans in the DB
-            // Validate plan correctness & remove all fields for any wrong energy:
-            var prescribedEnergy = Prescription?.Energy;
-            if (prescribedEnergy != null)
-            {
-                var fields = fetchedTreatmentFields?.ToList() ?? [];
-                foreach (var field in fields)
-                {
-                    if (field.Energy != prescribedEnergy)
-                    {
-                        fetchedTreatmentFields.Remove(field);
-                    }
-                }
-            }
-
-            fetchedTreatmentFields = fetchedTreatmentFields.OrderBy(field => field.Id).ToList();
-            // TODO: workaround - if we have more than one field, we keep only first one and remove all the others
-            if (fetchedTreatmentFields.Count > 1)
-            {
-                fetchedTreatmentFields = fetchedTreatmentFields.Take(1).ToList();
-            }
-            
-            var fieldNameMapping = TargetTypeConverter.GetIndexToTreatmentFieldNameMapping(plan?.CollimatorType ?? TargetType.TargetType_None);
-            // TODO: probably we can remove this dispatcher invoke now:
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
-            {
-                var treatmentFields = new List<TreatmentFieldEntry>(fetchedTreatmentFields.Count);
-
-                foreach (var tf in fetchedTreatmentFields)
-                {
-                    var tfEntry = new TreatmentFieldEntry(
-                        tf,
-                        TargetTypeConverter.GetBackwardFieldNameMapping(fieldNameMapping, tf.Name)
-                    );
-
-                    treatmentFields.Add(tfEntry);
-                }
-
-                TreatmentFields = new TreatmentFieldEntryObservableCollection(treatmentFields);                
-            });
-
-            CalculateTotalDuration();
-        }
 
         public async Task LoadPlanForTreatment(long planId, bool isPartial)
         {
             await PlanCommands.LoadForTreatmentAsync(planId, isPartial);
         }
 
-        public void UpdateActualTime(GcbEmissionPlan currentPlan)
+        public void UpdateActualTime(GcbOperationalPoint currentEmission)
         {
-            if (currentPlan.TotalPoints != TreatmentFields.Count) 
-            {
-                throw new ArgumentException("Size of the board plan differs from the plan loaded for treatment");
-            }
-            for (int i = 0; i < TreatmentFields.Count; i++)
-            {
-                TreatmentFields[i].Actual = currentPlan[i].ActualDuration;
-            }
+            TreatmentPlanFieldRules.EnsureValid(TreatmentFields);
+            TreatmentFields[0].Actual = currentEmission.ActualDuration;
         }
 
         //private ITreatmentField FindTreatmentField(ITreatmentFieldEntry treatmentFieldEntry)

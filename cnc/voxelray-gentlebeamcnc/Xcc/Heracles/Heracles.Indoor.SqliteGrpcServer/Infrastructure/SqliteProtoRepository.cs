@@ -22,12 +22,18 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
     private readonly string _connectionString;
     private readonly string _tableName;
     private readonly bool _hasParentId;
+    private readonly string? _parentIdJsonField;
 
-    public SqliteProtoRepository(string dbPath, string tableName, bool hasParentId = false)
+    public SqliteProtoRepository(
+        string dbPath,
+        string tableName,
+        bool hasParentId = false,
+        string? parentIdJsonField = null)
     {
         _connectionString = $"Data Source={dbPath}";
         _tableName = tableName;
         _hasParentId = hasParentId;
+        _parentIdJsonField = parentIdJsonField;
         EnsureTable();
     }
 
@@ -51,19 +57,40 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
             cmd.ExecuteNonQuery();
 
             // Migration: add parent_id to tables that were created before this column existed.
-            using var check = conn.CreateCommand();
-            check.CommandText = $"PRAGMA table_info({_tableName})";
             bool hasColumn = false;
-            using var r = check.ExecuteReader();
-            while (r.Read())
+            using (var check = conn.CreateCommand())
             {
-                if (r.GetString(1) == "parent_id") { hasColumn = true; break; }
+                check.CommandText = $"PRAGMA table_info({_tableName})";
+                using var reader = check.ExecuteReader();
+                while (reader.Read())
+                {
+                    if (reader.GetString(1) == "parent_id")
+                    {
+                        hasColumn = true;
+                        break;
+                    }
+                }
             }
+
             if (!hasColumn)
             {
                 using var alter = conn.CreateCommand();
                 alter.CommandText = $"ALTER TABLE {_tableName} ADD COLUMN parent_id INTEGER NOT NULL DEFAULT 0";
                 alter.ExecuteNonQuery();
+            }
+
+            if (!string.IsNullOrEmpty(_parentIdJsonField))
+            {
+                using var backfill = conn.CreateCommand();
+                backfill.CommandText =
+                    $"""
+                    UPDATE {_tableName}
+                    SET parent_id = CAST(json_extract(data, @path) AS INTEGER)
+                    WHERE parent_id = 0
+                      AND json_extract(data, @path) IS NOT NULL
+                    """;
+                backfill.Parameters.AddWithValue("@path", $"$.{_parentIdJsonField}");
+                backfill.ExecuteNonQuery();
             }
         }
         else

@@ -225,16 +225,30 @@ RELATIONS:
 UID: TC-H1FWMC-93
 TITLE: Emission Indicator
 STATEMENT: >>>
-The user can hear sounds during the emission which is provided by the audible indicator in the main board.
+Verify that an accepted direct emission start enables the external indicators only when
+the required interlocks are ready, and that an emission stop disables the indicators.
 <<<
 PREREQUISITES: >>>
-1. Emission is running
+1. The system is ready to accept direct emission start and stop directives.
+2. The required readiness inputs can be placed in their good and bad conditions.
+3. The external indicator output, audible indicator, on-board LED6, and queued HVPS
+   commands can be observed.
 <<<
 STEPS: >>>
-1. When an emission is running, check the sound
+1. Confirm the external indicators and LED6 are inactive.
+2. Place every required readiness input in its good condition and issue a start directive.
+3. Observe the external indicators, LED6, and queued HVPS command.
+4. Issue a stop directive and observe the same signals and command queue.
+5. Hold one required readiness input in its bad condition and issue another start
+   directive.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the user can hear the sound which is enabled by firmware and can be heard because of the audible indicator in the main board
+1. Verify the external indicators and LED6 are initially inactive.
+2. Verify the accepted start enables the external indicators and LED6.
+3. Verify the indicator outputs are enabled before the HVPS start command is queued.
+4. Verify stop disables both indicator outputs before the HVPS stop command is queued.
+5. Verify a start with a required readiness input bad enables neither indicator output
+   and queues no HVPS start command.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -245,44 +259,36 @@ RELATIONS:
 UID: TC-H1FWMC-94
 TITLE: Interlocks
 STATEMENT: >>>
-The firmware shall monitor the status of the interlocks and throw a fault if any unusual things happen.
+Verify physical interlock reporting and verify that an open emergency-stop interlock
+prevents entry into conditioning and produces a typed interlock fault.
 <<<
 PREREQUISITES: >>>
-1. The system is on and ready to run
+1. The system is on in the cold state and ready to accept a conditioning request.
+2. The Services and fault-log screens are available.
 <<<
 STEPS: >>>
-1. Press and release the e-stop button in the system
-2. Click Services symbol in the left panel of the screen
-3. Check the services
-4. Change the state of Ion pump HV interlocks
-5. Click Services symbol in the left panel of the screen
-6. Check the services
-7. Change the state of KUKA robot arm interlocks
-8. Click Services symbol in the left panel of the screen
-9. Check the services
-10. Change the state of Door interlock
-11. Click Services symbol in the left panel of the screen
-12. Check the services
-13. Change the state of Coolant level sensor
-14. Click Services symbol in the left panel of the screen
-15. Check the services
+1. Open the base emergency-stop interlock and request conditioning.
+2. Inspect the system state, fault log, heater command, and coolant-pump command.
+3. Restore the base emergency-stop interlock, clear the fault, and repeat steps 1 and 2
+   with the remote emergency-stop interlock open.
+4. Restore and clear the system.
+5. In turn, change the condition of the ion-pump, KUKA readiness, door, and coolant-level
+   interlocks.
+6. After each change, open the Services screen and wait at least 1 second for status
+   reporting.
+7. Record the physical-interlock status, required-interlock mask, and any reported fault.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the toggles of the e-stop button happened
-2. Verify services screen is displayed in the GUI
-3. Verify the e-stop toggle is recorded in the services screen after 1 second
-4. Verify Ion pump HV interlocks status changed
-5. Verify services screen is displayed in the GUI
-6. Verify Ion pump HV interlocks status is recorded in the services screen
-7. Verify KUKA robot arm interlocks status changed
-8. Verify services screen is displayed in the GUI
-9. Verify KUKA robot arm interlocks status is recorded in the services screen
-10. Verify Door interlock status changed
-11. Verify services screen is displayed in the GUI
-12. Verify Door interlock status is recorded in the services screen
-13. Verify Coolant level sensor status changed
-14. Verify services screen is displayed in the GUI
-15. Verify Coolant level sensor status is recorded in the services screen
+1. Verify neither open emergency-stop input permits a transition from cold to
+   conditioning.
+2. Verify each rejected transition reports a ``FAULT_INTERLOCK`` record containing
+   ``Cannot condition with e-stops open``.
+3. Verify rejection occurs before a conditioning heater command or coolant-pump start.
+4. Verify every changed physical interlock is reported in the Services screen within
+   1 second.
+5. Verify an interlock selected by the current required-interlock mask produces an
+   interlock fault, while an input omitted from that mask remains reported without
+   independently producing a fault.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -543,21 +549,21 @@ RELATIONS:
 UID: TC-H1FWMC-104
 TITLE: Operation 08: Ready 1
 STATEMENT: >>>
-When user loads a plan with at least 6 operational points with alternating non-auto-execute and auto-execute points, verify user's intervention requirements.
+When the user prepares one emission, verify that entering Ready never starts radiation
+without an explicit Beam On action.
 <<<
 PREREQUISITES: >>>
 1. System is ready to run a treatment
-2. A treatment plan is loaded into the system with at least 6 operational points with alternating non-auto-execute and auto-execute points
+2. One scalar emission is staged, confirmed, and plan-released
 <<<
 STEPS: >>>
-1. Run the loaded treatment plan with at least 6 operational points with alternating non-auto-execute and auto-execute points
-2. Check the flags of the auto-execute points
-3. Check the flags of the non-auto-execute points
+1. Observe the system in Ready without pressing Beam On
+2. Press Beam On once
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify system started to run
-2. Verify that the points which are flagged for auto-execute do not need user intervention to execute
-3. Verify that the points which are flagged for non-auto-execute do need user intervention to execute
+1. Verify no radiation is emitted before Beam On
+2. Verify one point-scope release starts exactly one emission
+3. Verify completion transitions to Discharge without a second Setup
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -568,19 +574,22 @@ RELATIONS:
 UID: TC-H1FWMC-105
 TITLE: Operation 08: Ready 2
 STATEMENT: >>>
-When user loads a plan with 1 operational point where the flag for auto-execute is set, verify user's intervention is required for running them.
+When two requested QA emissions are run as separate sessions, verify each session requires
+its own Beam On action.
 <<<
 PREREQUISITES: >>>
-1. System is ready to run a treatment
-2. A treatment plan is loaded into the system with 1 operational point with the flag for non-auto-execute
+1. System is ready to run emissions
+2. Two scalar QA emissions are available to the PC
 <<<
 STEPS: >>>
-1. Run the loaded treatment plan with 1 operational point with the alternating non-auto-execute point
-2. Check the flags of the loaded plan
+1. Prepare and Beam On the first session
+2. Prepare the second session and wait in Ready
+3. Press Beam On for the second session
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify system started to run
-2. Verify that despite being set to auto-execute, the point still requires user intervention to initiate emission (press "Beam On" button)
+1. Verify the first completion discharges and does not execute the second emission
+2. Verify the second session remains non-emitting in Ready
+3. Verify the second Beam On starts only the second emission
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -591,21 +600,22 @@ RELATIONS:
 UID: TC-H1FWMC-106
 TITLE: Operation 07: Operational Point Setup 1
 STATEMENT: >>>
-When the user runs an emission with at least 2 points, verify that prior to emission of each point, the kV reading is within 5% of the target kV.
+When the user runs a scalar emission, verify that prior to emission the kV reading is within
+5% of the target kV.
 <<<
 PREREQUISITES: >>>
 1. The system is up and ready to run an emission
-2. A treatment plan is loaded and ready to run for at least 2 emissions
+2. One scalar emission is loaded and ready
 <<<
 STEPS: >>>
 1. Start the system
-2. Load the normal treatment plan with at least 2 points
-3. Check the kV reading
+2. Load the scalar emission
+3. Check the kV reading before Beam On
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. Verify the system is started properly
-2. Verify the plan is loaded
-3. Verify that prior to emission of each point, the kV reading is within 5% of the target kV
+2. Verify the emission is loaded
+3. Verify the kV reading is within 5% of target before emission
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -616,21 +626,22 @@ RELATIONS:
 UID: TC-H1FWMC-107
 TITLE: Operation 07: Operational Point Setup 2
 STATEMENT: >>>
-When the user runs an emission with at least 2 points, verify that prior to emission of each point, the kV reading is within 5% of the target kV.
+When an emission is interrupted and resumed, verify the same scalar kV setpoint is reached
+before the resumed emission.
 <<<
 PREREQUISITES: >>>
-1. The system is up and ready to run an emission
-2. A treatment plan is loaded and ready to run for at least 2 emissions
+1. The system is ready with a scalar emission
+2. The emission can be stopped before completion
 <<<
 STEPS: >>>
-1. Start the system
-2. Load the normal treatment plan with at least 2 points
-3. Check the kV reading
+1. Beam On and stop during emission
+2. Reconfirm and release the same remaining emission
+3. Check the kV reading before the resumed Beam On
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is started properly
-2. Verify the plan is loaded
-3. Verify that prior to emission of each point, the kV reading is within 5% of the target kV
+1. Verify the same scalar remaining time is retained
+2. Verify the kV reading is within 5% of target before resumed emission
+3. Verify completion transitions to Discharge
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -723,26 +734,27 @@ RELATIONS:
 UID: TC-H1FWMC-111
 TITLE: Treatment Plan Reporting 1
 STATEMENT: >>>
-When user sets invalid parameters, GUI and logs should report it.
+Verify the scalar operational-point query has no index payload and that indexed legacy
+queries are rejected.
 <<<
 PREREQUISITES: >>>
-1. System is ready to use
+1. One scalar operational point is loaded
+2. The PC packet-contract test harness is available
 <<<
 STEPS: >>>
-1. Load invalid parameters to the system
-2. Check the GUI
-3. Click the Logs symbol in the left panel
-4. Check the logs
+1. Send an operational-point query with no payload
+2. Send the legacy query with one point-index payload word
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the invalid parameters are loaded in the system
-2. Verify errors are displayed in the GUI for invalid parameters
-3. Verify logs are displayed in the GUI
-4. Verify logs for the invalid parameters are present
+1. Verify the indexless query returns status and the loaded scalar parameters without point metadata
+2. Verify strict packet-length validation rejects the indexed query
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWMC-23
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-81
   ROLE: Verifies
 
 [TEST_CASE]
@@ -780,26 +792,29 @@ RELATIONS:
 UID: TC-H1FWMC-113
 TITLE: Operation 4: Treatment Plan Confirmation 1
 STATEMENT: >>>
-When a special test is running for some of the points belonging to the treatment plan, then treatment of the loaded plan's execution never completes.
+Verify a session becomes confirmed only when the singular scalar parameters match the
+staged point without an intervening standby timeout or fault.
 <<<
 PREREQUISITES: >>>
-1. A special test is ready for run which does not confirm all of the treatment plan's points
-2. The treatment plan is loaded
-3. System is ready to run a treatment plan
+1. The system is in Staging with one scalar operational point loaded
+2. The firmware command and state-transition test harness is available
 <<<
 STEPS: >>>
-1. Run GUI with special test functionality to not confirm all points
-2. Check running of the treatment plan
-3. Check the logs
+1. Finalize staging and confirm with one altered scalar parameter
+2. Confirm again with parameters that exactly match the loaded point
+3. Repeat the matching confirmation, then interrupt the session with standby or a fault before plan release
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the test is started to run
-2. Verify running of treatment with multiple points won't complete
-3. Verify logs indicate that treatment cannot be executed
+1. Verify the altered confirmation is rejected and plan release is denied
+2. Verify the matching confirmation is accepted only in Staged
+3. Verify the interruption clears confirmation and plan release is denied
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWMC-24
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-31
   ROLE: Verifies
 
 [TEST_CASE]
@@ -909,7 +924,7 @@ RELATIONS:
 UID: TC-H1FWMC-118
 TITLE: Operation 4: Treatment Plan Confirmation 2
 STATEMENT: >>>
-When user loads a plan with out of bound values, the system should display an error and record it in the logs. Acceptable values are: Acceleration potential (kV): 0–100 kV; Emission current (mA): 0–1 mA; Total delivery time: 0–300 seconds; Remaining delivery time: 0 to total delivery time; Beam optic focus adjustment values: 0–3 A.
+When a user loads a plan containing values outside the configured operating ranges, the system should display an error and record it in the logs.
 <<<
 PREREQUISITES: >>>
 1. System is ready to run a treatment
@@ -934,7 +949,7 @@ RELATIONS:
 UID: TC-H1FWMC-119
 TITLE: Operation 04: Treatment Plan Confirmation 6
 STATEMENT: >>>
-When user loads and runs a normal plan, make sure the parameters match with defined acceptable ranges: Acceleration potential (kV): 0–100 kV; Emission current (mA): 0–1 mA; Total delivery time: 0–300 seconds; Remaining delivery time: 0 to total delivery time; Beam optic focus adjustment values: 0–3 A; Beam optic deflection adjustment values: -1.5 A to +1.5 A; Filament current (mA): 0–3999 mA.
+When a user loads and runs a normal plan, verify every treatment parameter is within its configured operating range.
 <<<
 PREREQUISITES: >>>
 1. System is ready to use
@@ -960,27 +975,27 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-120
-TITLE: Report Telemetry to PC
+TITLE: Report Telemetry to UCSI
 STATEMENT: >>>
-When the user runs a normal treatment plan and emission, verify all of the values can be found in the services screen.
+Verify that the firmware decodes the supported head-interface packet into system status and publishes complete, consistently mapped system telemetry to UCSI both periodically and on request.
 <<<
 PREREQUISITES: >>>
-1. The system is ready to run a normal emission
-2. A treatment plan is loaded and ready to run emission(s)
+1. UCSI is connected to the system and displaying live telemetry.
+2. The head-interface board is configured to provide known, distinct button, coolant, 64-bit collimator-ID, and two three-axis magnetometer values in a valid packet.
+3. The remaining monitored inputs can be held at known safe values, and one scalar emission is ready to run.
 <<<
 STEPS: >>>
-1. Start the system
-2. Load the normal treatment plan
-3. Start the emission
-4. Click Services in the left panel of the screen
-5. Check the services
+1. Start the system and observe live telemetry in UCSI for at least one second.
+2. Provide one valid head-interface packet containing known button state, water pressure, water flow, water temperature, collimator ID, and distinct X, Y, and Z values for each of the two magnetometers.
+3. Compare the next UCSI telemetry update with every value supplied by the head-interface packet.
+4. Request a telemetry refresh through UCSI without changing the head-interface inputs.
+5. Load and start the scalar emission, then observe UCSI telemetry while the system progresses through the operating states.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is started properly
-2. Verify the plan is loaded
-3. Verify the emission is started properly
-4. Verify Services can be displayed in the GUI
-5. Verify all of the parameters of the treatment plan can be found in the services: Control board state; Current system operational point in treatment plan; Total operational points in treatment plan; Internal timer value; Backup timer values
+1. UCSI receives periodic telemetry at the required rate, and the requested update presents the same parameter set.
+2. Periodic and requested updates report the supplied button and coolant values, collimator ID, and both three-axis magnetometer vectors.
+3. UCSI reports the control-board state and runtime; fault, physical-interlock, and required-interlock status; indicator state; internal and backup timer values; HVPS status, setpoints, feedback, and limits; and the remaining monitored coil, ion-pump, and temperature values.
+4. The reported operating state follows the scalar emission, and no current-point or total-point fields are present.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -991,23 +1006,20 @@ RELATIONS:
 UID: TC-H1FWMC-121
 TITLE: Operation 3.2: Treatment Staging 1
 STATEMENT: >>>
-When user loads a treatment plan with valid parameters and beam optics feature, verify the configuration is logged and can be confirmed.
+Verify the firmware accepts exactly one scalar operational point with valid emission and
+beam-optics parameters and no point index, point count, or automatic-execution field.
 <<<
 PREREQUISITES: >>>
-1. A treatment plan is loaded with valid parameters
-2. The treatment plan includes beam optics
+1. The system is in Staging
+2. A valid scalar operational point is available
 <<<
 STEPS: >>>
-1. Start running the loaded treatment plan
-2. Check the parameters of the loaded plan in the system
-3. Click the Logs symbol in the left panel of the screen
-4. Check and find the parameters of the loaded plan in the logs
+1. Load the scalar operational point
+2. Inspect the load response and staged parameters
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the run is started
-2. Verify the following parameters match the loaded plan: Acceleration potential (kV): 0–100 kV; Emission current (mA): 0–1 mA; Total delivery time: 0–TBD; Remaining delivery time: 0 to total delivery time; Beam optic focus adjustment values: 0–3 A; Beam optic deflection adjustment values: -1.5 A to +1.5 A; Filament current (mA): 0–3999 mA
-3. Verify logs are displayed in the middle of the screen
-4. Verify the listed parameters can be found in the logs
+1. Verify the load response accepts each supported treatment parameter at its configured operating limits.
+2. Verify the staged point contains no point index, point count, or automatic-execution field
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1042,31 +1054,43 @@ RELATIONS:
 UID: TC-H1FWMC-123
 TITLE: Fault Mode 2
 STATEMENT: >>>
-Firmware shall enter fault mode when a fault is detected.
+Verify ordinary fault entry, lossless FIFO state-event dispatch, queue-overflow handling,
+and invalid-state crash dispatch.
 <<<
 PREREQUISITES: >>>
-1. The system is ready for use
-2. A treatment plan is loaded and ready to run
+1. The system is ready for use and a treatment plan is ready to run.
+2. An approved debugger or firmware test hook can pause state-machine processing, set the
+   queue indices and current state, observe the queue and fault records, and install a
+   dispatch recorder for a valid state.
+3. High-voltage, emission-interlock, HVPS, coil, pump, indicator, and system-state outputs
+   can be observed.
 <<<
 STEPS: >>>
-1. Start the system
-2. Wait till the state of the system changes to COLD
-3. Push the e-stop button
-4. Release the e-stop button
-5. Reset the fault
-6. Load a treatment plan
-7. When the plan is in staged state, press the e-stop button
-8. Check for system's mode
+1. Start the system, wait for cold, press the emergency stop, and inspect the system mode.
+2. Release the emergency stop and clear the fault.
+3. With a valid state selected, position an empty event queue near its wrap boundary,
+   enqueue a known sequence of valid events below capacity, and process the state machine.
+4. Pause processing, reset the queue to empty, enqueue
+   ``MAX_EVENT_QUEUE_SIZE - 1`` valid events, and capture the queue contents and indices.
+5. Attempt to enqueue one additional valid event and inspect the queue and fault records
+   before resuming state-machine processing.
+6. Clear the fault and reinitialize the fixture. Set the state value to
+   ``NUM_SYSTEM_STATES``, enqueue one valid event, process the state machine, and inspect
+   the safety outputs and resulting state.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is started
-2. Verify the state of the system is COLD
-3. Verify system induces a fault and the status displays a fault status in the GUI
-4. Verify physically that the e-stop button is released
-5. Verify the fault is reset
-6. Verify the plan is loaded
-7. Verify the state of the system as well as the pressing of the e-stop button
-8. Verify fault is created and system enters fault mode
+1. Verify the emergency-stop fault enters the state-appropriate safe fault mode.
+2. Verify the below-capacity sequence crosses the wrap boundary and each accepted event
+   reaches the valid-state dispatch recorder exactly once, in FIFO order.
+3. Verify the first ``MAX_EVENT_QUEUE_SIZE - 1`` events are accepted.
+4. Verify the additional event is rejected without changing the write index or any
+   accepted queue entry, and a ``FAULT_MEMORY`` record containing
+   ``State machine event queue overflow`` is latched.
+5. Verify resumed processing enters safe fault handling before dispatching another queued
+   event.
+6. Verify the out-of-range state dispatches the event to the crash handler, disables the
+   high-voltage and emission interlocks, commands all HVPS and coil outputs to zero, stops
+   the coolant pump and external indicators, and selects the system-crash state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1103,22 +1127,32 @@ RELATIONS:
 UID: TC-H1FWMC-125
 TITLE: Fault Information 2
 STATEMENT: >>>
-Firmware can clear the fault flags through the PC.
+An accepted PC clear-fault directive clears the main-control fault state, requests that the
+HVPS clear its faults, and returns success without waiting for an HVPS response. A
+clear-fault directive with a mismatched confirmation value initiates neither clear action.
 <<<
 PREREQUISITES: >>>
 1. System is up and running without any issues
+2. A PC command client can set directive confirmation values and record responses
+3. A control-link monitor can capture commands sent from main control to the HVPS
 <<<
 STEPS: >>>
 1. When the system is running, push the e-stop button
-2. Click the Logs symbol in the left panel of the screen
+2. Observe the active fault records and system state through the PC
 3. Release the e-stop button
-4. Click the "Clear Errors" button on the screen
+4. Monitor the HVPS control link while sending a correctly confirmed PC clear-fault directive
+5. Record the PC directive response and subsequent fault update without supplying an HVPS response
+6. Continue monitoring while sending a PC clear-fault directive with a mismatched confirmation value
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify system induces a fault and the status displays a fault status in the GUI
-2. Verify logs can be seen in the middle of the screen and the created fault is visible in the logs
-3. Verify physically that the e-stop button is released
-4. Verify the system is not displaying fault mode in the GUI
+1. Verify the system enters fault mode and publishes the e-stop fault
+2. Verify the active fault record remains latched while the e-stop is active
+3. Verify releasing the e-stop alone does not clear the fault
+4. Verify main control sends one HVPS clear-fault command with zero-valued parameters
+5. Verify the PC receives a successful directive response, followed by an empty active-fault
+   update and a system state which is no longer faulted
+6. Verify the PC receives an invalid response and main control sends no additional HVPS
+   clear-fault command
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1127,23 +1161,39 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-126
-TITLE: Fault Mode 1
+TITLE: Energized Fault Shutdown and Discharge
 STATEMENT: >>>
-When a system enters fault mode, firmware shall terminate any ongoing emission.
+When a fault is detected during an energized emission, verify that the firmware terminates
+the emission, commands the energized outputs to zero, and remains in Fault Discharge until
+the discharge feedback criteria are met.
 <<<
 PREREQUISITES: >>>
-1. The system should be ready for running an emission
+1. The system is ready to run an emission
 2. A treatment plan is loaded and ready for emission
+3. Instrumentation can record main-control state, HVPS commands and feedback, HVPS warming
+   status, external timer state, emission indicators, coil outputs, and cabinet fan output
 <<<
 STEPS: >>>
 1. Start the emission for the uploaded treatment plan
-2. Wait a few seconds
+2. Confirm that emission is active and that kV and filament feedback are energized
 3. Push the e-stop button
+4. Record the commanded outputs and observable emission controls immediately after fault
+   detection
+5. Monitor the state, kV and filament feedback, HVPS warming status, and cabinet fan until
+   the system enters Fault
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the emission is started
-2. Verify a few seconds passed after the emission started
-3. Verify the emission is terminated after pushing the e-stop button
+1. Verify the emission starts with its timer and emission indicator active
+2. Verify the fault terminates emission, pauses the external timers, disables the emission
+   indicators and high-voltage interlock, commands kV, filament, and grid to zero, and
+   commands all three coil outputs to zero
+3. Verify the system reports Fault Discharge and keeps the cabinet fan at high speed while
+   kV feedback is at least 4 kV, filament feedback is above 700 mA, or HVPS warming status
+   remains set
+4. Verify the system enters Fault only after kV feedback is below 4 kV, filament feedback
+   is at or below 700 mA, and HVPS warming status is clear
+5. Verify Fault disables the emission and grid interlocks and retains all zero output
+   commands
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1154,20 +1204,28 @@ RELATIONS:
 UID: TC-H1FWMC-127
 TITLE: Warmup Procedure
 STATEMENT: >>>
-When user clicks the Prepare button, the system enters the WARMUP state.
+Verify warmup is rejected safely when either emergency stop is open and starts only when
+both inputs permit operation.
 <<<
 PREREQUISITES: >>>
-1. The system is in COLD state
+1. The system is in COLD state without active faults
+2. Command responses, state, heater command, coolant-pump output, and fault log are visible
+3. The test fixture can pause state-machine event dispatch
 <<<
 STEPS: >>>
-1. Click the Prepare button
-2. System starts the Warmup procedure and goes to "Warmup" status (check the top section of the monitor to find the status)
-3. Check the target filament current value
+1. Open the base emergency stop and send a warmup request using a configured valid target
+2. Restore the base input, open the remote emergency stop, and repeat the request
+3. Restore both inputs, send the request while event dispatch is paused, open either
+   emergency stop, and then resume dispatch
+4. Restore both inputs and send the valid warmup request again
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The button changes to Warmup with the percentage
-2. The status changes to "Warmup"
-3. Verify the value is between 2000 mA and 3500 mA
+1. Each request made while an emergency stop is open returns ``SPR_ACCESS_ERROR``; the
+   system remains COLD and does not change the heater or start the coolant pump
+2. Opening an emergency stop after request acceptance but before state entry reports the
+   ``Cannot warmup with e-stops open`` interlock fault and still leaves those outputs off
+3. With both emergency stops released, the request succeeds, the system enters WARMUP,
+   commands the requested target, and starts the coolant pump
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1362,19 +1420,24 @@ RELATIONS:
 UID: TC-H1FWMC-135
 TITLE: HVPS Interface Communication
 STATEMENT: >>>
-The firmware shall monitor communication with the HVPS interface board.
+Verify that valid HVPS status communication produces an LED4 activity blink and that loss
+of communication produces a fault.
 <<<
 PREREQUISITES: >>>
 1. The system should be ready to use
 2. HVPS interface is connected and firmware can confirm it
 <<<
 STEPS: >>>
-1. Unplug the HVPS interface board from main control board
-2. Check the logs after 1 second
+1. With the HVPS interface board connected, observe LED4 for at least two transitions
+2. Unplug the HVPS interface board from the main control board
+3. Observe LED4 and check the logs after 1 second
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify HVPS interface board is unplugged from main control
-2. Verify system has a fault that indicates no communication is received from HVPS interface board because it's unplugged
+1. Verify LED4 repeatedly changes state while valid HVPS status messages are received
+2. Verify the HVPS interface board is unplugged from the main control board
+3. Verify LED4 no longer changes state after HVPS status messages stop
+4. Verify the system reports a fault indicating that communication with the HVPS interface
+   board was lost
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1385,23 +1448,22 @@ RELATIONS:
 UID: TC-H1FWMC-136
 TITLE: Temperature Monitoring 2
 STATEMENT: >>>
-When the cabinet temperature sensor is unplugged, the system should create a fault on GUI if the temperature is above TBD. It should also be reported in the logs.
+Verify that cabinet-temperature monitoring reports a fault when the reported temperature
+exceeds 40°C.
 <<<
 PREREQUISITES: >>>
-1. The system is working properly
-2. The cabinet temperature sensor is plugged in
+1. The system is operating without an active temperature fault
+2. A fixture can control or simulate the reported cabinet temperature
 <<<
 STEPS: >>>
-1. Unplug the cabinet temperature sensor
-2. Check the GUI for the temperature
-3. Click the Logs symbol in the left panel of the screen
-4. Check the logs
+1. Set the reported cabinet temperature to 40°C and run a monitoring cycle
+2. Set the reported cabinet temperature above 40°C and run a monitoring cycle
+3. Open the system logs
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify physically that the cabinet temperature sensor is unplugged
-2. Verify if the temperature is above TBD, the GUI displays a fault for high temperature
-3. Verify logs are displayed in the middle of the GUI
-4. Verify the related log for the high temperature of the cabinet temperature sensor is present
+1. No cabinet over-temperature fault is reported at 40°C
+2. A cabinet over-temperature fault is reported above 40°C
+3. The log identifies the measured temperature and the 40°C high limit
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1412,20 +1474,30 @@ RELATIONS:
 UID: TC-H1FWMC-137
 TITLE: Temperature Monitoring 1
 STATEMENT: >>>
-Run the system in a room temperature environment and ensure the fans are running. Unplug the cabinet temperature sensor to simulate high temperature and ensure the fans continue running.
+Verify temperature-based cabinet-fan control and delayed coolant-pump shutdown.
 <<<
 PREREQUISITES: >>>
-1. The system is in room temperature
-2. The system is running
-3. The cooling fans are working and plugged in
+1. The system is in COLD state without active faults
+2. A fixture can control reported cabinet temperature and coolant pressure
+3. Cabinet-fan drive and coolant-pump enable can be observed
 <<<
 STEPS: >>>
-1. Run the system in a room temperature environment
-2. Unplug the cabinet temperature sensor to simulate high temperature
+1. Apply cabinet temperatures below 18°C, at 20°C, at 25°C, and at 30°C, allowing one
+   monitoring cycle after each change
+2. With the pump off, apply out-of-range coolant pressure for more than 200 monitoring
+   cycles, then restore valid pressure
+3. Initiate conditioning and verify the coolant pump is enabled
+4. Send a stop command, observe the pump for three minutes, and observe it again after the
+   delay expires
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the cooling fans are running
-2. Verify the cooling fans did not stop and are still running
+1. Cabinet-fan drive advances through 3.7 V, 4.1 V, 4.5 V, and 4.9 V at the respective
+   temperature bands; downward transitions retain the prior band through 2°C hysteresis
+2. No coolant-pressure fault accumulates while the pump is off or appears when conditioning
+   starts with valid pressure
+3. Conditioning enables the coolant pump and drives its fan at 1.85 V
+4. The pump remains enabled for three minutes after stop, then the pump output is
+   deasserted and its fan drive is 0 V
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1996,32 +2068,31 @@ RELATIONS:
 UID: TC-H1FWMC-165
 TITLE: Operation 01: Filament Conditioning 5
 STATEMENT: >>>
-When the system is in Cold status, start the process till it goes back to Cold again and notice the filament current increases.
+Verify that filament conditioning holds a stable target for 15 minutes before completing.
 <<<
 PREREQUISITES: >>>
-1. The system is ready to run
-2. A treatment plan is uploaded and ready to run
-3. System is in COLD state
+1. The system is ready to run in COLD state with both e-stops released
+2. The HVPS can reach and report the configured conditioning target as stable
 <<<
 STEPS: >>>
-1. Check the system's state
-2. Start running the treatment plan
-3. Click the Services symbol in the left panel of the screen
-4. Check the services
-5. After the run, check the state of the system
-6. Check the services
+1. Send a conditioning request using the configured target
+2. Observe the system state, filament setpoint, coolant pump, and filament feedback
+3. When the feedback first reports stable at target, record the time
+4. Observe the state immediately before and immediately after 15 minutes have elapsed
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify it's in COLD state
-2. Verify the plan started to run and the state of the system changed accordingly
-3. Verify the services screen is displayed in the GUI
-4. Verify the filament's current is recorded in the services in different states of the system during the run
-5. Verify it's back to COLD state
-6. Verify the filament's current is not increasing anymore
+1. The system enters CONDITIONING, commands the configured target, and enables the coolant pump
+2. The first stable-target indication starts the hold and the system remains in
+   CONDITIONING for 15 minutes
+3. The system transitions once to PRIMED when the 15-minute hold completes
+4. Additional stable-target indications during the hold do not restart its timer
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWMC-37
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-36
   ROLE: Verifies
 
 [TEST_CASE]
@@ -2146,21 +2217,20 @@ RELATIONS:
 UID: TC-H1FWMC-170
 TITLE: Operation 03.1: Treatment Staging – New Session Commencement
 STATEMENT: >>>
-When a normal plan is loading from startup, the system should transit from Primed to staging.
+Verify an argument-free new-session command creates one scalar session in Primed and
+returns its generated session ID.
 <<<
 PREREQUISITES: >>>
-1. The system is ready to run
-2. A treatment plan is ready to load and run
+1. The system is in Primed
+2. The PC packet-contract test harness is available
 <<<
 STEPS: >>>
-1. Start the system
-2. Perform a normal plan
-3. Check the status of the system
+1. Send a new-session command with no payload
+2. Inspect the response and system state
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is started successfully
-2. Verify the plan is loaded successfully
-3. Verify that the system transitions from Primed to staging when the plan loading is initiated
+1. Verify the response contains status and one generated session ID only
+2. Verify the firmware transitions to Staging with storage for exactly one scalar point
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2203,20 +2273,21 @@ RELATIONS:
 UID: TC-H1FWMC-172
 TITLE: Temperature Monitoring 4
 STATEMENT: >>>
-The firmware shall monitor the Peltier heatsink temperature and report a fault when it is above 55°C.
+Verify that the firmware reports a Peltier heatsink fault above 50°C.
 <<<
 PREREQUISITES: >>>
-1. The system is off
+1. The system is operating without an active heatsink-temperature fault
+2. A fixture can control or simulate the reported Peltier heatsink temperature
 <<<
 STEPS: >>>
-1. Power off the system
-2. Replace the Peltier controller temperature sensor with a 2 kΩ +/- 10% resistor
-3. Turn on the system
+1. Set the reported Peltier heatsink temperature to 50°C and run a monitoring cycle
+2. Set the reported temperature above 50°C and run a monitoring cycle
+3. Open the system logs
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is off
-2. Verify physically that the Peltier controller temperature sensor is replaced with a 2 kΩ +/- 10% resistor
-3. Verify the system is on and throws a temperature fault
+1. No heatsink over-temperature fault is reported at 50°C
+2. A heatsink over-temperature fault is reported above 50°C
+3. The log identifies the measured temperature and the 50°C high limit
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2257,6 +2328,32 @@ EXPECTED_BEHAVIOR: >>>
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWMC-305
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMC-307
+TITLE: Device Information Version Reporting Through UCSI
+STATEMENT: >>>
+Verify the device-information exchange from the HVPS interface through main control to UCSI.
+<<<
+PREREQUISITES: >>>
+1. Main-control and HVPS-interface firmware are built with known release version strings.
+2. UCSI is installed and connected to the system.
+<<<
+STEPS: >>>
+1. Power on both boards and start UCSI.
+2. Open the UCSI system-status view and observe the main-control and HVPS-interface version information.
+3. Refresh the connection so UCSI requests current device information again.
+4. Compare the refreshed version information with the installed firmware versions.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Main control obtains the HVPS-interface version after startup.
+2. UCSI displays the expected main-control and HVPS-interface release versions and operating modes.
+3. Refreshing device information returns the same installed versions.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-306
   ROLE: Verifies
 
 [[/SECTION]]

@@ -15,8 +15,6 @@ public interface ISystemTelemetry
     uint? CollimatorId2 { get; }
     ulong? CollimatorSerial { get; }
     int ButtonsState { get; }
-    int CurrentOperationalPoint { get; }
-    int TotalOperationalPoints { get; }
     int InternalTimerState { get; }
     float PrimaryTimerValue { get; }
     int Timer1State { get; }
@@ -46,6 +44,10 @@ public interface ISystemTelemetry
     float CabinetTemperature { get; }
     TelemetryVector3? Mag1 { get; }
     TelemetryVector3? Mag2 { get; }
+    float? QcChannel0Reading { get; }
+    float? QcChannel1Reading { get; }
+    bool? QcAdc1Connected { get; }
+    bool? QcAdc2Connected { get; }
 
     bool IsFaultState();
     bool IsEmissionState();

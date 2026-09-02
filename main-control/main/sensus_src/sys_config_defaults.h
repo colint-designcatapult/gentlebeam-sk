@@ -59,7 +59,7 @@
 #define DEFAULT_KV_TOL			5
 #define DEFAULT_MA_TOL			5
 
-#define DEFAULT_MA_THRESH		0.2
+#define DEFAULT_MA_THRESH		0.25
 
 #else
 
@@ -70,6 +70,7 @@
 #define DEFAULT_HS_LOW_TH		30
 #define DEFAULT_HS_HYS			2
 
+#define DEFAULT_CAB_HIGH		30
 #define DEFAULT_CAB_ERR			40
 #define DEFAULT_CAB_FULL		30
 #define DEFAULT_CAB_MED			25
@@ -84,6 +85,8 @@
 #define DEFAULT_ION_P_HI_TH		6
 
 #define DEFAULT_WTR_TEMP_ERR	35
+#define DEFAULT_HS_TEMP_ERR		50
+#define DEFAULT_CAB_TEMP_ERR	40
 
 #define DEFAULT_WTR_F_HI_ERR	6
 #define DEFAULT_WTR_F_HI_TH		5
@@ -111,10 +114,10 @@
 
 #define DEFAULT_PWR_SP		300
 
-#define DEFAULT_MA_THRESH	0.2
+#define DEFAULT_MA_THRESH	0.25
 
 #define QC_MAX_READ		819000
-#define QC_MIN_READ		25480
+#define QC_MIN_READ		0
 #endif
 
 #endif /* SYS_CONFIG_DEFAULTS_H_ */

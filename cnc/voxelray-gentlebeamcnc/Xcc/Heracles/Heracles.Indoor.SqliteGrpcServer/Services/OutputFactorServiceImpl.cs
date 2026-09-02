@@ -12,7 +12,8 @@ public sealed class OutputFactorServiceImpl : OutputFactorService.OutputFactorSe
     public override async Task<ListOutputFactorsResponse> ListOutputFactors(
         ListOutputFactorsRequest request, ServerCallContext context)
     {
-        var items = await _repo.ReadAllAsync();
+        var items = (await _repo.ReadAllAsync())
+            .Where(item => item.PresetConfigurationId == request.PresetConfigurationId);
         var r = new ListOutputFactorsResponse();
         r.OutputFactors.AddRange(items);
         return r;

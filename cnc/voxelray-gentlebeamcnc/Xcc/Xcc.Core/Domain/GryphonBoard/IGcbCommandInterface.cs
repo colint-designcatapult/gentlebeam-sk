@@ -29,7 +29,7 @@ namespace Xcc.Core.Domain.GryphonBoard
         Task SendOperationalPoint(OperationalPointCmdType commandType, GcbOperationalPoint operationalPoint, GcbSession session);
         Task SendDirectiveCommand(GCBDirectiveCommandNew command);
         Task ReleasePlan(GCBReleaseCommandScope scope, GcbSession session);
-        Task<GcbSession> NewSession(int totalPoints);
+        Task<GcbSession> NewSession();
         Task Stop();
         Task Initialize();
         Task StagePlan();
@@ -39,16 +39,19 @@ namespace Xcc.Core.Domain.GryphonBoard
         Task<FaultSnapshot> GetFaults();
         Task Conditioning(float conditioningSetpoint);
         Task WarmUp(float warmupSetpoint);
+        Task<bool> PingQcb();
+        Task StartQcbReadings(int samplingWindowMs);
+        Task<Xcc.Core.Domain.QualityCheck.QcReadings> StopQcbReadings();
         Task SendHvpsKv(float kvSetpoint, float powerSetpoint);
         Task SendHvpsMaLimit(float maSetpoint);
         Task SendHvpsGrid(float gridVoltage);
         Task SendHvpsFilament(float filamentCurrent);
         Task SendHvpsPidControl(bool enable);
-        Task SendCoils(float xCoil, float yCoil, float fCoil);
+        Task SendCoils(float xCoilMilliamps, float yCoilMilliamps, float fCoilMilliamps);
         Task<CalibrationSetpointResponse> RequestCalibrationSetpoints();
         Task<CalibrationEmissionResponse> SendHvpsEmission(uint command);
         Task<byte[]> SendVersionInfoRequest();
-        Task<GcbOperationalPoint> QueryPoint(int pointIndex);
+        Task<GcbOperationalPoint> QueryPoint();
         Task<VersionInfo> GetVersionInfo();
     }
 }

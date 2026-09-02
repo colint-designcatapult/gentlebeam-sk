@@ -8,6 +8,7 @@
 */
 
 #include <atmel_start.h>
+#include <lwip/sys.h>
 #include "ext_dac.h"
 #include "faults.h"
 #include "hvps.h"
@@ -22,6 +23,8 @@
 #else
 #define INTERLOCK_FAULT_MASK			0xC3FCDu
 #endif
+#define PUMP_SHUTDOWN_DELAY_MS		(3u * 60u * 1000u)
+
 
 static struct timer_task VTIMER_param_check_task;
 
@@ -37,14 +40,11 @@ static void check_cooling_system_values();
 static void update_cabinet_fan();
 static void update_heatsink_fan();
 static void update_pump();
+static void process_pump_shutdown();
 static void check_coolant_pressure();
-#if defined(CALIBRATION_MODE)
 static void check_coolant_temp();
 static void check_heatsink_temp();
 static void check_cabinet_temp();
-#else
-static void check_coolant_temp();
-#endif
 static void check_coolant_flow();
 
 static void check_coils();
@@ -58,6 +58,8 @@ int32_t system_monitoring[SMON_COUNT];
 float expected_coil_value[EV_COUNT];
 uint32_t pc_timeout_count = 0;
 volatile bool pump_on = false;
+static bool pump_shutdown_pending = false;
+static uint32_t pump_shutdown_time = 0;
 uint32_t coil_err_count[3] = {0, 0, 0};
 
 
@@ -95,6 +97,8 @@ void set_sys_param_check(const struct timer_task *const timer_task)
 
 void process_system_monitoring()
 {	
+	process_pump_shutdown();
+	
 	if(!system_param_check) return;
 	system_param_check = false;
 	
@@ -255,7 +259,9 @@ static void check_interlocks()
 		case STATE_READY:
 		case STATE_LAUNCHING:
 		case STATE_EMISSION:
+		case STATE_CALIBRATION:
 			break;
+		case STATE_FAULT_DISCHARGE:
 		case STATE_TERMINATION:
 		case STATE_DISCHARGE:
 		case STATE_FAULT:
@@ -346,10 +352,8 @@ static void check_cooling_system_values()
 	check_coolant_pressure();
 	check_coolant_flow();
 	check_coolant_temp();
-#if defined(CALIBRATION_MODE)
 	check_heatsink_temp();
 	check_cabinet_temp();
-#endif
 	
 	update_cabinet_fan();
 	update_heatsink_fan();
@@ -387,7 +391,12 @@ static void check_coolant_pressure()
 		{
 			system_monitoring[SMON_CLNT_P_LO_COUNTER] = 0;
 		}
-	}	
+	}
+	else
+	{
+		system_monitoring[SMON_CLNT_P_HI_COUNTER] = 0;
+		system_monitoring[SMON_CLNT_P_LO_COUNTER] = 0;
+	}
 }
 
 static void check_coolant_flow()
@@ -427,7 +436,6 @@ static void check_coolant_flow()
 
 static void check_coolant_temp()
 {
-#if defined(CALIBRATION_MODE)
 	float coolant_temp = system_status[SS_WATER_TEMP].f;
 	
 	if(coolant_temp > DEFAULT_WTR_TEMP_ERR)
@@ -454,13 +462,6 @@ static void check_cabinet_temp()
 	{
 		report_typed_fault2(FAULT_HEATSINK, "Cabinet temperature %f exceeds the high limit %f.", MAKE_ARG(cabinet_temp), MAKE_ARG((float)DEFAULT_CAB_TEMP_ERR));
 	}
-#else
-	//Check for temperature fault
-	if(system_status[SS_WATER_TEMP].f > DEFAULT_WTR_TEMP_ERR)
-	{
-		report_typed_fault2(FAULT_COOLANT, "Coolant temperature %f exceeds the high limit %f.", MAKE_ARG(system_status[SS_WATER_TEMP].f), MAKE_ARG((float)DEFAULT_WTR_TEMP_ERR));
-	}
-#endif
 }
 
 static void update_pump()
@@ -470,12 +471,11 @@ static void update_pump()
 
 static void update_cabinet_fan()
 {
-#if defined (CALIBRATION_MODE)
 	uint32_t state_now = system_status[SS_STATE].i;
 	float cabinet_temp = system_status[SS_CABINET_TEMP].f;
 	
 	//Always force cabinet fan to high while high voltage is present (between ramping up until ramped down)
-	if(state_now >= STATE_SETUP && state_now <= STATE_DISCHARGE)
+	if((state_now >= STATE_SETUP && state_now <= STATE_DISCHARGE) || state_now == STATE_FAULT_DISCHARGE)
 	{
 		if(system_monitoring[SMON_LAST_CB_FAN_STATE] != 0)
 		{
@@ -546,61 +546,6 @@ static void update_cabinet_fan()
 			system_monitoring[SMON_LAST_CB_FAN_STATE] = 3;
 		}
 	}
-#else
-	uint32_t state_now = system_status[SS_STATE].i;
-	
-	//Always turn on cabinet fans after ready
-	if(state_now >= STATE_READY)
-	{
-		system_monitoring[SMON_LAST_CB_FAN_STATE] = 0;
-		gpio_set_pin_level(IO_CB_FAN_EN, true);
-		set_fan_voltage(CB_FAN_DAC_CH, 4.9); //TBD TODO magic number
-	}	
-	//Set cabinet fan based on current cabinet temperature
-	//In the future can add hysteresis
-	else if(system_status[SS_CABINET_TEMP].f >= DEFAULT_CAB_ERR)
-	{
-		//TBD TODO throw fault maybe
-		if(system_monitoring[SMON_LAST_CB_FAN_STATE] != 0) 
-		{
-			gpio_set_pin_level(IO_CB_FAN_EN, true);
-			set_fan_voltage(CB_FAN_DAC_CH, 4.9); //TBD TODO magic number
-		}
-		system_monitoring[SMON_LAST_CB_FAN_STATE] = 0;
-	}
-	else if(system_status[SS_CABINET_TEMP].f >= DEFAULT_CAB_FULL)
-	{
-		if(system_monitoring[SMON_LAST_CB_FAN_STATE] != 1) 
-		{
-			gpio_set_pin_level(IO_CB_FAN_EN, true);
-			set_fan_voltage(CB_FAN_DAC_CH, 4.9); //TBD TODO magic number
-		}
-		system_monitoring[SMON_LAST_CB_FAN_STATE] = 1;
-	}
-	else if(system_status[SS_CABINET_TEMP].f >= DEFAULT_CAB_MED)
-	{
-		if(system_monitoring[SMON_LAST_CB_FAN_STATE] != 2) {
-			gpio_set_pin_level(IO_CB_FAN_EN, true);
-			set_fan_voltage(CB_FAN_DAC_CH, 4.2); //TBD TODO magic number
-		}
-		system_monitoring[SMON_LAST_CB_FAN_STATE] = 2;
-	}
-	else if(system_status[SS_CABINET_TEMP].f >= DEFAULT_CAB_LOW)
-	{
-		if(system_monitoring[SMON_LAST_CB_FAN_STATE] != 3) {
-			gpio_set_pin_level(IO_CB_FAN_EN, true);
-			set_fan_voltage(CB_FAN_DAC_CH, 3.8); //TBD TODO magic number
-		}
-		system_monitoring[SMON_LAST_CB_FAN_STATE] = 3;
-	}
-	else
-	{
-		if(system_monitoring[SMON_LAST_CB_FAN_STATE] != 4) {
-			gpio_set_pin_level(IO_CB_FAN_EN, false);
-		}
-		system_monitoring[SMON_LAST_CB_FAN_STATE] = 4;
-	}
-#endif
 }
 
 static void update_heatsink_fan()
@@ -610,7 +555,7 @@ static void update_heatsink_fan()
 	float heatsink_temp = system_status[SS_HEATSINK_TEMP].f;
 	
 	//Always force heatsink fan to high while high voltage is present (between ramping up until ramped down)
-	if(state_now >= STATE_SETUP && state_now <= STATE_DISCHARGE)
+	if((state_now >= STATE_SETUP && state_now <= STATE_DISCHARGE) || state_now == STATE_FAULT_DISCHARGE)
 	{
 		if(system_monitoring[SMON_LAST_HS_FAN_STATE] != 0)
 		{
@@ -879,15 +824,27 @@ void enable_indicators(bool on)
 
 void enable_pump(bool on)
 {
-	pump_on = on;
-	gpio_set_pin_level(IO_PUMP_EN, on);
-	
 	if(on)
 	{
+		pump_shutdown_pending = false;
+		pump_on = true;
+		gpio_set_pin_level(IO_PUMP_EN, true);
 		set_fan_voltage(PUMP_FAN_DAC_CH, 1.85);
 	}
-	else
+	else if(pump_on)
 	{
+		pump_shutdown_time = sys_now() + PUMP_SHUTDOWN_DELAY_MS;
+		pump_shutdown_pending = true;
+	}
+}
+
+static void process_pump_shutdown()
+{
+	if(pump_shutdown_pending && (int32_t)(sys_now() - pump_shutdown_time) >= 0)
+	{
+		pump_shutdown_pending = false;
+		pump_on = false;
+		gpio_set_pin_level(IO_PUMP_EN, false);
 		set_fan_voltage(PUMP_FAN_DAC_CH, 0);
 	}
 }

@@ -126,6 +126,9 @@ TYPE: Functional
 TITLE: Treatment View - Beam On process
 STATEMENT: >>>
 The treatment console shall provide a control that allows the user to initiate/trigger radiation emission.
+A clinical treatment shall contain exactly one treatment field. One preparation creates one
+firmware session containing one scalar emission, and one Beam On action releases that
+emission.
 
 The interface should include a multi-state control that includes the following states:
 
@@ -195,7 +198,8 @@ UID: RQ-H10TG-30
 TYPE: Functional
 TITLE: Treatment View - Perform System Warmup in COLD State
 STATEMENT: >>>
-The application shall implement functionality to request the firmware to perform a warmup procedure, which can only be initiated when the system is in the "COLD" state.
+The application shall request system warmup only from the COLD state and shall inform the
+operator when a safety prerequisite prevents the firmware from starting the procedure.
 <<<
 
 [REQUIREMENT]
@@ -203,7 +207,9 @@ UID: RQ-H10TG-31
 TYPE: Functional
 TITLE: Treatment View - Treatment Plan Staging
 STATEMENT: >>>
-The application shall implement functionality to initiate a new treatment staging by sending a request to the firmware while the system is in the "PRIMED" state. This request shall include the operational point for the treatment plan. The response to the request shall consist of a session ID.
+The application shall initiate treatment staging with an argument-free new-session request
+while the firmware is in the "PRIMED" state. The response shall contain a session ID. The
+application shall then load exactly one scalar operational point for that session.
 <<<
 
 [REQUIREMENT]
@@ -211,7 +217,7 @@ UID: RQ-H10TG-32
 TYPE: Functional
 TITLE: Treatment View - Load a Treatment Plan
 STATEMENT: >>>
-The application shall implement functionality to load a treatment plan into the firmware.
+The application shall load exactly one scalar operational point into each firmware session.
 <<<
 
 [REQUIREMENT]
@@ -219,7 +225,8 @@ UID: RQ-H10TG-34
 TYPE: Functional
 TITLE: Treatment View - Treatment Plan Confirmation
 STATEMENT: >>>
-The application shall receive confirmation responses from the firmware for each operational point in the treatment plan.
+The application shall receive one confirmation response for the singular operational point
+in the firmware session.
 <<<
 
 [REQUIREMENT]
@@ -375,9 +382,14 @@ The user shall be able to select the Applicator type that is used and to set the
 
 Once an applicator and Energy are set, the Coils (X, Y, and Focus) and Heater Current that are configured for this Applicator will be populated to the UI.
 
+Refreshing the Physics view shall replace its applicator configurations and physics values
+with current database values, remove stale values, and allow the user to retry a failed
+refresh.
+
 The application should alert the user if the connected applicator is different from the selected one.
 
-The emission process shall include the emission actions: Prepare, Beam-On, and Stop. All safety interlocks shall be cleared before emission.
+Each requested physics field shall be prepared and emitted separately, and the operator
+shall perform a distinct Beam On action for every field.
 
 .. image:: _images/RQ-H10TG-280.png
 <<<
@@ -403,9 +415,9 @@ received from the control-board firmware in real time, including:
 * Emission current and energy
 * Safety interlock states, the current required-interlock set, and system-fault categories
 
-The application shall select the telemetry layout from the reported firmware version and
-mode. A field that is not supplied by that firmware mode shall be shown as unavailable
-rather than as a false or zero measurement.
+The application shall select the telemetry layout from the reported firmware mode. A field
+that is not supplied by that firmware mode shall be shown as unavailable rather than as a
+false or zero measurement.
 <<<
 
 [REQUIREMENT]
@@ -453,9 +465,9 @@ TITLE: Quality Assurance - Perform Quality Checks
 STATEMENT: >>>
 The application shall provide the operator with an interface to test and record the quality of the beam.
 
-Before triggering the emission, the operator will set the Energy for which to perform the quality tests.
-
-The measured intensity will be recorded for each point.
+Before triggering a QC emission, the operator shall select the energy and one listed QA
+emission. The application shall emit and record only the selected item. Performing another
+QC emission shall require a new operator selection and activation cycle.
 
 .. image:: _images/RQ-H10TG-66.png
 <<<
@@ -556,9 +568,13 @@ TITLE: Quality Assurance - Quality Checks Reports
 STATEMENT: >>>
 The application shall provide the operator with an interface displaying the history of quality test results.
 
-The results will include the current and the intensity for each operational point.
+The results will include the current and intensity recorded for each requested QA emission.
 
 The operator will be able to filter the results by the applicator type, energy level, and the date the test was performed.
+
+Each saved QC result shall remain associated with its creation information, operator,
+applicator and energy configuration, and measured values. The application shall retrieve
+results for the selected configuration.
 
 .. image:: _images/RQ-H10TG-93.png
 <<<
@@ -661,15 +677,17 @@ be present on the Internal GUI.
 [REQUIREMENT]
 UID: RQ-H10TG-282
 TYPE: Safety
-TITLE: Treatment - Prevent Treatment Initiation for Unapproved Failed QC Tests
+TITLE: Treatment - QC Acceptance and Authorized Approval
 STATEMENT: >>>
-The application shall prevent treatment initiation within the Treatment View if any Quality Control (QC) test associated with the energy level and applicator type required by the treatment plan has failed and has not been manually approved by an authorized user.
+The application shall evaluate the current Quality Control (QC) result for the applicator
+and energy configuration required by the treatment plan before treatment preparation.
 
-When the user attempts to initiate treatment (press the Prepare button), the application will:
+The application shall apply the configured acceptance criteria to the current and reference
+QC results and shall prevent treatment preparation when the required QC evidence is missing
+or unacceptable.
 
-* Verify the energy level(s) used in the current treatment plan.
-* The system shall check the latest QC status for the plan's applicator and energy level. (i.e., the deviation from the reference values exceeds a predefined threshold).
-* If the corresponding QC test has failed, verify that a user has approved it. If it is not approved, an alert message will be displayed to the user, and the treatment operation will be blocked.
+An authorized user may approve a QC result after successful authentication. The application
+shall persist the approval decision and reject invalid credentials without changing it.
 <<<
 
 [REQUIREMENT]
@@ -691,9 +709,8 @@ The application shall display the currently latched control-board fault records.
 record shall show the fault category, formatted message, and the system state and runtime
 captured when the fault occurred.
 
-The application shall retrieve multi-entry fault snapshots by index, keep the displayed
-list synchronized with unsolicited fault and clear notifications, and provide a command to
-clear the latched records. Up to four simultaneously active records shall be displayed.
+The application shall keep the displayed fault list synchronized with the control board and
+shall allow the operator to clear latched fault records.
 <<<
 
 [REQUIREMENT]
@@ -733,6 +750,33 @@ The layout should include:
 8. System readiness indicators
 
 .. image:: _images/RQ-H10TG-13.png
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-286
+TYPE: Functional
+TITLE: System Information - Main Control Firmware Version
+STATEMENT: >>>
+The application shall display the main-control firmware release version reported by the
+control board in the System Information dialog.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-287
+TYPE: Functional
+TITLE: Permission-Based Navigation
+STATEMENT: >>>
+The application shall show clinical functions only when the authenticated user has the
+corresponding permission.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10TG-288
+TYPE: Functional
+TITLE: Database Communication Error
+STATEMENT: >>>
+The application shall notify the operator and log an error when communication with the
+database is lost during treatment preparation or emission.
 <<<
 
 [[/SECTION]]

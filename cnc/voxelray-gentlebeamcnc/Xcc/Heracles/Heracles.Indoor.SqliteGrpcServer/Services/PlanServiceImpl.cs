@@ -1,4 +1,4 @@
-using System.Threading.Channels;
+using Xcc.Infra.Networking.gRPC.EventStreams;
 using Com.Empyreanmed.Heracles.Enums.V1;
 using Com.Empyreanmed.Heracles.Plans.V1;
 using Grpc.Core;
@@ -11,12 +11,10 @@ namespace Heracles.Indoor.SqliteGrpcServer.Services;
 /// </summary>
 public sealed class PlanServiceImpl : PlanService.PlanServiceBase
 {
-    // ── broadcast channels ──────────────────────────────────────────────────
-    private static readonly Channel<LoadForTreatmentEventsResponse> _lftChannel =
-        System.Threading.Channels.Channel.CreateUnbounded<LoadForTreatmentEventsResponse>();
-
-    private static readonly Channel<PlanEventsResponse> _planEventChannel =
-        System.Threading.Channels.Channel.CreateUnbounded<PlanEventsResponse>();
+    // Each connected Indoor/External client needs its own event queue. A single
+    // Channel<T> distributes events among readers instead of broadcasting them.
+    private static readonly BroadcastEventHub<LoadForTreatmentEventsResponse> _loadForTreatmentEvents = new();
+    private static readonly BroadcastEventHub<PlanEventsResponse> _planEvents = new();
 
     private readonly SqliteProtoRepository<Plan> _repo;
 
@@ -74,7 +72,7 @@ public sealed class PlanServiceImpl : PlanService.PlanServiceBase
         var updated = await _repo.UpdateAsync(plan.Id, plan);
         BroadcastPlanEvent(updated);
 
-        _lftChannel.Writer.TryWrite(new LoadForTreatmentEventsResponse { Plan = updated });
+        _loadForTreatmentEvents.Publish(new LoadForTreatmentEventsResponse { Plan = updated });
         return new LoadForTreatmentResponse();
     }
 
@@ -100,7 +98,7 @@ public sealed class PlanServiceImpl : PlanService.PlanServiceBase
         var updated = await _repo.UpdateAsync(plan.Id, plan);
         BroadcastPlanEvent(updated);
 
-        _lftChannel.Writer.TryWrite(new LoadForTreatmentEventsResponse { Plan = updated });
+        _loadForTreatmentEvents.Publish(new LoadForTreatmentEventsResponse { Plan = updated });
         return new UnloadFromTreatmentResponse();
     }
 
@@ -142,10 +140,9 @@ public sealed class PlanServiceImpl : PlanService.PlanServiceBase
         IServerStreamWriter<LoadForTreatmentEventsResponse> responseStream,
         ServerCallContext context)
     {
-        await foreach (var evt in _lftChannel.Reader.ReadAllAsync(context.CancellationToken))
-        {
-            await responseStream.WriteAsync(evt, context.CancellationToken);
-        }
+        await _loadForTreatmentEvents.StreamAsync(
+            (evt, cancellationToken) => responseStream.WriteAsync(evt, cancellationToken),
+            context.CancellationToken);
     }
 
     public override async Task PlanEvents(
@@ -153,14 +150,13 @@ public sealed class PlanServiceImpl : PlanService.PlanServiceBase
         IServerStreamWriter<PlanEventsResponse> responseStream,
         ServerCallContext context)
     {
-        await foreach (var evt in _planEventChannel.Reader.ReadAllAsync(context.CancellationToken))
-        {
-            await responseStream.WriteAsync(evt, context.CancellationToken);
-        }
+        await _planEvents.StreamAsync(
+            (evt, cancellationToken) => responseStream.WriteAsync(evt, cancellationToken),
+            context.CancellationToken);
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private static void BroadcastPlanEvent(Plan plan)
-        => _planEventChannel.Writer.TryWrite(new PlanEventsResponse { Plan = plan });
+        => _planEvents.Publish(new PlanEventsResponse { Plan = plan });
 }

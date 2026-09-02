@@ -203,9 +203,7 @@ int main(void)
 		process_faults();
 		
 		//Run state machine
-#if !defined(CALIBRATION_MODE)
 		process_state_machine();
-#endif
 		
 		//Send PC response
 		send_pc_response();

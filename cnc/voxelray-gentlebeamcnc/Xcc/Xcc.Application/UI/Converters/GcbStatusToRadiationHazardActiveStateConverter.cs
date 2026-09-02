@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Markup;
 using Xcc.Core.Enums;
+using Xcc.Core.Domain.GryphonBoard;
 
 namespace Xcc.Application.UI.Converters
 {
@@ -10,13 +11,11 @@ namespace Xcc.Application.UI.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if(value is null)
-                throw new ArgumentException("'ControlBoardState' value is not specified.");
+            if (value is not ISystemTelemetry telemetry)
+                return false;
 
-            if(!Enum.TryParse(value.ToString(), out GcbStateNew state))
-                throw new ArgumentException($"The value '{value}' is not a valid 'ControlBoardState' value.");
-
-            return state is GcbStateNew.Emission or GcbStateNew.Imaging;
+            return telemetry.ControlBoardState is GcbStateNew.Emission or GcbStateNew.Imaging
+                || telemetry.Hvps.EmissionOn;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();

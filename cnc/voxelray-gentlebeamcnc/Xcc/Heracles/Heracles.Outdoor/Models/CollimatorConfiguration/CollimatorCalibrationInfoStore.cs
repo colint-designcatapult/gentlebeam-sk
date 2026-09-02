@@ -25,6 +25,17 @@ namespace Heracles.External.Models.CollimatorConfiguration
                 }
             }
         }
+        public void Replace(IReadOnlyDictionary<long, ICollimatorCalibrationInfo> configurations)
+        {
+            lock (_lock)
+            {
+                _configurations.Clear();
+                foreach (var configuration in configurations)
+                {
+                    _configurations.Add(configuration.Key, configuration.Value);
+                }
+            }
+        }
 
         public CollimatorCalibrationInfoStore Filter(Func<ICollimatorCalibrationInfo, bool> predicate)
         {

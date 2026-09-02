@@ -43,7 +43,7 @@ namespace Heracles.Application.Models.Settings
         }
 
         //TODO: ask Limor about this, there is should be Uri like this:
-        //rtsp://root:Empy!12@172.31.1.40:554/axis-media/media.amp
+        //rtsp://Empyrean:Empyrean!2025@172.31.1.40:554/axis-media/media.amp
         SystemEndPoint _treatmentHeadCamEndPoint = SystemEndPoint.LocalHost;
         public SystemEndPoint TreatmentHeadCamEndPoint
         {

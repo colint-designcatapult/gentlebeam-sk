@@ -17,7 +17,7 @@ namespace Xcc.Application.Domain.GryphonBoard.Model.Indicators
         public double Value { get => _value; set => SetProperty(ref _value, value); }
         public void Reset()
         {
-            _initialRemainingTime = mainBoardState.CurrentPlan.TotalTime;
+            _initialRemainingTime = mainBoardState.CurrentEmission?.RemainingPointTime ?? 0;
             Value = 0;
         }
 
@@ -28,7 +28,7 @@ namespace Xcc.Application.Domain.GryphonBoard.Model.Indicators
             {
                 if (_initialRemainingTime > double.Epsilon)
                 {
-                    double remainingTime = mainBoardState.CurrentPlan.RemainingTime;
+                    double remainingTime = mainBoardState.CurrentEmission?.RemainingPointTime ?? 0;
                     if (remainingTime < 0.1)
                     {
                         Value = 100.0;

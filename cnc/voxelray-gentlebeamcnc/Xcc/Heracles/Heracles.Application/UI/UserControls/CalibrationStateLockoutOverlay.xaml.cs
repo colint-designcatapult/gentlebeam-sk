@@ -2,9 +2,9 @@ using System.Windows.Controls;
 
 namespace Heracles.Application.UI.UserControls;
 
-public partial class CalibrationModeLockoutOverlay : UserControl
+public partial class CalibrationStateLockoutOverlay : UserControl
 {
-    public CalibrationModeLockoutOverlay()
+    public CalibrationStateLockoutOverlay()
     {
         InitializeComponent();
     }

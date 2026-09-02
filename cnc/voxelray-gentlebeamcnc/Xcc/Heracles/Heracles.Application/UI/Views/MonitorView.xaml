@@ -140,7 +140,7 @@
         <uc:RadiationHazardControl 
             Grid.Row="5"
             Margin="4,36" 
-            IsActive="{Binding GCBDataStore.SystemTelemetry.ControlBoardState, Converter={conv2:GcbStatusToRadiationHazardActiveStateConverter}}" />
+            IsActive="{Binding GCBDataStore.SystemTelemetry, Converter={conv2:GcbStatusToRadiationHazardActiveStateConverter}}" />
 
         <views:InterlocksView Grid.Row="6" Orientation="Vertical"/>
 

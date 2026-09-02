@@ -12,7 +12,8 @@ public sealed class ReferenceFieldServiceImpl : ReferenceFieldService.ReferenceF
     public override async Task<ListReferenceFieldsResponse> ListReferenceFields(
         ListReferenceFieldsRequest request, ServerCallContext context)
     {
-        var items = await _repo.ReadAllAsync();
+        var items = (await _repo.ReadAllAsync())
+            .Where(item => item.PresetConfigurationId == request.PresetConfigurationId);
         var r = new ListReferenceFieldsResponse();
         r.ReferenceFields.AddRange(items);
         return r;

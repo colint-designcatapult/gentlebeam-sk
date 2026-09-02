@@ -199,9 +199,9 @@ internal sealed class UcsiCalibrationCommandTests
     public void GenerateCalibrationCoilsCmd_ProducesCorrectPacket()
     {
         // Arrange
-        const float xCoil = 1.0f;
-        const float yCoil = 0.5f;
-        const float focusCoil = 2.0f;
+        const float xCoil = 1_000.0f;
+        const float yCoil = 500.0f;
+        const float focusCoil = 2_000.0f;
 
         // Act
         var packet = _commandOperator.GenerateCalibrationCoilsCmd(xCoil, yCoil, focusCoil);
@@ -226,9 +226,9 @@ internal sealed class UcsiCalibrationCommandTests
     public void GenerateCalibrationCoilsCmd_WithNegativeValues_PreservesValues()
     {
         // Arrange
-        const float xCoil = -1.5f;
-        const float yCoil = -0.8f;
-        const float focusCoil = 1.5f; // Focus is always positive
+        const float xCoil = -1_500.0f;
+        const float yCoil = -800.0f;
+        const float focusCoil = 1_500.0f; // Focus is always positive
 
         // Act
         var packet = _commandOperator.GenerateCalibrationCoilsCmd(xCoil, yCoil, focusCoil);
@@ -269,9 +269,9 @@ internal sealed class UcsiCalibrationCommandTests
     public void GenerateCalibrationCoilsCmd_WithMixedPolarity_PreservesSigns()
     {
         // Arrange
-        const float xCoil = -0.75f;
-        const float yCoil = 0.60f;
-        const float focusCoil = 2.30f;
+        const float xCoil = -750.0f;
+        const float yCoil = 600.0f;
+        const float focusCoil = 2_300.0f;
 
         // Act
         var packet = _commandOperator.GenerateCalibrationCoilsCmd(xCoil, yCoil, focusCoil);
@@ -422,15 +422,15 @@ internal sealed class UcsiCalibrationCommandTests
     }
 
     /// <summary>
-    /// Test coils command at UI-defined limits:
-    /// - X/Y: -1.5 to +1.5 A (UI range, firmware allows -2.0 to +2.0)
-    /// - Focus: 0 to +3.0 A
+    /// Test coils command at UI-defined limits converted to the protocol unit:
+    /// - X/Y: -1500 to +1500 mA
+    /// - Focus: 0 to +3000 mA
     /// </summary>
-    [TestCase(-1.5f, -1.5f, 0.0f)]
-    [TestCase(-1.0f, 0.0f, 1.5f)]
-    [TestCase(0.0f, 0.0f, 1.5f)]
-    [TestCase(1.0f, 1.0f, 2.0f)]
-    [TestCase(1.5f, 1.5f, 3.0f)]
+    [TestCase(-1_500f, -1_500f, 0.0f)]
+    [TestCase(-1_000f, 0.0f, 1_500f)]
+    [TestCase(0.0f, 0.0f, 1_500f)]
+    [TestCase(1_000f, 1_000f, 2_000f)]
+    [TestCase(1_500f, 1_500f, 3_000f)]
     public void GenerateCalibrationCoilsCmd_WithUiLimits_ProducesValidPacket(float xCoil, float yCoil, float focusCoil)
     {
         // Act
@@ -447,13 +447,13 @@ internal sealed class UcsiCalibrationCommandTests
     }
 
     /// <summary>
-    /// Test coils command at firmware limits (beyond UI range):
-    /// - Firmware allows X/Y: -2.0 to +2.0 A
-    /// - Firmware allows Focus: 0 to +3.0 A
+    /// Test coils command at firmware limits:
+    /// - Firmware allows X/Y: -2000 to +2000 mA
+    /// - Firmware allows Focus: 0 to +3000 mA
     /// </summary>
-    [TestCase(-2.0f, -2.0f, 0.0f)]
-    [TestCase(2.0f, 2.0f, 3.0f)]
-    [TestCase(-1.99f, 1.99f, 3.0f)]
+    [TestCase(-2_000f, -2_000f, 0.0f)]
+    [TestCase(2_000f, 2_000f, 3_000f)]
+    [TestCase(-1_990f, 1_990f, 3_000f)]
     public void GenerateCalibrationCoilsCmd_WithFirmwareLimits_ProducesValidPacket(float xCoil, float yCoil, float focusCoil)
     {
         // Act

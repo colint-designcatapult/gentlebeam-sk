@@ -36,8 +36,8 @@ uint32_t invalid_packet[INVALID_COUNT];
 uint32_t directive_response[DIR_RES_COUNT];
 VariableValue fault_request_response[FAULT_RES_COUNT];
 SetpointResult condition_cmd_response[CONDITION_CMD_COUNT];
-SetpointResult warmup_cmd_response[WARMUP_CMD_FIL];
-SetpointResult new_session_response[NEW_SES_CMD_COUNT];
+SetpointResult warmup_cmd_response[WARMUP_CMD_COUNT];
+uint32_t new_session_response[NEW_SES_RES_COUNT];
 SetpointResult op_load_results[OP_CMD_COUNT];
 SetpointResult op_confirm_results[OP_CMD_COUNT];
 SetpointResult release_cmd_response[RELEASE_CMD_COUNT];
@@ -78,6 +78,7 @@ SetpointResult cal_coil_response[CAL_COIL_CMD_COUNT];
 SetpointResult cal_hvps_cmd_response[CAL_HVPS_CMD_COUNT];
 SetpointResult cal_directive_response[CAL_DIRECTIVE_CMD_COUNT];
 float cal_setpoint_req_response[CAL_SP_RES_COUNT];
+VariableValue cal_mag_response[HB_NUM_MAG_CAL];
 
 static void process_start_directive();
 static void process_stop_directive();
@@ -129,8 +130,7 @@ void init_response_pointers()
 	return_data_pointers[PCCOM_CONFIRM_OP] = (void *)op_confirm_results;
 	comm_processing_func[PCCOM_CONFIRM_OP] = process_op_confirm_command;
 	
-	//This will change based on the requested operational point
-	//By default set it to the first operational point
+	//Operational point query always returns the staged point.
 	return_data_pointers[PCCOM_QUERY_OP] = (void *)op_query_response;
 	comm_processing_func[PCCOM_QUERY_OP] = process_op_query;
 	
@@ -151,7 +151,7 @@ void init_response_pointers()
 	return_data_pointers[CAL_SP_REQ_CMD] = (void *)cal_setpoint_req_response;
 	comm_processing_func[CAL_SP_REQ_CMD] = process_cal_setpoint_request;
 
-	return_data_pointers[CAL_MAG_REQ_CMD] = (void *)mag_cal_array;
+	return_data_pointers[CAL_MAG_REQ_CMD] = (void *)cal_mag_response;
 	comm_processing_func[CAL_MAG_REQ_CMD] = process_cal_mag_command;
 #else
 	return_data_pointers[PCCOM_QC_PING] = (void *)qc_ping_buf;
@@ -242,8 +242,8 @@ static void process_pc_directive_command(uint32_t *data)
 			{
 				directive_response[DIR_RES_STATUS] = SPR_ACCESS_ERROR;
 			}
-			//Ensure all desired points have been loaded
-			else if(plan_info[PLAN_TARGET_BITS_1] != plan_info[PLAN_LOADING_FLAGS_1] || plan_info[PLAN_TARGET_BITS_2] != plan_info[PLAN_LOADING_FLAGS_2])
+			//Ensure the operational point has been loaded.
+			else if(plan_info[PLAN_LOADED_BOOL] == 0)
 			{
 				directive_response[DIR_RES_STATUS] = SPR_INVALID;
 			}
@@ -352,6 +352,12 @@ static void process_warmup_command(uint32_t *data)
 	{
 		warmup_cmd_response[WARMUP_CMD_FIL] = SPR_ACCESS_ERROR;
 	}
+	//The state transition also requires both E-stops to be released. Reject
+	//the command here instead of acknowledging a transition that cannot occur.
+	else if(!verify_estops_ok())
+	{
+		warmup_cmd_response[WARMUP_CMD_FIL] = SPR_ACCESS_ERROR;
+	}
 	//Check that value is valid
 	else if(isnan(*new_wu_val))
 	{
@@ -377,33 +383,25 @@ static void process_warmup_command(uint32_t *data)
 
 static void process_new_session_command(uint32_t *data)
 {
-	uint32_t point_count = *data;
-	
+	(void)data;
+	memset(new_session_response, 0, sizeof(new_session_response));
+
 	//Ensure we are in a valid state to start a new session
 	if(system_status[SS_STATE].i != STATE_PRIMED)
 	{
-		new_session_response[NEW_SES_CMD_POINTS] = SPR_ACCESS_ERROR;
+		new_session_response[NEW_SES_RES_STATUS] = SPR_ACCESS_ERROR;
+		return;
 	}
-	//Ensure number of points is in range
-	else if(point_count > MAX_OPERATIONAL_POINTS)
-	{
-		new_session_response[NEW_SES_CMD_POINTS] = SPR_OOB;
-	}
-	else
-	{	
-		//Generate new session key
-		session_id = system_status[SS_SYS_RUNTIME].u;	//TBD TODO can update to use RNG instead of runtime val
-		
-		//Save point count
-		system_status[SS_OP_COUNT].u = point_count;
-		
-		//Notify PC
-		new_session_response[NEW_SES_CMD_ID] = session_id;
-		new_session_response[NEW_SES_CMD_POINTS] = SPR_OK;
-		
-		//Notify state machine
-		queue_sm_event(EVENT_PC_NEW_SESSION);
-	}
+
+	//Generate new session key
+	session_id = system_status[SS_SYS_RUNTIME].u;	//TBD TODO can update to use RNG instead of runtime val
+
+	//Notify PC
+	new_session_response[NEW_SES_RES_STATUS] = SPR_OK;
+	new_session_response[NEW_SES_RES_ID] = session_id;
+
+	//Notify state machine
+	queue_sm_event(EVENT_PC_NEW_SESSION);
 }
 
 static bool cmd_auth_check(uint32_t *data, uint32_t packet_type, uint32_t auth_idx)
@@ -450,19 +448,13 @@ static uint32_t op_val_check(uint32_t *data, int idx, float min, float max)
 
 static void process_op_load_command(uint32_t *data)
 {
-	uint32_t op_idx = data[OP_CMD_POINT_IDX];
-	uint32_t load_packet_ok = SPR_OK;	
-	op_load_results[OP_CMD_AUTO_EXEC] = SPR_OK;
-	
-	//Ensure we are in a valid state to load points
+	uint32_t load_packet_ok = SPR_OK;
+	memset(op_load_results, 0, sizeof(op_load_results));
+
+	//Ensure we are in a valid state to load the point
 	if(system_status[SS_STATE].i != STATE_STAGING)
 	{
-		op_load_results[OP_CMD_POINT_IDX] = SPR_ACCESS_ERROR;
-	}
-	//Check that the point index is valid
-	else if(op_idx >= MAX_OPERATIONAL_POINTS)
-	{
-		op_load_results[OP_CMD_POINT_IDX] = SPR_OOB;
+		op_load_results[OP_CMD_TOTAL_TIME] = SPR_ACCESS_ERROR;
 	}
 	//Check that the message is authentic
 	else if(!cmd_auth_check(data, PCCOM_LOAD_OP, OP_CMD_AUTHENTICATION))
@@ -472,9 +464,8 @@ static void process_op_load_command(uint32_t *data)
 	//Check that given values are ok
 	else
 	{
-		op_load_results[OP_CMD_POINT_IDX] = SPR_OK;
 		op_load_results[OP_CMD_AUTHENTICATION] = SPR_OK;
-		
+
 		op_load_results[OP_CMD_TOTAL_TIME] = op_val_check(data, OP_CMD_TOTAL_TIME, 0, MAX_OP_TIME);
 		op_load_results[OP_CMD_REMAIN_TIME] = op_val_check(data, OP_CMD_REMAIN_TIME, 0, MAX_OP_TIME);
 		op_load_results[OP_CMD_KV] = op_val_check(data, OP_CMD_KV, 0, MAX_OP_KV);
@@ -484,68 +475,45 @@ static void process_op_load_command(uint32_t *data)
 		op_load_results[OP_CMD_Y_COIL] = op_val_check(data, OP_CMD_Y_COIL, MIN_OP_DEFL_COIL, MAX_OP_DEFL_COIL);
 		op_load_results[OP_CMD_F_COIL] = op_val_check(data, OP_CMD_F_COIL, 0, MAX_OP_F_COIL);
 	}
-	
+
 	for(int i = 0; i < OP_CMD_COUNT; i++)
 	{
 		load_packet_ok += op_load_results[i];
 	}
-	
+
 	if(load_packet_ok == SPR_OK)
-	{		
-		//Save parameters to treatment plan
-		memcpy(operational_points[op_idx], data, sizeof(uint32_t) * OP_PARAM_COUNT);
-		
-		//Update plan info loading flag		
-		if(op_idx < 32)
-		{
-			plan_info[PLAN_LOADING_FLAGS_1] |= (1 << op_idx);
-		}
-		else
-		{
-			op_idx -= 32;
-			plan_info[PLAN_LOADING_FLAGS_2] |= (1 << op_idx);
-		}
+	{
+		memcpy(operational_point, data, sizeof(uint32_t) * OP_PARAM_COUNT);
+		plan_info[PLAN_LOADED_BOOL] = 1;
 	}
 }
 
 static uint32_t match_op_confirm(uint32_t *data, uint32_t data_idx)
-{	
+{
 	if(data_idx >= OP_PARAM_COUNT)
 	{
 		return SPR_INVALID;
 	}
-	
-	uint32_t op_idx = data[OP_CMD_POINT_IDX];
-	if(op_idx >= MAX_OPERATIONAL_POINTS)
-	{
-		return SPR_INVALID;
-	}
-	
+
 	float *target = (float *)(data + data_idx);
-	
-	if(*target != operational_points[op_idx][data_idx].f)
+
+	if(*target != operational_point[data_idx].f)
 	{
 		return SPR_INVALID;
 	}
-	
-	return SPR_OK;	
+
+	return SPR_OK;
 }
 
 static void process_op_confirm_command(uint32_t *data)
 {
-	uint32_t op_idx = data[OP_CMD_POINT_IDX];
 	uint32_t confirm_packet_ok = SPR_OK;
-	op_confirm_results[OP_CMD_AUTO_EXEC] = SPR_OK;
-	
-	//Ensure we are in a valid state to confirm points
+	memset(op_confirm_results, 0, sizeof(op_confirm_results));
+
+	//Ensure we are in a valid state to confirm the point
 	if(system_status[SS_STATE].i != STATE_STAGED)
 	{
-		op_confirm_results[OP_CMD_POINT_IDX] = SPR_ACCESS_ERROR;
-	}
-	//Check that the point index is valid
-	else if(op_idx >= MAX_OPERATIONAL_POINTS)
-	{
-		op_confirm_results[OP_CMD_POINT_IDX] = SPR_OOB;
+		op_confirm_results[OP_CMD_TOTAL_TIME] = SPR_ACCESS_ERROR;
 	}
 	//Check that the message is authentic
 	else if(!cmd_auth_check(data, PCCOM_CONFIRM_OP, OP_CMD_AUTHENTICATION))
@@ -555,55 +523,32 @@ static void process_op_confirm_command(uint32_t *data)
 	//Check that given values match what has been loaded
 	else
 	{
-		op_confirm_results[OP_CMD_POINT_IDX] = SPR_OK;
 		op_confirm_results[OP_CMD_AUTHENTICATION] = SPR_OK;
-		
-		for(int i = (OP_CMD_POINT_IDX+1); i < OP_CMD_AUTHENTICATION; i++)
+
+		for(int i = OP_CMD_TOTAL_TIME; i < OP_CMD_AUTHENTICATION; i++)
 		{
 			op_confirm_results[i] = match_op_confirm(data, i);
 		}
 	}
-	
+
 	for(int i = 0; i < OP_CMD_COUNT; i++)
 	{
 		confirm_packet_ok += op_confirm_results[i];
 	}
-	
+
 	if(confirm_packet_ok == SPR_OK)
 	{
-		//Update plan info confirmation flag
-		if(op_idx < 32)
-		{
-			plan_info[PLAN_CONFIRMATION_FLAGS_1] |= (1 << op_idx);
-		}
-		else
-		{
-			op_idx -= 32;
-			plan_info[PLAN_CONFIRMATION_FLAGS_2] |= (1 << op_idx);
-		}
+		plan_info[PLAN_CONFIRMED_BOOL] = 1;
 	}
 }
 
 static void process_op_query(uint32_t *data)
 {
-	uint32_t idx = data[OP_REQ_POINT_IDX];
-	//If we have an invalid index request, just send first OP
-	if(idx >= system_status[SS_OP_COUNT].u || idx >= MAX_OPERATIONAL_POINTS)
+	(void)data;
+	op_query_response[OP_RES_STATUS].u = SPR_OK;
+	for(int i = 0; i < OP_PARAM_COUNT; i++)
 	{
-		op_query_response[OP_RES_STATUS].u = SPR_OOB;
-		for(int i = (OP_RES_STATUS+1); i < OP_RES_COUNT; i++)
-		{
-			op_query_response[i].u = 0;
-		}
-	}
-	//Otherwise set up reply for indicated index
-	else
-	{
-		op_query_response[OP_RES_STATUS].u = SPR_OK;
-		for(int i = 0; i < OP_PARAM_COUNT; i++)
-		{
-			op_query_response[i+1].u = operational_points[idx][i].u;
-		}
+		op_query_response[i + 1].u = operational_point[i].u;
 	}
 }
 
@@ -614,7 +559,7 @@ static void check_plan_for_release()
 	{
 		release_cmd_response[RELEASE_CMD_SCOPE] = SPR_ACCESS_ERROR;
 	}
-	else if(plan_info[PLAN_TARGET_BITS_1] != plan_info[PLAN_CONFIRMATION_FLAGS_1] || plan_info[PLAN_TARGET_BITS_2] != plan_info[PLAN_CONFIRMATION_FLAGS_2])
+	else if(plan_info[PLAN_CONFIRMED_BOOL] == 0)
 	{
 		release_cmd_response[RELEASE_CMD_SCOPE] = SPR_INVALID;
 	}
@@ -672,12 +617,14 @@ static void process_start_directive()
 	//check if all calibration interlocks are ready
 	if (can_calibrate())
 	{
+		enable_indicators(true);
 		queue_hvps_cmd(HVPS_CMD_CAL_START, 0, 0);
 	}
 }
 
 static void process_stop_directive()
 {
+	enable_indicators(false);
 	queue_hvps_cmd(HVPS_CMD_CAL_STOP, 0, 0);
 }
 
@@ -703,6 +650,15 @@ static bool coil_float_check(uint32_t *data, float min, float max, int idx)
 
 static void process_cal_coil_command(uint32_t *data)
 {
+	if(!try_enter_calibration_state())
+	{
+		for(int i = 0; i < CAL_COIL_CMD_COUNT; i++)
+		{
+			cal_coil_response[i] = SPR_ACCESS_ERROR;
+		}
+		return;
+	}
+
 	bool cmd_is_valid = true;
 	
 	//TODO set SPR all good here
@@ -711,29 +667,40 @@ static void process_cal_coil_command(uint32_t *data)
 		cal_coil_response[i] = SPR_OK;
 	}
 	
-	cmd_is_valid &= coil_float_check(data, -2, 2, CAL_COIL_CMD_X);
-	cmd_is_valid &= coil_float_check(data, -2, 2, CAL_COIL_CMD_Y);
-	cmd_is_valid &= coil_float_check(data, 0, 3, CAL_COIL_CMD_F);
+	cmd_is_valid &= coil_float_check(data, -2000, 2000, CAL_COIL_CMD_X);
+	cmd_is_valid &= coil_float_check(data, -2000, 2000, CAL_COIL_CMD_Y);
+	cmd_is_valid &= coil_float_check(data, 0, 3000, CAL_COIL_CMD_F);
 	
 	if(cmd_is_valid)
 	{
 		float *target = (float *)(data);
-		float coil_out = *target; //TBD verify calibration param is in A
-		coil_out *= 2.5; //TBD scaling factor verify
+		float coil_out = (*target / 1000.0f) * 2.5f;
 		set_coil_voltage(X_COIL_DAC_CH, coil_out);
 		target++;
-		coil_out = *target; //TBD verify calibration param is in A
-		coil_out *= 2.5; //TBD scaling factor verify
+		coil_out = (*target / 1000.0f) * 2.5f;
 		set_coil_voltage(Y_COIL_DAC_CH, coil_out);
 		target++;
-		coil_out = *target; //TBD verify calibration param is in A
-		coil_out *= 1.666; //TBD scaling factor verify
+		coil_out = (*target / 1000.0f) * 1.666f;
 		set_coil_voltage(F_COIL_DAC_CH, coil_out);
 	}
 }
 
 static void process_cal_hvps_command(uint32_t *data)
 {
+	if(!try_enter_calibration_state())
+	{
+		for(int i = 0; i < CAL_HVPS_CMD_COUNT; i++)
+		{
+			cal_hvps_cmd_response[i] = SPR_ACCESS_ERROR;
+		}
+		return;
+	}
+
+	for(int i = 0; i < CAL_HVPS_CMD_COUNT; i++)
+	{
+		cal_hvps_cmd_response[i] = SPR_OK;
+	}
+
 	VariableValue output_data[3];
 	for(int i = 0; i < 3; i++)
 	{
@@ -744,8 +711,14 @@ static void process_cal_hvps_command(uint32_t *data)
 
 static void process_cal_directive_command(uint32_t *data)
 {
+	if(!try_enter_calibration_state())
+	{
+		cal_directive_response[DIRECTIVE_RES_STATUS] = SPR_ACCESS_ERROR;
+		return;
+	}
+
 	cal_directive_response[DIRECTIVE_RES_STATUS] = SPR_INVALID;
-	
+
 	if(data[DIRECTIVE_CMD_COMMAND] == 0x03)
 	{
 		cal_directive_response[DIRECTIVE_RES_STATUS] = SPR_OK;
@@ -755,46 +728,35 @@ static void process_cal_directive_command(uint32_t *data)
 	{
 		cal_directive_response[DIRECTIVE_RES_STATUS] = SPR_OK;
 		process_stop_directive();
+		exit_calibration_state();
 	}
 }
 
 static void process_cal_setpoint_request(uint32_t *data)
 {
+	(void)data;
+	if(!try_enter_calibration_state())
+	{
+		memset(cal_setpoint_req_response, 0, sizeof(cal_setpoint_req_response));
+		return;
+	}
+
 	//Copy setpoint values read from HVPS into cal_setpoint_req_response
 	memcpy(cal_setpoint_req_response, hvps_setpoints, CAL_SP_RES_COUNT*sizeof(float));
 }
 
 static void process_cal_mag_command(uint32_t *data)
 {
+	if(!try_enter_calibration_state())
+	{
+		memset(cal_mag_response, 0, sizeof(cal_mag_response));
+		return;
+	}
+
 	set_mag_cal_window(*data);
+	memcpy(cal_mag_response, mag_cal_array, sizeof(cal_mag_response));
 }
 
-void signal_emission_stop()
-{
-	// stop emission
-	process_stop_directive();
-}
-
-void signal_hvps_stop()
-{
-	// stop emission
-	process_stop_directive();
-	// ramp down
-	uint32_t data_pwr[3] = {4, 0, 0};
-	process_cal_hvps_command(data_pwr);
-	
-	uint32_t data_kv[3] = {5, 0, 0};
-	process_cal_hvps_command(data_kv);
-	
-	uint32_t data_ma[3] = {6, 0, 0};
-	process_cal_hvps_command(data_ma);
-	
-	uint32_t data_grid[3] = {7, 0, 0};
-	process_cal_hvps_command(data_grid);
-	
-	uint32_t data_fil[3] = {8, 0, 0};
-	process_cal_hvps_command(data_fil);
-}
 #else
 static void process_qc_command(uint32_t *data)
 {
@@ -810,25 +772,22 @@ static void process_qc_command(uint32_t *data)
 			break;
 			case 2:
 			// StopGetResult
+			report_qc_reading();
 			if(qc_reading_buf[0].f < QC_MIN_READ)
 			{
-				report_typed_fault1(FAULT_QC, "QC channel 0 reading is below the minimum %f.", MAKE_ARG(QC_MIN_READ));
+				report_typed_fault3(FAULT_QC, "QC channel 0 reading %f is below the minimum %f after %u samples.", MAKE_ARG(qc_reading_buf[0].f), MAKE_ARG((float)QC_MIN_READ), MAKE_ARG(qc_samples));
 			}
 			else if(qc_reading_buf[1].f < QC_MIN_READ)
 			{
-				report_typed_fault1(FAULT_QC, "QC channel 1 reading is below the minimum %f.", MAKE_ARG(QC_MIN_READ));
+				report_typed_fault3(FAULT_QC, "QC channel 1 reading %f is below the minimum %f after %u samples.", MAKE_ARG(qc_reading_buf[1].f), MAKE_ARG((float)QC_MIN_READ), MAKE_ARG(qc_samples));
 			}
 			else if(qc_reading_buf[0].f > QC_MAX_READ)
 			{
-				report_typed_fault1(FAULT_QC, "QC channel 0 reading is above the maximum %f.", MAKE_ARG(QC_MAX_READ));
+				report_typed_fault3(FAULT_QC, "QC channel 0 reading %f is above the maximum %f after %u samples.", MAKE_ARG(qc_reading_buf[0].f), MAKE_ARG((float)QC_MAX_READ), MAKE_ARG(qc_samples));
 			}
 			else if(qc_reading_buf[1].f > QC_MAX_READ)
 			{
-				report_typed_fault1(FAULT_QC, "QC channel 1 reading is above the maximum %f.", MAKE_ARG(QC_MAX_READ));
-			}
-			else
-			{
-				report_qc_reading();
+				report_typed_fault3(FAULT_QC, "QC channel 1 reading %f is above the maximum %f after %u samples.", MAKE_ARG(qc_reading_buf[1].f), MAKE_ARG((float)QC_MAX_READ), MAKE_ARG(qc_samples));
 			}
 			break;
 			default:

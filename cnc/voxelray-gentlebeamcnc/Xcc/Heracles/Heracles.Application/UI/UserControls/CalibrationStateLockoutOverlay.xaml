@@ -1,5 +1,5 @@
 <UserControl
-    x:Class="Heracles.Application.UI.UserControls.CalibrationModeLockoutOverlay"
+    x:Class="Heracles.Application.UI.UserControls.CalibrationStateLockoutOverlay"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:common="clr-namespace:Heracles.Application.Common"
@@ -20,7 +20,7 @@
         <Style TargetType="{x:Type UserControl}">
             <Setter Property="Visibility" Value="Collapsed" />
             <Style.Triggers>
-                <DataTrigger Binding="{Binding GcbDataStore.SystemTelemetry.FirmwareMode}" Value="{x:Static enums:FirmwareMode.Calibration}">
+                <DataTrigger Binding="{Binding GcbDataStore.SystemTelemetry.ControlBoardState}" Value="{x:Static enums:GcbStateNew.Calibration}">
                     <Setter Property="Visibility" Value="Visible" />
                 </DataTrigger>
             </Style.Triggers>
@@ -43,13 +43,13 @@
                     FontSize="{StaticResource HugeFontSize}"
                     FontWeight="SemiBold"
                     Style="{StaticResource TextBlockLegendStyle}"
-                    Text="Calibration mode" />
+                    Text="Calibration state" />
                 <TextBlock
                     Margin="0,24,0,0"
                     HorizontalAlignment="Center"
                     FontSize="{StaticResource BaseFontSize}"
                     Style="{StaticResource TextBlockLegendStyle}"
-                    Text="{x:Static common:StringConstants+Common.CalibrationModeServiceRequiredMessage}"
+                    Text="{x:Static common:StringConstants+Common.CalibrationStateServiceRequiredMessage}"
                     TextAlignment="Center"
                     TextWrapping="Wrap" />
             </StackPanel>

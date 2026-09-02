@@ -8,7 +8,7 @@ using Xcc.Core.Logging;
 
 namespace Xcc.Application.Domain.GryphonBoard.Service
 {
-    // TODO: rename ClearOrKeepPlanOnBoard to something better, or even redesign it 
+    // TODO: rename ClearOrKeepEmissionOnBoard to something better, or redesign it.
     internal class ClearOrKeepPlanOnBoard : AbstractMainBoardAction
     {
         private readonly IMainBoardStateManagement mainBoardState;
@@ -31,12 +31,14 @@ namespace Xcc.Application.Domain.GryphonBoard.Service
 
         protected override async Task RunActionAsync(CancellationToken token)
         {
-            var planOnBoard = await mainBoardAPI.QueryPlanFromGCB();
-            bool keepThePlan = tryKeepSamePlan && planOnBoard.IsSameAs(MainBoard.CurrentPlan);
+            var emissionOnBoard = await mainBoardAPI.QueryEmissionFromGCB();
+            bool keepEmission = tryKeepSamePlan
+                && MainBoard.CurrentEmission is { } currentEmission
+                && currentEmission.IsSamePoint(emissionOnBoard);
 
-            if (keepThePlan)
+            if (keepEmission)
             {
-                mainBoardState.SetCurrentPlan(planOnBoard);
+                mainBoardState.SetCurrentEmission(emissionOnBoard);
             }
 
             // We have a plan staged on the board, but we don't have a session for it,
@@ -101,18 +103,20 @@ namespace Xcc.Application.Domain.GryphonBoard.Service
         }
 
         #region Board command sequences
-        public async Task<bool> PreparePlan(GcbEmissionPlan plan, bool tryKeepPrevPlan)
+        public async Task<bool> PrepareEmission(
+            GcbOperationalPoint emission,
+            bool tryKeepPreviousEmission)
         {
+            mainBoardState.SetCurrentEmission(emission);
             await gcbCommandProcessor.Execute(
                 new MacroAction(
                     [
                     new MainBoardOptionalActionWrapper(
-                        new ClearOrKeepPlanOnBoard(mainBoardState, this, gcbCommandInterface, tryKeepPrevPlan)),
+                        new ClearOrKeepPlanOnBoard(mainBoardState, this, gcbCommandInterface, tryKeepPreviousEmission)),
                     new NewSession(mainBoardState, gcbCommandInterface),
                     new LoadAndStagePlan(mainBoardState, gcbCommandInterface, logWriter),
                     new ConfirmAndReleasePlan(mainBoardState, gcbCommandInterface, logWriter)
                     ]));
-            // TODO: now we need to store a flag if plan was loaded from scratch here
             return true;
         }
         public Task BeamOn()
@@ -120,12 +124,8 @@ namespace Xcc.Application.Domain.GryphonBoard.Service
             throw new NotImplementedException();
         }
 
-        public Task BeamOnOnePoint()
-        {
-            throw new NotImplementedException();
-        }
 
-        public Task ResumePlan()
+        public Task ResumeEmission()
         {
             throw new NotImplementedException();
         }
@@ -174,31 +174,19 @@ namespace Xcc.Application.Domain.GryphonBoard.Service
         }
 
 
-        public async Task<GcbEmissionPlan> QueryPlanFromGCB()
+        public Task<GcbOperationalPoint> QueryEmissionFromGCB()
         {
-            var telemetry = mainBoardState.SystemTelemetry;
-            if (telemetry == null)
-                return null!;
-
-            var totalPoints = telemetry.TotalOperationalPoints;
-
-            GcbEmissionPlan plan = new();
-            for (int i = 0; i < totalPoints; i++)
-            {
-                var point = await QueryPointFromGCB(i);
-                plan.AddPoint(point);
-            }
-            return plan;
+            return gcbCommandInterface.QueryPoint();
         }
 
-        public Task<GcbOperationalPoint> QueryPointFromGCB(int index)
+        public Task UpdateCurrentEmissionFromGCB()
         {
-            return gcbCommandInterface.QueryPoint(index);
+            return QueryAndStoreEmission();
         }
 
-        public Task UpdatePlanPointFromGCB(int index)
+        private async Task QueryAndStoreEmission()
         {
-            throw new NotImplementedException();
+            mainBoardState.SetCurrentEmission(await QueryEmissionFromGCB());
         }
 
         #endregion Board state queries

@@ -1,5 +1,5 @@
 [DOCUMENT]
-TITLE: Heracles Unified Calibration and Service Interface Test Protocol
+TITLE: Heracles UCSI Test Protocol
 UID: DHF-HRC-UCSI-0003-TP
 METADATA:
   COMPONENT: heracles-ucsi
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-This protocol defines the minimum verification tests for the Heracles Unified Calibration and Service Interface (UCSI) Software Requirements Specification, DHF-HRC-UCSI-0001.
+This protocol defines the minimum verification tests for the Heracles UCSI Software Requirements Specification, DHF-HRC-UCSI-0001.
 <<<
 
 [[/SECTION]]
@@ -39,7 +39,7 @@ Abbreviation/Term    Definition
 ===================  ==========================================
 GCB                  Gryphon Control Board
 HVPS                 High Voltage Power Supply
-UCSI                 Unified Calibration and Service Interface
+UCSI                 Heracles technician-facing service interface
 ===================  ==========================================
 <<<
 
@@ -51,24 +51,31 @@ TITLE: Test Cases
 
 [TEST_CASE]
 UID: TP-UCSI-001
-TITLE: UCSI deployment and telemetry monitoring
+TITLE: UCSI deployment, telemetry sessions, status, and version information
 STATEMENT: >>>
-Verify that UCSI presents current telemetry and status information and supports numerical and graphical monitoring of selected parameters in both supported deployment modes.
+Verify that UCSI presents current telemetry, status, operational logs, and version information; supports numerical and graphical monitoring, recording, and replay; and preserves the preceding five minutes of live telemetry in operator-requested and automatic fault CSV exports in both supported deployment modes.
 <<<
 PREREQUISITES: >>>
-Bench test setup with the GCB and HVPS telemetry channels available.
+Bench test setup with the GCB and HVPS telemetry channels available, known GCB and HVPS firmware versions, and the ability to publish controlled active-fault sets. The setup can supply continuously changing, time-correlated telemetry for at least six minutes and safely introduce and clear test faults.
 
-The standalone UCSI application and the system PC application containing the hosted UCSI module are installed.
+The standalone UCSI application and the system PC application containing the hosted UCSI module are installed with known CNC software versions. Remove or inventory pre-existing UCSI CSV exports before each deployment-mode run.
 <<<
 STEPS: >>>
-1. Start the standalone UCSI application and connect the bench test setup.
+1. Start the standalone UCSI application, connect the bench test setup, and begin the continuously changing telemetry stream.
 2. Confirm that current operating-parameter values, communication status, system status, interlock status, and active faults are displayed.
-3. Select a telemetry parameter for the monitored-parameter list and for a graph; confirm that its current numerical value and telemetry history are displayed.
-4. Close the standalone application, start the system PC application, and open the hosted UCSI module.
-5. Repeat steps 2 and 3.
+3. Confirm that the displayed GCB firmware, HVPS firmware, and CNC software versions match the installed versions.
+4. Select a telemetry parameter for the monitored-parameter list and for a graph; confirm that its current numerical value and telemetry history are displayed.
+5. Start and stop a telemetry recording, load the recorded session, and verify play, pause, timeline seeking, and return to live monitoring.
+6. After telemetry has run for at least six minutes, request a CSV export. Confirm that its rows cover only samples received during the five minutes preceding the request, include the changing values expected in that interval, and exclude earlier samples. Confirm that the header contains UTC timestamp, elapsed time, live sequence, and every available telemetry parameter.
+7. With no active fault, safely introduce one test fault. Confirm that exactly one new, uniquely named fault-tagged CSV is created and that it contains only the five minutes of telemetry preceding the fault report with the columns checked in step 6.
+8. Publish the same active-fault set again and confirm that no duplicate CSV is created. Add a second test fault while the first remains active and confirm that exactly one separate, uniquely named CSV is created for the second fault.
+9. Clear the first fault, then safely introduce it again and confirm that exactly one new CSV is created for the recurrence.
+10. Save the displayed operational logs. Confirm that the saved log contains the displayed entries and that the operational log records each successful automatic telemetry export with its sample count and output filename.
+11. Close the standalone application, start the system PC application, and open the hosted UCSI module.
+12. Repeat steps 2 through 10.
 <<<
 EXPECTED_BEHAVIOR: >>>
-In both deployment modes, UCSI displays the current system operating parameters, communication status, system status, interlock status, and active faults received from the bench test setup. A selected parameter appears in the monitored-parameter list with its current value and in a graph with its telemetry history.
+In both deployment modes, UCSI displays the current system operating parameters, communication status, system status, interlock status, active faults, operational logs, and installed software versions. A selected parameter appears numerically and in its telemetry-history graph. Recording and replay support play, pause, seek, and return to live operation. Operator-requested and automatic fault CSV files contain every telemetry column and only samples from the five minutes immediately preceding their respective trigger; older samples are absent. Each transition to a newly active fault creates one separate, uniquely named fault-tagged CSV, unchanged active faults create none, and a cleared fault creates another when it recurs. The operational log identifies each successful automatic export.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -79,6 +86,9 @@ RELATIONS:
   ROLE: Verifies
 - TYPE: Parent
   VALUE: RQ-UCSI-003
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-UCSI-007
   ROLE: Verifies
 
 [TEST_CASE]
@@ -132,6 +142,147 @@ RELATIONS:
   ROLE: Verifies
 - TYPE: Parent
   VALUE: RQ-UCSI-006
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TP-UCSI-004
+TITLE: Standalone fault clearing
+STATEMENT: >>>
+Verify that Clear Faults clears active system faults from the standalone UCSI application and remains unavailable from the hosted UCSI module.
+<<<
+PREREQUISITES: >>>
+Bench test setup with the GCB communication channel available and an approved procedure for safely inducing an active system fault.
+
+The standalone UCSI application and the system PC application containing the hosted UCSI module are installed.
+<<<
+STEPS: >>>
+1. Safely induce an active system fault, start the standalone UCSI application, open the Faults view, and confirm that the fault is displayed.
+2. While monitoring live telemetry and not recording, confirm that Clear Faults is enabled.
+3. Start a telemetry recording and confirm that Clear Faults is disabled, then stop recording. Load a recorded session and confirm that Clear Faults remains disabled during replay, then return to live monitoring.
+4. Invoke Clear Faults and confirm that the active fault clears.
+5. Safely induce an active system fault again, close the standalone application, start the system PC application, and open the hosted UCSI module's Faults view.
+6. Confirm that Clear Faults is disabled and that the active fault remains present.
+<<<
+EXPECTED_BEHAVIOR: >>>
+In standalone live, non-recording operation, Clear Faults is enabled and sends the clear-faults command to the GCB, which clears the active system fault. The command is disabled during recording and replay. In the hosted UCSI module, Clear Faults remains disabled and does not clear the active fault.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-008
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TP-UCSI-005
+TITLE: HVPS fault-status bit mapping
+STATEMENT: >>>
+Verify that UCSI decodes and displays each named HVPS fault indicator from its
+assigned HVPS status bit rather than from the HVPS IO field.
+<<<
+PREREQUISITES: >>>
+Bench test setup with a GCB telemetry source that can independently control the
+HVPS status and IO fields.
+<<<
+STEPS: >>>
+1. Start UCSI, connect the bench test setup, and open the HVPS-state view.
+2. For each mapping below, publish telemetry with only the specified HVPS status
+   bit set and with the HVPS IO field clear:
+
+   * bit 10 - Filament Clock Fault;
+   * bit 11 - Cathode Arc;
+   * bit 12 - Fan Fault;
+   * bit 13 - 24V Overcurrent Fault;
+   * bit 14 - Master Fault;
+   * bit 15 - HV Overcurrent Fault;
+   * bit 16 - Temperature 1 Fault;
+   * bit 17 - Cathode Overcurrent Fault;
+   * bit 18 - Temperature 3 Fault; and
+   * bit 19 - Temperature 2 Fault.
+
+3. For each sample, confirm that the corresponding named indicator is active
+   and displays ``On`` while the other nine named fault indicators are inactive
+   and display ``Off``.
+4. Publish telemetry with HVPS status bits 10 through 19 clear and confirm that
+   all ten named fault indicators are inactive and display ``Off``.
+5. Keep the HVPS status field clear. Set HVPS IO bits 1, 5, 6, and 10 through 16
+   individually and confirm that none of the ten named fault indicators becomes
+   active.
+<<<
+EXPECTED_BEHAVIOR: >>>
+Each HVPS status bit activates only its assigned named indicator and clearing
+the bit deactivates that indicator. The tested HVPS IO bits do not activate any
+of the ten indicators.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-009
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TP-UCSI-006
+TITLE: Telemetry-gated service and one-point test emission
+STATEMENT: >>>
+Verify periodic GCB communication, live-telemetry gating of service commands,
+one-point emission parameter limits, telemetry-confirmed sequencing, and stop
+behavior.
+<<<
+PREREQUISITES: >>>
+Bench test setup with a GCB communication simulator that can publish selected
+control states, suspend telemetry, replay a recorded session, delay command
+responses, and record every command without energizing X-ray output.
+
+UCSI is installed, and qualified personnel have completed the approved
+radiation-safety procedure for service/test emission commands.
+<<<
+STEPS: >>>
+1. Start UCSI and record the GCB requests for at least three seconds. Confirm
+   that one version-information request occurs each second with no duplicate
+   request loop when the UCSI view is activated repeatedly.
+2. Make the simulator withhold version-information responses for longer than
+   500 ms over several request intervals. Confirm that the first consecutive
+   failure produces one warning and that a subsequent successful response
+   allows the first failure of a later failure run to produce one new warning.
+3. Publish live ``Cold`` telemetry, command one permitted direct HVPS value and
+   one permitted coil value, and confirm that both commands are recorded.
+   Suspend telemetry for more than 1.5 seconds and repeat the commands; then
+   load a recorded session and repeat them again. Confirm that no command is
+   recorded for either unavailable condition. Return to live telemetry,
+   publish ``Ready``, repeat the direct-service commands, and confirm that
+   neither is recorded.
+4. In the Emission view, enter values at the configured inclusive limits for acceleration
+   potential, power, filament current, duration, and each coil current. Confirm that every
+   boundary combination is accepted.
+5. In turn, enter a value immediately outside each configured limit and a zero or
+   non-finite value where the parameter must be positive. Attempt to run each case and
+   confirm that no emission-sequence command is recorded.
+6. With valid parameters and fresh live ``Cold`` telemetry, start an emission.
+   For each recorded command, hold the current telemetry state briefly and
+   confirm that the next state-dependent command is not sent until the
+   simulator publishes the required state. Confirm this order: reset timers;
+   clear plan; warmup; ``Primed``; new session; ``Staging``; load point; stage
+   plan; ``Staged``; confirm point; release plan; ``Ready``; release point; and
+   ``Emission``.
+7. Repeat step 6 from ``Primed`` and confirm that reset, clear-plan, and warmup
+   commands are skipped. Repeat from ``Staged`` and confirm that UCSI first
+   sends Stop and waits for ``Cold`` before executing the full sequence.
+8. During a sequence wait, suspend telemetry for more than 1.5 seconds and
+   confirm that the sequence fails without sending the next command. Restore
+   fresh telemetry, start another sequence, invoke Stop while it is in
+   progress, and confirm cancellation followed by one Stop command. Publish a
+   normal active state, invoke Stop again, and confirm one Stop command.
+<<<
+EXPECTED_BEHAVIOR: >>>
+UCSI maintains one once-per-second version-information request loop with a
+500 ms response timeout and suppresses repeated warnings during one continuous
+failure. Operator-issued service commands require fresh live telemetry and a
+permitted control state. One-point parameters within the configured service limits follow
+the state-confirmed command sequence from each supported start state, while values outside
+those limits, replay, stale or missing telemetry, and non-permitted states do not
+transmit those commands. Loss of fresh telemetry stops sequence advancement,
+and Stop cancels an in-progress sequence or stops a normal active state.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-UCSI-010
   ROLE: Verifies
 
 [[/SECTION]]

@@ -107,8 +107,6 @@
                     <RowDefinition Height="4*" />
                     <RowDefinition Height="{StaticResource SystemSignalsBlockMarginLength}"/>
                     <RowDefinition Height="3.5*" />
-                    <RowDefinition Height="{StaticResource SystemSignalsBlockMarginLength}"/>
-                    <RowDefinition Height="3*" />
                 </Grid.RowDefinitions>
 
                 <!--System-->
@@ -298,53 +296,6 @@
                 </Border>             
                 
                 
-                <!--Operational points-->
-                <Border Grid.Row="4" Style="{StaticResource BorderBlockStyle}">
-                    <Grid Margin="{StaticResource BlockContentMargin}" VerticalAlignment="Center">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.2*"/>
-                            <ColumnDefinition Width="{StaticResource  BlockContentSmallMarginLength}" />
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentMarginGridLength}"/>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="{StaticResource BlockContentSmallMarginLength}"/>
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        
-                        <TextBlock Grid.ColumnSpan="3" Style="{StaticResource BlockHeaderTextBoxStyle}" Text="Operational points"/>
-
-                    
-                        <TextBlock 
-                            Grid.Row="2"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Current Point:"/>
-                    
-                        <TextBlock 
-                            Grid.Row="2" Grid.Column="2"
-                            HorizontalAlignment="Left"
-                            Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.CurrentOperationalPoint, FallbackValue={StaticResource NotAvailableText}}"/>
-                    
-
-                        <TextBlock 
-                            Grid.Row="4"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Total Points:"/>
-
-                        <TextBlock 
-                            Grid.Row="4" Grid.Column="2"
-                            HorizontalAlignment="Left"
-                            Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.TotalOperationalPoints, FallbackValue={StaticResource NotAvailableText}}"/>
-                    </Grid>
-                </Border>   
                 
                   
             </Grid>            

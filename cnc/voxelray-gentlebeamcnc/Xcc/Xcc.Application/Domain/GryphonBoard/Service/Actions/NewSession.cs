@@ -22,7 +22,7 @@ namespace Xcc.Application.Domain.GryphonBoard.Service.Actions
         protected override async Task RunActionAsync(CancellationToken token)
         {
             mainBoardStateManagement.SetSession(
-                await gcbCommands.NewSession(MainBoard.CurrentPlan.TotalPoints));
+                await gcbCommands.NewSession());
         }
     }
 }

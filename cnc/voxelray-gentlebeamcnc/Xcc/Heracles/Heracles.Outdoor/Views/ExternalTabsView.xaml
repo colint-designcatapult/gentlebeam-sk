@@ -57,7 +57,7 @@
         <ucx:RadiationHazardControl 
             Grid.Column="0" Grid.Row="2"
             VerticalAlignment="Center"
-            IsActive="{Binding GcbDataStore.SystemTelemetry.ControlBoardState, Converter={convx:GcbStatusToRadiationHazardActiveStateConverter}}"
+            IsActive="{Binding GcbDataStore.SystemTelemetry, Converter={convx:GcbStatusToRadiationHazardActiveStateConverter}}"
             Margin="12" />
         
         <ucx:XccTabControl
@@ -69,7 +69,7 @@
             
             <!--Treatment Tab-->
             <TabItem
-                ToolTip="{x:Static common:StringConstants+Common.CalibrationModeServiceRequiredMessage}"
+                ToolTip="{x:Static common:StringConstants+Common.CalibrationStateServiceRequiredMessage}"
                 ToolTipService.ShowOnDisabled="True">
                 <TabItem.Visibility>
                     <MultiBinding Converter="{convx:VisibilityConjunction}">
@@ -83,9 +83,9 @@
                         <Binding Path="UIStateMachine.IsPlanLoadedForTreatment" />
                         <Binding Path="UIStateMachine.TabName"/>
                         <Binding
-                            Path="GcbDataStore.SystemTelemetry.FirmwareMode"
+                            Path="GcbDataStore.SystemTelemetry.ControlBoardState"
                             Converter="{convx:ObjectIsNotEqualConverter}"
-                            ConverterParameter="{x:Static coreEnums:FirmwareMode.Calibration}"
+                            ConverterParameter="{x:Static coreEnums:GcbStateNew.Calibration}"
                             FallbackValue="True"
                             TargetNullValue="True" />
                     </MultiBinding>
@@ -100,13 +100,13 @@
                 
                 <Grid>
                     <ContentControl prism:RegionManager.RegionName="{x:Static appx:Regions+External.TreatmentRegion}" IsTabStop="False"/>
-                    <heraclesControls:CalibrationModeLockoutOverlay Panel.ZIndex="10" />
+                    <heraclesControls:CalibrationStateLockoutOverlay Panel.ZIndex="10" />
                 </Grid>
             </TabItem>
          
             <!--Quality Assurance Tab-->
             <TabItem
-                ToolTip="{x:Static common:StringConstants+Common.CalibrationModeServiceRequiredMessage}"
+                ToolTip="{x:Static common:StringConstants+Common.CalibrationStateServiceRequiredMessage}"
                 ToolTipService.ShowOnDisabled="True"
                 Visibility="{Binding AuthorizedUserStore.AuthorizedUser.Role.Permissions.QualityAssurance, Converter={convx:BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
                 
@@ -115,9 +115,9 @@
                         <Binding Path="UIStateMachine.IsPlanLoadedForTreatment" />
                         <Binding Path="UIStateMachine.TabName"/>
                         <Binding
-                            Path="GcbDataStore.SystemTelemetry.FirmwareMode"
+                            Path="GcbDataStore.SystemTelemetry.ControlBoardState"
                             Converter="{convx:ObjectIsNotEqualConverter}"
-                            ConverterParameter="{x:Static coreEnums:FirmwareMode.Calibration}"
+                            ConverterParameter="{x:Static coreEnums:GcbStateNew.Calibration}"
                             FallbackValue="True"
                             TargetNullValue="True" />
                     </MultiBinding>
@@ -133,7 +133,7 @@
 
                 <Grid>
                     <ContentControl prism:RegionManager.RegionName="{x:Static appx:Regions+External.QualityAssuranceRegion}" />
-                    <heraclesControls:CalibrationModeLockoutOverlay Panel.ZIndex="10" />
+                    <heraclesControls:CalibrationStateLockoutOverlay Panel.ZIndex="10" />
                 </Grid>
             </TabItem>
             

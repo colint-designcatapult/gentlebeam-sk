@@ -37,16 +37,20 @@ namespace Heracles.Application.Domain.DataManagement.System.QualityCheck
 
         public static double? CalculateDeviation(double? value, double? reference)
         {
-            return (value != null && reference != null && reference != 0.0d)
-                ? 100.0 * (value - reference) / reference
-                : null;
+            if (value is null || reference is null)
+                return null;
+
+            if (reference == 0.0d)
+                return value == 0.0d ? 0.0d : null;
+
+            return 100.0d * (value - reference) / reference;
         }
 
         public bool IsDeviationAcceptable(double threshold)
         {
-            return Deviations != null 
+            return Deviations != null
                 && Values.Count == Deviations.Count
-                && Deviations.All(v => v != null && v.Value < threshold);
+                && Deviations.All(v => v != null && Math.Abs(v.Value) < threshold);
         }
     }
 }

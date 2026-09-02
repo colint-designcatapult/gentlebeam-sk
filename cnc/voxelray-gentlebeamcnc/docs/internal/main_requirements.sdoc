@@ -55,7 +55,7 @@ TITLE: Overview
 
 [TEXT]
 STATEMENT: >>>
-The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans. It communicates with the record and verify component, and flange camera stream.
+The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans. It communicates with the database and flange camera stream.
 
 The internal GUI software runs on an all-in-one touchscreen PC.
 <<<
@@ -85,11 +85,13 @@ UID: RQ-H10SG-422
 TYPE: Functional
 TITLE: Load For Treatment - Resume Uncompleted Treatment
 STATEMENT: >>>
-The application shall allow users to load an uncompleted plan into the external application and will enable the operator to deliver the remaining plan (i.e., uncompleted operational point delivery).
+The application shall allow users to load an incomplete clinical plan into the external
+application and enable the operator to deliver the remaining time of its singular treatment
+field.
 
-The user will have an action button that sends the plan to the external app. Once this action is triggered, the user should be alerted that the last treatment was not completed and asked to send the remaining plan or the complete plan.
-
-The external app will be triggered that the plan is pending for load and will recalculate the time according to the latest treatment completion status.
+The user action shall alert when the last treatment was incomplete and offer either the
+remaining scalar emission or the complete scalar emission. The external application shall
+recalculate time from the latest treatment completion status.
 
 .. image:: _images/RQ-H10SG-422.png
 <<<
@@ -526,9 +528,14 @@ UID: RQ-H10SG-184
 TYPE: Functional
 TITLE: Patients - Plan View - Load For Treatment
 STATEMENT: >>>
-The application shall have a user interface that allows users to Load the plan into the external application and enable the user to activate the patient's treatment.
+The application shall have a user interface that allows users to load the plan into the external application and enable the user to activate the patient's treatment.
 
-The user will have an action button that sends the plan to the external. Once this action is triggered, the plan shall be visible in external application.
+The user shall have an action button that sends the plan to the external application. Once this action is accepted, the plan shall be visible in the external application.
+
+An accepted load shall be made available consistently to every connected client.
+
+Before a plan is accepted for loading, the application shall require exactly one valid
+treatment field. A missing, additional, or invalid field shall be rejected.
 <<<
 
 [REQUIREMENT]
@@ -931,7 +938,8 @@ The application shall provide the operator with an interface displaying the hist
 
 The quality checks report will be filtered by the type of collimator it was tested with, its energy, SSD, and the date it was performed.
 
-The report will include a table the current and the deviation from the referenced test for each operational point.
+The report shall show the current, measured intensity, and deviation from the referenced
+test for each requested QA emission.
 <<<
 
 [REQUIREMENT]
@@ -949,7 +957,7 @@ TITLE: Service - System's Signals
 STATEMENT: >>>
 The application shall have a user interface allowing the service engineer to view semantic
 real-time system signals decoded from the board telemetry according to the reported
-firmware version and mode.
+firmware mode.
 
 The System Signals to be presented are:
 
@@ -1028,10 +1036,6 @@ The System Signals to be presented are:
 +--------------------+-------------------------+-------+
 | General            | Buttons                 | [Raw] |
 +--------------------+-------------------------+-------+
-| Operational Points | Current Point           |       |
-+--------------------+-------------------------+-------+
-| Operational Points | Total Points            |       |
-+--------------------+-------------------------+-------+
 | Timers             | Internal Timer State    |       |
 +--------------------+-------------------------+-------+
 | Timers             | Internal Timer Value    | [sec] |
@@ -1045,9 +1049,8 @@ The System Signals to be presented are:
 | Timers             | Timer 2 Value           | [sec] |
 +--------------------+-------------------------+-------+
 
-Fields not supplied by the selected firmware mode shall be shown as unavailable. The
-service interface shall also show the current latched fault records with each record's
-category, formatted message, captured system state, and captured runtime.
+The service interface shall display the signals supported by the reported firmware mode
+and the current latched fault information.
 
 .. image:: _images/RQ-H10SG-65.png
 <<<

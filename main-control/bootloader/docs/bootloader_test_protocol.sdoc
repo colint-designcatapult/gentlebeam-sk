@@ -139,23 +139,26 @@ RELATIONS:
 UID: TC-H1FWMCBOOT-8
 TITLE: Functional 2
 STATEMENT: >>>
-The main control bootloader firmware shall be able to write a specified flash memory page with provided data from the PC.
+The main control bootloader firmware shall write 512 bytes of PC-provided data to application-relative
+flash page indices from 0 through 2519.
 <<<
 PREREQUISITES: >>>
 1. The system is ready to start.
-2. Flash memory is present which contains firmware application.
+2. A bootloader-compatible application image contains programmed data in application-relative
+   flash pages 0 and 2519.
 <<<
 STEPS: >>>
-1. Start the system from power
-2. Don’t load any treatment plan.
-3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory but terminate the PC utility partway through.
-4. Record the utility log to ensure the application writes data to flash memory
+1. Start the system from power.
+2. Use the Bootloader utility to request bootloader mode.
+3. Use the Bootloader utility to load the application image through application-relative page 2519.
+4. Record the Bootloader utility log for the write operations.
+5. Power cycle the system after the utility reports that loading is complete.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system is started up successfully
-2. The system doesn’t have any treatment plan loaded on it.
-3. The system is off
-4. The system is started up successfully
+1. The system starts successfully and enters bootloader mode.
+2. The utility reports successful writes for application-relative pages 0 and 2519.
+3. The utility completes the application load without rejecting page 2519.
+4. After the power cycle, the loaded application starts successfully.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -166,23 +169,25 @@ RELATIONS:
 UID: TC-H1FWMCBOOT-9
 TITLE: Functional 3
 STATEMENT: >>>
-The main control bootloader firmware shall be able to erase a predetermined area of flash memory corresponding to the application firmware programming area.
+Upon an erase command, the main control bootloader firmware shall erase 2520 flash pages beginning
+at flash page 240.
 <<<
 PREREQUISITES: >>>
 1. The system is ready to start.
-2. Flash memory is present which contains firmware application.
+2. Using the MCU programming or debug interface, program a non-erased test pattern throughout
+   flash pages 240 through 2759.
 <<<
 STEPS: >>>
-1. Start the system from power
-2. Don’t load any treatment plan.
-3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory
-4. Record the utility log to ensure the application erases MCU memory
+1. Start the system from power.
+2. Use the Bootloader utility to request bootloader mode.
+3. Use the Bootloader utility to issue the erase command.
+4. Record the Bootloader utility log.
+5. Using the MCU programming or debug interface, blank-check flash pages 240 through 2759.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system is starting successfully
-2. The system doesn’t have any treatment plan loaded on it.
-3. The new firmware application is loaded successfully
-4. Record the utility log to ensure the application erases MCU memory
+1. The system starts successfully and enters bootloader mode.
+2. The utility reports that the erase operation completed.
+3. Every byte in flash pages 240 through 2759 is in the erased state.
 <<<
 RELATIONS:
 - TYPE: Parent

@@ -96,8 +96,8 @@ void pc_comm_init()
 	expected_data_count[PCCOM_WARMUP_CMD] = WARMUP_CMD_COUNT;
 	response_data_count[PCCOM_WARMUP_CMD] = WARMUP_CMD_COUNT;	
 	
-	expected_data_count[PCCOM_NEW_SESSION] = NEW_SES_CMD_COUNT;
-	response_data_count[PCCOM_NEW_SESSION] = NEW_SES_CMD_COUNT;
+	expected_data_count[PCCOM_NEW_SESSION] = NEW_SES_REQ_COUNT;
+	response_data_count[PCCOM_NEW_SESSION] = NEW_SES_RES_COUNT;
 	
 	expected_data_count[PCCOM_LOAD_OP] = OP_CMD_COUNT;
 	response_data_count[PCCOM_LOAD_OP] = OP_CMD_COUNT;

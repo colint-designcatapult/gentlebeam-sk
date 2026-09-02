@@ -28,6 +28,7 @@ Design notes:
 """
 
 import re
+from datetime import datetime, timezone
 import sys
 import json
 from pathlib import Path
@@ -42,12 +43,20 @@ def to_camel(snake: str) -> str:
 
 
 def pg_ts_to_rfc3339(ts: str) -> str:
-	"""'2026-01-13 16:17:43.962'  ->  '2026-01-13T16:17:43.962Z'"""
-	ts = ts.strip()
-	# date-only  e.g. '1998-11-14'
-	if re.fullmatch(r"\d{4}-\d{2}-\d{2}", ts):
-		return ts + "T00:00:00Z"
-	return ts.replace(" ", "T") + "Z"
+	"""Convert PostgreSQL timestamps to canonical UTC RFC-3339."""
+	value = ts.strip().replace(" ", "T")
+	if value.endswith("Z"):
+		value = value[:-1] + "+00:00"
+
+	parsed = datetime.fromisoformat(value)
+	if parsed.tzinfo is None:
+		# The legacy PostgreSQL columns are timestamp-without-time-zone values.
+		# Preserve the prior migration behavior by treating them as UTC.
+		parsed = parsed.replace(tzinfo=timezone.utc)
+	else:
+		parsed = parsed.astimezone(timezone.utc)
+
+	return parsed.isoformat().replace("+00:00", "Z")
 
 
 def decode_bytea(val: str) -> str | None:
@@ -101,6 +110,9 @@ PARENT_ID_COL = {
 	"series":                  "diagnosis_id",
 	"photo":                   "diagnosis_id",
 	"collimator":              "collimator_configuration_id",
+	"qcsample":                "collimator_configuration_id",
+	"qcsample_field":          "qcsample_id",
+	"intensity":               "qcsample_fields_id",
 }
 
 # SQLite table name for each PostgreSQL table name.

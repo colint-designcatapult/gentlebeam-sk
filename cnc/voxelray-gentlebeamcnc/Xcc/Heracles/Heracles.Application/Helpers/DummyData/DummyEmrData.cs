@@ -278,30 +278,17 @@ namespace Heracles.Application.Helpers.DummyData
                             };
 
                             plan = EmrPlanCommands.CreateAsync(plan).GetAwaiter().GetResult();
-                            // add treatment fields:
-                            var fieldNameMapping = TargetTypeConverter.GetIndexToTreatmentFieldNameMapping(plan.CollimatorType).ToArray();
-                            IList<TreatmentFieldName> fieldNames = (fieldNameMapping.Count() > 1)
-                                ? [
-                                    fieldNameMapping.First().Value,
-                                    fieldNameMapping[fieldNameMapping.Length / 2].Value,
-                                    fieldNameMapping.Last().Value,
-                                ]
-                                : [fieldNameMapping.First().Value];
-
-                            var treatmentFieldsList = new List<ITreatmentField>();
-                            for (var i = 0; i < fieldNames.Count; i++)
-                            {
-                                ITreatmentField tf = new TreatmentField
+                            // add the single clinical treatment field:
+                            ITreatmentField treatmentField = EmrTreatmentFieldCommands.CreateAsync(
+                                new TreatmentField
                                 {
                                     DwellTime = dwellTime,
-                                    Name = fieldNames[i],
+                                    Name = TreatmentPlanFieldRules.RequiredFieldName,
                                     PlanId = plan.Id,
                                     Energy = prescribedEnergy,
                                     Current = CurrentCalculator.CalculateCurrent(prescribedEnergy),
                                     CalculatedDose = doseRate * dwellTime / 60
-                                };
-                                treatmentFieldsList.Add(EmrTreatmentFieldCommands.CreateAsync(tf).GetAwaiter().GetResult());
-                            }
+                                }).GetAwaiter().GetResult();
 
                             // Add treatment history
                             int treatmentRecords = plan.Id % 2 == 0 ? 1 : 2;
@@ -332,20 +319,17 @@ namespace Heracles.Application.Helpers.DummyData
                                     }).GetAwaiter().GetResult();
 
                                 bool incompleteField = makeUncompleteTreatment && treatmentIndex == treatmentRecords;
-                                foreach (var tf in treatmentFieldsList)
-                                {
-                                    EmrActualTreatmentFieldCommands.CreateAsync(
-                                        new ActualTreatmentField(tf)
-                                        {
-                                            TreatmentId = treatment.Id,
-                                            CreationDate = DateTime.Now,
-                                            ActualDuration = (incompleteField) ? tf.DwellTime / 2 : tf.DwellTime,
-                                            Completed = (incompleteField) ? 0 : 1,
-                                            ActualCurrent = tf.Current,
-                                            ActualDose = tf.CalculatedDose,
-                                            ActualEnergy = (double)tf.Energy
-                                        }).GetAwaiter().GetResult();
-                                }
+                                EmrActualTreatmentFieldCommands.CreateAsync(
+                                    new ActualTreatmentField(treatmentField)
+                                    {
+                                        TreatmentId = treatment.Id,
+                                        CreationDate = DateTime.Now,
+                                        ActualDuration = (incompleteField) ? treatmentField.DwellTime / 2 : treatmentField.DwellTime,
+                                        Completed = (incompleteField) ? 0 : 1,
+                                        ActualCurrent = treatmentField.Current,
+                                        ActualDose = treatmentField.CalculatedDose,
+                                        ActualEnergy = (double)treatmentField.Energy
+                                    }).GetAwaiter().GetResult();
                             }
 
                             // Add some photos:

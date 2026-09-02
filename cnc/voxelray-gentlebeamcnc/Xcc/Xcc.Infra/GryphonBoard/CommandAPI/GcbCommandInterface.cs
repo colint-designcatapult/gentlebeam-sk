@@ -14,7 +14,7 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
     {
         #region Constants
         private const int DelayAfterSendRequestFailureMilliseconds = 1000;
-        private const int AutoExecutionFieldValue = 1;
+        private const int QcbResponseFieldCount = 5;
         #endregion Constants
 
         public GcbCommandInterface(
@@ -102,9 +102,9 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
         }
         
 
-        public async Task<GcbSession> NewSession(int totalPoints)
+        public async Task<GcbSession> NewSession()
         {
-            byte[] data = GcbXRayCommandOperator.GenerateNewSessionCmd(totalPoints);
+            byte[] data = GcbXRayCommandOperator.GenerateNewSessionCmd();
             byte[] responseData = await SendRequestSeveralTimes(data);
 
             UdpPacket responsePacket = ParseAndValidateResponseData(responseData, GCBPacketType.NewSessionResponse, expectedPayloadLength: 2);
@@ -121,7 +121,7 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             _ = LogWriter.LogAsync(msg, LogRecordSeverity.Info, LogRecordType.System);
 #endif
 
-            return new GcbSession(sessionId, totalPoints);
+            return new GcbSession(sessionId);
         }
 
         public async Task Stop()
@@ -240,6 +240,11 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             var responsePacket = ParseAndValidateResponseData(responseData, GCBPacketType.WarmupResponse, expectedPayloadLength: 1);
 
             var status = (GcbProcessingStatus)(int)responsePacket[0];
+            if (status == GcbProcessingStatus.AccessError)
+            {
+                throw new Exception("Cannot start warmup from the current state; verify both E-stops are released");
+            }
+
             if (status != GcbProcessingStatus.OK)
             {
                 throw new Exception($"Failed to complete 'WarmUp' command with status: {status}");
@@ -249,6 +254,47 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             string msg = $"GCB 'WarmUp' command status: {status}";
             _ = LogWriter.LogAsync(msg, LogRecordSeverity.Info, LogRecordType.System);
 #endif
+        }
+
+        public async Task<bool> PingQcb()
+        {
+            byte[] data = GcbXRayCommandOperator.GenerateQcbPingCmd();
+            byte[] responseData = await SendRequestSeveralTimes(data);
+            UdpPacket response = ParseAndValidateResponseData(
+                responseData,
+                GCBPacketType.QcbPingResponse,
+                QcbResponseFieldCount);
+            return Math.Abs((float)response[0] - 1.0f) < float.Epsilon;
+        }
+
+        public async Task StartQcbReadings(int samplingWindowMs)
+        {
+            byte[] data = GcbXRayCommandOperator.GenerateQcbReadingsCmd(1, samplingWindowMs);
+            byte[] responseData = await SendRequestSeveralTimes(data);
+            ParseAndValidateResponseData(
+                responseData,
+                GCBPacketType.QcbReadingsCommandResponse,
+                QcbResponseFieldCount);
+        }
+
+        public async Task<Xcc.Core.Domain.QualityCheck.QcReadings> StopQcbReadings()
+        {
+            byte[] data = GcbXRayCommandOperator.GenerateQcbReadingsCmd(2, 0);
+            byte[] responseData = await SendRequestSeveralTimes(data);
+            UdpPacket response = ParseAndValidateResponseData(
+                responseData,
+                GCBPacketType.QcbReadingsCommandResponse,
+                QcbResponseFieldCount);
+
+            var readings = new float[QcbResponseFieldCount];
+            readings[0] = response[0];
+            readings[1] = response[1];
+            // Response index 2 is the firmware sample count, not a diode value.
+            uint sampleCount = response[2];
+            readings[2] = 0;
+            readings[3] = response[3];
+            readings[4] = response[4];
+            return new Xcc.Core.Domain.QualityCheck.QcReadings(readings, sampleCount);
         }
 
         public async Task SendHvpsKv(float kvSetpoint, float powerSetpoint)
@@ -366,9 +412,9 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             }
         }
 
-        public async Task SendCoils(float xCoil, float yCoil, float fCoil)
+        public async Task SendCoils(float xCoilMilliamps, float yCoilMilliamps, float fCoilMilliamps)
         {
-            byte[] data = GcbXRayCommandOperator.GenerateCalibrationCoilsCmd(xCoil, yCoil, fCoil);
+            byte[] data = GcbXRayCommandOperator.GenerateCalibrationCoilsCmd(xCoilMilliamps, yCoilMilliamps, fCoilMilliamps);
 
             _ = LogWriter.LogAsync(
                 $"[COILS] Sending {data.Length} bytes: {BitConverter.ToString(data)}",
@@ -394,7 +440,7 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 }
 
 #if DEBUG
-                string msg = $"GCB 'SendCoils' command status: {status} (X:{xCoil:F3}A, Y:{yCoil:F3}A, Focus:{fCoil:F3}A)";
+                string msg = $"GCB 'SendCoils' command status: {status} (X:{xCoilMilliamps:F0}mA, Y:{yCoilMilliamps:F0}mA, Focus:{fCoilMilliamps:F0}mA)";
                 _ = LogWriter.LogAsync(msg, LogRecordSeverity.Info, LogRecordType.System);
 #endif
             }
@@ -606,9 +652,9 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             }
         }
 
-        public async Task<GcbOperationalPoint> QueryPoint(int pointIndex)
+        public async Task<GcbOperationalPoint> QueryPoint()
         {
-            byte[] data = GcbXRayCommandOperator.GenerateOperationalPointQueryCmd(pointIndex);
+            byte[] data = GcbXRayCommandOperator.GenerateOperationalPointQueryCmd();
             byte[] responseData = await SendRequestSeveralTimes(data);
 
             return ParseOperationalPointData(responseData);
@@ -720,65 +766,49 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
 
         private GcbOperationalPoint ParseOperationalPointData(byte[] responseData)
         {
-
             if (responseData == null || responseData.Length == 0)
             {
-                throw new Exception($"Failed to parse OperationalPoint data: no response.");
+                throw new Exception("Failed to parse OperationalPoint data: no response.");
             }
 
-            // Response fields
-            //1   Processing status of Query  Enum Integer Enumeration value indicating status(see information below)
-            //2   Return value for Point Index    Count   Integer The index of the point within the treatment plan
-            //3   Return value for Total Point Time   sec Float   The total execution time of the point
-            //4   Return value for Remaining Point Time   sec Float   The remaining execution time of the point
-            //5   Return value for kV setpoint    kV  Float   The kV for the point
-            //6   Return value for Target mA  mA  Float   The mA for the point
-            //7   Return value for Filament Setpoint  mA  Float   The filament current for the point
-            //8   Return value for X Coil Setpoint    mA  Float   The x coil current for the point
-            //9   Return value for Y Coil Setpoint    mA  Float   The y coil current for the point
-            //10  Return value for Focus Coil Setpoint    mA  Float   The focus coil current for the point
-            //11  Return value for auto - execute flag  N / A N / A The auto - execute setting for the point
-
-            UdpPacket responsePacket = ParseAndValidateResponseData(responseData, GCBPacketType.OperationalPointQueryResponse, expectedPayloadLength: 11);
+            UdpPacket responsePacket = ParseAndValidateResponseData(
+                responseData,
+                GCBPacketType.OperationalPointQueryResponse,
+                expectedPayloadLength: 9);
 
             var status = (GcbProcessingStatus)(int)responsePacket[0];
             if (status != GcbProcessingStatus.OK)
             {
-                throw new Exception($"Failed to parse OperationalPoint data: status = {status.ToString()}");
+                throw new Exception($"Failed to parse OperationalPoint data: status = {status}");
             }
-            return new GcbOperationalPoint()
+
+            return new GcbOperationalPoint
             {
-                PointIndex = responsePacket[1],
-                TotalPointTime = responsePacket[2],
-                // initial remaining time is the same as the regular remaining time here,
-                // as the board's time value is ground truth to us:
-                InitialRemainingPointTime = responsePacket[3],
-                RemainingPointTime = responsePacket[3],
-                SetpointKv = responsePacket[4],
-                TargetMA = responsePacket[5],
-                FilamentSetpoint = responsePacket[6],
-                XCoilSetpoint = responsePacket[7],
-                YCoilSetpoint = responsePacket[8],
-                FocusCoilSetpoint = responsePacket[9],
-                AutoExecution = responsePacket[10] == AutoExecutionFieldValue
+                TotalPointTime = responsePacket[1],
+                InitialRemainingPointTime = responsePacket[2],
+                RemainingPointTime = responsePacket[2],
+                SetpointKv = responsePacket[3],
+                TargetMA = responsePacket[4],
+                FilamentSetpoint = responsePacket[5],
+                XCoilSetpoint = responsePacket[6],
+                YCoilSetpoint = responsePacket[7],
+                FocusCoilSetpoint = responsePacket[8]
             };
         }
 
         private void CheckOperationalPointStatusesResponse(byte[] data)
         {
             if (data == null)
-                throw new ArgumentNullException($"Failed to complete 'OperationalPoint' command: no response data.");
+                throw new ArgumentNullException("Failed to complete 'OperationalPoint' command: no response data.");
 
             UdpPacket packet = new(data);
-
-            const int expectedDataLength = 11; // according to the protocol
+            const int expectedDataLength = 9;
 
             if (packet.PayloadLength != expectedDataLength)
-                throw new Exception($"Failed to complete 'OperationalPoint' command: invalid response data lenght ({packet.PayloadLength})");
+                throw new Exception($"Failed to complete 'OperationalPoint' command: invalid response data length ({packet.PayloadLength})");
 
             string[] fieldNames =
             [
-                "Processing status for [Point Index]",
                 "Processing status for [Total Point Time]",
                 "Processing status for [Remaining Point Time]",
                 "Processing status for [kV setpoint]",
@@ -787,20 +817,17 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 "Processing status for [X Coil Setpoint]",
                 "Processing status for [Y Coil Setpoint]",
                 "Processing status for [Focus Coil Setpoint]",
-                "Processing status for [Auto-Execute Flag]",
                 "Processing status for [Authentication]"
             ];
 
             for (int i = 0; i < expectedDataLength; i++)
             {
                 GcbProcessingStatus status = (GcbProcessingStatus)(uint)packet[i];
-
                 if (status != GcbProcessingStatus.OK)
                 {
                     string msg = $"GCB 'OperationalPoint' command response data: {BitConverter.ToString(packet.Buffer)}";
                     _ = LogWriter.LogAsync(msg, LogRecordSeverity.Warn, LogRecordType.Error);
-
-                    throw new Exception($"Failed to complete 'OperationalPoint' command: {fieldNames[i]} = {status.ToString()}, value = {(uint)packet[i]}"); //throws on any first bad status
+                    throw new Exception($"Failed to complete 'OperationalPoint' command: {fieldNames[i]} = {status}, value = {(uint)packet[i]}");
                 }
             }
         }

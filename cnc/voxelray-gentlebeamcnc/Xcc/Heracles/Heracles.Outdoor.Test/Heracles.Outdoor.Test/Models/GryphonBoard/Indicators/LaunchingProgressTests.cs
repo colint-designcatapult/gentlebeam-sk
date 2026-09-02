@@ -10,114 +10,65 @@ namespace Heracles.Outdoor.Test.Models.GryphonBoard.Indicators
 {
     internal class LaunchingProgressTests
     {
-        private const float FILAMENT_SETPOINT_VALUE = 3500.0f;
-        private static GcbEmissionPlan emissionPlan = MakeTestPlan(points: 3, filamentSetpoint: FILAMENT_SETPOINT_VALUE);
-        private Mock<IMainBoardModel> mockMainBoardModel;
-        public LaunchingProgress LaunchingProgress { get; private set; }
+        private const float FilamentSetpoint = 3500.0f;
+        private LaunchingProgress progress;
 
-        private static GcbEmissionPlan MakeTestPlan(int points, float filamentSetpoint)
-        {
-            GcbEmissionPlan plan = new GcbEmissionPlan();
-            for (int i = 0; i < points; i++)
-            {
-                plan.AddPoint(new GcbOperationalPoint { FilamentSetpoint = filamentSetpoint, PointIndex = i });
-            }
-            return plan;
-        }
-
-        private static ISystemTelemetry MakeSystemTelemetry(GcbStateNew state, int pointIndex, float filamentFeedback) =>
+        private static ISystemTelemetry MakeSystemTelemetry(
+            GcbStateNew state,
+            float filamentFeedback) =>
             new SystemNormalTelemetry
             {
                 ControlBoardState = state,
-                CurrentOperationalPoint = pointIndex,
                 HeaterCurrentFeedback = filamentFeedback,
             };
 
         [SetUp]
         public void Setup()
         {
-            mockMainBoardModel = new();
-            mockMainBoardModel.SetupGet(m => m.CurrentPlan).Returns(emissionPlan);
-            LaunchingProgress = new LaunchingProgress(mockMainBoardModel.Object);
+            var mainBoard = new Mock<IMainBoardModel>();
+            mainBoard.SetupGet(model => model.CurrentEmission)
+                .Returns(new GcbOperationalPoint
+                {
+                    FilamentSetpoint = FilamentSetpoint
+                });
+            progress = new LaunchingProgress(mainBoard.Object);
         }
 
         [Test]
-        public void NoLaunchingTelemetryTest()
+        public void IgnoresMissingAndNonLaunchingTelemetry()
         {
-            LaunchingProgress.OnSystemTelemetryChanged(null);
-            Assert.That(LaunchingProgress.Value, Is.EqualTo(0));
+            progress.OnSystemTelemetryChanged(null);
+            progress.OnSystemTelemetryChanged(
+                MakeSystemTelemetry(GcbStateNew.Cold, 0));
 
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Cold, 0, 0));
-            Assert.That(LaunchingProgress.Value, Is.EqualTo(0));
+            Assert.That(progress.Value, Is.Zero);
         }
 
         [Test]
-        public void LaunchingTelemetryZeroSetpointTest()
+        public void ReportsScalarEmissionLaunchingProgress()
         {
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 0, 0));
-            Assert.That(LaunchingProgress.Value, Is.EqualTo(0));
+            const float initial = 2500;
+            progress.OnSystemTelemetryChanged(
+                MakeSystemTelemetry(GcbStateNew.Launching, initial));
+            progress.OnSystemTelemetryChanged(
+                MakeSystemTelemetry(
+                    GcbStateNew.Launching,
+                    initial + (FilamentSetpoint - initial) / 2));
+
+            Assert.That(progress.Value, Is.EqualTo(50).Within(1));
         }
 
         [Test]
-        public void LaunchingTelemetryPositiveIncrementTest()
+        public void RetainsCompletedProgressThroughDischarge()
         {
-            float initialSetpoint = 2500;
-            float setpoint50percent = initialSetpoint + (FILAMENT_SETPOINT_VALUE - initialSetpoint) / 2;
+            progress.OnSystemTelemetryChanged(
+                MakeSystemTelemetry(GcbStateNew.Launching, 2500));
+            progress.OnSystemTelemetryChanged(
+                MakeSystemTelemetry(GcbStateNew.Emission, 2600));
+            progress.OnSystemTelemetryChanged(
+                MakeSystemTelemetry(GcbStateNew.Discharge, 2600));
 
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 0, initialSetpoint));
-            Assert.That(LaunchingProgress.Value, Is.EqualTo(0));
-
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 0, initialSetpoint + 100));
-            Assert.That(LaunchingProgress.Value, Is.GreaterThan(0));
-
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 0, setpoint50percent));
-            Assert.That(Math.Abs(LaunchingProgress.Value - 50), Is.LessThan(1)); // value is close to 50%
-        }
-
-        [Test]
-        public void RetainsCompletedProgressThroughTerminationTest()
-        {
-            float initialSetpoint = 2500;
-
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 0, initialSetpoint));
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 0, initialSetpoint + 100));
-            Assert.That(LaunchingProgress.Value, Is.GreaterThan(0));
-
-            // Doesn't reset in emission state
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Emission, 0, initialSetpoint + 100));
-            Assert.That(LaunchingProgress.Value, Is.EqualTo(100));
-
-            // Termination preserves completed progress while hardware discharges
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Termination, 0, initialSetpoint + 100));
-            Assert.That(LaunchingProgress.Value, Is.EqualTo(100));
-
-        }
-
-        [Test]
-        public void LaunchingTelemetryOverflowTest()
-        {
-            float initialSetpoint = 2500;
-            float setpoint50percent = initialSetpoint + (FILAMENT_SETPOINT_VALUE - initialSetpoint) / 2;
-
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 0, initialSetpoint));
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 0, FILAMENT_SETPOINT_VALUE * 2));
-            Assert.That(LaunchingProgress.Value, Is.EqualTo(100));
-        }
-
-        [Test]
-        public void LaunchingTelemetryPointSwitchTest()
-        {
-            float initialSetpoint = 2500;
-            float setpoint50percent = initialSetpoint + (FILAMENT_SETPOINT_VALUE - initialSetpoint) / 2;
-
-            // Set and update progress for point #0
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 0, initialSetpoint));
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 0, initialSetpoint + 100));
-            Assert.That(LaunchingProgress.Value, Is.GreaterThan(0));
-
-            // Set progress for point #1
-            LaunchingProgress.OnSystemTelemetryChanged(MakeSystemTelemetry(GcbStateNew.Launching, 1, initialSetpoint));
-            Assert.That(LaunchingProgress.Value, Is.EqualTo(0));
+            Assert.That(progress.Value, Is.EqualTo(100));
         }
     }
 }

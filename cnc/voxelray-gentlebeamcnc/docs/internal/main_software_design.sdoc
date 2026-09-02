@@ -65,7 +65,7 @@ TITLE: Overview
 
 [TEXT]
 STATEMENT: >>>
-The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans. It communicates with the record and verify component and flange camera stream.
+The Internal GUI SW provides a means for the user to maintain demographic patient data, including treatment plans. It communicates with the database and flange camera stream.
 
 The internal GUI software runs on an industrial PC located at the base of the system
 <<<
@@ -103,7 +103,7 @@ Main Modules
 
 The design of the application is based on the MVVM pattern. There are three core components in the MVVM pattern: the model, the view, and the view model. Each serves a distinct purpose. The diagram below shows the relationships between the three components.
 
-The MVVN design pattern is implemented in the application as follows: the 4 th layer is the gRPC wrapper for communication with Record and Verify services.
+The MVVN design pattern is implemented in the application as follows: the 4 th layer is the gRPC wrapper for communication with database services.
 <<<
 
 [[/SECTION]]
@@ -1047,13 +1047,15 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H10SG-676
-TITLE: Register New Collimator Flow
+TITLE: Register and Update Collimator Flow
 STATEMENT: >>>
-1. First, Identify the connected collimator
+1. Identify the connected collimator.
 
-2. Open the New Collimator form with the serial of the identified collimator
+2. Open the New Collimator form with the serial of the identified collimator, or open the Edit Collimator form for a registered collimator.
 
-3. Save data to the database.
+3. When the user saves the form, the target-management view model passes the selected Active value to the collimator service. The service passes that value to the repository when creating a collimator and copies it to the updated collimator when editing one, so the repository persists the selected value in the Collimator table's ``IsActive`` field.
+
+Before the collimator model is populated, the service fetches the active Head record. If none is active, the repository reactivates the existing Head with serial ``00000`` or, when that record does not exist, creates it as active with the current creation date. The resulting active Head is used as the foreign-key parent when a new collimator is saved. Head persistence requests include the creation date.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1064,6 +1066,9 @@ RELATIONS:
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H10SG-383
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-128
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1236,6 +1241,10 @@ The quality check history shall include the following fields:
  - Collimator configuration
 
 The report will be retrieved from the database using the QcSampleService.
+
+Each result row is keyed to a requested QA emission rather than a firmware point index. The
+report presents its emission current, measured intensities, and deviations from the matching
+reference result without creating rows for emissions that were not requested.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1261,9 +1270,20 @@ RELATIONS:
 UID: SW-H10SG-687
 TITLE: Load For Treatment Flow
 STATEMENT: >>>
-The application will be locked when a user loads a plan in the external application. 
-The application shall create a Plan DB Event.
-When the application receives a Plan DB Event, the internal screen shall be locked.
+When a user loads a plan in the external application, the plan service persists the Pending plan and publishes it to both the ``PlanEvents`` and ``LoadForTreatmentEvents`` streams.
+
+Each stream uses a broadcast event hub with an independent queue for every active subscriber. Publishing writes the same event to every subscriber instead of allowing subscribers to compete for one shared channel item. Stream cancellation removes that subscriber's queue.
+
+The external application loads the plan from its load-for-treatment event. Every internal application subscribed to the plan event receives the same update and locks its plan screen.
+
+For an incomplete treatment, the internal application prompts the user to choose the
+remaining scalar emission or the complete scalar emission before publishing the selected
+plan. The external application recalculates the scalar treatment time from the latest
+treatment completion status.
+
+The shared treatment-plan validation runs before a plan is accepted for load. It permits
+one valid treatment field and rejects missing, additional, or invalid fields before the
+firmware-session preparation path receives the plan.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1271,6 +1291,9 @@ RELATIONS:
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H10SG-185
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-422
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1462,31 +1485,46 @@ RELATIONS:
 UID: SW-H10SG-698
 TITLE: Retrieve Treatment History Sequence
 STATEMENT: >>>
-Sequence diagram for retrieving treatment data:
+Sequence diagram for retrieving treatment history when the selected plan changes:
 
 .. raw:: html
 
    <pre class="mermaid">
    sequenceDiagram
-    participant TreatmentsView
-    participant TreatmentsViewModel
-    participant TreatmentHistoryModel
-    participant EmrGrpcTreatmentCommands
+    box rgb(245, 245, 245) Application
+        participant TreatmentsViewModel
+        participant TreatmentHistoryModel
+        participant IEmrTreatmentCommands
+        participant IEmrActualTreatmentFieldCommands
+    end
 
-    Note over TreatmentsView: OnLoad
-    TreatmentsView->>TreatmentsViewModel: FetchTreatmentsDataAsync
-    activate TreatmentsViewModel
-    TreatmentsViewModel->>TreatmentHistoryModel: FetchTreatmentsAsync
+    box rgb(245, 245, 245) Server
+        participant TreatmentService
+        participant TreatmentFieldService
+    end
+
+    Note over TreatmentsViewModel: TreatmentInfoStore.PlanChanged
+    alt [different plan selected]
+        TreatmentsViewModel->>TreatmentHistoryModel: SetContext(diagnosis, prescription, plan)
+        TreatmentsViewModel->>TreatmentHistoryModel: FetchTreatmentsAsync()
+    else [same plan refreshed]
+        TreatmentsViewModel->>TreatmentHistoryModel: UpdateTreatmentsAsync()
+    end
     activate TreatmentHistoryModel
-    TreatmentHistoryModel->>EmrGrpcTreatmentCommands: QueryTreatmentsListAsync
-    activate EmrGrpcTreatmentCommands
-    EmrGrpcTreatmentCommands->>EmrGrpcTreatmentCommands: ReadAsync
-    EmrGrpcTreatmentCommands-->>TreatmentHistoryModel: Return Treatments History
-    deactivate EmrGrpcTreatmentCommands
-    TreatmentHistoryModel-->>TreatmentsViewModel: Return Treatments History
+    TreatmentHistoryModel->>IEmrTreatmentCommands: ReadListAsync(plan.Id)
+    IEmrTreatmentCommands->>TreatmentService: grpc:ListTreatmentsRequest
+    TreatmentService-->>IEmrTreatmentCommands: grpc:ListTreatmentsResponse
+    IEmrTreatmentCommands-->>TreatmentHistoryModel: treatments
+    loop [for each treatment in ID order]
+        TreatmentHistoryModel->>IEmrActualTreatmentFieldCommands: ReadListAsync(treatment.Id)
+        IEmrActualTreatmentFieldCommands->>TreatmentFieldService: grpc:ListActualTreatmentFieldsRequest
+        TreatmentFieldService-->>IEmrActualTreatmentFieldCommands: grpc:ListActualTreatmentFieldsResponse
+        IEmrActualTreatmentFieldCommands-->>TreatmentHistoryModel: actual treatment fields
+        TreatmentHistoryModel->>TreatmentHistoryModel: map field display names and add treatment
+    end
+    TreatmentHistoryModel->>TreatmentHistoryModel: update treatment history and summary
+    TreatmentHistoryModel-->>TreatmentsViewModel: observable data changed
     deactivate TreatmentHistoryModel
-    TreatmentsViewModel-->>TreatmentsView: Test
-    deactivate TreatmentsViewModel
    </pre>
 <<<
 RELATIONS:
@@ -1496,9 +1534,11 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H10SG-699
-TITLE: Retrieve Actual Treatment Fields
+TITLE: Display Actual Treatment Fields
 STATEMENT: >>>
-Sequence diagram for retrieving treatment history from the external system:
+Actual treatment fields are retrieved with their parent treatment as shown in
+``SW-H10SG-698``. The following sequence displays the fields for the treatment selected
+by the user:
 
 .. raw:: html
 
@@ -1507,22 +1547,11 @@ Sequence diagram for retrieving treatment history from the external system:
     participant TreatmentsView
     participant TreatmentsViewModel
     participant TreatmentHistoryModel
-    participant EmrGrpcTreatmentFieldCommands
 
-    Note over TreatmentsView: OnLoad
-    TreatmentsView->>TreatmentsViewModel: ShowActualFieldsCommand
-    activate TreatmentsViewModel
-    TreatmentsViewModel->>TreatmentHistoryModel: FetchTreatmentsAsync
-    activate TreatmentHistoryModel
-    TreatmentHistoryModel->>EmrGrpcTreatmentFieldCommands: QueryTreatmentsListAsync
-    activate EmrGrpcTreatmentFieldCommands
-    EmrGrpcTreatmentFieldCommands->>EmrGrpcTreatmentFieldCommands: ReadListAsync
-    EmrGrpcTreatmentFieldCommands-->>TreatmentHistoryModel: Return Actual Treatments Fields List
-    deactivate EmrGrpcTreatmentFieldCommands
-    TreatmentHistoryModel-->>TreatmentsViewModel: Return Actual Treatments Fields List
-    deactivate TreatmentHistoryModel
-    TreatmentsViewModel-->>TreatmentsView: Return Treatments History
-    deactivate TreatmentsViewModel
+    Note over TreatmentsView,TreatmentHistoryModel: Treatment history and actual fields have already been loaded
+    TreatmentsView->>TreatmentsViewModel: ShowActualFieldsCommand(treatment)
+    TreatmentsViewModel->>TreatmentHistoryModel: SelectedTreatment = treatment
+    TreatmentHistoryModel-->>TreatmentsView: property change exposes selected treatment fields
    </pre>
 <<<
 RELATIONS:
@@ -1548,48 +1577,49 @@ RELATIONS:
 UID: SW-H10SG-701
 TITLE: Retrieve Patient's Treatment Simulation
 STATEMENT: >>>
-Sequence diagram for retrieving patient's treatment simulation:
+Sequence diagram for retrieving the latest treatment simulation, its devices, and its
+patient positions when the user selects a site or requests a refresh:
 
 .. raw:: html
 
    <pre class="mermaid">
    sequenceDiagram
-    box rgb(245, 245, 245) Application
-        participant SimulationViewModel
-        participant TreatmentInfoStore
-        participant SimulationRepository
-        participant IEmrGrpcSimulationCommands
-    end
-    
-    box rgb(245, 245, 245) Server
-        participant SimulationService
+    participant SimulationViewModel
+    participant SimulationRepository
+    participant IEmrSimulationCommands
+    participant IEmrTreatmentDeviceCommands
+    participant IEmrPatientPositionCommands
+    participant TreatmentInfoStore
+
+    Note over SimulationViewModel: DiagnosisChanged, ReloadCommand, or PlanStatusChangedEvent
+    SimulationViewModel->>SimulationRepository: FetchLatestSimulationAsync(diagnosis.Id)
+    activate SimulationRepository
+    SimulationRepository->>IEmrSimulationCommands: ReadListAsync(diagnosis.Id)
+    IEmrSimulationCommands-->>SimulationRepository: simulations
+    SimulationRepository->>SimulationRepository: select simulation with greatest ID
+    SimulationRepository-->>SimulationViewModel: optional latest simulation
+    deactivate SimulationRepository
+
+    opt [simulation exists]
+        SimulationViewModel->>SimulationRepository: FetchTreatmentDevicesAsync(simulation.Id)
+        SimulationRepository->>IEmrTreatmentDeviceCommands: ReadListAsync(simulation.Id)
+        IEmrTreatmentDeviceCommands-->>SimulationRepository: treatment devices
+        SimulationRepository-->>SimulationViewModel: treatment devices
+
+        SimulationViewModel->>SimulationRepository: FetchPatientPositionsAsync(simulation.Id)
+        SimulationRepository->>IEmrPatientPositionCommands: ReadListAsync(simulation.Id)
+        IEmrPatientPositionCommands-->>SimulationRepository: patient positions
+        SimulationRepository-->>SimulationViewModel: patient positions
     end
 
-    Note over SimulationViewModel,IEmrGrpcSimulationCommands: User selects a site or refreshes its simulation
-    SimulationViewModel->>SimulationRepository: fetch simulation
-    activate SimulationRepository
-    SimulationRepository->>IEmrGrpcSimulationCommands: fetch site's simulation list
-    activate IEmrGrpcSimulationCommands
-    IEmrGrpcSimulationCommands->>SimulationService: grpc:ListSimulationsRequest
-    activate SimulationService
-    SimulationService->>SimulationService: handle request
-    SimulationService-->>IEmrGrpcSimulationCommands: grpc:ListSimulationsResponse
-    deactivate SimulationService
-    IEmrGrpcSimulationCommands-->>SimulationRepository: list of simulations
-    deactivate IEmrGrpcSimulationCommands
-    Note over SimulationRepository: select latest simulation
-    SimulationRepository-->>SimulationViewModel: [optional] simulation
-    deactivate SimulationRepository
-    SimulationViewModel->>TreatmentInfoStore: set current simulation
+    SimulationViewModel->>TreatmentInfoStore: SetSimulation(simulation, devices, positions)
+    TreatmentInfoStore-->>SimulationViewModel: simulation data changed
     SimulationViewModel->>SimulationViewModel: update simulation form
    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-88
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-422
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1672,9 +1702,10 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H10SG-705
-TITLE: Save log records sequence
+TITLE: Save Patient Audit Log Records
 STATEMENT: >>>
-Sequence diagram for saving audit log records during patient operations:
+Sequence diagram for registering the current user and patient data operation before and
+after a successful patient save. Log persistence is queued and assigns the record timestamp.
 
 .. raw:: html
 
@@ -1682,63 +1713,51 @@ Sequence diagram for saving audit log records during patient operations:
    sequenceDiagram
     box rgb(245, 245, 245) Application
         participant PatientsViewModel
-        participant PatientListModel
         participant ActionAuditService
-    end
-    
-    box rgb(245, 245, 245) Server
-        participant PatientService
-        participant LogService
+        participant DbLogRepository
+        participant PatientEditing
+        participant PatientListModel
+        participant PatientRepository
     end
 
-    PatientsViewModel->>PatientListModel: register action start
-    activate PatientListModel
-    PatientListModel->>ActionAuditService: register action start
-    activate ActionAuditService
-    ActionAuditService->>LogService: grpc:CreateRecord
-    activate LogService
-    Note over LogService: save log record
-    LogService-->>ActionAuditService: 
-    deactivate LogService
-    deactivate ActionAuditService
-    
-    PatientsViewModel->>PatientListModel: save patient
-    activate PatientService
-    
-    alt [create new patient]
-        PatientListModel->>PatientService: grpc:CreatePatient
-        activate PatientService
-        Note over PatientService: create new record
-        PatientService-->>PatientListModel: saved patient
-        deactivate PatientService
-    else [update existing patient]
-        PatientListModel->>PatientService: grpc:UpdatePatient
-        activate PatientService
-        Note over PatientService: update patient record
-        PatientService-->>PatientListModel: updated patient
-        deactivate PatientService
+    box rgb(245, 245, 245) Server
+        participant LogService
+        participant PatientService
     end
-    
-    PatientListModel-->>PatientsViewModel: saved patient
-    deactivate PatientService
-    
-    PatientsViewModel->>ActionAuditService: register action end
-    activate ActionAuditService
-    ActionAuditService->>LogService: grpc: CreateRecord
-    activate LogService
-    Note over LogService: save log record
-    LogService-->>ActionAuditService: 
-    deactivate LogService
-    deactivate ActionAuditService
-    deactivate PatientListModel
+
+    PatientsViewModel->>ActionAuditService: RegisterAction(save new patient or update patient ID)
+    ActionAuditService->>ActionAuditService: add current username and user ID
+    ActionAuditService->>DbLogRepository: LogAsync(user audit record; not awaited)
+    DbLogRepository->>LogService: CreateRecord
+    LogService-->>DbLogRepository: persisted record with timestamp
+
+    PatientsViewModel->>PatientEditing: SavePatientAsync()
+    PatientEditing->>PatientListModel: SavePatientAsync(patient)
+    alt [new patient]
+        PatientListModel->>PatientRepository: CreateAsync(patient)
+        PatientRepository->>PatientService: grpc:CreatePatient
+        PatientService-->>PatientRepository: created patient
+    else [existing patient]
+        PatientListModel->>PatientRepository: UpdateAsync(old patient, new patient)
+        PatientRepository->>PatientService: grpc:UpdatePatient
+        PatientService-->>PatientRepository: updated patient
+    end
+    PatientRepository-->>PatientListModel: saved patient
+    PatientListModel-->>PatientEditing: saved patient
+    PatientEditing-->>PatientsViewModel: saved patient
+
+    opt [save succeeded]
+        PatientsViewModel->>ActionAuditService: RegisterAction(save completed with patient ID)
+        ActionAuditService->>ActionAuditService: add current username and user ID
+        ActionAuditService->>DbLogRepository: LogAsync(user audit record; not awaited)
+        DbLogRepository->>LogService: CreateRecord
+        LogService-->>DbLogRepository: persisted record with timestamp
+    end
    </pre>
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-45
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H10SG-67
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -1746,12 +1765,18 @@ UID: SW-H10SG-708
 TITLE: Display System Telemetry
 STATEMENT: >>>
 The receive-only GCB telemetry service passes unsolicited device-information, telemetry,
-and fault datagrams to the system telemetry processor. Device information selects the
-corresponding normal or calibration parser. The selected parser translates the complete
-physical interlock status and required-interlock masks into ``SystemInterlocks`` while
-retaining both raw masks for service diagnostics. Valid immutable snapshots are published
-through the main-board model and GCB data store; unsupported versions or malformed packets
-do not replace the last valid snapshot. Publication is limited to one snapshot every
+and fault datagrams to the system telemetry processor. The operating mode in device
+information selects the corresponding normal or calibration parser. The selected parser
+translates the complete physical interlock status and required-interlock masks into
+``SystemInterlocks`` while retaining both raw masks for service diagnostics. The calibration
+parser validates the expanded 55-field payload while preserving fields 0 through 46. It
+maps the appended collimator-ID low and high words at fields 47 and 48, Mag 1 X/Y/Z at
+fields 49 through 51, and Mag 2 X/Y/Z at fields 52 through 54 into the same semantic
+snapshot properties as the normal parser.
+
+Valid immutable snapshots are published through the main-board model and GCB data store;
+unsupported modes or malformed packets do not replace the last valid snapshot. Publication
+is limited to one snapshot every
 250 ms, and 1.5 seconds without valid telemetry produces an unavailable snapshot.
 System readiness requires a clear buffered master-fault input, no active system fault,
 and all required interlocks to be available and active.

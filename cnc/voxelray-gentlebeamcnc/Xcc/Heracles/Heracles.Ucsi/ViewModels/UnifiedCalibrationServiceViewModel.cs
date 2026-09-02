@@ -293,6 +293,19 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private double _coilsCommandFocus;
     private bool _hvpsConnected = false;  // Backing field for HvpsConnected property
     private bool _versionInfoFetched = false;  // Track whether we've fetched firmware versions
+    private const int TelemetryFreshnessMilliseconds = 1_500;
+    private double _emissionKv;
+    private double _emissionPower;
+    private double _emissionFilament = 1_000;
+    private double _emissionDurationSeconds = 1;
+    private double _emissionXCoilAmps;
+    private double _emissionYCoilAmps;
+    private double _emissionFocusCoilAmps;
+    private CancellationTokenSource? _emissionSequenceCancellation;
+    private Task? _emissionSequenceTask;
+    private bool _emissionSequenceActive;
+    private bool _emissionStopInProgress;
+    private string _emissionSequenceStatus = "Idle.";
 
     public bool RefreshEnabled
     {
@@ -349,7 +362,8 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         IGcbCommandInterface commandInterface,
         ISystemTelemetryProcessor telemetryProcessor,
         IUcsiHvpsUartCommandInterface hvpsUartInterface,
-        SessionDataExportService exportService)
+        SessionDataExportService exportService,
+        IUcsiKeepaliveService keepaliveService)
     {
         _coordinator = coordinator;
         _catalog = catalog;
@@ -359,6 +373,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         _telemetryProcessor = telemetryProcessor;
         _hvpsUartInterface = hvpsUartInterface;
         _exportService = exportService;
+        keepaliveService.Start();
 
         ParameterOptions = new ObservableCollection<CheckableParameterViewModel>(
             catalog.All.Select(descriptor => new CheckableParameterViewModel(descriptor)));
@@ -451,6 +466,12 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         RefreshSystemConfigCommand = new DelegateCommand(RefreshSystemConfig, () => ConfigEditingEnabled && HvpsConnected);
         ExportSessionDataCommand = new DelegateCommand(async () => await ExportSessionDataAsync(), () => Mode == UcsiMode.Live);
         SaveLogsCommand = new DelegateCommand(async () => await SaveLogsAsync());
+        EmissionRunStopCommand = new DelegateCommand(
+            async () => await RunOrStopEmissionAsync(),
+            () => IsEmissionTabAvailable && !_emissionStopInProgress);
+        StopCalibrationCommand = new DelegateCommand(
+            async () => await StopCalibrationAsync(),
+            () => CanStopCalibration);
 
         // Subscribe to HVPS connection state changes
         // The service event fires on the message loop thread, so we need to marshal to UI thread
@@ -515,6 +536,8 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     public DelegateCommand RefreshSystemConfigCommand { get; }
     public DelegateCommand ExportSessionDataCommand { get; }
     public DelegateCommand SaveLogsCommand { get; }
+    public DelegateCommand EmissionRunStopCommand { get; }
+    public DelegateCommand StopCalibrationCommand { get; }
 
     public ITelemetrySessionCoordinator Coordinator => _coordinator;
     public UcsiTelemetrySample? CurrentSample => _coordinator.CurrentSample;
@@ -537,6 +560,11 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     public string SampleRateText { get => _sampleRateText; private set => SetProperty(ref _sampleRateText, value); }
     public string RecordingCountText { get => _recordingCountText; private set => SetProperty(ref _recordingCountText, value); }
     public string ErrorText { get => _errorText; private set => SetProperty(ref _errorText, value); }
+    public string EmissionSequenceStatus
+    {
+        get => _emissionSequenceStatus;
+        private set => SetProperty(ref _emissionSequenceStatus, value);
+    }
     public string GcbFirmwareVersion { get => _gcbFirmwareVersion; private set => SetProperty(ref _gcbFirmwareVersion, value); }
     public string HvpsFirmwareVersion { get => _hvpsFirmwareVersion; private set => SetProperty(ref _hvpsFirmwareVersion, value); }
     public string CncSoftwareVersion { get => _cncSoftwareVersion; private set => SetProperty(ref _cncSoftwareVersion, value); }
@@ -567,6 +595,157 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         private set => SetProperty(ref _timelineMaximumSeconds, value);
     }
     public string TimelineText => $"{TimeSpan.FromSeconds(TimelineSeconds):hh\\:mm\\:ss\\.fff} / {TimeSpan.FromSeconds(TimelineMaximumSeconds):hh\\:mm\\:ss\\.fff}";
+
+    public bool HasFreshLiveTelemetry =>
+        Mode == UcsiMode.Live
+        && CurrentSample is { } sample
+        && DateTimeOffset.UtcNow - sample.ReceivedAtUtc <= TimeSpan.FromMilliseconds(TelemetryFreshnessMilliseconds);
+
+    public bool CanUseCalibrationControls =>
+        HasFreshLiveTelemetry
+        && CurrentSample!.Value.Telemetry.ControlBoardState is
+            GcbStateNew.Cold or GcbStateNew.ColdFault or GcbStateNew.Fault or GcbStateNew.Calibration;
+
+    public bool CanStopCalibration =>
+        HasFreshLiveTelemetry
+        && CurrentSample?.Telemetry.ControlBoardState == GcbStateNew.Calibration;
+
+    public bool CalibrationControlsUnavailable => !CanUseCalibrationControls;
+
+    public string CalibrationControlsUnavailableReason =>
+        !HasFreshLiveTelemetry
+            ? Mode == UcsiMode.Replay
+                ? "Calibration controls are unavailable during telemetry replay."
+                : "Calibration controls are unavailable without current live telemetry."
+            : $"Calibration controls are unavailable while the control state is {CurrentSample?.Telemetry.ControlBoardState.ToString() ?? SystemStateText}.";
+
+    public bool IsEmissionTabAvailable =>
+        HasFreshLiveTelemetry
+        && CurrentSample is { } sample
+        && (_emissionSequenceActive
+            || IsEmissionStartState(sample.Telemetry.ControlBoardState)
+            || IsNormalActiveState(sample.Telemetry.ControlBoardState));
+
+    public bool EmissionTabUnavailable => !IsEmissionTabAvailable;
+
+    public string EmissionTabUnavailableReason =>
+        !HasFreshLiveTelemetry
+            ? Mode == UcsiMode.Replay
+                ? "Emission is unavailable during telemetry replay."
+                : "Emission is unavailable without current live telemetry."
+            : CurrentSample?.Telemetry.ControlBoardState == GcbStateNew.Calibration
+                ? "Emission is unavailable while the control state is Calibration."
+                : $"Emission cannot start or stop while the control state is {CurrentSample?.Telemetry.ControlBoardState.ToString() ?? SystemStateText}.";
+
+    public string EmissionButtonText =>
+        _emissionSequenceActive || IsNormalActiveState(CurrentSample?.Telemetry.ControlBoardState)
+            ? "Stop"
+            : "Emission";
+
+    public bool IsEmissionInputValid =>
+        double.IsFinite(EmissionKv)
+        && double.IsFinite(EmissionPower)
+        && double.IsFinite(EmissionMa)
+        && double.IsFinite(EmissionFilament)
+        && double.IsFinite(EmissionDurationSeconds)
+        && double.IsFinite(EmissionXCoilAmps)
+        && double.IsFinite(EmissionYCoilAmps)
+        && double.IsFinite(EmissionFocusCoilAmps)
+        && EmissionKv > 0
+        && EmissionPower > 0
+        && EmissionMa is > 0 and <= 6
+        && EmissionFilament is >= 1_000 and <= 3_250
+        && EmissionDurationSeconds is >= 0.1 and <= 180
+        && EmissionXCoilAmps is >= -1.5 and <= 1.5
+        && EmissionYCoilAmps is >= -1.5 and <= 1.5
+        && EmissionFocusCoilAmps is >= 0 and <= 3;
+
+    public double EmissionKv
+    {
+        get => _emissionKv;
+        set
+        {
+            if(SetProperty(ref _emissionKv, value))
+            {
+                RaisePropertyChanged(nameof(EmissionMa));
+                RaisePropertyChanged(nameof(IsEmissionInputValid));
+            }
+        }
+    }
+
+    public double EmissionPower
+    {
+        get => _emissionPower;
+        set
+        {
+            if(SetProperty(ref _emissionPower, value))
+            {
+                RaisePropertyChanged(nameof(EmissionMa));
+                RaisePropertyChanged(nameof(IsEmissionInputValid));
+            }
+        }
+    }
+
+    public double EmissionMa => EmissionKv > 0 ? EmissionPower / EmissionKv : 0;
+
+    public double EmissionFilament
+    {
+        get => _emissionFilament;
+        set
+        {
+            if(SetProperty(ref _emissionFilament, value))
+                RaisePropertyChanged(nameof(IsEmissionInputValid));
+        }
+    }
+
+    public double EmissionDurationSeconds
+    {
+        get => _emissionDurationSeconds;
+        set
+        {
+            if(SetProperty(ref _emissionDurationSeconds, value))
+                RaisePropertyChanged(nameof(IsEmissionInputValid));
+        }
+    }
+
+    public double EmissionXCoilAmps
+    {
+        get => _emissionXCoilAmps;
+        set
+        {
+            if(SetProperty(ref _emissionXCoilAmps, value))
+                RaisePropertyChanged(nameof(IsEmissionInputValid));
+        }
+    }
+
+    public double EmissionYCoilAmps
+    {
+        get => _emissionYCoilAmps;
+        set
+        {
+            if(SetProperty(ref _emissionYCoilAmps, value))
+                RaisePropertyChanged(nameof(IsEmissionInputValid));
+        }
+    }
+
+    public double EmissionFocusCoilAmps
+    {
+        get => _emissionFocusCoilAmps;
+        set
+        {
+            if(SetProperty(ref _emissionFocusCoilAmps, value))
+                RaisePropertyChanged(nameof(IsEmissionInputValid));
+        }
+    }
+
+    public double EmissionFeedbackKv => CurrentSample?.Telemetry.KvFeedback ?? 0;
+    public double EmissionFeedbackMa => CurrentSample?.Telemetry.EmissionCurrent ?? 0;
+    public double EmissionFeedbackPower => EmissionFeedbackKv * EmissionFeedbackMa;
+    public double EmissionFeedbackFilament => CurrentSample?.Telemetry.HeaterCurrentFeedback ?? 0;
+    public double EmissionFeedbackXCoil => (CurrentSample?.Telemetry.XCoilCurrent ?? 0) / 1_000;
+    public double EmissionFeedbackYCoil => (CurrentSample?.Telemetry.YCoilCurrent ?? 0) / 1_000;
+    public double EmissionFeedbackFocusCoil => (CurrentSample?.Telemetry.FocusCurrent ?? 0) / 1_000;
+    public double EmissionFeedbackElapsedSeconds => CurrentSample?.Telemetry.PrimaryTimerValue ?? 0;
 
     public double HvpsCommandHV
     {
@@ -716,9 +895,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         }
     }
 
-    public double CoilsFeedbackXCoil => CurrentSample?.Telemetry.XCoilCurrent ?? 0.0;
-    public double CoilsFeedbackYCoil => CurrentSample?.Telemetry.YCoilCurrent ?? 0.0;
-    public double CoilsFeedbackFocus => CurrentSample?.Telemetry.FocusCurrent ?? 0.0;
+    public double CoilsFeedbackXCoil => (CurrentSample?.Telemetry.XCoilCurrent ?? 0.0) / 1_000;
+    public double CoilsFeedbackYCoil => (CurrentSample?.Telemetry.YCoilCurrent ?? 0.0) / 1_000;
+    public double CoilsFeedbackFocus => (CurrentSample?.Telemetry.FocusCurrent ?? 0.0) / 1_000;
     public double HvpsFeedbackPower => (CurrentSample?.Telemetry.KvFeedback ?? 0.0) * (CurrentSample?.Telemetry.EmissionCurrent ?? 0.0);
     public double HvpsFeedbackGrid => CurrentSample?.Telemetry.GridVoltage ?? 0.0;
     public double HvpsFeedbackHeat => CurrentSample?.Telemetry.HeaterCurrentFeedback ?? 0.0;
@@ -788,6 +967,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
 
     private void RefreshSetpoints()
     {
+        if(!EnsureCalibrationControlsAvailable())
+            return;
+
         RefreshEnabled = false;
         _refreshDisabledUntilUtc = DateTimeOffset.UtcNow.AddSeconds(2);
         _telemetryProcessor.RequestSetpointPollingNow();
@@ -799,6 +981,12 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
 
     private void CheckSetpointPollingProgress()
     {
+        if(!CanUseCalibrationControls)
+        {
+            _setpointPollingActive = false;
+            return;
+        }
+
         double elapsedMs = (DateTimeOffset.UtcNow - _setpointPollingStartUtc).TotalMilliseconds;
         
         // Check if all 3 setpoints match expected values
@@ -1066,7 +1254,8 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             RuntimeText = sample is null ? "00:00:00" : TimeSpan.FromMilliseconds(sample.Value.Telemetry.SystemRuntime).ToString("hh\\:mm\\:ss");
             SampleRateText = $"{_coordinator.LiveSampleRate:F1} samples/s";
             RecordingCountText = $"{_coordinator.AcceptedRecordingSamples:N0} accepted / {_coordinator.WrittenRecordingSamples:N0} written";
-            ErrorText = _coordinator.LastError ?? string.Empty;
+            if(!string.IsNullOrWhiteSpace(_coordinator.LastError))
+                ErrorText = _coordinator.LastError;
             foreach (MonitoredParameterViewModel parameter in MonitoredParameters)
                 parameter.Update(sample);
             UpdateDetailedStatus(sample);
@@ -1182,8 +1371,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     {
         await RunCommandAsync(async () =>
         {
-            // Get snapshot of live telemetry data
-            IReadOnlyList<UcsiTelemetrySample> samples = _coordinator.LiveHistory.Snapshot();
+            DateTimeOffset exportedAtUtc = DateTimeOffset.UtcNow;
+            IReadOnlyList<UcsiTelemetrySample> samples =
+                _coordinator.LiveHistory.GetSince(exportedAtUtc - TimeSpan.FromMinutes(5));
             if (samples.Count == 0)
             {
                 ErrorText = "No telemetry data available to export.";
@@ -1328,16 +1518,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         SystemInterlock[] values = Enum.GetValues<SystemInterlock>();
         for (int index = 0; index < values.Length; index++)
         {
-            bool? state;
-            if (values[index] == SystemInterlock.WatchdogReady)
-            {
-                // Watchdog ready tracks HVPS-level GridInterlock (bit 2 of RawIoFlags), not system-level WatchdogReady
-                state = telemetry?.Hvps.GridInterlock;
-            }
-            else
-            {
-                state = telemetry?.Interlocks.GetState(values[index]);
-            }
+            bool? state = telemetry?.Interlocks.GetState(values[index]);
             Interlocks[index].Value = state.HasValue ? state.Value ? "Ready" : "Open" : "N/A";
             Interlocks[index].IsActive = state == true;
             Interlocks[index].IsAvailable = state.HasValue;
@@ -1467,6 +1648,24 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         RaisePropertyChanged(nameof(CoilsFeedbackXCoil));
         RaisePropertyChanged(nameof(CoilsFeedbackYCoil));
         RaisePropertyChanged(nameof(CoilsFeedbackFocus));
+        RaisePropertyChanged(nameof(HasFreshLiveTelemetry));
+        RaisePropertyChanged(nameof(CanUseCalibrationControls));
+        RaisePropertyChanged(nameof(CanStopCalibration));
+        RaisePropertyChanged(nameof(CalibrationControlsUnavailable));
+        RaisePropertyChanged(nameof(CalibrationControlsUnavailableReason));
+        RaisePropertyChanged(nameof(IsEmissionTabAvailable));
+        RaisePropertyChanged(nameof(EmissionTabUnavailable));
+        RaisePropertyChanged(nameof(EmissionTabUnavailableReason));
+        RaisePropertyChanged(nameof(EmissionButtonText));
+        RaisePropertyChanged(nameof(IsEmissionInputValid));
+        RaisePropertyChanged(nameof(EmissionFeedbackKv));
+        RaisePropertyChanged(nameof(EmissionFeedbackMa));
+        RaisePropertyChanged(nameof(EmissionFeedbackPower));
+        RaisePropertyChanged(nameof(EmissionFeedbackFilament));
+        RaisePropertyChanged(nameof(EmissionFeedbackXCoil));
+        RaisePropertyChanged(nameof(EmissionFeedbackYCoil));
+        RaisePropertyChanged(nameof(EmissionFeedbackFocusCoil));
+        RaisePropertyChanged(nameof(EmissionFeedbackElapsedSeconds));
         RaisePropertyChanged(nameof(IsEmissionValid));
         RaisePropertyChanged(nameof(EmissionTextBoxBorder));
         RaisePropertyChanged(nameof(CoolingWaterPumpText));
@@ -1478,6 +1677,8 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         PlayPauseCommand.RaiseCanExecuteChanged();
         ReturnToLiveCommand.RaiseCanExecuteChanged();
         ClearFaultsCommand.RaiseCanExecuteChanged();
+        EmissionRunStopCommand.RaiseCanExecuteChanged();
+        StopCalibrationCommand.RaiseCanExecuteChanged();
     }
 
     private static string GetDisplayName<T>(T value) where T : Enum
@@ -1487,6 +1688,303 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             .OfType<System.ComponentModel.DataAnnotations.DisplayAttribute>()
             .FirstOrDefault()?.Name ?? value.ToString();
     }
+
+    private static bool IsEmissionStartState(GcbStateNew? state) =>
+        state is GcbStateNew.Cold or GcbStateNew.Primed or GcbStateNew.Staged;
+
+    private static bool IsNormalActiveState(GcbStateNew? state) =>
+        state is GcbStateNew.DailyWarmup
+            or GcbStateNew.Warmup
+            or GcbStateNew.Staging
+            or GcbStateNew.HvpsCheck
+            or GcbStateNew.HVSetup
+            or GcbStateNew.Ready
+            or GcbStateNew.Launching
+            or GcbStateNew.Emission
+            or GcbStateNew.Termination
+            or GcbStateNew.Discharge;
+
+    private bool EnsureCalibrationControlsAvailable()
+    {
+        if(CanUseCalibrationControls)
+            return true;
+
+        SetCommandError(CalibrationControlsUnavailableReason, LogRecordSeverity.Warn);
+        return false;
+    }
+
+    private void SetCommandError(string message, LogRecordSeverity severity = LogRecordSeverity.Error)
+    {
+        ErrorText = message;
+        _logBuffer.Log(message, severity, LogRecordType.System);
+    }
+
+    private void ReportEmissionSequence(string message, LogRecordSeverity severity = LogRecordSeverity.Info)
+    {
+        EmissionSequenceStatus = message;
+        _logBuffer.Log(message, severity, LogRecordType.System);
+    }
+
+    public async Task RunOrStopEmissionAsync()
+    {
+        GcbStateNew? currentState = CurrentSample?.Telemetry.ControlBoardState;
+        if(_emissionSequenceActive || IsNormalActiveState(currentState))
+        {
+            await StopNormalEmissionAsync();
+            return;
+        }
+
+        if(!IsEmissionTabAvailable || !IsEmissionStartState(currentState))
+        {
+            SetCommandError(EmissionTabUnavailableReason, LogRecordSeverity.Warn);
+            return;
+        }
+
+        if(!IsEmissionInputValid)
+        {
+            string message =
+                $"Emission parameters are invalid: kV={EmissionKv}, power={EmissionPower}, derived mA={EmissionMa}, " +
+                $"filament={EmissionFilament}, time={EmissionDurationSeconds}, X={EmissionXCoilAmps}, " +
+                $"Y={EmissionYCoilAmps}, focus={EmissionFocusCoilAmps}.";
+            ReportEmissionSequence(message, LogRecordSeverity.Error);
+            SetCommandError(message);
+            return;
+        }
+
+        var parameters = new EmissionParameters(
+            (float)EmissionKv,
+            (float)EmissionPower,
+            (float)EmissionFilament,
+            (float)EmissionDurationSeconds,
+            (float)EmissionXCoilAmps,
+            (float)EmissionYCoilAmps,
+            (float)EmissionFocusCoilAmps);
+        ReportEmissionSequence(
+            $"Starting one-point emission: {parameters.Kv:F1} kV, {parameters.Power:F1} W, " +
+            $"{parameters.Power / parameters.Kv:F3} mA, filament {parameters.Filament:F0} mA, " +
+            $"duration {parameters.DurationSeconds:F1} s.");
+        var cancellation = new CancellationTokenSource();
+        _emissionSequenceCancellation = cancellation;
+        _emissionSequenceActive = true;
+        Task sequenceTask = RunEmissionSequenceAsync(parameters, cancellation.Token);
+        _emissionSequenceTask = sequenceTask;
+        RaiseStateProperties();
+
+        try
+        {
+            await sequenceTask;
+        }
+        catch(OperationCanceledException)
+        {
+            ReportEmissionSequence("Emission sequence canceled.", LogRecordSeverity.Warn);
+        }
+        catch(Exception exception)
+        {
+            ReportEmissionSequence($"Emission sequence failed: {exception.Message}", LogRecordSeverity.Error);
+            SetCommandError(exception.Message);
+        }
+        finally
+        {
+            if(ReferenceEquals(_emissionSequenceTask, sequenceTask))
+            {
+                _emissionSequenceTask = null;
+                _emissionSequenceCancellation = null;
+                _emissionSequenceActive = false;
+                cancellation.Dispose();
+                RaiseStateProperties();
+            }
+        }
+    }
+
+    private async Task StopNormalEmissionAsync()
+    {
+        if(_emissionStopInProgress)
+            return;
+
+        _emissionStopInProgress = true;
+        RaiseStateProperties();
+        try
+        {
+            _emissionSequenceCancellation?.Cancel();
+            Task? sequenceTask = _emissionSequenceTask;
+            if(sequenceTask is not null)
+            {
+                try
+                {
+                    await sequenceTask;
+                }
+                catch(OperationCanceledException)
+                {
+                }
+                catch(Exception exception)
+                {
+                    _logBuffer.Log(exception.Message, LogRecordSeverity.Warn, LogRecordType.System);
+                }
+            }
+
+            await ExecuteEmissionStepAsync("Stop", _commandInterface.Stop);
+            ReportEmissionSequence("Stop command accepted; waiting for firmware state transition.");
+        }
+        catch(Exception exception)
+        {
+            SetCommandError(exception.Message);
+        }
+        finally
+        {
+            _emissionStopInProgress = false;
+            RaiseStateProperties();
+        }
+    }
+
+    private async Task RunEmissionSequenceAsync(EmissionParameters parameters, CancellationToken cancellationToken)
+    {
+        GcbStateNew state = GetCurrentLiveState();
+        ReportEmissionSequence($"Emission sequence entered from control state {state}.");
+        if(state == GcbStateNew.Staged)
+        {
+            await ExecuteEmissionStepAsync("Stop staged plan", _commandInterface.Stop);
+            await WaitForControlStateAsync("Stop staged plan", cancellationToken, GcbStateNew.Cold);
+            state = GcbStateNew.Cold;
+        }
+
+        if(state == GcbStateNew.Cold)
+        {
+            // Cold does not clear PLAN_STAGED_BOOL. Without an explicit wipe,
+            // warmup returns to Staged instead of Primed after the first run.
+            await ExecuteEmissionStepAsync("Reset timers", _commandInterface.ResetTimers);
+            await ExecuteEmissionStepAsync("Clear stale plan", _commandInterface.ClearPlan);
+            await ExecuteEmissionStepAsync(
+                "Warmup",
+                () => _commandInterface.WarmUp(parameters.Filament));
+            await WaitForControlStateAsync("Warmup", cancellationToken, GcbStateNew.Primed);
+        }
+        else if(state != GcbStateNew.Primed)
+        {
+            throw new InvalidOperationException($"Emission cannot start from control state {state}.");
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        GcbSession session = await ExecuteEmissionStepAsync(
+            "New session",
+            _commandInterface.NewSession);
+        await WaitForControlStateAsync("New session", cancellationToken, GcbStateNew.Staging);
+
+        var point = new GcbOperationalPoint
+        {
+            TotalPointTime = parameters.DurationSeconds,
+            InitialRemainingPointTime = parameters.DurationSeconds,
+            RemainingPointTime = parameters.DurationSeconds,
+            SetpointKv = parameters.Kv,
+            TargetMA = parameters.Power / parameters.Kv,
+            FilamentSetpoint = parameters.Filament,
+            XCoilSetpoint = parameters.XCoilAmps * 1_000,
+            YCoilSetpoint = parameters.YCoilAmps * 1_000,
+            FocusCoilSetpoint = parameters.FocusCoilAmps * 1_000,
+        };
+
+        await ExecuteEmissionStepAsync(
+            "Load operational point",
+            () => _commandInterface.SendOperationalPoint(OperationalPointCmdType.Load, point, session));
+        cancellationToken.ThrowIfCancellationRequested();
+        await ExecuteEmissionStepAsync("Stage plan", _commandInterface.StagePlan);
+        await WaitForControlStateAsync("Stage plan", cancellationToken, GcbStateNew.Staged);
+        await ExecuteEmissionStepAsync(
+            "Confirm operational point",
+            () => _commandInterface.SendOperationalPoint(OperationalPointCmdType.Confirmation, point, session));
+        cancellationToken.ThrowIfCancellationRequested();
+        await ExecuteEmissionStepAsync(
+            "Release plan",
+            () => _commandInterface.ReleasePlan(GCBReleaseCommandScope.Plan, session));
+        await WaitForControlStateAsync("Release plan", cancellationToken, GcbStateNew.Ready);
+        await ExecuteEmissionStepAsync(
+            "Release point",
+            () => _commandInterface.ReleasePlan(GCBReleaseCommandScope.Point, session));
+        await WaitForControlStateAsync("Release point", cancellationToken, GcbStateNew.Emission);
+
+        _logBuffer.Log(
+            "One-point emission reached the Emission state.",
+            LogRecordSeverity.Info,
+            LogRecordType.System);
+    }
+
+    private GcbStateNew GetCurrentLiveState()
+    {
+        if(!HasFreshLiveTelemetry || CurrentSample is not { } sample)
+            throw new InvalidOperationException("Current live telemetry is required for emission.");
+        return sample.Telemetry.ControlBoardState;
+    }
+
+    private async Task WaitForControlStateAsync(
+        string step,
+        CancellationToken cancellationToken,
+        params GcbStateNew[] targetStates)
+    {
+        GcbStateNew? lastReportedState = null;
+        while(true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            GcbStateNew state = GetCurrentLiveState();
+            if(targetStates.Contains(state))
+            {
+                ReportEmissionSequence($"{step}: reached control state {state}.");
+                return;
+            }
+            if(state != lastReportedState)
+            {
+                ReportEmissionSequence(
+                    $"{step}: waiting for {string.Join(" or ", targetStates)}; current state is {state}.");
+                lastReportedState = state;
+            }
+            if(state is GcbStateNew.FaultDischarge
+                or GcbStateNew.Fault
+                or GcbStateNew.ColdFault
+                or GcbStateNew.WarmupFault
+                or GcbStateNew.SystemCrash
+                or GcbStateNew.Calibration)
+            {
+                throw new InvalidOperationException($"{step} entered terminal control state {state}.");
+            }
+            await Task.Delay(20, cancellationToken);
+        }
+    }
+
+    private async Task ExecuteEmissionStepAsync(string step, Func<Task> action)
+    {
+        ReportEmissionSequence($"Sending {step} command.");
+        try
+        {
+            await action();
+            ReportEmissionSequence($"{step} command accepted.");
+        }
+        catch(Exception exception)
+        {
+            throw new InvalidOperationException($"{step} failed: {exception.Message}", exception);
+        }
+    }
+
+    private async Task<T> ExecuteEmissionStepAsync<T>(string step, Func<Task<T>> action)
+    {
+        ReportEmissionSequence($"Sending {step} command.");
+        try
+        {
+            T result = await action();
+            ReportEmissionSequence($"{step} command accepted.");
+            return result;
+        }
+        catch(Exception exception)
+        {
+            throw new InvalidOperationException($"{step} failed: {exception.Message}", exception);
+        }
+    }
+
+    private readonly record struct EmissionParameters(
+        float Kv,
+        float Power,
+        float Filament,
+        float DurationSeconds,
+        float XCoilAmps,
+        float YCoilAmps,
+        float FocusCoilAmps);
 
     /// <summary>
     /// Sends HVPS KV (kilovoltage) command to the board with current HV and derived mA values.
@@ -1527,6 +2025,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
 
     private async Task SendHvpsKvToBoard()
     {
+        if(!EnsureCalibrationControlsAvailable())
+            return;
+
         try
         {
             await _commandInterface.SendHvpsKv(
@@ -1552,6 +2053,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
 
     private async Task SendHvpsGridToBoard()
     {
+        if(!EnsureCalibrationControlsAvailable())
+            return;
+
         try
         {
             await _commandInterface.SendHvpsGrid((float)_hvpsCommandGrid);
@@ -1575,6 +2079,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
 
     private async Task SendHvpsFilamentToBoard()
     {
+        if(!EnsureCalibrationControlsAvailable())
+            return;
+
         try
         {
             await _commandInterface.SendHvpsFilament((float)_hvpsCommandHeat);
@@ -1600,8 +2107,35 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         set => SetProperty(ref _maLimitValue, value);
     }
 
+    public async Task StopCalibrationAsync()
+    {
+        if(!CanStopCalibration)
+        {
+            SetCommandError(
+                $"Stop calibration is unavailable while the control state is {CurrentSample?.Telemetry.ControlBoardState.ToString() ?? SystemStateText}.",
+                LogRecordSeverity.Warn);
+            return;
+        }
+
+        try
+        {
+            await _commandInterface.SendHvpsEmission(0x04u);
+            _logBuffer.Log(
+                "Calibration stop command sent.",
+                LogRecordSeverity.Info,
+                LogRecordType.System);
+        }
+        catch(Exception exception)
+        {
+            SetCommandError($"Calibration stop command failed: {exception.Message}");
+        }
+    }
+
     public async Task SendEmissionCommandAsync()
     {
+        if(!EnsureCalibrationControlsAvailable())
+            return;
+
         try
         {
             // Send START (0x03) if emission is off, STOP (0x04) if emission is on
@@ -1619,6 +2153,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
 
     private async Task SendMaLimitToBoard()
     {
+        if(!EnsureCalibrationControlsAvailable())
+            return;
+
         try
         {
             await _commandInterface.SendHvpsMaLimit(MaLimitValue);
@@ -1644,6 +2181,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     /// </summary>
     private async Task SendHvpsPidControlAsync(bool enabled)
     {
+        if(!EnsureCalibrationControlsAvailable())
+            return;
+
         try
         {
             await _commandInterface.SendHvpsPidControl(enabled);
@@ -1669,12 +2209,15 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     /// </summary>
     public async Task SendCoilsAsync()
     {
+        if(!EnsureCalibrationControlsAvailable())
+            return;
+
         try
         {
             await _commandInterface.SendCoils(
-                (float)_coilsCommandXCoil,
-                (float)_coilsCommandYCoil,
-                (float)_coilsCommandFocus);
+                (float)_coilsCommandXCoil * 1_000,
+                (float)_coilsCommandYCoil * 1_000,
+                (float)_coilsCommandFocus * 1_000);
             
             _logBuffer.Log(
                 $"Coils command sent: X={_coilsCommandXCoil:F3}A, Y={_coilsCommandYCoil:F3}A, Focus={_coilsCommandFocus:F3}A",

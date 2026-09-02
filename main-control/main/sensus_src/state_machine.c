@@ -20,10 +20,13 @@
 
 #include "ftdi.h"
 
+_Static_assert(CONDITIONING_HOLD_DECI_SECONDS == 9000, "conditioning hold must be 15 minutes");
 static void run_crash_state(EventType ev);
 static void run_startup_state(EventType ev);
 static void goto_cold_state();
 static void run_cold_state(EventType ev);
+static void goto_calibration_state(void);
+static void run_calibration_state(EventType ev);
 static void goto_cold_fault_state();
 static void run_cold_fault_state(EventType ev);
 static void goto_conditioning_state();
@@ -50,11 +53,17 @@ static void goto_emission_state();
 static void run_emission_state(EventType ev);
 static void goto_termination_state();
 static void run_termination_state(EventType ev);
+static void enter_discharge_state(XState target_state);
 static void goto_discharge_state();
 static void run_discharge_state(EventType ev);
+static void goto_fault_discharge_state();
+static void run_fault_discharge_state(EventType ev);
 static void goto_fault_state();
 static void run_fault_state(EventType ev);
 static void transition_to_latched_fault(void);
+#if defined(CALIBRATION_MODE)
+static bool handle_calibration_mode_stop(EventType ev);
+#endif
 
 static void deci_second_timer(const struct timer_task *const timer_task);
 
@@ -70,7 +79,6 @@ volatile EventType event_queue[MAX_EVENT_QUEUE_SIZE];
 volatile uint32_t event_q_idx = 0;
 volatile uint32_t event_q_end = 0;
 
-volatile bool wait_for_release_point = false;
 
 volatile int warmup_deci_seconds = 0;
 
@@ -119,8 +127,10 @@ void init_state_machine()
 	state_exec_func[STATE_EMISSION] = run_emission_state;
 	state_exec_func[STATE_TERMINATION] = run_termination_state;
 	state_exec_func[STATE_DISCHARGE] = run_discharge_state;
+	state_exec_func[STATE_FAULT_DISCHARGE] = run_fault_discharge_state;
 	state_exec_func[STATE_FAULT] = run_fault_state;
 	state_exec_func[STATE_SYSTEM_CRASH] = run_crash_state;
+	state_exec_func[STATE_CALIBRATION] = run_calibration_state;
 	
 }
 
@@ -129,6 +139,14 @@ static void deci_second_timer(const struct timer_task *const timer_task)
 {
 	switch(*state)
 	{
+		case STATE_CONDITIONING:
+			if(warmup_deci_seconds > 0 && --warmup_deci_seconds == 0)
+			{
+				//Prevent a repeated stability event from restarting the completed hold.
+				warmup_deci_seconds = -1;
+				queue_sm_event(EVENT_CONDITIONING_HOLD_COMPLETE);
+			}
+			break;
 		case STATE_EMISSION:
 			//update internal emission timer
 			if(--deci_seconds_remaining <= 0)
@@ -136,24 +154,7 @@ static void deci_second_timer(const struct timer_task *const timer_task)
 				queue_sm_event(EVENT_OP_COMPLETE);
 			}
 			system_status[SS_INTERNAL_TIMER_VAL].f += 0.1f;
-			int op_idx = system_status[SS_OP_IDX].i;
-			if(op_idx < 0)
-			{
-				report_typed_fault1(FAULT_MEMORY, "Operational-point index %d is negative.", MAKE_ARG(op_idx));
-			}
-			else if(op_idx >= system_status[SS_OP_COUNT].i)
-			{
-				report_typed_fault2(FAULT_MEMORY, "Operational-point index %d exceeds the loaded count %d.", MAKE_ARG(op_idx), MAKE_ARG(system_status[SS_OP_COUNT].i));
-				
-			}
-			else if(op_idx >= MAX_OPERATIONAL_POINTS)
-			{
-				report_typed_fault2(FAULT_MEMORY, "Operational-point index %d exceeds the firmware maximum %u.", MAKE_ARG(op_idx), MAKE_ARG(MAX_OPERATIONAL_POINTS));
-			}
-			else
-			{
-				operational_points[op_idx][OP_REMAIN_TIME].f -= 0.1;
-			}
+			operational_point[OP_REMAIN_TIME].f -= 0.1f;
 			break;
 		case STATE_PRIMED: //timeout for if system is warmed up but not executing a plan
 		case STATE_STAGING:
@@ -177,12 +178,54 @@ void queue_sm_event(EventType ev)
 	{
 		return;
 	}
-	//Queue event
-	if(++event_q_end >= MAX_EVENT_QUEUE_SIZE)
+
+	bool queue_overflow = false;
+
+	CRITICAL_SECTION_ENTER()
+	uint32_t next_idx = event_q_end + 1u;
+	if(next_idx >= MAX_EVENT_QUEUE_SIZE)
 	{
-		event_q_end = 0;
+		next_idx = 0;
 	}
-	event_queue[event_q_end] = ev;
+
+	if(next_idx == event_q_idx)
+	{
+		queue_overflow = true;
+	}
+	else
+	{
+		//Publish the new end only after the event data is stored.
+		event_queue[next_idx] = ev;
+		event_q_end = next_idx;
+	}
+	CRITICAL_SECTION_LEAVE()
+
+	if(queue_overflow)
+	{
+		report_typed_fault(FAULT_MEMORY, "State machine event queue overflow");
+	}
+}
+
+static bool dequeue_sm_event(EventType *ev)
+{
+	bool event_available = false;
+
+	CRITICAL_SECTION_ENTER()
+	if(event_q_idx != event_q_end)
+	{
+		uint32_t next_idx = event_q_idx + 1u;
+		if(next_idx >= MAX_EVENT_QUEUE_SIZE)
+		{
+			next_idx = 0;
+		}
+
+		*ev = event_queue[next_idx];
+		event_q_idx = next_idx;
+		event_available = true;
+	}
+	CRITICAL_SECTION_LEAVE()
+
+	return event_available;
 }
 
 void process_state_machine()
@@ -194,23 +237,24 @@ void process_state_machine()
 	}
 
 	//Dequeue all queued events and run state machine
-	while(event_q_idx != event_q_end)
+	EventType ev;
+	while(dequeue_sm_event(&ev))
 	{
-		if(++event_q_idx >= MAX_EVENT_QUEUE_SIZE)
+#if defined(CALIBRATION_MODE)
+		if(!handle_calibration_mode_stop(ev))
+#endif
 		{
-			event_q_idx = 0;
-		}
-
-		//Ensure state index is valid
-		if(*state < NUM_SYSTEM_STATES)
-		{
-			//If so, run the appropriate state processing function
-			//using the given event trigger
-			(*state_exec_func[*state])(event_queue[event_q_idx]);
-		}
-		else
-		{
-			run_crash_state(event_queue[event_q_idx]);
+			//Ensure state index is valid
+			if(*state < NUM_SYSTEM_STATES)
+			{
+				//If so, run the appropriate state processing function
+				//using the given event trigger
+				(*state_exec_func[*state])(ev);
+			}
+			else
+			{
+				run_crash_state(ev);
+			}
 		}
 
 		if(consume_fault_transition())
@@ -245,8 +289,15 @@ static void transition_to_latched_fault(void)
 		case STATE_FAULT:
 		case STATE_SYSTEM_CRASH:
 			break;
-		default:
+		case STATE_CALIBRATION:
+			goto_fault_discharge_state();
+			break;
+		case STATE_FAULT_DISCHARGE:
+			// If double fault, go to fault immediately
 			goto_fault_state();
+			break;
+		default:
+			goto_fault_discharge_state();
 			break;
 	}
 }
@@ -291,8 +342,16 @@ static void goto_cold_state()
 {
 	//Disable HV interlock
 	enable_hv(false);
-	//Disable EMISSION interlock (grid)
+	
+	// wait 50ms
+	u32_t time_now = sys_now();
+	u32_t time_set = time_now + 50;
+	
+	while(sys_now() < time_set){}
+	
+	//Disable EMISSION interlock
 	enable_ecc(false);
+	enable_grid(false);
 	
 	//Ensure kV, source heater and grid voltages are 0
 	set_hvps_kv(0, 0);
@@ -313,6 +372,92 @@ static void goto_cold_state()
 	
 	*state = STATE_COLD;
 }
+
+static void goto_calibration_state(void)
+{
+	// Enter calibration from a known, de-energized baseline.
+	enable_hv(false);
+	enable_ecc(false);
+
+	set_hvps_kv(0, 0);
+	set_hvps_heater(0);
+	set_hvps_grid(0);
+
+	set_coil_voltage(X_COIL_DAC_CH, 0);
+	set_coil_voltage(Y_COIL_DAC_CH, 0);
+	set_coil_voltage(F_COIL_DAC_CH, 0);
+
+	enable_pump(false);
+	enable_indicators(false);
+	set_led_sequence(LED_SEQ_COLD);
+
+	*state = STATE_CALIBRATION;
+}
+
+static void run_calibration_state(EventType ev)
+{
+	(void)ev;
+}
+
+bool try_enter_calibration_state(void)
+{
+	if(*state == STATE_CALIBRATION)
+	{
+		return true;
+	}
+
+	if(*state != STATE_COLD && *state != STATE_COLD_FAULT && *state != STATE_FAULT)
+	{
+		return false;
+	}
+
+	goto_calibration_state();
+	return true;
+}
+
+bool exit_calibration_state(void)
+{
+	if(*state != STATE_CALIBRATION)
+	{
+		return false;
+	}
+
+	goto_cold_state();
+	return true;
+}
+
+#if defined(CALIBRATION_MODE)
+static bool handle_calibration_mode_stop(EventType ev)
+{
+	if(ev != EVENT_PC_STOP)
+	{
+		return false;
+	}
+
+	switch(*state)
+	{
+		case STATE_CONDITIONING:
+		case STATE_WARMUP:
+			goto_cold_state();
+			return true;
+		case STATE_PRIMED:
+		case STATE_STAGING:
+		case STATE_STAGED:
+		case STATE_HVPS_CHECK:
+		case STATE_SETUP:
+		case STATE_READY:
+		case STATE_LAUNCHING:
+		case STATE_EMISSION:
+		case STATE_TERMINATION:
+			goto_discharge_state();
+			return true;
+		case STATE_DISCHARGE:
+			return true;
+		default:
+			return false;
+	}
+}
+#endif
 
 static void run_cold_state(EventType ev)
 {
@@ -344,6 +489,7 @@ static void goto_cold_fault_state()
 	enable_hv(false);
 	//Disable EMISSION interlock (grid)
 	enable_ecc(false);
+	enable_grid(false);
 	
 	//Ensure kV, source heater and grid voltages are 0
 	set_hvps_kv(0, 0);
@@ -379,9 +525,11 @@ static void goto_conditioning_state()
 	//If estops are pressed do not proceed to conditioning
 	if(!verify_estops_ok())
 	{
+		report_typed_fault(FAULT_INTERLOCK, "Cannot condition with e-stops open");
 		return;
 	}
 	
+	warmup_deci_seconds = 0;
 	//Set new heater value
 	enable_fast_warmup(false);
 	float htr_val = hvps_config[HVPS_CONF_CONDITION_I];
@@ -407,6 +555,14 @@ static void run_conditioning_state(EventType ev)
 	}
 	else if(ev == EVENT_HVPS_SP_REACHED)
 	{
+		//Start the hold only after the heater first reaches and stabilizes at target.
+		if(warmup_deci_seconds == 0)
+		{
+			warmup_deci_seconds = CONDITIONING_HOLD_DECI_SECONDS;
+		}
+	}
+	else if(ev == EVENT_CONDITIONING_HOLD_COMPLETE)
+	{
 		goto_primed_state();
 	}
 }
@@ -416,6 +572,7 @@ static void goto_warmup_state()
 	//If estops are pressed do not proceed to warmup
 	if(!verify_estops_ok())
 	{
+		report_typed_fault(FAULT_INTERLOCK, "Cannot warmup with e-stops open");
 		return;
 	}
 	
@@ -505,7 +662,7 @@ static void run_primed_state(EventType ev)
 	//Go to fault state if fault reported
 	if(ev == EVENT_FAULT)
 	{		
-		goto_fault_state();
+		goto_fault_discharge_state();
 	}
 	else if(ev == EVENT_PC_STANDBY)
 	{
@@ -524,9 +681,6 @@ static void run_primed_state(EventType ev)
 		ok_to_proceed &= (system_status[SS_TIMER_1_VAL].f == 0.0);
 		ok_to_proceed &= (system_status[SS_TIMER_2_VAL].f == 0.0);
 		
-		//Check that an appropriate number of points is requested
-		ok_to_proceed &= (system_status[SS_OP_COUNT].i > 0);
-		ok_to_proceed &= (system_status[SS_OP_COUNT].i <= MAX_OPERATIONAL_POINTS);
 		
 		//Only proceed if system is in ok state
 		if(ok_to_proceed)
@@ -546,8 +700,8 @@ static void goto_staging_state()
 	//Restart standby timer
 	standby_deci_seconds = STANDBY_TICKS;
 		
-	//Set up target flags for plan points
-	set_plan_flags();
+	//Start with an empty singular operational point.
+	clear_treatment_plan();
 	
 	//Go to staging state
 	*state = STATE_STAGING;
@@ -558,7 +712,7 @@ static void run_staging_state(EventType ev)
 	//Go to fault state if fault reported
 	if(ev == EVENT_FAULT)
 	{
-		goto_fault_state();
+		goto_fault_discharge_state();
 	}
 	else if(ev == EVENT_PC_STANDBY)
 	{
@@ -582,9 +736,8 @@ static void goto_staged_state()
 	//Restart standby timer
 	standby_deci_seconds = STANDBY_TICKS;
 	
-	//Ensure confirmation flags are completely wiped
-	plan_info[PLAN_CONFIRMATION_FLAGS_1] = 0;
-	plan_info[PLAN_CONFIRMATION_FLAGS_2] = 0;
+	//The staged point must be confirmed before plan release.
+	plan_info[PLAN_CONFIRMED_BOOL] = 0;
 	
 	//Set flag indicating plan is staged
 	plan_info[PLAN_STAGED_BOOL] = 1;
@@ -599,7 +752,7 @@ static void run_staged_state(EventType ev)
 	//Go to fault state if fault reported
 	if(ev == EVENT_FAULT)
 	{
-		goto_fault_state();
+		goto_fault_discharge_state();
 	}
 	else if(ev == EVENT_PC_STANDBY)
 	{
@@ -634,9 +787,12 @@ static void run_staged_state(EventType ev)
 		
 		if(ok_to_proceed)
 		{
-			//Always set wait for resume on first point
-			wait_for_release_point = true;
-			goto_hvps_check_state();	
+			//Plan release configures the singular operational point.
+#if defined(CALIBRATION_MODE)
+			goto_setup_state();
+#else
+			goto_hvps_check_state();
+#endif
 		}
 		else
 		{
@@ -664,7 +820,7 @@ static void run_hvps_check_state(EventType ev)
 {
 	if(ev == EVENT_FAULT)
 	{
-		goto_fault_state();
+		goto_fault_discharge_state();
 	}
 	else if(ev == EVENT_HVPS_CHECK)
 	{
@@ -678,79 +834,58 @@ static void run_hvps_check_state(EventType ev)
 
 static void goto_setup_state()
 {
-	//Ensure OP index is valid
-	int op_idx = system_status[SS_OP_IDX].i;
-	float seconds = 0;
-	bool op_time_ok = false;
-	
-	do
+	float seconds = operational_point[OP_REMAIN_TIME].f;
+	if(seconds <= 0)
 	{
-		if(op_idx < 0 || op_idx >= system_status[SS_OP_COUNT].i || op_idx >= MAX_OPERATIONAL_POINTS)
-		{
-			goto_fault_state();	//TBD TODO add specific reporting in addition to transition
-			return;
-		}
-		
-		seconds = operational_points[op_idx][OP_REMAIN_TIME].f;
-		if(seconds <= 0)
-		{
-			op_idx++;
-			system_status[SS_OP_IDX].i += 1;
-		}
-		else
-		{
-			op_time_ok = true;
-		}
+		goto_discharge_state();
+		return;
 	}
-	while(!op_time_ok);
-	//check remaining time for the current operational point
-	//if time <= 0, move to the next point
-	
+
 	//Disable HV interlock
 	enable_hv(false);
-	
+
 	// wait 20ms
 	u32_t time_now = sys_now();
 	u32_t time_set = time_now + 20;
-	
+
 	while(sys_now() < time_set){}
 	//Disable EMISSION interlock
 	enable_ecc(false);
-	
+
 	// wait 20ms
 	time_now = sys_now();
 	time_set = time_now + 20;
-		
+
 	while(sys_now() < time_set){}
-	
+
 	//Enable HV interlock
 	enable_hv(true);
-	
+
 	//Set new timer values (pause first to allow timer change)
 	pause_ext_timers();
 	set_new_timer_value(seconds);
 	deci_seconds_remaining = (int)((seconds * 10) + 0.5);	//Add 0.5 to round due to integer truncation
 	system_status[SS_INTERNAL_TIMER_VAL].f = 0;
 	//TBD TODO system_status[SS_I_TIMER_STATE].i = ;
-	
+
 	//Set filament to target current
-	float heater_target = operational_points[op_idx][OP_FIL].f;
+	float heater_target = operational_point[OP_FIL].f;
 	set_hvps_heater(heater_target);
-	
+
 	//Set kV to target energy
-	float kV = operational_points[op_idx][OP_KV].f;
-	float mA_out = operational_points[op_idx][OP_MA].f;
+	float kV = operational_point[OP_KV].f;
+	float mA_out = operational_point[OP_MA].f;
 	set_hvps_kv(kV, mA_out);
-	
+
 #if defined(CALIBRATION_MODE)
 	//Set grid to 150V
-	set_hvps_grid(150);
+	set_hvps_grid(600);
 #else
 	//Set grid to 200/400/500V
 	if(kV <= 50)
 	{
 		set_hvps_grid(200);
-	} 
+	}
 	else if (kV <= 70)
 	{
 		set_hvps_grid(400);
@@ -759,31 +894,31 @@ static void goto_setup_state()
 	{
 		set_hvps_grid(500);
 	}
-	else 
+	else
 	{
 		set_hvps_grid(0);
 	}
 #endif
-	
-	float f_coil_current = (operational_points[op_idx][OP_F_COIL].f / 1000) * 1.666;	//TBD TODO clean up magic number
+
+	float f_coil_current = (operational_point[OP_F_COIL].f / 1000) * 1.666;	//TBD TODO clean up magic number
 	set_coil_voltage(F_COIL_DAC_CH, f_coil_current);
-	
-	float coil_current = (operational_points[op_idx][OP_X_COIL].f / 1000) * 2.5;	//TBD TODO clean up magic number
+
+	float coil_current = (operational_point[OP_X_COIL].f / 1000) * 2.5;	//TBD TODO clean up magic number
 	set_coil_voltage(X_COIL_DAC_CH, coil_current);
 
-	coil_current = (operational_points[op_idx][OP_Y_COIL].f / 1000) * 2.5;	//TBD TODO clean up magic number
+	coil_current = (operational_point[OP_Y_COIL].f / 1000) * 2.5;	//TBD TODO clean up magic number
 	set_coil_voltage(Y_COIL_DAC_CH, coil_current);
-	
+
 	//Set expected coil values
-	expected_coil_value[EV_COIL_X_A] = operational_points[op_idx][OP_X_COIL].f;
-	expected_coil_value[EV_COIL_Y_A] = operational_points[op_idx][OP_Y_COIL].f;
-	expected_coil_value[EV_COIL_F_A] = operational_points[op_idx][OP_F_COIL].f;
-	
+	expected_coil_value[EV_COIL_X_A] = operational_point[OP_X_COIL].f;
+	expected_coil_value[EV_COIL_Y_A] = operational_point[OP_Y_COIL].f;
+	expected_coil_value[EV_COIL_F_A] = operational_point[OP_F_COIL].f;
+
 	//Turn off indicators
 	enable_indicators(false);
-	
+
 	set_led_sequence(LED_SEQ_SETUP);
-	
+
 	*state = STATE_SETUP;
 }
 
@@ -791,7 +926,7 @@ static void run_setup_state(EventType ev)
 {
 	if(ev == EVENT_FAULT)
 	{
-		goto_fault_state();
+		goto_fault_discharge_state();
 	}
 	else if(ev == EVENT_PC_STOP)
 	{
@@ -805,22 +940,14 @@ static void run_setup_state(EventType ev)
 
 static void goto_ready_state()
 {
-	int op_idx = system_status[SS_OP_IDX].i;
-	
 	//Restart standby timer
 	standby_deci_seconds = STANDBY_TICKS;
-	
+
 	//Pause timers in case we are stopping existing treatment (does not affect new treatment)
 	pause_ext_timers();
-	
+
 	//Disable EMISSION interlock
 	enable_ecc(false);
-	
-	//Queue start if auto-continue for point is set
-	if(!wait_for_release_point && (operational_points[op_idx][OP_AUTO_EXEC].u != 0))
-	{
-		queue_sm_event(EVENT_PC_RELEASE_POINT);
-	}
 
 	set_led_sequence(LED_SEQ_READY);
 
@@ -831,7 +958,7 @@ static void run_ready_state(EventType ev)
 {
 	if(ev == EVENT_FAULT)
 	{
-		goto_fault_state();
+		goto_fault_discharge_state();
 	}
 	else if(ev == EVENT_PC_STOP)
 	{
@@ -843,6 +970,7 @@ static void run_ready_state(EventType ev)
 	}
 	else if(ev == EVENT_PC_RELEASE_POINT)
 	{
+		
 		//Check keys before proceeding
 		bool ok_to_proceed = true;
 		
@@ -856,7 +984,6 @@ static void run_ready_state(EventType ev)
 		//Only proceed if interlocks are ok
 		if(ok_to_proceed)
 		{
-			wait_for_release_point = false;	//For now, auto-proceed to all points after first
 			goto_launching_state();
 		}
 		else
@@ -871,6 +998,10 @@ static void goto_launching_state()
 {
 	//Disable EMISSION interlock
 	enable_ecc(false);
+#if defined(CALIBRATION_MODE)
+	//Start the HVPS calibration emission while the state machine launches.
+	queue_hvps_cmd(HVPS_CMD_CAL_START, 0, 0);
+#endif
 	
 	*state = STATE_LAUNCHING;
 }
@@ -879,7 +1010,7 @@ static void run_launching_state(EventType ev)
 {
 	if(ev == EVENT_FAULT)
 	{
-		goto_fault_state();
+		goto_fault_discharge_state();
 	}
 	else if(ev == EVENT_PC_STOP)
 	{
@@ -899,6 +1030,9 @@ static void goto_emission_state()
 	//Enable EMISSION interlock
 	enable_ecc(true);
 
+	//Assert GRID enable high for active x-ray emission
+	enable_grid(true);
+
 	//Start the external timers
 	start_ext_timers();
 
@@ -913,7 +1047,7 @@ static void run_emission_state(EventType ev)
 {
 	if(ev == EVENT_FAULT)
 	{
-		goto_fault_state();
+		goto_fault_discharge_state();
 	}
 	else if(ev == EVENT_PC_STOP)
 	{
@@ -921,14 +1055,7 @@ static void run_emission_state(EventType ev)
 	}
 	else if(ev == EVENT_OP_COMPLETE)
 	{
-		if(++system_status[SS_OP_IDX].i >= system_status[SS_OP_COUNT].i)
-		{	
-			goto_termination_state();
-		}
-		else
-		{
-			goto_setup_state();	
-		}
+		goto_discharge_state();
 	}
 }
 
@@ -976,7 +1103,7 @@ static void run_termination_state(EventType ev)
 {
 	if(ev == EVENT_FAULT)
 	{
-		goto_fault_state();
+		goto_fault_discharge_state();
 	}
 	else if(ev == EVENT_HVPS_SP_REACHED)
 	{
@@ -984,35 +1111,69 @@ static void run_termination_state(EventType ev)
 	}
 }
 
-static void goto_discharge_state()
-{	
+static void enter_discharge_state(XState target_state)
+{
 	//Disable HV interlock
 	enable_hv(false);
-	
-	//Disable EMISSION interlock
-	enable_ecc(false);
+
+	//Stop an active emission while outputs ramp to zero.
+	pause_ext_timers();
+	enable_indicators(false);
 	
 	//Set kV, heater and grid to 0
 	set_hvps_kv(0, 0);
 	set_hvps_heater(0);	
 	set_hvps_grid(0);
+#if defined(CALIBRATION_MODE)
+	//Stop calibration after the zero setpoints are queued so the HVPS applies them.
+	queue_hvps_cmd(HVPS_CMD_CAL_STOP, 0, 0);
+#endif
 
 	//Turn off coils
 	set_coil_voltage(X_COIL_DAC_CH, 0);
 	set_coil_voltage(Y_COIL_DAC_CH, 0);
 	set_coil_voltage(F_COIL_DAC_CH, 0);
 	
-	*state = STATE_DISCHARGE;
+	*state = target_state;
+}
+
+static void goto_discharge_state()
+{
+	enter_discharge_state(STATE_DISCHARGE);
 }
 
 static void run_discharge_state(EventType ev)
 {
 	if(ev == EVENT_FAULT)
 	{
-		goto_fault_state();
+		goto_fault_discharge_state();
 	}
 	else if(ev == EVENT_HVPS_SP_REACHED)
 	{
+		goto_cold_state();
+	}
+}
+
+static void goto_fault_discharge_state()
+{
+	enable_hv(false);
+	set_led_sequence(LED_SEQ_FAULT);
+	enter_discharge_state(STATE_FAULT_DISCHARGE);
+}
+
+static void run_fault_discharge_state(EventType ev)
+{
+	if(ev == EVENT_HVPS_SP_REACHED)
+	{
+		goto_fault_state();
+	}
+	else if (ev == EVENT_FAULT)
+	{
+		goto_fault_state();
+	}
+	else if(ev == EVENT_PC_CLEAR_FAULT)
+	{
+		clear_faults();
 		goto_cold_state();
 	}
 }
@@ -1032,6 +1193,11 @@ static void goto_fault_state()
 	
 	//Disable EMISSION interlock
 	enable_ecc(false);
+	enable_grid(false);
+#if defined(CALIBRATION_MODE)
+	//A fault also terminates any active HVPS calibration emission.
+	queue_hvps_cmd(HVPS_CMD_CAL_STOP, 0, 0);
+#endif
 	
 	//Pause timers
 	pause_ext_timers();

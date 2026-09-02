@@ -13,6 +13,7 @@
 #include <string.h>
 #include "checksum.h"
 #include "hal_atomic.h"
+#include "hvps.h"
 #include "state_machine.h"
 #include "faults.h"
 
@@ -347,48 +348,51 @@ void process_faults(void)
 #if defined(CALIBRATION_MODE)
 void fault_detected(CalFault fault_type, bool fault)
 {
+	const bool report_fault = fault && system_status[SS_STATE].u == STATE_CALIBRATION;
+
 	switch (fault_type)
 	{
 		case FLOW_FAULT:
 			flow_ok = !fault;
-			if (fault)
+			if(report_fault)
 			{
-				signal_emission_stop();
+				report_typed_fault(FAULT_COOLANT, "Calibration coolant fault");
 			}
 			break;
 		case PRES_FAULT:
 			pres_ok = !fault;
-			if (fault)
+			if(report_fault)
 			{
-				signal_emission_stop();
+				report_typed_fault(FAULT_COOLANT, "Calibration pressure fault");
 			}
 			break;
 		case TEMP_FAULT:
 			temp_ok = !fault;
-			if (fault)
+			if(report_fault)
 			{
-				signal_emission_stop();
+				report_typed_fault(FAULT_COOLANT, "Calibration temp fault");
+				fault_latch(FAULT_COOLANT);
 			}
 			break;
 		case IREP_FAULT:
 			irep_ok = !fault;
-			if (fault)
+			if(report_fault)
 			{
-				signal_emission_stop();
+				report_typed_fault(FAULT_ION_REPELLER, "Calibration irep fault");
 			}
 			break;
 		case IPUM_FAULT:
 			ipum_ok = !fault;
-			if (fault)
+			if(report_fault)
 			{
-				signal_emission_stop();
+				report_typed_fault(FAULT_ION_PUMP_FB, "Calibration ipum fault");
 			}
 			break;
 		case DOOR_FAULT:
 			door_ok = !fault;
-			if (fault)
+			if(report_fault)
 			{
-				signal_hvps_stop();
+				report_typed_fault(FAULT_INTERLOCK, "Calibration door interlock fault");
 			}
 			break;
 		default:
@@ -396,10 +400,11 @@ void fault_detected(CalFault fault_type, bool fault)
 	}
 }
 
-bool can_calibrate()
+bool can_calibrate(void)
 {
 	return flow_ok && pres_ok && temp_ok && irep_ok && ipum_ok && door_ok;
 }
+
 #endif
 
 /*

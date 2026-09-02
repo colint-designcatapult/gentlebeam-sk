@@ -11,104 +11,85 @@ namespace Xcc.Test.Xcc.Core.Models.GryphonBoard
         {
             operationalPoint = new GcbOperationalPoint
             {
-                PointIndex = 0,
                 TotalPointTime = 1,
                 RemainingPointTime = 1,
                 SetpointKv = 50,
                 TargetMA = 1.0f,
                 FilamentSetpoint = 3700,
-                XCoilSetpoint = 0,
-                YCoilSetpoint = 0,
-                FocusCoilSetpoint = 0,
-                AutoExecution = false
+                XCoilSetpoint = 10,
+                YCoilSetpoint = 20,
+                FocusCoilSetpoint = 30
             };
         }
 
         [Test]
-        public void EqualsTest()
+        public void EqualsIncludesRemainingTime()
         {
-            GcbOperationalPoint equalPoint = operationalPoint;
+            Assert.That(operationalPoint.Equals(operationalPoint), Is.True);
 
-            Assert.That(operationalPoint.Equals(equalPoint), Is.True);
+            var changed = operationalPoint;
+            changed.RemainingPointTime -= 0.5f;
 
-            GcbOperationalPoint nonEqualPoint = operationalPoint;
-            nonEqualPoint.AutoExecution = !operationalPoint.AutoExecution;
-            Assert.That(operationalPoint.Equals(nonEqualPoint), Is.False);
+            Assert.That(operationalPoint.Equals(changed), Is.False);
         }
 
         [Test]
-        public void IsSame_PositiveTest()
+        public void IsSamePointIgnoresRuntimeAndDeflectionValues()
         {
-            GcbOperationalPoint samePoint = operationalPoint;
+            var changed = operationalPoint;
+            changed.RemainingPointTime -= 0.5f;
+            changed.XCoilSetpoint += 1;
+            changed.YCoilSetpoint += 1;
 
-            Assert.That(operationalPoint.IsSamePoint(samePoint), Is.True);
-
-            samePoint.RemainingPointTime = samePoint.RemainingPointTime - 0.5f;
-            Assert.That(operationalPoint.IsSamePoint(samePoint), Is.True);
+            Assert.That(operationalPoint.IsSamePoint(changed), Is.True);
         }
 
         [Test]
-        public void IsSame_NegativeTest()
+        public void IsSamePointRejectsDifferentSetpoint()
         {
-            GcbOperationalPoint otherPoint = operationalPoint;
+            var changed = operationalPoint;
+            changed.SetpointKv += 1;
 
-            otherPoint.PointIndex += 1;
-            Assert.That(operationalPoint.IsSamePoint(otherPoint), Is.False);
-
-            otherPoint = operationalPoint;
-            otherPoint.AutoExecution = !otherPoint.AutoExecution;
-            Assert.That(operationalPoint.IsSamePoint(otherPoint), Is.False);
+            Assert.That(operationalPoint.IsSamePoint(changed), Is.False);
         }
 
         [Test]
-        public void ActualDurationTest()
+        public void ActualDurationIsElapsedTime()
         {
-            GcbOperationalPoint point = operationalPoint;
-            float elapsedTime = 0.5f;
-            point.RemainingPointTime = point.TotalPointTime - elapsedTime;
-            Assert.That(point.ActualDuration, Is.EqualTo(elapsedTime));
+            var point = operationalPoint;
+            point.RemainingPointTime = 0.5f;
+
+            Assert.That(point.ActualDuration, Is.EqualTo(0.5f));
         }
-        
+
         [Test]
-        public void GettersSetters(
-            [Values(0, 1)] int pointIndex,
-            [Values(0.1f, 1.1f)] float totalPointTime,
-            [Values(0.2f, 1.2f)] float initialRemainingPointTime,
-            [Values(0.3f, 1.3f)] float remainingPointTime,
-            [Values(0.4f, 1.4f)] float setpointKv,
-            [Values(0.5f, 1.5f)] float targetMA,
-            [Values(0.6f, 1.6f)] float filamentSetpoint,
-            [Values(0.7f, 1.7f)] float xCoilSetpoint,
-            [Values(0.8f, 1.8f)] float yCoilSetpoint,
-            [Values(0.9f, 1.9f)] float focusCoilSetpoint,
-            [Values(false, true)] bool autoExecution)
+        public void ScalarPropertiesRoundTrip()
         {
             var sut = new GcbOperationalPoint
             {
-                PointIndex = pointIndex,
-                TotalPointTime = totalPointTime,
-                InitialRemainingPointTime = initialRemainingPointTime,
-                RemainingPointTime = remainingPointTime,
-                SetpointKv = setpointKv,
-                TargetMA = targetMA,
-                FilamentSetpoint = filamentSetpoint,
-                XCoilSetpoint = xCoilSetpoint,
-                YCoilSetpoint = yCoilSetpoint,
-                FocusCoilSetpoint = focusCoilSetpoint,
-                AutoExecution = autoExecution,
+                TotalPointTime = 0.1f,
+                InitialRemainingPointTime = 0.2f,
+                RemainingPointTime = 0.3f,
+                SetpointKv = 0.4f,
+                TargetMA = 0.5f,
+                FilamentSetpoint = 0.6f,
+                XCoilSetpoint = 0.7f,
+                YCoilSetpoint = 0.8f,
+                FocusCoilSetpoint = 0.9f
             };
-            
-            Assert.That(sut.PointIndex, Is.EqualTo(pointIndex));
-            Assert.That(sut.TotalPointTime, Is.EqualTo(totalPointTime).Within(G.Precision));
-            Assert.That(sut.InitialRemainingPointTime, Is.EqualTo(initialRemainingPointTime).Within(G.Precision));
-            Assert.That(sut.RemainingPointTime, Is.EqualTo(remainingPointTime).Within(G.Precision));
-            Assert.That(sut.SetpointKv, Is.EqualTo(setpointKv).Within(G.Precision));
-            Assert.That(sut.TargetMA, Is.EqualTo(targetMA).Within(G.Precision));
-            Assert.That(sut.FilamentSetpoint, Is.EqualTo(filamentSetpoint).Within(G.Precision));
-            Assert.That(sut.XCoilSetpoint, Is.EqualTo(xCoilSetpoint).Within(G.Precision));
-            Assert.That(sut.YCoilSetpoint, Is.EqualTo(yCoilSetpoint).Within(G.Precision));
-            Assert.That(sut.FocusCoilSetpoint, Is.EqualTo(focusCoilSetpoint).Within(G.Precision));
-            Assert.That(sut.AutoExecution, Is.EqualTo(autoExecution));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(sut.TotalPointTime, Is.EqualTo(0.1f).Within(G.Precision));
+                Assert.That(sut.InitialRemainingPointTime, Is.EqualTo(0.2f).Within(G.Precision));
+                Assert.That(sut.RemainingPointTime, Is.EqualTo(0.3f).Within(G.Precision));
+                Assert.That(sut.SetpointKv, Is.EqualTo(0.4f).Within(G.Precision));
+                Assert.That(sut.TargetMA, Is.EqualTo(0.5f).Within(G.Precision));
+                Assert.That(sut.FilamentSetpoint, Is.EqualTo(0.6f).Within(G.Precision));
+                Assert.That(sut.XCoilSetpoint, Is.EqualTo(0.7f).Within(G.Precision));
+                Assert.That(sut.YCoilSetpoint, Is.EqualTo(0.8f).Within(G.Precision));
+                Assert.That(sut.FocusCoilSetpoint, Is.EqualTo(0.9f).Within(G.Precision));
+            });
         }
     }
 }

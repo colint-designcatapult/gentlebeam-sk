@@ -67,8 +67,8 @@ STATEMENT: >>>
 The HVPS interface application firmware is used to control and receive feedback from HVPS.
 The HVPS interface application firmware reports data back to and receives commands from the main
 control application firmware. The HVPS interface application firmware contains routines to ramp up the
-filament current, as well as the high voltage. It contains a PID loop for regulating the emission output to a
-given setpoint.
+filament current, as well as the high voltage. It contains a proportional-integral feedback
+controller for regulating the emission output to a given setpoint.
 The HVPS interface application firmware runs on the MCU of the HVPS interface board.
 Application setup and cyclic processing run in the default FreeRTOS task. External ADC result processing and feedback-control calculations run in a separate FreeRTOS control task.
 <<<
@@ -150,7 +150,7 @@ TITLE: Design Items
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPS-106
-TITLE: Boot loading Communication
+TITLE: Bootloader Communication
 STATEMENT: >>>
 The firmware communicates with the PC via one of the microcontrollers' serial UART interface. The
 firmware both receives and transmits data on this UART port. Due to the nature of UART having
@@ -170,8 +170,15 @@ been received from the PC, as according to the communication protocol. Once a co
 has been received, the firmware sets a flag for further data processing outside of the parsing
 inside of the interrupt callback.
 
-The firmware will monitor for a boot load command from the PC. Once received the firmware will reset
-the microcontroller into bootloader mode.
+Each recognized command has a fixed expected frame length. After the five-character command header
+is received, the callback uses that command's byte count to delimit the frame rather than treating a
+newline-valued byte in a binary payload as an early terminator. An unrecognized header or a receive
+buffer limit resets the parser. The callback always re-arms one-byte interrupt reception, including
+while a complete frame awaits deferred processing; bytes received while processing is pending are
+discarded, and reception remains available for a subsequent valid frame.
+
+When deferred processing accepts the seven-byte `*B00TL\n` frame, it erases the single application
+CRC flash page at `CRC_ADDR_START` and invokes a system reset so execution enters the bootloader.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -195,12 +202,6 @@ remains enabled.
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-5
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-10
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-11
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-12
@@ -273,14 +274,19 @@ TITLE: External ADC Communication
 STATEMENT: >>>
 The firmware communicates with two external ADC IC chips. Each chip has one channel, and they are
 responsible for reading the mA and kV feedback signals. Each chip uses a dedicated SPI bus and chip
-select line.
+select line, and both SPI buses operate at 2.25 Mbit/s.
 
-The external ADC module acquires both channels using nonblocking SPI receive DMA transfers. Each
-received frame is decoded and checked for valid device framing. DMA, framing, and acquisition timing
-errors produce an invalid result and prevent that result from being used for feedback processing.
+The external ADC module starts a 16-pair burst every 5 ms and acquires both channels using
+nonblocking SPI receive DMA transfers. Each received frame is decoded and checked for valid device
+framing. At 2 ms after the burst starts, an incomplete or missing result is rejected as an
+acquisition-timing error. DMA or framing errors also produce an invalid result and prevent that
+result from being used for feedback processing.
 
-Completed paired samples are averaged before the result is published to the feedback and control
-functions. The ADC chip-select signals remain inactive while the ADCs are idle.
+The 16 samples from each channel are averaged. The averaged 16-bit codes are converted to engineering
+units using the 4.096 V ADC reference and the channel input scaling: a 20 kOhm/10 kOhm divider and
+0.1 V/kV for high voltage, and a 30 kOhm/20 kOhm divider and 1 V/mA for cathode current. The paired
+result is then published to the feedback and control functions. The ADC chip-select signals remain
+inactive while the ADCs are idle.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -309,9 +315,9 @@ continue operating during the relatively longer SPI transmission (compared to pr
 DAC module utilizes the SPI interrupt handler to set flags for handling the queued DAC requests
 (indicating bus is free).
 
-In addition to sending data over the SPI bus, the DAC module handles the digital chip select
-signals. These signals are independent for each chip, so there are a total of 4 digital output lines
-controlled by the DAC via the hardware abstraction library's provided GPIO control.
+In addition to sending data over the SPI bus, the DAC module handles the four independent digital
+chip-select outputs through the hardware abstraction library's GPIO control. All four outputs
+initialize inactive high and remain high whenever no DAC transaction is active.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -363,9 +369,8 @@ RELATIONS:
 UID: SW-H1FWHVPS-114
 TITLE: HVPS Interface Status Flags
 STATEMENT: >>>
-The firmware tracks various Boolean status flags. These status flags are represented in a single
-bitmask with each bit representing one flag. This status is reported to the main control board. The
-following flags are monitored and reported:
+The firmware tracks Boolean status flags in a bitmask reported to the main control board. The
+following operating-state flags are monitored and reported:
 
 - HV interlock control enabled
 - Grid interlock control enabled
@@ -373,11 +378,31 @@ following flags are monitored and reported:
 - High voltage ramp in progress
 - Emission ongoing
 - Configuration modification unlocked
-- PID enabled
-- Calibration grid interlock enabled
+- Emission-current controller enabled
 - Fast filament ramping enabled
+
+The firmware also reports a distinct latched status flag for each of these HVPS fault sources:
+
+- Filament clock fault
+- Cathode arc
+- Fan fault
+- 24 V overcurrent
+- Master fault
+- High-voltage overcurrent
+- Temperature 1 fault
+- Cathode overcurrent
+- Temperature 3 fault
+- Temperature 2 fault
+
+When a monitored fault input becomes active, the firmware sets the corresponding status flag and
+writes a diagnostic entry identifying the fault source and its status and input bit positions.
+Deasserting the input does not clear the flag. An explicit fault clear removes the corresponding
+latched flag and writes a diagnostic fault-cleared entry.
 <<<
 RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-5
+  ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-14
   ROLE: Refines
@@ -387,8 +412,8 @@ UID: SW-H1FWHVPS-115
 TITLE: Output Power
 STATEMENT: >>>
 The output power is set by the main control board via commands to the firmware. The firmware
-utilizes the power setpoint along with the high voltage output setpoint so that PID control of the
-emission output targets the associated emission current (power divided by voltage).
+uses the power setpoint and high-voltage setpoint to derive the target emission current as power
+divided by voltage for the proportional-integral grid controller.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -399,60 +424,53 @@ RELATIONS:
 UID: SW-H1FWHVPS-116
 TITLE: High Voltage Output and Ramping
 STATEMENT: >>>
-When a target filament high voltage value is requested by the main control board, the firmware will
-incrementally ramp up or down towards the final target value.
+When a target high-voltage value is requested while the high-voltage control is unlocked, the
+firmware sets the high-voltage-ramping status and ramps the command toward the target while emission
+is inactive. Each 5 ms feedback-control cycle scales the command increment by the elapsed 0.005 s
+rather than treating the configured ramp values as per-cycle steps.
 
-Unfortunately, the high voltage power supply is unregulated and has a relatively inaccurate control
-translation (differential between the control signal and feedback signal is around +/-5% tolerance
-which is too far for clinical performance) and as such the firmware must implement a closed loop to
-adjust the control to arrive at a more accurate high voltage output.
+The default slow and fast ramp rates are 5 kV/s and 20 kV/s. For either ramp direction, an error
+whose magnitude is less than 5 kV uses the slow rate, an error from 5 kV to 20 kV uses four times the
+slow rate, and an error of at least 20 kV uses the fast rate. With the defaults, these produce
+0.025 kV and 0.1 kV changes per 5 ms cycle. The command is limited to the configured 0 kV to 100 kV
+output range.
 
-When increasing voltage, the firmware increases the control output, with larger steps the further
-away from the target value. Once the system starts to approach the target high voltage, the firmware
-uses smaller increment steps. This is due to the time lag in the system where increases in the
-control signal to the high voltage power supply take a short but indeterminate amount of time to
-fully stabilize. Stabilization time depends on a variety of factors such as HVPS calibration/tuning,
-as well as high voltage cable and source characteristics. The simplest way to account for all these
-differences is to use smaller steps the closer to the target output to eliminate time lag issues.
-
-For decreasing, once again due to both time lag issues, the decrements are generally small, but if
-the target voltage is much lower, the firmware will drop the control signal to approximately 90% of
-the target value (to account for the unregulated tolerance variances of the HVPS).
-
-The increment/decrement steps are performed at fixed periodic intervals while the ramping process is
-taking place. While the ramping process is taking place the firmware also sets the 'high voltage
-ramping' status bit in the flag status value reported to the main control board.
+After the feedback reaches the target, feedback samples within +/-2% of the requested voltage add
+5 ms to an elapsed stability accumulator. The firmware clears the high-voltage-ramping status after
+the accumulator reaches 4000 ms; samples outside the tolerance do not add to the accumulator. If an
+increasing command has reached at least 50 kV and exceeds feedback by more than 50 kV, the firmware
+sets the command to zero and cancels the ramp.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-8
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-14
   ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPS-117
 TITLE: Filament Output and Ramping
 STATEMENT: >>>
-When a target filament current value is requested by the main control board, the firmware will
-incrementally ramp up or down towards the final target value. The decrement steps are large and
-fixed. The increment steps are variable and are dependent on two factors. The first factor is the
-present output value of the filament current. Higher present filament currents will result in
-smaller steps than lower present filament currents. The second factor is whether fast ramping is
-enabled or not. If fast ramping is enabled, the step size will be increased by a fixed multiple.
+When a target filament-current value is requested, the firmware starts the warming status and
+services the ramp every 3 ms while warming is active and emission is inactive. Each active upward
+ramp adds 2.25 mA, which is the elapsed-time increment for the fixed 750 mA/s ramp rate. The active
+command is limited to the configured minimum and maximum filament-current values. An invalid target
+or command outside the configured range sets the target and command to zero and cancels warming.
 
-As the final target filament current may not be a multiple of the final step size, if the final step
-under or overshoots the final target value, the ramp simply sets the filament current on this final
-step to the intended target value.
+When feedback has reached the target, each sample from the target through 2% above the target adds
+3 ms to the stability accumulator. The firmware clears warming after at least 4000 ms of qualifying
+samples. Feedback more than 2% above the target makes the command equal the target without adding
+stability time.
 
-The increment/decrement steps are performed at fixed periodic intervals while the ramping process is
-taking place. While the ramping process is taking place the firmware also sets the 'filament
-ramping' status bit in the flag status value reported to the main control board.
+While feedback remains below the target, a commanded current at or above the configured minimum that exceeds
+feedback by more than 300 mA adds 3 ms to a feedback-discrepancy accumulator. At 6000 ms of
+qualifying samples, the firmware sets the filament command to zero and cancels warming.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-6
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-14
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-17
@@ -462,13 +480,17 @@ RELATIONS:
 UID: SW-H1FWHVPS-118
 TITLE: Grid Output
 STATEMENT: >>>
-The grid is currently just set to a fixed constant value. The main control board may change the grid
-output value to another fixed value. The grid value is not ramped, it is directly set through the
-external DAC interface.
+The firmware accepts a direct adjustment-grid command from the main control board and writes values
+from zero through the configured maximum to the external grid DAC. While emission-current grid
+control is enabled during emission, the feedback controller supersedes the direct command and
+updates the grid output within its configured control limits and elapsed-time slew rates.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-7
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-14
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -486,12 +508,25 @@ RELATIONS:
 UID: SW-H1FWHVPS-120
 TITLE: Emission Current Grid Control
 STATEMENT: >>>
-When grid control is enabled, the firmware calculates the difference between the requested emission
-current and the measured feedback current. It adjusts the grid output in response to that error and
-constrains the resulting command to the configured minimum and maximum grid outputs.
+Grid control is enabled by default and operates only while x-ray emission is active. The requested
+emission current is the requested power divided by the requested high voltage. On activation, the
+firmware initializes the adjustment-grid command to its configured maximum of 600 units, clears the
+integral state, and runs the proportional-integral calculation from the 5 ms external-feedback
+control task.
 
-The grid-control calculation runs in the FreeRTOS control task. The resulting command is written
-through the external DAC interface.
+The controller error is requested cathode current minus measured cathode current. The default
+proportional gain is -25 for requested high voltage at or below 50 kV, -35 above 50 kV through
+70 kV, and -150 above 70 kV. The integral time is 0.2 s, and each integral increment is calculated
+as `(Kp / 0.2 s) * 0.005 s * error`. The firmware compensates the integral state when the gain or
+maximum-grid feedforward changes. When the absolute error is within 1% of the absolute requested
+current, the controller holds the command and integral state and does not issue a DAC write.
+
+Outside the hold band, the default downward and upward slew limits are 3000 and 1000 grid units per
+second, respectively, yielding a reachable range of 15 units down and 5 units up per control cycle.
+The command is clamped to both this per-cycle range and the configured 50-to-600-unit output range.
+The integral candidate is accepted only when the unsaturated command is inside the reachable range
+or when the integral increment unwinds a saturation condition. Disabling grid control or ending
+emission restores the maximum-grid command and clears the controller state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -519,13 +554,17 @@ UID: SW-H1FWHVPS-122
 TITLE: External Feedback Control Task
 STATEMENT: >>>
 The firmware creates a dedicated FreeRTOS task for external ADC result processing and feedback
-control. The task waits for notification that an ADC acquisition has completed, accepts only valid
-results, updates feedback values, processes the high-voltage ramp, and calculates output-control
-commands.
+control. The periodic external ADC completion check notifies the task once per 5 ms acquisition
+period. A valid result replaces the high-voltage and cathode-current feedback values; invalid
+results do not replace feedback. Each notification then processes the high-voltage ramp and
+emission-current grid controller using the current feedback.
 
-Shared status and control state are protected while accessed by the task and interrupt context.
-DAC writes are performed outside the protected state-processing region so external feedback
-processing does not block communication, I/O, or DAC servicing.
+High-voltage increments, grid-controller integration, and grid-command slew are each multiplied by
+the 0.005 s control period. Their behavior therefore follows configured rates and time constants
+rather than a fixed change per task invocation. Shared status and controller state are protected
+while accessed by the task and interrupt context. DAC writes are performed outside the protected
+state-processing region so external feedback processing does not block communication, I/O, or DAC
+servicing.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -592,13 +631,18 @@ RELATIONS:
 UID: SW-H1FWHVPS-36
 TITLE: Input Signals
 STATEMENT: >>>
-The firmware logs several digital input signals coming from the HVPS and monitors the master fault
-signal for determining if an HVPS fault has occurred.
+The firmware logs several digital input signals coming from the HVPS and monitors them to determine
+whether an HVPS fault has occurred. OC_CAT is handled separately from the active-high fault inputs:
+a low level on the initial input sample and each subsequent high-to-low transition reports the
+cathode-overcurrent fault.
 
 The firmware also monitors three digital inputs from the main control board for enabling and
 disabling emission: HV interlock, grid interlock, and the emission start signal.
 <<<
 RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-5
+  ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-14
   ROLE: Refines
@@ -623,7 +667,22 @@ RELATIONS:
 UID: SW-H1FWHVPS-123
 TITLE: Logging Module
 STATEMENT: >>>
-The logging subsystem provides a configurable mechanism for recording and transmitting diagnostic information. It supports multiple log levels, formatted messages, and status reporting while minimizing application impact through buffered, asynchronous communication. The subsystem interfaces with the platform communication driver and provides a simple API for debugging, monitoring, and diagnostics.
+The compile-time logging switch defaults to enabled with DEBUG as the highest included severity.
+Initialization binds output to USART3, enables the runtime switch, and clears a 1024-byte transmit ring
+buffer. ERROR, WARN, INFO, and DEBUG calls format severity-tagged records in a 256-byte working buffer,
+truncate oversized records to leave room for a CRLF terminator, and enqueue them for FTDI_TX. Startup
+emits an INFO record containing `Sensus setup complete`. Unprefixed formatted output and newline-delimited
+JSON status containing `runtime_ms`, `sys_stat`, and `sys_io_bits` use the same queue and runtime switch;
+the optional 500 ms periodic status task is disabled by default. The UART interrupt starts one-byte
+transmission and each transmit-complete callback drains the next queued byte. Writers briefly mask
+interrupts while copying bytes; if the ring buffer fills, they drop the remainder instead of waiting.
+Runtime-disabled logging returns before formatting or enqueueing output. The USART3 error callback
+clears UART error flags so subsequent transmission can proceed.
+
+After input debouncing identifies a transition, the HV interlock handler emits WARN records
+containing `Hv int rose` or `Hv int fell`, the grid interlock handler emits `Grid int rose`
+or `Grid int fell`, and the beam-control handler emits `Beam ctrl rose` or
+`Beam ctrl fell`.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -634,7 +693,16 @@ RELATIONS:
 UID: SW-H1FWHVPS-124
 TITLE: GET and SET Configurations Command Processing
 STATEMENT: >>>
-The firmware processes GET and SET commands received through the FTDI UART interface to read and update configuration parameters. Valid requests are decoded, verified, and executed using the system configuration manager. GET commands return the requested parameter value, while successful SET commands update the parameter and return a confirmation response. Invalid requests are ignored without response.
+The firmware recognizes an 11-byte GET frame consisting of the `*GET..` command, a little-endian
+16-bit parameter-category identifier, a little-endian 16-bit parameter index, and a newline
+terminator. For a supported configuration-value category and index, GET reads the selected value and
+returns a 15-byte response containing `*GET..`, the received category and index, the value as a
+little-endian IEEE-754 32-bit float, and a newline terminator. The firmware recognizes a 15-byte SET
+frame consisting of the `*..SET` command, the same category and index fields, a little-endian
+IEEE-754 32-bit float value, and a newline terminator. A supported SET updates the selected
+configuration value and returns the corresponding 15-byte `*..SET` confirmation frame. Requests
+with an unrecognized command header or unsupported category, SET requests outside the configuration
+table, and requests with an index of 64 or greater are ignored without response.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -645,11 +713,46 @@ RELATIONS:
 UID: SW-H1FWHVPS-125
 TITLE: All-Values Bulk Read Command Processing
 STATEMENT: >>>
-The firmware processes bulk-read commands received through the FTDI UART interface to return the complete set of configuration values, setpoints, or feedback values in a single response. Valid requests are decoded and executed using the system configuration manager, setpoint manager, or feedback value manager, as applicable to the command received. Each command returns all values for its corresponding parameter category in a single response frame, with values packed sequentially in index order. Invalid or unrecognized commands are ignored without response.
+The firmware recognizes the seven-byte `*ACFGS\n`, `*ASPTS\n`, and `*AFBVS\n` bulk-read requests
+by their five-character command and expected frame length. In one response, the firmware echoes
+`*` and the request command, appends every value from the requested category as consecutive
+little-endian IEEE-754 32-bit floats in increasing index order, and appends a newline terminator.
+`ACFGS` returns all 32 configuration values in a 135-byte response, `ASPTS` returns all six
+setpoints in a 31-byte response, and `AFBVS` returns all five feedback values in a 27-byte
+response. An unrecognized command header is discarded without response.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-19
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPS-126
+TITLE: Firmware Version Response
+STATEMENT: >>>
+The control-command processor recognizes command value ``0x7F`` as a version request. It
+queues a 13-word UART response containing two synchronization words, the ``VRSN`` marker,
+the operating-mode identifier, the null-padded release version string in a 32-byte field,
+and an additive checksum. The response is sent when the UART transmitter is available,
+ahead of the next periodic telemetry frame.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-20
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPS-127
+TITLE: Development-build boot validation marker
+STATEMENT: >>>
+During FTDI setup in builds where ``RELEASE`` is not defined, the firmware reads the application CRC
+location. If it already contains ``0xDEADBEEF``, no flash operation is performed. Otherwise, the
+firmware erases the CRC flash page when the location is not erased, programs ``0xDEADBEEF``, and
+verifies the programmed value. Builds where ``RELEASE`` is defined skip this operation.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPS-21
   ROLE: Refines
 
 [[/SECTION]]

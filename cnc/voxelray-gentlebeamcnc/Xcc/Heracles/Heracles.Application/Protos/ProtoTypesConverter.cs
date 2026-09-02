@@ -1756,6 +1756,7 @@ namespace Heracles.Application.Protos
 
             var protoPatient = new Patient
             {
+                CreationDate = ToTimestamp(patient.CreationDate),
                 Address = patient.Address ?? string.Empty,
                 City = patient.City ?? string.Empty,
                 State = patient.State ?? string.Empty,
@@ -1814,6 +1815,7 @@ namespace Heracles.Application.Protos
 
             var proto = new Diagnosis
             {
+                CreationDate = ToTimestamp(diagnosis.CreationDate),
                 Pathology = ToProto(diagnosis.Pathology),
                 PatientId = diagnosis.PatientId,
                 Referring = diagnosis.Referring,
@@ -1865,6 +1867,7 @@ namespace Heracles.Application.Protos
 
             var protoPrescription = new Prescription
             {
+                CreationDate = ToTimestamp(prescription.CreationDate),
                 MinTdf = ToProto(prescription.MinTdf),
                 NumberOfFxs = prescription.NumberOfFxs,
                 SimulationId = prescription.SimulationId,
@@ -1917,6 +1920,7 @@ namespace Heracles.Application.Protos
 
             var proto = new Simulation()
             {
+                CreationDate = ToTimestamp(simulation.CreationDate),
                 DiagnosisId = simulation.DiagnosisId,
                 LesionSizeL = simulation.LesionSizeL.Value,
                 LesionSizeW = simulation.LesionSizeW.Value,
@@ -1970,6 +1974,7 @@ namespace Heracles.Application.Protos
 
             var protoVisit = new Visit
             {
+                CreationDate = ToTimestamp(visit.CreationDate),
                 PatientId = visit.PatientId,
                 Type = ToProto(visit.Type)
             };
@@ -2005,6 +2010,7 @@ namespace Heracles.Application.Protos
 
             var protoPlan = new Plan
             {
+                CreationDate = ToTimestamp(plan.CreationDate),
                 ApprovedBy = plan.ApprovedBy,
                 PrescriptionId = plan.PrescriptionId,
                 Status = ToProto(plan.Status),
@@ -2046,6 +2052,7 @@ namespace Heracles.Application.Protos
 
             var protoTreatmentField = new TreatmentField
             {
+                CreationDate = ToTimestamp(treatmentField.CreationDate),
                 CalculatedDose = treatmentField.CalculatedDose,
                 Current = treatmentField.Current,
                 DwellTime = treatmentField.DwellTime,
@@ -2069,6 +2076,7 @@ namespace Heracles.Application.Protos
 
             var protoTreatment = new Treatment
             {
+                CreationDate = ToTimestamp(treatment.CreationDate),
                 PlanId = treatment.PlanId,
                 CumulativeDose = Convert.ToDouble(treatment.CumulativeDose),
                 DailyDose = Convert.ToDouble(treatment.DailyDose),
@@ -2133,6 +2141,7 @@ namespace Heracles.Application.Protos
 
             var protoUser = new Com.Empyreanmed.Heracles.Users.V1.User
             {
+                CreationDate = ToTimestamp(user.CreationDate),
                 Username = user.Username,
                 FirstName = user.FirstName,
                 MiddleName = user.MiddleName,
@@ -2271,6 +2280,7 @@ namespace Heracles.Application.Protos
 
             var protoDevice = new TreatmentDevice
             {
+                CreationDate = ToTimestamp(device.CreationDate),
                 DeviceName = ToProto(device.DeviceName),
                 SimulationId = device.SimulationId
             };
@@ -2304,6 +2314,7 @@ namespace Heracles.Application.Protos
 
             var outValue = new Position
             {
+                CreateDate = ToTimestamp(position.CreationDate),
                 PatientPosition = ToProto(position.Position),
                 SimulationId = position.SimulationId
             };
@@ -2322,6 +2333,7 @@ namespace Heracles.Application.Protos
 
             var proto = new Photo
             {
+                CreationDate = ToTimestamp(photoDescription.CreationDate),
                 Description = photoDescription.Description,
                 DiagnosisId = photoDescription.DiagnosisId,
                 VisitId = photoDescription.VisitId,
@@ -2386,6 +2398,7 @@ namespace Heracles.Application.Protos
 
             var proto = new SafetyCheck
             {
+                CreateDate = ToTimestamp(safetyCheck.CreationDate),
                 Duration = safetyCheck.Duration,
                 Energy = ToProto(safetyCheck.Energy),
                 DoorInterlock = safetyCheck.DoorInterlock,
@@ -2429,6 +2442,7 @@ namespace Heracles.Application.Protos
 
             var proto = new Intensity
             {
+                CreateDate = ToTimestamp(intensity.CreationDate),
                 DiodeName = intensity.DiodeName,
                 Intensity_ = intensity.IntensityValue,
                 QcsampleFieldsId = intensity.QcSampleFieldId
@@ -2462,6 +2476,7 @@ namespace Heracles.Application.Protos
 
             var proto = new QCSampleField
             {
+                CreateDate = ToTimestamp(qcSampleField.CreationDate),
                 Field = ToProto(qcSampleField.Name),
                 QcsampleId = qcSampleField.QcSampleId
             };
@@ -2500,6 +2515,7 @@ namespace Heracles.Application.Protos
 
             var proto = new QCSample
             {
+                CreateDate = ToTimestamp(qcSample.CreationDate),
                 CollimatorConfigurationId = qcSample.CollimatorConfigurationId,
                 Referenced = qcSample.Referenced,
                 Duration = qcSample.Duration,
@@ -2572,6 +2588,7 @@ namespace Heracles.Application.Protos
 
             var proto = new Com.Empyreanmed.Heracles.Collimators.V1.Collimator
             {
+                CreateDate = ToTimestamp(collimator.CreationDate),
                 IsActive = collimator.IsActive,
                 Serial = collimator.Serial,
                 CollimatorConfigurationId = collimator.CollimatorConfigurationId,
@@ -2609,6 +2626,7 @@ namespace Heracles.Application.Protos
 
             var proto = new Com.Empyreanmed.Heracles.CollimatorConfigurations.V1.CollimatorConfiguration
             {
+                CreateDate = ToTimestamp(collimatorConfiguration.CreationDate),
                 Energy = ToProto(collimatorConfiguration.Energy),
                 ReferencedDoseRate = Convert.ToSingle(collimatorConfiguration.ReferencedDoseRate),
                 Ssd = ToProto(collimatorConfiguration.SsdType),
@@ -2645,6 +2663,7 @@ namespace Heracles.Application.Protos
 
             var proto = new Com.Empyreanmed.Heracles.OutputFactors.V1.OutputFactor
             {
+                CreateDate = ToTimestamp(outputFactor.CreationDate),
                 Factor = (float)outputFactor.Factor.Value,
                 FieldName = ToProto(outputFactor.FieldName),
                 PresetConfigurationId = outputFactor.PresetConfigurationId
@@ -2679,6 +2698,7 @@ namespace Heracles.Application.Protos
 
             var protoWarmup = new Warmup
             {
+                CreateDate = ToTimestamp(warmup.CreationDate),
                 WarmupType = ToProto(warmup.Type),
                 HeaterCurrent = Convert.ToSingle(warmup.HeaterCurrent),
                 HeadId = warmup.HeadId
@@ -2699,6 +2719,7 @@ namespace Heracles.Application.Protos
 
             var proto = new Com.Empyreanmed.Heracles.PresetConfigurations.V1.PresetConfiguration
             {
+                CreateDate = ToTimestamp(presetConfiguration.CreationDate),
                 CollimatorConfigurationId = presetConfiguration.CollimatorConfigurationId,
                 IsActive = presetConfiguration.IsActive,
                 IsDefault = presetConfiguration.IsDefault,
@@ -2737,6 +2758,7 @@ namespace Heracles.Application.Protos
 
             var proto = new ActualTreatmentField
             {
+                CreationDate = ToTimestamp(actualTreatmentField.CreationDate),
                 ActualCurrent = actualTreatmentField.ActualCurrent,
                 ActualDose = actualTreatmentField.ActualDose,
                 ActualDwellTime = actualTreatmentField.ActualDuration,
@@ -2782,6 +2804,7 @@ namespace Heracles.Application.Protos
 
             var proto = new EmissionTreatmentField
             {
+                CreationDate = ToTimestamp(emissionTreatmentField.CreationDate),
                 ActualDwellTime = emissionTreatmentField.ActualDwellTime,
                 ActualTreatmentFieldId = emissionTreatmentField.ActualTreatmentFieldId
             };
@@ -2835,6 +2858,7 @@ namespace Heracles.Application.Protos
 
             var proto = new CorrectionMatrix
             {
+                CreateDate = ToTimestamp(correctionMatrix.CreationDate),
                 PresetConfigurationId = correctionMatrix.PresetConfigurationId,
                 Cm11 = Convert.ToSingle(correctionMatrix.Cm11),
                 Cm22 = Convert.ToSingle(correctionMatrix.Cm22),
@@ -2874,6 +2898,7 @@ namespace Heracles.Application.Protos
 
             var proto = new HeaterCurrentConfig
             {
+                CreateDate = ToTimestamp(heaterCurrentConfig.CreationDate),
                 PresetConfigurationId = heaterCurrentConfig.PresetConfigurationId,
                 HeaterCurrent = Convert.ToSingle(heaterCurrentConfig.HeaterCurrent.Value)
             };
@@ -2910,6 +2935,7 @@ namespace Heracles.Application.Protos
 
             var proto = new ReferenceField
             {
+                CreateDate = ToTimestamp(referenceField.CreationDate),
                 PresetConfigurationId = referenceField.PresetConfigurationId,
                 MagnetometerType = ToProto(referenceField.MagnetometerType),
                 Rf11 = Convert.ToSingle(referenceField.Rf11),
@@ -2931,6 +2957,7 @@ namespace Heracles.Application.Protos
 
             var proto = new CoilConfiguration
             {
+                CreateDate = ToTimestamp(coilConfiguration.CreationDate),
                 FieldName = ToProto(coilConfiguration.FieldName),
                 FocusCurrent = (float)coilConfiguration.FocusCurrent,
                 PresetConfigurationId = coilConfiguration.PresetConfigurationId,

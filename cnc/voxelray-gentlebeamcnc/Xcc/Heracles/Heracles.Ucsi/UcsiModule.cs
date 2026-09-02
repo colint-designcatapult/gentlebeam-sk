@@ -60,8 +60,10 @@ public static class UcsiRegistration
         });
         // Register the command interface (uses GcbCommandInterface which requires logWriter and communication service)
         containerRegistry.RegisterSingleton<IGcbCommandInterface, GcbCommandInterface>();
+        containerRegistry.RegisterSingleton<IUcsiKeepaliveService, UcsiKeepaliveService>();
         
         containerRegistry.RegisterSingleton<SessionDataExportService>();
+        containerRegistry.RegisterSingleton<FaultTelemetryExportService>();
         containerRegistry.RegisterSingleton<UnifiedCalibrationServiceViewModel>();
     }
 }
@@ -70,10 +72,8 @@ public sealed class UcsiModule : IModule
 {
     public void RegisterTypes(IContainerRegistry containerRegistry) =>
         UcsiRegistration.RegisterTypes(containerRegistry);
-
     public void OnInitialized(IContainerProvider containerProvider)
     {
-        // HVPS UART initialization is started in the factory (fire-and-forget)
-        // This method is required by IModule interface but intentionally empty
+        containerProvider.Resolve<FaultTelemetryExportService>().Start();
     }
 }

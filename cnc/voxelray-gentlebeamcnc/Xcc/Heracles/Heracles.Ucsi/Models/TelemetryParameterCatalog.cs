@@ -190,13 +190,21 @@ public sealed class TelemetryParameterCatalog
             if (RootContainers.Contains(property.Name))
                 continue;
 
+            string? qcDisplayName = property.Name switch
+            {
+                nameof(ISystemTelemetry.QcChannel0Reading) => "QC Channel 0 Reading",
+                nameof(ISystemTelemetry.QcChannel1Reading) => "QC Channel 1 Reading",
+                nameof(ISystemTelemetry.QcAdc1Connected) => "QC ADC 1 Connected",
+                nameof(ISystemTelemetry.QcAdc2Connected) => "QC ADC 2 Connected",
+                _ => null,
+            };
             AddPropertyDescriptor(
                 descriptors,
                 sample,
                 Expression.Property(telemetry, property),
                 $"system.{property.Name}",
-                Humanize(property.Name),
-                "System",
+                qcDisplayName ?? Humanize(property.Name),
+                qcDisplayName is not null ? "Quality Control" : "System",
                 UnitFor(property.Name),
                 IsIdentifier(property.Name));
         }
@@ -564,6 +572,7 @@ public sealed class TelemetryParameterCatalog
 
     private static string UnitFor(string propertyName)
     {
+        if (propertyName.Contains("QcChannel", StringComparison.OrdinalIgnoreCase)) return "counts";
         if (propertyName.Contains("Kv", StringComparison.OrdinalIgnoreCase)) return "kV";
         if (propertyName.Contains("Emission", StringComparison.OrdinalIgnoreCase)) return "mA";
         if (propertyName.Contains("HeaterCurrent", StringComparison.OrdinalIgnoreCase)) return "mA";

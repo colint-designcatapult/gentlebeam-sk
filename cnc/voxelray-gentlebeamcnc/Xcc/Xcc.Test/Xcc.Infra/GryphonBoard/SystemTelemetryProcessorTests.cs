@@ -45,6 +45,26 @@ internal class SystemTelemetryProcessorTests
     }
 
     [Test]
+    public void Process_DecodesCalibrationControlStateValue()
+    {
+        ISystemTelemetry? published = null;
+        var callback = new Mock<ISystemTelemetryChanged>();
+        callback.Setup(value => value.OnSystemTelemetryChanged(It.IsAny<ISystemTelemetry?>()))
+            .Callback<ISystemTelemetry?>(value => published = value);
+        var sut = CreateSut(callback.Object);
+
+        sut.Process(BuildVersionInfo(1, 0, 0, FirmwareMode.Calibration));
+        bool result = sut.Process(BuildCalibrationTelemetry(0, GcbStateNew.Calibration));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.True);
+            Assert.That((int)GcbStateNew.Calibration, Is.EqualTo(22));
+            Assert.That(published?.ControlBoardState, Is.EqualTo(GcbStateNew.Calibration));
+        });
+    }
+
+    [Test]
     public void Process_UnsupportedVersionClearsPreviousSelection()
     {
         var callback = new Mock<ISystemTelemetryChanged>();
@@ -415,7 +435,7 @@ internal class SystemTelemetryProcessorTests
         packet[(int)NormalTelemetryField.SystemRuntime] = runtime;
         packet[(int)NormalTelemetryField.SystemFaultFlags] = faultFlags;
         packet[(int)NormalTelemetryField.InterlockFlags] = interlockFlags;
-        packet[(int)NormalTelemetryField.Reserved1] = 1u;
+        packet[(int)NormalTelemetryField.QcChannel0Reading] = 1.0f;
         packet[(int)NormalTelemetryField.RequiredInterlockFlags] = requiredInterlockFlags;
         packet[(int)NormalTelemetryField.HvpsStatusFlags] = statusFlags;
         packet[(int)NormalTelemetryField.HvpsIO] = ioFlags;
@@ -434,16 +454,19 @@ internal class SystemTelemetryProcessorTests
         uint errorFlags = 0,
         float kvFeedback = 0)
     {
-        var packet = new UdpPacket((uint)GCBPacketType.TelemetryResponse, 0, 47);
-        packet[1] = (int)state;
-        packet[7] = runtime;
-        packet[12] = faultFlags;
-        packet[14] = interlockFlags;
-        packet[10] = requiredInterlockFlags;
-        packet[15] = ioFlags;
-        packet[16] = statusFlags;
-        packet[17] = errorFlags;
-        packet[21] = kvFeedback;
+        var packet = new UdpPacket(
+            (uint)GCBPacketType.TelemetryResponse,
+            0,
+            (uint)CalibrationTelemetryField.PayloadFields);
+        packet[(int)CalibrationTelemetryField.SystemState] = (int)state;
+        packet[(int)CalibrationTelemetryField.SystemRuntime] = runtime;
+        packet[(int)CalibrationTelemetryField.SystemFaultFlags] = faultFlags;
+        packet[(int)CalibrationTelemetryField.InterlockFlags] = interlockFlags;
+        packet[(int)CalibrationTelemetryField.RequiredInterlockFlags] = requiredInterlockFlags;
+        packet[(int)CalibrationTelemetryField.HvpsIO] = ioFlags;
+        packet[(int)CalibrationTelemetryField.HvpsStatusFlags] = statusFlags;
+        packet[(int)CalibrationTelemetryField.HvpsErrorFlags] = errorFlags;
+        packet[(int)CalibrationTelemetryField.KvFeedback] = kvFeedback;
         return packet.UpdateCRC().Buffer;
     }
 

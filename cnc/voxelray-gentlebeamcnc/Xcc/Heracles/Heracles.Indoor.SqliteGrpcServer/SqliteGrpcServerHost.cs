@@ -89,9 +89,12 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
         services.AddSingleton(_ => new SqliteProtoRepository<OutputFactor>(dbPath, "output_factors"));
         services.AddSingleton(_ => new SqliteProtoRepository<ReferenceField>(dbPath, "reference_fields"));
         services.AddSingleton(_ => new SqliteProtoRepository<PresetConfiguration>(dbPath, "preset_configurations"));
-        services.AddSingleton(_ => new SqliteProtoRepository<QCSample>(dbPath, "qcsamples"));
-        services.AddSingleton(_ => new SqliteProtoRepository<QCSampleField>(dbPath, "qcsample_fields"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Intensity>(dbPath, "intensities"));
+        services.AddSingleton(_ => new SqliteProtoRepository<QCSample>(
+            dbPath, "qcsamples", hasParentId: true, parentIdJsonField: "collimatorConfigurationId"));
+        services.AddSingleton(_ => new SqliteProtoRepository<QCSampleField>(
+            dbPath, "qcsample_fields", hasParentId: true, parentIdJsonField: "qcsampleId"));
+        services.AddSingleton(_ => new SqliteProtoRepository<Intensity>(
+            dbPath, "intensities", hasParentId: true, parentIdJsonField: "qcsampleFieldsId"));
         services.AddSingleton(_ => new SqliteProtoRepository<SafetyCheck>(dbPath, "safety_checks"));
         services.AddSingleton(_ => new SqliteProtoRepository<Warmup>(dbPath, "warmups"));
         services.AddSingleton(_ => new SqliteProtoRepository<Log>(dbPath, "logs"));

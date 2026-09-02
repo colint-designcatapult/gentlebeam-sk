@@ -41,6 +41,7 @@ namespace Heracles.External.ViewModels.QualityCheck
     public class BeamQaViewModel : OperatePlanViewModelBase
     {
         private const int NumberOfQcDiodes = 5;
+        private const int QcSamplingWindowMs = 1000;
 
         #region Contructors
         public BeamQaViewModel()
@@ -61,7 +62,6 @@ namespace Heracles.External.ViewModels.QualityCheck
             IGcbIndicators gcbIndicators,
             IAuthorizedUserStore userStore,
             QcReportService qcReportService,
-            IQcbReadingModel qcbReadingModel,
             IDispatcherService dispatcherService,
             IQcbService qcbService,
             ICollimatorCalibrationModel collimatorCalibrationModel,
@@ -78,7 +78,6 @@ namespace Heracles.External.ViewModels.QualityCheck
         {
             UserStore = userStore;
             QcReportService = qcReportService;
-            QcbReadingModel = qcbReadingModel;
             QcbService = qcbService;
             CollimatorCalibrationModel = collimatorCalibrationModel;
             ApplicatorCompatibilityService = applicatorCompatibilityService;
@@ -88,6 +87,7 @@ namespace Heracles.External.ViewModels.QualityCheck
             {
                 if (e.PropertyName == nameof(QualityCheckPlan.Fields))
                 {
+                    SelectedEmission = null;
                     FieldsViewSource.Source = QcPlan.Fields;
                 }
             };
@@ -123,10 +123,22 @@ namespace Heracles.External.ViewModels.QualityCheck
         public IAuthorizedUserStore UserStore { get; }
         public QcReportService QcReportService { get; }
         public QualityCheckPlan QcPlan { get; }
-        public IQcbReadingModel QcbReadingModel { get; }
         public IQcbService QcbService { get; }
         public ICollimatorCalibrationModel CollimatorCalibrationModel { get; }
         public ApplicatorCompatibilityService ApplicatorCompatibilityService { get; }
+
+        private IQcSampleFieldEntry _selectedEmission;
+        public IQcSampleFieldEntry SelectedEmission
+        {
+            get => _selectedEmission;
+            set
+            {
+                if (SetProperty(ref _selectedEmission, value))
+                {
+                    ValidateCanExecuteCommands();
+                }
+            }
+        }
 
         private CollectionViewSource _fieldsViewSource = new();
         public CollectionViewSource FieldsViewSource
@@ -393,7 +405,10 @@ namespace Heracles.External.ViewModels.QualityCheck
                 return false;
             }
 
-            PrepareButtonIsEnabled = UIStateMachine.LeftButton.IsEnabled || HasValidPlanForTreatment();
+            int selectedEmissionIndex = GetSelectedEmissionIndex();
+            PrepareButtonIsEnabled =
+                (UIStateMachine.LeftButton.IsEnabled || HasValidPlanForTreatment())
+                && selectedEmissionIndex >= 0;
 
             var telemetry = GCBDataStore.SystemTelemetry;
 
@@ -406,6 +421,7 @@ namespace Heracles.External.ViewModels.QualityCheck
                                                                 GcbStateNew.StandBy;
 
             return QcPlan.Fields is {Count: > 0}
+                   && selectedEmissionIndex >= 0
                    && !CanResetTimers()
                    && !IsPreparing
                    && ApplicatorCompatibilityStatus.IsCompatible
@@ -439,6 +455,8 @@ namespace Heracles.External.ViewModels.QualityCheck
                     StringConstants.TreatmentConsole.PlanPreparationErrorTitle,
                     StringConstants.TreatmentConsole.PlanPreparationForQcBoardPingErrorMessage,
                     ex);
+                IsCurrentViewModelRunning = false;
+                ValidateCanExecuteCommands();
                 return;
             }
 
@@ -457,6 +475,8 @@ namespace Heracles.External.ViewModels.QualityCheck
                     StringConstants.TreatmentConsole.PlanPreparationErrorTitle,
                     StringConstants.TreatmentConsole.PlanPreparationForQcErrorMessage,
                     ex);
+                IsCurrentViewModelRunning = false;
+                ValidateCanExecuteCommands();
             }
             finally
             {
@@ -465,10 +485,6 @@ namespace Heracles.External.ViewModels.QualityCheck
             }
         }
 
-        protected override bool GetPlanAutoExecutionFlag()
-        {
-            return false; // we don't auto-execute QC plans
-        }
 
         protected override void CheckForApplicatorCompatibility()
         {
@@ -498,54 +514,36 @@ namespace Heracles.External.ViewModels.QualityCheck
             try
             {
                 await Semaphore.WaitAsync();
-
-                if (GcbState == GcbStateNew.Emission ||
-                    PreviousGcbState == GcbStateNew.Emission)
+                if (ActiveEmissionIndex < 0 || ActiveEmissionIndex >= QcPlan.Fields.Count)
                 {
-                    int operationalPointIndex = telemetry.CurrentOperationalPoint;
+                    return;
+                }
+
+                var field = QcPlan.Fields[ActiveEmissionIndex];
+                if (GcbState == GcbStateNew.Emission)
+                {
                     float timerValue = telemetry.PrimaryTimerValue;
-
-                    if (operationalPointIndex != PreviousOperationPointIndex)
+                    field.Actual = Convert.ToSingle(XrayPointStartTime + timerValue);
+                    UpdateBeamOnProgress(
+                        field.Duration,
+                        Convert.ToSingle(XrayTime + timerValue));
+                    Debug.WriteLine(
+                        $"Update treatment field {field.DisplayValue} with actual = {field.Actual}");
+                }
+                else if (PreviousGcbState == GcbStateNew.Emission)
+                {
+                    await MainBoardModel.UpdateCurrentEmissionFromGCB();
+                    if (MainBoardModel.CurrentEmission is { } emission)
                     {
-                        var fields = QcPlan.Fields;
-                        if (PreviousOperationPointIndex >= 0 && fields is not null && fields.Count > PreviousOperationPointIndex)
-                        {
-                            var previousTf = fields[PreviousOperationPointIndex];
-                            previousTf.Actual = Convert.ToSingle(previousTf.Duration);
-                            RecalculateInitialXrayTime();
-                            XrayPointStartTime = 0;
-
-                            await MainBoardModel.UpdatePlanPointFromGCB(PreviousOperationPointIndex);
-                            var previousPoint = MainBoardModel.CurrentPlan[PreviousOperationPointIndex];
-
-                            if (previousPoint.RemainingPointTime > 0)
-                            {
-                                previousTf.Actual = previousPoint.TotalPointTime - previousPoint.RemainingPointTime;
-                                _ = LogWriter.LogAsync($"Query point response: TotalPointTime={previousPoint.TotalPointTime} RemainingPointTime={previousPoint.RemainingPointTime} Actual={previousTf.Actual}", LogRecordSeverity.Info, LogRecordType.System);
-                            }
-                            //_ = LogService.LogAsync($"UpdateEmissionTreatmentField: operationalPointIndex={operationalPointIndex}, timerValue {timerValue} _xrayTime {_xrayTime} TotalDuration {PlanModel.TotalDuration}", LogRecordSeverity.Info, LogRecordType.System);
-                        }
-                    }
-
-                    if (operationalPointIndex < QcPlan.Fields?.Count)
-                    {
-                        var tf = QcPlan.Fields[operationalPointIndex];
-
-                        if (operationalPointIndex != PreviousOperationPointIndex)
-                        {
-                            PreviousOperationPointIndex = operationalPointIndex;
-                            XrayPointStartTime = tf.Actual;
-                        }
-
-                        UpdateBeamOnProgress(QcPlan.TotalDuration, Convert.ToSingle(XrayTime + timerValue));
-
-                        tf.Actual = Convert.ToSingle(XrayPointStartTime + timerValue);
-                        Debug.WriteLine($"Update treatment field {tf.DisplayValue} with actual = {tf.Actual}");
-
-                        if (tf.DwellTime - tf.Actual < PlanCompletedThreshold)
-                        {
-                            tf.IsDone = true;
-                        }
+                        field.Actual = emission.ActualDuration;
+                        field.IsDone =
+                            emission.RemainingPointTime < PlanCompletedThreshold;
+                        RecalculateInitialXrayTime();
+                        UpdateBeamOnProgress(field.Duration, XrayTime);
+                        _ = LogWriter.LogAsync(
+                            $"Query emission response: TotalPointTime={emission.TotalPointTime} RemainingPointTime={emission.RemainingPointTime} Actual={field.Actual}",
+                            LogRecordSeverity.Info,
+                            LogRecordType.System);
                     }
                 }
             }
@@ -557,6 +555,7 @@ namespace Heracles.External.ViewModels.QualityCheck
 
         protected override async Task OnClearPlanClicked()
         {
+            SelectedEmission = null;
             FieldsSelectionModel.SelectField(null);
 
             await base.OnClearPlanClicked();
@@ -571,124 +570,98 @@ namespace Heracles.External.ViewModels.QualityCheck
 
             try
             {
-                FieldsSelectionModel.SelectField(null);
+                if (ActiveEmissionIndex < 0 || ActiveEmissionIndex >= QcPlan.Fields.Count)
+                {
+                    throw new InvalidOperationException("No QC emission is prepared.");
+                }
 
                 await CheckQCBoardStatusAsync();
+                _ = GCBDataStore.SystemTelemetry
+                    ?? throw new Exception("GCB telemetry connection lost.");
 
-                var telemetry = GCBDataStore.SystemTelemetry ?? throw new Exception("GCB telemetry connection lost.");
-
-                // Store what was the current point before emission
-                PreviousOperationPointIndex = telemetry.CurrentOperationalPoint;
-
-                // Store initial emission time of the current point to calc progress over the plan
+                var field = QcPlan.Fields[ActiveEmissionIndex];
                 RecalculateInitialXrayTime();
-
-                XrayPointStartTime = (PreviousOperationPointIndex < QcPlan.Fields.Count)
-                    ? QcPlan.Fields[PreviousOperationPointIndex].Actual
-                    : 0.0;
-
-                UpdateBeamOnProgress(QcPlan.TotalDuration, XrayTime);
+                XrayPointStartTime = field.Actual;
+                UpdateBeamOnProgress(field.Duration, XrayTime);
 
                 UIStateMachine.RequestStateSwitch(UIMacroState.Emission);
-                Debug.WriteLine($"Update UI state machine: State={UIStateMachine.State}, LB=({UIStateMachine.LeftButton.State}, {UIStateMachine.LeftButton.IsEnabled}), " +
-                                $"CB=({UIStateMachine.CentralButton.State}, {UIStateMachine.CentralButton.IsEnabled}), Stop={UIStateMachine.RightButton.IsEnabled}");
+                _ = LogWriter.LogAsync(
+                    $"Run QC emission {ActiveEmissionIndex + 1} by {UserStore.AuthorizedUser.EmailAddress}",
+                    LogRecordSeverity.Info,
+                    LogRecordType.User);
 
-                _ = LogWriter.LogAsync($"Run QC by {UserStore.AuthorizedUser.EmailAddress}", LogRecordSeverity.Info, LogRecordType.User);
+                updateAfterEmissionTask = Task.Run(
+                    () => UpdateAfterEmission(tokenSource.Token),
+                    tokenSource.Token);
+                Task beamOn = MainBoardModel.BeamOn();
+                await WaitForEmissionAsync(beamOn, tokenSource.Token);
 
-                // Run emission and wait until it gets done or gets stopped:
-                foreach (var field in QcPlan.Fields)
+                var startStatus = await QcbService.StartQCReadingsAsync(
+                    NumberOfQcDiodes,
+                    QcSamplingWindowMs);
+                if (startStatus != QcbCommandResponseStatus.StartConfirmed)
                 {
-                    FieldsSelectionModel.SelectField(field);
-                    var dataReadingCancellationTokenSource = new CancellationTokenSource();
-                    
-                    updateAfterEmissionTask = Task.Run(() => UpdateAfterEmission(tokenSource.Token), tokenSource.Token);
-
-                    Task beamOn = MainBoardModel.BeamOnOnePoint();
-
-                    Task<QcReadings> dataReading = QcbReadingModel.ReadQCAsync(NumberOfQcDiodes, dataReadingCancellationTokenSource.Token, samplingWindowMs: 50);
-
-                    Task firstDone = await Task.WhenAny([beamOn, dataReading] /*todo: cancellationToken from AppGlobals*/);
-
-                    // First, react on errors
-                    if (firstDone.IsFaulted)
-                    {
-                        if (firstDone == beamOn)
-                        {
-                            await dataReadingCancellationTokenSource.CancelAsync(); // cancel dataReading task
-                            Debug.WriteLine("BeamOn faulted task: BeamOnOnePoint");
-                            throw new Exception("Failed to collect QC data: BeamOn task failed");
-                        }
-
-                        // it is dataReading failed
-                        MainBoardModel.CancelCurrentTask();
-                        Debug.WriteLine("BeamOn faulted task: ReadQC");
-                        throw new Exception("Failed to collect QC data: reading task failed");
-                    }
-
-                    // whatever it was, wait for the second one:
-                    await Task.WhenAll([beamOn, dataReading]);
-
-                    await updateAfterEmissionTask;
-
-                    if (beamOn.Status == TaskStatus.RanToCompletion && dataReading.Status == TaskStatus.RanToCompletion)
-                    {
-                        Debug.WriteLine("BeamOn: QC point reading succeeded");
-                        var readings = dataReading.Result;
-                        // OK, write data readings into model
-                        field.Intensities = readings;
-                    }
-                    else if (beamOn.IsFaulted)
-                    {
-                        Debug.WriteLine("BeamOn second faulted task: BeamOnOnePoint");
-                        throw new Exception("Failed to collect QC data: BeamOn task failed");
-                    }
-                    else // it is dataReading failed
-                    {
-                        Debug.WriteLine("BeamOn second faulted task: ReadQC");
-                        throw new Exception("Failed to collect QC data: reading task failed");
-                    }
+                    await MainBoardModel.Stop();
+                    throw new InvalidOperationException(
+                        "Main-control rejected the QC reading start command.");
                 }
 
-                // Check if plan is actually complete:
-                if (IsPlanCompleted())
+                await Task.Delay(QcSamplingWindowMs, tokenSource.Token);
+                var readings = await QcbService.StopQCReadingsAsync(NumberOfQcDiodes);
+                if (readings is null)
                 {
-                    PopUpService.LogAndShowMessage(
-                        Application.Common.StringConstants.TreatmentConsole.QualityCheckNotificationTitle,
-                        $"{Application.Common.StringConstants.TreatmentConsole.QualityCheckCompletionNotification}{Environment.NewLine}{Application.Common.StringConstants.TreatmentConsole.SwitchToReportsSuggestionMessage}",
-                        ReportType.Info, LogRecordSeverity.Info, LogRecordType.System);
+                    await MainBoardModel.Stop();
+                    throw new InvalidOperationException(
+                        "Main-control returned no QC readings.");
                 }
-                else
+
+                await beamOn;
+                await updateAfterEmissionTask;
+                await MainBoardModel.UpdateCurrentEmissionFromGCB();
+                if (MainBoardModel.CurrentEmission is not { } completedEmission)
                 {
-                    PopUpService.LogAndShowError(
-                        Application.Common.StringConstants.TreatmentConsole.QualityCheckConsistencyErrorTitle,
-                        $"{Application.Common.StringConstants.TreatmentConsole.QualityCheckConsistencyErrorMessage}{Environment.NewLine}{Application.Common.StringConstants.TreatmentConsole.SwitchToReportsSuggestionMessage}");
+                    throw new InvalidOperationException(
+                        "Main-control returned no completed QC emission.");
                 }
+
+                field.Actual = completedEmission.ActualDuration;
+                field.IsDone =
+                    completedEmission.RemainingPointTime < PlanCompletedThreshold;
+                field.Intensities = readings;
+                RecalculateInitialXrayTime();
+
+                if (!field.IsDone)
+                {
+                    throw new InvalidOperationException(
+                        Application.Common.StringConstants.TreatmentConsole.QualityCheckIncompleteEmissionErrorMessage);
+                }
+
+                PopUpService.LogAndShowMessage(
+                    Application.Common.StringConstants.TreatmentConsole.QualityCheckNotificationTitle,
+                    $"{Application.Common.StringConstants.TreatmentConsole.QualityCheckCompletionNotification}{Environment.NewLine}{Application.Common.StringConstants.TreatmentConsole.SwitchToReportsSuggestionMessage}",
+                    ReportType.Info,
+                    LogRecordSeverity.Info,
+                    LogRecordType.System);
 
                 await MainBoardModel.ResetTimers();
                 await MainBoardModel.ClearPlan();
-
                 UIStateMachine.IsPlanStaged = false;
                 UIStateMachine.RequestStateSwitch(UIMacroState.StandBy);
-
-                await QcReportService.SaveQcSampleReportAsync(QcPlan);
-
-                Debug.WriteLine($"Update UI state machine: State={UIStateMachine.State}, LB=({UIStateMachine.LeftButton.State}, {UIStateMachine.LeftButton.IsEnabled})" +
-                                $"CB=({UIStateMachine.CentralButton.State}, {UIStateMachine.CentralButton.IsEnabled}), Stop={UIStateMachine.RightButton.IsEnabled}");
-
+                await QcReportService.SaveQcSampleReportAsync(field);
                 await SetPlanUnloadTaskAsync();
-
                 EventAggregator!.GetEvent<QualityCheckFinishedEvent>().Publish();
             }
             catch (TaskCanceledException ex)
             {
                 await WaitAndIgnoreTaskExceptionsAsync(updateAfterEmissionTask);
-
                 PopUpService.ShowMessage(
                     StringConstants.TreatmentConsole.EmissionTitle,
                     StringConstants.TreatmentConsole.EmissionInterruptedError,
                     ReportType.Error);
-
-                _ = LogWriter.LogAsync($"QC plan execution was cancelled: {ex.Message}", LogRecordSeverity.Info, LogRecordType.System);
+                _ = LogWriter.LogAsync(
+                    $"QC emission was cancelled: {ex.Message}",
+                    LogRecordSeverity.Info,
+                    LogRecordType.System);
             }
             catch (DataServiceException ex)
             {
@@ -713,9 +686,8 @@ namespace Heracles.External.ViewModels.QualityCheck
             finally
             {
                 await tokenSource.CancelAsync();
-
                 await WaitAndIgnoreTaskExceptionsAsync(updateAfterEmissionTask);
-
+                SelectedEmission = null;
                 FieldsSelectionModel.SelectField(null);
                 IsCurrentViewModelRunning = false;
             }
@@ -723,7 +695,7 @@ namespace Heracles.External.ViewModels.QualityCheck
 
         private async Task CheckQCBoardStatusAsync()
         {
-            bool qcBoardIsAlive = await QcbReadingModel.PingBoardAsync();
+            bool qcBoardIsAlive = await QcbService.PingBoardAsync();
             if (!qcBoardIsAlive)
             {
                 throw new Exception("QCBoard does not respond");
@@ -733,58 +705,98 @@ namespace Heracles.External.ViewModels.QualityCheck
         protected override Task SetPlanUnloadTaskAsync()
         {
             UIStateMachine.IsPlanLoadedForTreatment = false;
+            ActiveEmissionIndex = -1;
 
-            QcPlan.ResetEntryCollectionActualTime();
+            foreach (var field in QcPlan.Fields)
+            {
+                field.Actual = 0.0f;
+                field.IsDone = false;
+                field.Intensities = null;
+            }
 
             return Task.CompletedTask;
         }
 
         protected override void RecalculateInitialXrayTime()
         {
-            var fields = QcPlan.Fields;
-            if (fields is null || fields.Count == 0)
-                XrayTime = 0.0;
-            else
-                XrayTime = fields.Sum(tf => tf.Actual);
+            XrayTime = ActiveEmissionIndex >= 0
+                       && ActiveEmissionIndex < QcPlan.Fields.Count
+                ? QcPlan.Fields[ActiveEmissionIndex].Actual
+                : 0.0;
         }
 
-        /// <summary>
-        /// Convers QcModel.Fields to our GcbOperationalDataPoint items
-        /// Requires Fields to be already ordered by TargetType to not switch heaterCurrent back and forth if it's different for diff. configs
-        /// It may require also to sort Fields by kV if we'll have it different
-        /// </summary>
-        protected override GcbEmissionPlan BuildGcbEmissionPlan()
+        private async Task WaitForEmissionAsync(Task beamOn, CancellationToken token)
         {
-            GcbEmissionPlan plan = new();
-
-            foreach (var field in QcPlan.Fields)
+            while(GCBDataStore.SystemTelemetry?.ControlBoardState != GcbStateNew.Emission)
             {
-                var collimatorCalibConfig = _collimatorConfigurationsWithCalibInfo[field.Configuration];
-
-                // TODO: we don't apply magnetometer now, just get calibrated coilX/Y
-                var fieldCalibConfig = collimatorCalibConfig.GetCoilConfiguration(field.Name).Value;
-
-                float totalTime = (float)field.Duration;
-                float remainingTime = totalTime - (float)field.Actual;
-
-                GcbOperationalPoint op = new GcbOperationalPoint
+                if(beamOn.IsCompleted)
                 {
-                    PointIndex = plan.TotalPoints,
-                    TotalPointTime = totalTime,
-                    RemainingPointTime = remainingTime,
-                    SetpointKv = EnergyConverter.Convert(field.Energy),
-                    TargetMA = Convert.ToSingle(field.Current),
+                    await beamOn;
+                    throw new InvalidOperationException("QC point completed without entering emission.");
+                }
 
-                    FilamentSetpoint = (float)collimatorCalibConfig.HeaterCurrent,
-                    XCoilSetpoint = (float)fieldCalibConfig.XDeflectionCurrent,
-                    YCoilSetpoint = (float)fieldCalibConfig.YDeflectionCurrent,
-                    FocusCoilSetpoint = (float)fieldCalibConfig.FocusCurrent,
-                    AutoExecution = GetPlanAutoExecutionFlag()
-                };
-
-                plan.AddPoint(op);
+                await Task.Delay(10, token);
             }
-            return plan;
+        }
+
+        protected override GcbOperationalPoint BuildGcbOperationalPoint(int fieldIndex)
+        {
+            if (fieldIndex < 0 || fieldIndex >= QcPlan.Fields.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(fieldIndex));
+            }
+
+            var field = QcPlan.Fields[fieldIndex];
+            var collimatorCalibConfig =
+                _collimatorConfigurationsWithCalibInfo[field.Configuration];
+            var fieldCalibConfig =
+                collimatorCalibConfig.GetCoilConfiguration(field.Name).Value;
+            float totalTime = (float)field.Duration;
+
+            return new GcbOperationalPoint
+            {
+                TotalPointTime = totalTime,
+                RemainingPointTime = totalTime - (float)field.Actual,
+                SetpointKv = EnergyConverter.Convert(field.Energy),
+                TargetMA = Convert.ToSingle(field.Current),
+                FilamentSetpoint = (float)collimatorCalibConfig.HeaterCurrent,
+                XCoilSetpoint = (float)fieldCalibConfig.XDeflectionCurrent,
+                YCoilSetpoint = (float)fieldCalibConfig.YDeflectionCurrent,
+                FocusCoilSetpoint = (float)fieldCalibConfig.FocusCurrent
+            };
+        }
+
+        protected override int GetInitialEmissionIndex() =>
+            GetSelectedEmissionIndex();
+
+        private int GetSelectedEmissionIndex()
+        {
+            int selectedIndex = QcPlan.Fields.IndexOf(SelectedEmission);
+            if (selectedIndex < 0)
+            {
+                return -1;
+            }
+
+            var selectedField = QcPlan.Fields[selectedIndex];
+            return !selectedField.IsDone
+                   && selectedField.Duration - selectedField.Actual >= PlanCompletedThreshold
+                ? selectedIndex
+                : -1;
+        }
+
+        protected override int FindNextPendingEmissionIndex(int startIndex)
+        {
+            for (int index = Math.Max(0, startIndex); index < QcPlan.Fields.Count; index++)
+            {
+                var field = QcPlan.Fields[index];
+                if (!field.IsDone
+                    && field.Duration - field.Actual >= PlanCompletedThreshold)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
 
         private bool GetUserConfirmation()

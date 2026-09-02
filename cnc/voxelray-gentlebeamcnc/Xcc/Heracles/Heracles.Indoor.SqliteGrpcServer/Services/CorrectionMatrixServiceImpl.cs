@@ -12,7 +12,8 @@ public sealed class CorrectionMatrixServiceImpl : CorrectionMatrixService.Correc
     public override async Task<ListCorrectionMatricesResponse> ListCorrectionMatrices(
         ListCorrectionMatricesRequest request, ServerCallContext context)
     {
-        var items = await _repo.ReadAllAsync();
+        var items = (await _repo.ReadAllAsync())
+            .Where(item => item.PresetConfigurationId == request.PresetConfigurationId);
         var r = new ListCorrectionMatricesResponse();
         r.CorrectionMatrices.AddRange(items);
         return r;

@@ -4,9 +4,9 @@ namespace Heracles.Application.Helpers
 {
     public static class CurrentCalculator
     {
-        public static double HvpsPower50kV = 200.0;
+        public static double HvpsPower50kV = 100.0;
         public static double HvpsPower70kV = 200.0;
-        public static double HvpsPower100kV = 200.0;
+        public static double HvpsPower100kV = 260.0;
 
         public static double CalculateCurrent(Energy energy)
         {

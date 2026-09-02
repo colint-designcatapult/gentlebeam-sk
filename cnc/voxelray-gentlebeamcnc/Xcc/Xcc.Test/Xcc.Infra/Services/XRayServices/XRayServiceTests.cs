@@ -1,6 +1,7 @@
 using Empyrean.Common.Infra.Networking.Udp;
 using Moq;
 using Xcc.Core.Domain.GryphonBoard;
+using Xcc.Core.Domain.QualityCheck;
 using Xcc.Core.Enums;
 using Xcc.Core.Logging;
 using Xcc.Infra.GryphonBoard;
@@ -10,6 +11,7 @@ using Xcc.Test.Xcc.Infra;
 
 namespace Xcc.Test.Xcc.Infra.Services.XRayServices
 {
+    [NonParallelizable]
     internal class XRayServiceTests
     {
         Mock<IGcbXRayCommandOperator> fakeCommandOperator = new();
@@ -17,7 +19,16 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         Mock<ILogWriter> fakeLogService = new();
         IGcbXRayCommandOperator actualCommandOperator = new GcbXRayCommandOperator();
 
-        private GcbCommandInterface MakeService(bool useFakeCommandOperator = true)
+        [SetUp]
+        public void SetUp()
+        {
+            fakeCommandOperator = new();
+            fakeCommunicationService = new();
+            fakeLogService = new();
+            actualCommandOperator = new GcbXRayCommandOperator();
+        }
+
+        private GcbCommandInterface MakeService(bool useFakeCommandOperator = false)
         {
             if (useFakeCommandOperator)
             {
@@ -29,11 +40,10 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             }
         }
 
-        private static GcbOperationalPoint MakeOperationalPoint(int index)
+        private static GcbOperationalPoint MakeOperationalPoint()
         {
             return new GcbOperationalPoint
             {
-                PointIndex = index,
                 TotalPointTime = 2.0f,
                 RemainingPointTime = 1.0f,
                 SetpointKv = 50.0f,
@@ -41,8 +51,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
                 TargetMA = 2.0f,
                 XCoilSetpoint = 0.1f,
                 YCoilSetpoint = 0.2f,
-                FocusCoilSetpoint = 2000.0f,
-                AutoExecution = true
+                FocusCoilSetpoint = 2000.0f
             };
         }
 
@@ -64,11 +73,11 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         {
             VersionInfo versionInfo = new()
             {
-                Major = 1,
-                Minor = 2,
-                Level = 3,
+                FirmwareVersion = "1.2.3",
                 FirmwareChecksum = 4,
-                Mode = FirmwareMode.Demo
+                Mode = FirmwareMode.Demo,
+                HvpsFirmwareVersion = "5.6.7",
+                HvpsMode = FirmwareMode.Normal
             };
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
                 .Returns(Task.FromResult(GcbXRayCmdResponseGenerator.GenerateVersionInfoResponse(0, versionInfo)));
@@ -91,7 +100,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void SendOperationalPoint_PositiveTest([Values] OperationalPointCmdType commandType)
         {
-            var fieldStatuses = Enumerable.Repeat(0, 11).ToList();
+            var fieldStatuses = Enumerable.Repeat(0, 9).ToList();
             var responseData =
                 GcbXRayCmdResponseGenerator.GenerateOperationalPointResponse(0, commandType, fieldStatuses);
             
@@ -103,8 +112,8 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             Assert.DoesNotThrow(
                 () => service.SendOperationalPoint(
                     commandType, 
-                    operationalPoint: MakeOperationalPoint(1), 
-                    session: new GcbSession(id: 42, totalPoints: 1)
+                    operationalPoint: MakeOperationalPoint(),
+                    session: new GcbSession(id: 42)
                     ).GetAwaiter().GetResult());
         }
 
@@ -112,7 +121,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void SendOperationalPoint_WrongPointStatusTest([Values] OperationalPointCmdType commandType)
         {
-            var fieldStatuses = Enumerable.Repeat(0, 11).ToList();
+            var fieldStatuses = Enumerable.Repeat(0, 9).ToList();
             fieldStatuses[0] = (int)OperationalPointStatus.InvalidValue; // Make first point status invalud
             
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
@@ -123,8 +132,8 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             Assert.Throws<Exception>(
                 () => service.SendOperationalPoint(
                     commandType,
-                    operationalPoint: MakeOperationalPoint(1),
-                    session: new GcbSession(id: 42, totalPoints: 1)
+                    operationalPoint: MakeOperationalPoint(),
+                    session: new GcbSession(id: 42)
                     ).GetAwaiter().GetResult());
         }
 
@@ -145,8 +154,8 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             Assert.Throws<Exception>(
                 () => service.SendOperationalPoint(
                     OperationalPointCmdType.Load, 
-                    operationalPoint: MakeOperationalPoint(1),
-                    session: new GcbSession(id: 0, totalPoints: 0)
+                    operationalPoint: MakeOperationalPoint(),
+                    session: new GcbSession(id: 0)
                     ).GetAwaiter().GetResult());
         }
 
@@ -161,8 +170,8 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             Assert.ThrowsAsync<ArgumentNullException>(
                 () => service.SendOperationalPoint(
                     OperationalPointCmdType.Load,
-                    operationalPoint: MakeOperationalPoint(1),
-                    session: new GcbSession(id: 0, totalPoints: 0)
+                    operationalPoint: MakeOperationalPoint(),
+                    session: new GcbSession(id: 0)
                 ));
         }
 
@@ -220,7 +229,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             var service = MakeService();
 
             var scope = GCBReleaseCommandScope.Plan;
-            var session = new GcbSession(id: 42, totalPoints: 1);
+            var session = new GcbSession(id: 42);
 
 
             if (throwsException)
@@ -244,11 +253,11 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
 
             if (responseStatus != GcbProcessingStatus.OK)
             {
-                Assert.Throws<Exception>(() => service.NewSession(totalPoints: 3).GetAwaiter().GetResult());
+                Assert.Throws<Exception>(() => service.NewSession().GetAwaiter().GetResult());
             }
             else
             {
-                Assert.DoesNotThrow(() => service.NewSession(totalPoints: 3).GetAwaiter().GetResult());
+                Assert.DoesNotThrow(() => service.NewSession().GetAwaiter().GetResult());
             }
         }
 
@@ -339,7 +348,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         [SkipIfCi("Infrastructure test requiring GCB hardware connection")]
         public void OperationalPointQueryCommandTest(GcbProcessingStatus responseStatus)
         {
-            GcbOperationalPoint point = MakeOperationalPoint(1);
+            GcbOperationalPoint point = MakeOperationalPoint();
             fakeCommunicationService.Setup(cmd => cmd.SendRequestAsync(It.IsAny<byte[]>()))
                 .Returns(Task.FromResult(GcbXRayCmdResponseGenerator.GenerateOperationalPointQueryResponse(0, responseStatus, point)));
 
@@ -347,15 +356,70 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
 
             if (responseStatus != GcbProcessingStatus.OK)
             {
-                Assert.Throws<Exception>(() => service.QueryPoint(1).GetAwaiter().GetResult());
+                Assert.Throws<Exception>(() => service.QueryPoint().GetAwaiter().GetResult());
             }
             else
             {
                 GcbOperationalPoint? receivedPoint = null;
-                Assert.DoesNotThrow(() => receivedPoint = service.QueryPoint(1).GetAwaiter().GetResult());
+                Assert.DoesNotThrow(() => receivedPoint = service.QueryPoint().GetAwaiter().GetResult());
                 Assert.That(receivedPoint, Is.Not.Null);
                 Assert.That(receivedPoint?.Equals(point), Is.True);
             }
+        }
+
+        [Test]
+        public async Task QcbPingCommand_ParsesFirmwareResponse()
+        {
+            fakeCommunicationService.Setup(service => service.SendRequestAsync(It.IsAny<byte[]>()))
+                .ReturnsAsync(GcbXRayCmdResponseGenerator.GenerateQcbResponse(
+                    0,
+                    GCBPacketType.QcbPingResponse,
+                    1, 0, 0, 0, 0));
+
+            Assert.That(await MakeService(useFakeCommandOperator: false).PingQcb(), Is.True);
+        }
+
+        [Test]
+        public async Task QcbStartCommand_SendsStartAndSamplingWindow()
+        {
+            byte[]? request = null;
+            fakeCommunicationService.Setup(service => service.SendRequestAsync(It.IsAny<byte[]>()))
+                .Callback<byte[]>(value => request = value)
+                .ReturnsAsync(GcbXRayCmdResponseGenerator.GenerateQcbResponse(
+                    0,
+                    GCBPacketType.QcbReadingsCommandResponse,
+                    0, 0, 0, 0, 0));
+
+            await MakeService(useFakeCommandOperator: false).StartQcbReadings(50);
+
+            var packet = new UdpPacket(request!);
+            Assert.Multiple(() =>
+            {
+                Assert.That(packet.PacketType, Is.EqualTo((uint)GCBPacketType.QcbReadingsCommand));
+                Assert.That((uint)packet[0], Is.EqualTo(1));
+                Assert.That((int)packet[1], Is.EqualTo(50));
+            });
+        }
+
+        [Test]
+        public async Task QcbStopCommand_ReturnsFirmwareReadings()
+        {
+            float[] expected = [12.5f, 23.5f, 0, 0, 0];
+            const uint expectedSampleCount = 9;
+            fakeCommunicationService.Setup(service => service.SendRequestAsync(It.IsAny<byte[]>()))
+                .ReturnsAsync(GcbXRayCmdResponseGenerator.GenerateQcbReadingsResponse(
+                    0,
+                    expected[0],
+                    expected[1],
+                    expectedSampleCount));
+
+            QcReadings readings = await MakeService(useFakeCommandOperator: false).StopQcbReadings();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(readings.Data, Is.EqualTo(expected));
+                Assert.That(readings.SampleCount, Is.EqualTo(expectedSampleCount));
+            });
         }
 
 

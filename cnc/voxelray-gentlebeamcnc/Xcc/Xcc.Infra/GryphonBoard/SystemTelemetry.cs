@@ -21,8 +21,6 @@ public sealed class SystemNormalTelemetry : ISystemTelemetry
     public uint? CollimatorId2 { get; init; }
     public ulong? CollimatorSerial { get; init; }
     public int ButtonsState { get; init; }
-    public int CurrentOperationalPoint { get; init; }
-    public int TotalOperationalPoints { get; init; }
     public int InternalTimerState { get; init; }
     public float PrimaryTimerValue { get; init; }
     public int Timer1State { get; init; }
@@ -52,6 +50,10 @@ public sealed class SystemNormalTelemetry : ISystemTelemetry
     public float CabinetTemperature { get; init; }
     public TelemetryVector3? Mag1 { get; init; }
     public TelemetryVector3? Mag2 { get; init; }
+    public float? QcChannel0Reading { get; init; }
+    public float? QcChannel1Reading { get; init; }
+    public bool? QcAdc1Connected { get; init; }
+    public bool? QcAdc2Connected { get; init; }
 
     public static SystemNormalTelemetry Parse(byte[] data)
     {
@@ -66,7 +68,7 @@ public sealed class SystemNormalTelemetry : ISystemTelemetry
     public string GetVerticallyFormattedString() => TelemetryFormatter.Format(this, verticallyAligned: true);
 
     internal static bool IsFaultState(GcbStateNew state) => state is
-        GcbStateNew.Fault or GcbStateNew.ColdFault or GcbStateNew.WarmupFault;
+        GcbStateNew.FaultDischarge or GcbStateNew.Fault or GcbStateNew.ColdFault or GcbStateNew.WarmupFault;
 
     internal static bool IsEmissionState(GcbStateNew state) => state is
         GcbStateNew.Emission or GcbStateNew.Imaging;
@@ -85,8 +87,6 @@ public sealed class SystemCalibrationTelemetry : ISystemTelemetry
     public uint? CollimatorId2 { get; init; }
     public ulong? CollimatorSerial { get; init; }
     public int ButtonsState { get; init; }
-    public int CurrentOperationalPoint { get; init; }
-    public int TotalOperationalPoints { get; init; }
     public int InternalTimerState { get; init; }
     public float PrimaryTimerValue { get; init; }
     public int Timer1State { get; init; }
@@ -116,6 +116,10 @@ public sealed class SystemCalibrationTelemetry : ISystemTelemetry
     public float CabinetTemperature { get; init; }
     public TelemetryVector3? Mag1 { get; init; }
     public TelemetryVector3? Mag2 { get; init; }
+    public float? QcChannel0Reading => null;
+    public float? QcChannel1Reading => null;
+    public bool? QcAdc1Connected => null;
+    public bool? QcAdc2Connected => null;
 
     public static SystemCalibrationTelemetry Parse(byte[] data)
     {
@@ -130,7 +134,7 @@ public sealed class SystemCalibrationTelemetry : ISystemTelemetry
     public string GetVerticallyFormattedString() => TelemetryFormatter.Format(this, verticallyAligned: true);
 
     internal static bool IsFaultState(GcbStateNew state) => state is
-        GcbStateNew.Fault or GcbStateNew.ColdFault or GcbStateNew.WarmupFault;
+        GcbStateNew.FaultDischarge or GcbStateNew.Fault or GcbStateNew.ColdFault or GcbStateNew.WarmupFault;
 
     internal static bool IsEmissionState(GcbStateNew state) => state is
         GcbStateNew.Emission or GcbStateNew.Imaging;
@@ -183,8 +187,6 @@ internal sealed class NormalTelemetryState
     private uint _collimatorId2;
     private ulong _collimatorSerial;
     private int _buttonsState;
-    private int _currentOperationalPoint;
-    private int _totalOperationalPoints;
     private int _internalTimerState;
     private float _primaryTimerValue;
     private int _timer1State;
@@ -214,6 +216,10 @@ internal sealed class NormalTelemetryState
     private float _cabinetTemperature;
     private TelemetryVector3 _mag1;
     private TelemetryVector3 _mag2;
+    private float _qcChannel0Reading;
+    private float _qcChannel1Reading;
+    private bool _qcAdc1Connected;
+    private bool _qcAdc2Connected;
 
     internal uint Runtime => unchecked((uint)_systemRuntime);
 
@@ -243,8 +249,6 @@ internal sealed class NormalTelemetryState
         _collimatorId2 = packet[(int)NormalTelemetryField.Collimator2];
         _collimatorSerial = ((ulong)_collimatorId2 << 32) | _collimatorId1;
         _buttonsState = packet[(int)NormalTelemetryField.Buttons];
-        _currentOperationalPoint = packet[(int)NormalTelemetryField.CurrentPoint];
-        _totalOperationalPoints = packet[(int)NormalTelemetryField.TotalPoints];
         _internalTimerState = packet[(int)NormalTelemetryField.InternalTimerState];
         _primaryTimerValue = packet[(int)NormalTelemetryField.InternalTimerValue];
         _timer1State = packet[(int)NormalTelemetryField.Timer1State];
@@ -280,6 +284,11 @@ internal sealed class NormalTelemetryState
             packet[(int)NormalTelemetryField.Mag2X],
             packet[(int)NormalTelemetryField.Mag2Y],
             packet[(int)NormalTelemetryField.Mag2Z]);
+        _qcChannel0Reading = packet[(int)NormalTelemetryField.QcChannel0Reading];
+        _qcChannel1Reading = packet[(int)NormalTelemetryField.QcChannel1Reading];
+        uint qcAdcI2cStatus = packet[(int)NormalTelemetryField.QcAdcI2cStatus];
+        _qcAdc1Connected = (qcAdcI2cStatus & 1u) != 0u;
+        _qcAdc2Connected = (qcAdcI2cStatus & 2u) != 0u;
         _kvSetpoint = packet[(int)NormalTelemetryField.KvSetpoint];
         _emissionCurrentLimit = packet[(int)NormalTelemetryField.EmissionCurrentLimit];
         _hvpsPowerSetpoint = packet[(int)NormalTelemetryField.HvpsPowerSetpoint];
@@ -297,8 +306,6 @@ internal sealed class NormalTelemetryState
         CollimatorId2 = _collimatorId2,
         CollimatorSerial = _collimatorSerial,
         ButtonsState = _buttonsState,
-        CurrentOperationalPoint = _currentOperationalPoint,
-        TotalOperationalPoints = _totalOperationalPoints,
         InternalTimerState = _internalTimerState,
         PrimaryTimerValue = _primaryTimerValue,
         Timer1State = _timer1State,
@@ -328,6 +335,10 @@ internal sealed class NormalTelemetryState
         CabinetTemperature = _cabinetTemperature,
         Mag1 = _mag1,
         Mag2 = _mag2,
+        QcChannel0Reading = _qcChannel0Reading,
+        QcChannel1Reading = _qcChannel1Reading,
+        QcAdc1Connected = _qcAdc1Connected,
+        QcAdc2Connected = _qcAdc2Connected,
     };
 
     private static ulong TranslateFaults(uint rawFlags)
@@ -401,8 +412,9 @@ internal sealed class CalibrationTelemetryState
     private SystemFaults _faults;
     private SystemInterlocks _interlocks;
     private int _buttonsState;
-    private int _currentOperationalPoint;
-    private int _totalOperationalPoints;
+    private uint _collimatorId1;
+    private uint _collimatorId2;
+    private ulong _collimatorSerial;
     private int _internalTimerState;
     private float _primaryTimerValue;
     private int _timer1State;
@@ -426,6 +438,8 @@ internal sealed class CalibrationTelemetryState
     private float _heatSinkTemperature;
     private float _peltierTemperature;
     private float _cabinetTemperature;
+    private TelemetryVector3 _mag1;
+    private TelemetryVector3 _mag2;
     
     // Setpoint values retrieved from calibration setpoint request command
     private float? _kvSetpoint;
@@ -437,22 +451,26 @@ internal sealed class CalibrationTelemetryState
 
     internal void Update(UdpPacket packet)
     {
-        if (packet.PacketType != (uint)GCBPacketType.TelemetryResponse || packet.PayloadLength != 47u)
+        if (packet.PacketType != (uint)GCBPacketType.TelemetryResponse
+            || packet.PayloadLength != (uint)CalibrationTelemetryField.PayloadFields)
+        {
             throw new ArgumentException("Invalid calibration telemetry packet");
+        }
 
-        _controlBoardState = (GcbStateNew)(int)packet[1];
-        _currentOperationalPoint = packet[2];
-        _totalOperationalPoints = packet[3];
-        _internalTimerState = packet[4];
-        _timer1State = packet[5];
-        _timer2State = packet[6];
-        _systemRuntime = packet[7];
-        _runtimeCounterHvps = packet[8];
-        _buttonsState = packet[11];
-        var rawFaults = (uint)packet[12];
-        var rawCommunicationFaults = (uint)packet[13];
-        var rawInterlocks = (uint)packet[14];
-        var rawRequiredInterlocks = (uint)packet[10];
+        _controlBoardState = (GcbStateNew)(int)packet[(int)CalibrationTelemetryField.SystemState];
+        _internalTimerState = packet[(int)CalibrationTelemetryField.InternalTimerState];
+        _timer1State = packet[(int)CalibrationTelemetryField.Timer1State];
+        _timer2State = packet[(int)CalibrationTelemetryField.Timer2State];
+        _systemRuntime = packet[(int)CalibrationTelemetryField.SystemRuntime];
+        _runtimeCounterHvps = packet[(int)CalibrationTelemetryField.HvpsRuntime];
+        _buttonsState = packet[(int)CalibrationTelemetryField.Buttons];
+        _collimatorId1 = packet[(int)CalibrationTelemetryField.Collimator1];
+        _collimatorId2 = packet[(int)CalibrationTelemetryField.Collimator2];
+        _collimatorSerial = ((ulong)_collimatorId2 << 32) | _collimatorId1;
+        var rawFaults = (uint)packet[(int)CalibrationTelemetryField.SystemFaultFlags];
+        var rawCommunicationFaults = (uint)packet[(int)CalibrationTelemetryField.CommunicationFaultFlags];
+        var rawInterlocks = (uint)packet[(int)CalibrationTelemetryField.InterlockFlags];
+        var rawRequiredInterlocks = (uint)packet[(int)CalibrationTelemetryField.RequiredInterlockFlags];
         _faults = new SystemFaults(
             rawFaults,
             rawCommunicationFaults,
@@ -465,27 +483,35 @@ internal sealed class CalibrationTelemetryState
             SystemInterlockTranslator.AvailablePhysicalInterlocks,
             SystemInterlockTranslator.Translate(rawRequiredInterlocks));
         _hvps = new HvpsTelemetryStatus(
-            RawStatusFlags: packet[16],
-            RawIoFlags: packet[15],
-            RawErrorFlags: packet[17]);
-        _primaryTimerValue = packet[18];
-        _secondaryTimer1Value = packet[19];
-        _secondaryTimer2Value = packet[20];
-        _kvFeedback = packet[21];
-        _emissionCurrent = packet[22];
-        _gridVoltage = packet[23];
-        _heaterCurrentFeedback = packet[24];
-        _heaterCurrentSetpoint = packet[25];
-        _xCoilCurrent = packet[29];
-        _yCoilCurrent = packet[31];
-        _focusCurrent = packet[33];
-        _ionPumpFeedback = packet[35];
-        _waterPressure = packet[38];
-        _waterFlowRate = packet[39];
-        _waterTemperature = packet[40];
-        _heatSinkTemperature = packet[41];
-        _peltierTemperature = packet[42];
-        _cabinetTemperature = packet[43];
+            RawStatusFlags: packet[(int)CalibrationTelemetryField.HvpsStatusFlags],
+            RawIoFlags: packet[(int)CalibrationTelemetryField.HvpsIO],
+            RawErrorFlags: packet[(int)CalibrationTelemetryField.HvpsErrorFlags]);
+        _primaryTimerValue = packet[(int)CalibrationTelemetryField.InternalTimerValue];
+        _secondaryTimer1Value = packet[(int)CalibrationTelemetryField.Timer1Value];
+        _secondaryTimer2Value = packet[(int)CalibrationTelemetryField.Timer2Value];
+        _kvFeedback = packet[(int)CalibrationTelemetryField.KvFeedback];
+        _emissionCurrent = packet[(int)CalibrationTelemetryField.MaFeedback];
+        _gridVoltage = packet[(int)CalibrationTelemetryField.GridFeedback];
+        _heaterCurrentFeedback = packet[(int)CalibrationTelemetryField.FilamentFeedback];
+        _heaterCurrentSetpoint = packet[(int)CalibrationTelemetryField.FilamentSetpoint];
+        _xCoilCurrent = packet[(int)CalibrationTelemetryField.XCoilCurrent];
+        _yCoilCurrent = packet[(int)CalibrationTelemetryField.YCoilCurrent];
+        _focusCurrent = packet[(int)CalibrationTelemetryField.FocusCoilCurrent];
+        _ionPumpFeedback = packet[(int)CalibrationTelemetryField.IonPumpFeedback];
+        _waterPressure = packet[(int)CalibrationTelemetryField.WaterPressure];
+        _waterFlowRate = packet[(int)CalibrationTelemetryField.WaterFlow];
+        _waterTemperature = packet[(int)CalibrationTelemetryField.WaterTemp];
+        _heatSinkTemperature = packet[(int)CalibrationTelemetryField.HeatsinkTemp];
+        _peltierTemperature = packet[(int)CalibrationTelemetryField.PeltierTemp];
+        _cabinetTemperature = packet[(int)CalibrationTelemetryField.CabinetTemp];
+        _mag1 = new TelemetryVector3(
+            packet[(int)CalibrationTelemetryField.Mag1X],
+            packet[(int)CalibrationTelemetryField.Mag1Y],
+            packet[(int)CalibrationTelemetryField.Mag1Z]);
+        _mag2 = new TelemetryVector3(
+            packet[(int)CalibrationTelemetryField.Mag2X],
+            packet[(int)CalibrationTelemetryField.Mag2Y],
+            packet[(int)CalibrationTelemetryField.Mag2Z]);
     }
 
     internal void UpdateSetpoints(CalibrationSetpointResponse setpointResponse)
@@ -505,8 +531,9 @@ internal sealed class CalibrationTelemetryState
         Faults = _faults,
         Interlocks = _interlocks,
         ButtonsState = _buttonsState,
-        CurrentOperationalPoint = _currentOperationalPoint,
-        TotalOperationalPoints = _totalOperationalPoints,
+        CollimatorId1 = _collimatorId1,
+        CollimatorId2 = _collimatorId2,
+        CollimatorSerial = _collimatorSerial,
         InternalTimerState = _internalTimerState,
         PrimaryTimerValue = _primaryTimerValue,
         Timer1State = _timer1State,
@@ -534,6 +561,8 @@ internal sealed class CalibrationTelemetryState
         HeatSinkTemperature = _heatSinkTemperature,
         PeltierTemperature = _peltierTemperature,
         CabinetTemperature = _cabinetTemperature,
+        Mag1 = _mag1,
+        Mag2 = _mag2,
     };
 
     private static ulong TranslateFaults(uint rawFlags)

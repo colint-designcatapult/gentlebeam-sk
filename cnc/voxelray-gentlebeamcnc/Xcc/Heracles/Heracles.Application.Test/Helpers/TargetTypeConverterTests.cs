@@ -20,6 +20,28 @@ namespace Heracles.Application.Test.Helpers
                 Assert.That(TargetTypeConverter.GetIndexToTreatmentFieldNameMapping(targetType), Is.Not.Null);
             }
         }
+        [TestCase(TargetType.TargetType_30mm_SSD_7_Fields)]
+        [TestCase(TargetType.TargetType_50mm_SSD_13_Fields)]
+        [TestCase(TargetType.TargetType_50mm_SSD_15mm_Field)]
+        [TestCase(TargetType.TargetType_50mm_SSD_20mm_Field)]
+        [TestCase(TargetType.TargetType_50mm_SSD_30mm_Field)]
+        [TestCase(TargetType.TargetType_50mm_SSD_40mm_Field)]
+        [TestCase(TargetType.TargetType_50mm_SSD_50mm_Field)]
+        public void SupportedClinicalTarget_CentralCellMapsToPlusC(TargetType targetType)
+        {
+            var mapping = TargetTypeConverter.GetIndexToTreatmentFieldNameMapping(targetType);
+            var centralCellIndex = TargetTypeConverter.GetCentralCellIndex(targetType);
+
+            Assert.That(mapping![centralCellIndex], Is.EqualTo(TreatmentFieldName.PlusC));
+        }
+
+        [TestCase(TargetType.TargetType_None)]
+        [TestCase(TargetType.TargetType_61_Fields)]
+        public void UnsupportedClinicalTarget_HasNoFieldMapping(TargetType targetType)
+        {
+            Assert.That(TargetTypeConverter.GetIndexToTreatmentFieldNameMapping(targetType), Is.Null);
+        }
+
 
         [Test]
         public void GetBackwardFieldNameMapping_PositiveTest()

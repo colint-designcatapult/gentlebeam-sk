@@ -64,6 +64,22 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 payload: [filamentSetpoint]);
         }
 
+        public byte[] GenerateQcbPingCmd()
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.QcbPing,
+                packetCounter: ++packetCounter,
+                payload: [0, 0]);
+        }
+
+        public byte[] GenerateQcbReadingsCmd(uint command, int samplingWindowMs)
+        {
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)GCBPacketType.QcbReadingsCommand,
+                packetCounter: ++packetCounter,
+                payload: [command, samplingWindowMs]);
+        }
+
         /// <summary>
         /// This command is used in calibration mode to set HVPS kilovoltage.
         /// Payload: [cmd_id=5 (SET_KV), kv_value, flags]
@@ -149,19 +165,19 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
         }
         /// <summary>
         /// This command is used in calibration mode to set coil currents (X, Y, Focus).
-        /// Payload: [x_coil_amps, y_coil_amps, focus_coil_amps]
-        /// Valid ranges: X/Y Coil [-2.0, 2.0] A, Focus [0.0, 3.0] A
+        /// Payload: [x_coil_milliamps, y_coil_milliamps, focus_coil_milliamps]
+        /// Valid ranges: X/Y Coil [-2000, 2000] mA, Focus [0, 3000] mA
         /// </summary>
-        /// <param name="xCoil">X Deflection Coil current [A]</param>
-        /// <param name="yCoil">Y Deflection Coil current [A]</param>
-        /// <param name="fCoil">Focus Coil current [A]</param>
+        /// <param name="xCoilMilliamps">X Deflection Coil current [mA]</param>
+        /// <param name="yCoilMilliamps">Y Deflection Coil current [mA]</param>
+        /// <param name="fCoilMilliamps">Focus Coil current [mA]</param>
         /// <returns></returns>
-        public byte[] GenerateCalibrationCoilsCmd(float xCoil, float yCoil, float fCoil)
+        public byte[] GenerateCalibrationCoilsCmd(float xCoilMilliamps, float yCoilMilliamps, float fCoilMilliamps)
         {
             return UdpPacketBuilder.BuildRawPacket(
                 packetType: (uint)GCBPacketType.CalibrationCoilsCmd,
                 packetCounter: ++packetCounter,
-                payload: [xCoil, yCoil, fCoil]);
+                payload: [xCoilMilliamps, yCoilMilliamps, fCoilMilliamps]);
         }
 
         /// <summary>
@@ -192,33 +208,26 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
         }
 
         /// <summary>
-        /// This command is used to begin staging a new treatment plan. If successful, the firmware responds with a new session ID.
+        /// This command is used to begin staging a new single-emission treatment plan. If successful, the firmware responds with a new session ID.
         /// </summary>
-        /// <param name="totalPoints">The total requested number of points for the new plan</param>
-        /// <returns></returns>
-        public byte[] GenerateNewSessionCmd(int totalPoints)
+        public byte[] GenerateNewSessionCmd()
         {
             return UdpPacketBuilder.BuildRawPacket(
                 packetType: (uint)GCBPacketType.NewSessionCmd,
                 packetCounter: ++packetCounter,
-                payload: [
-                    totalPoints,
-                    0 /* reserved field */
-                    ]);
+                payload: []);
         }
 
 
         /// <summary>
-        /// This command is used to request information on a staged treatment plan. Each command is used to request the information for a single point within the treatment plan.
+        /// This command requests the emission currently staged on the board.
         /// </summary>
-        /// <param name="pointIndex"></param>
-        /// <returns></returns>
-        public byte[] GenerateOperationalPointQueryCmd(int pointIndex)
+        public byte[] GenerateOperationalPointQueryCmd()
         {
             return UdpPacketBuilder.BuildRawPacket(
                 packetType: (uint)GCBPacketType.OperationalPointQueryCmd,
                 packetCounter: ++packetCounter,
-                payload: [pointIndex]);
+                payload: []);
         }
 
         public byte[] GenerateReleaseTreatmentPlanCmd(GCBReleaseCommandScope scope, IGcbSessionAuthentication sessionKey)
@@ -251,19 +260,14 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
 
         
         /// <summary>
-        /// Loading or Confirmation OP command
+        /// Loading or confirmation command for the session's emission.
         /// </summary>
-        /// <param name="packetType"></param>
-        /// <param name="op"></param>
-        /// <param name="authenticationCode"></param>
-        /// <returns></returns>
         public byte[] GenerateOperationalPointCmd(GCBPacketType packetType, GcbOperationalPoint op, IGcbSessionAuthentication sessionKey)
         {
             UdpPacket packet = UdpPacketBuilder.BuildPacket(
                 packetType: (uint)packetType,
                 packetCounter: ++packetCounter,
                 payload: [
-                    op.PointIndex,
                     op.TotalPointTime,
                     op.RemainingPointTime,
                     op.SetpointKv,
@@ -272,7 +276,6 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                     op.XCoilSetpoint,
                     op.YCoilSetpoint,
                     op.FocusCoilSetpoint,
-                    op.AutoExecution ? 1 : 0,
                     0 // authentication code, calc it below from the packet payload:
                     ]);
             return sessionKey.Sign(packet).Buffer;

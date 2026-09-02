@@ -1,7 +1,5 @@
 ﻿using Com.Empyreanmed.Heracles.TreatmentFields.V1;
-using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xcc.Infra.Networking.gRPC.Channels;
@@ -57,16 +55,6 @@ namespace Heracles.Application.Commands.gRPC.EMR.Invokers
                 new ListTreatmentFieldsRequest { PlanId = parentId });
 
             return response.TreatmentFields;
-        }
-        public Task<ICollection<TreatmentField>> CreateBunchAsync(RepeatedField<TreatmentField> fields)
-        {
-            throw new NotImplementedException("Moses infrastructure not implemented: CreateBatchTreatmentFieldsRequest.TreatmentFields is read only");
-
-            //var request = new CreateBatchTreatmentFieldsRequest { TreatmentFields = fields};
-            //request.TreatmentField.ClearId();
-
-            //var response = await CallWithOptions(Client.CreateTreatmentFieldAsync, request);
-            //return response.TreatmentField;
         }
     }
 }

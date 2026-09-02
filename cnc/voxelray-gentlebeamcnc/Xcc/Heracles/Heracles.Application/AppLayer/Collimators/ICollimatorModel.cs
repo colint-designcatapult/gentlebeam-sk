@@ -1,5 +1,6 @@
 ﻿using Heracles.Application.Domain.DataManagement.System.Collimators;
 using Heracles.Core.Enums;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using Xcc.Core.Domain.DataManagement.System;
@@ -13,7 +14,10 @@ namespace Heracles.Application.AppLayer.Collimators
         IHead ActiveHead { get; }
         ObservableCollection<ICollimatorConfiguration> CollimatorConfigurations { get; }
 
-        void Reset(IHead activeHead);
+        void Reset(
+            IHead activeHead,
+            IEnumerable<ICollimatorConfiguration> configurations,
+            IEnumerable<ICollimator> collimators);
 
         void AddConfiguration(ICollimatorConfiguration configuration);
         ICollimatorConfiguration? FindConfigurationByType(TargetType collimatorType, Energy energy);

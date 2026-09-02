@@ -78,19 +78,6 @@ namespace Heracles.Application.Commands.DummyCommands
             : base(p => p.PlanId)
         {
         }
-
-        public async Task<ICollection<ITreatmentField>> CreateBunchAsync(ICollection<ITreatmentField> fields)
-        {
-            var result = new List<ITreatmentField>(fields.Count);
-
-            foreach (var field in fields)
-            {
-                var created = await CreateAsync(field);
-                result.Add(created);
-            }
-
-            return result;
-        }
     }
     
     public class EmrDummyActualTreatmentFieldCommands : DummyChildEntryCommands<IActualTreatmentField, ActualTreatmentField>, IEmrActualTreatmentFieldCommands

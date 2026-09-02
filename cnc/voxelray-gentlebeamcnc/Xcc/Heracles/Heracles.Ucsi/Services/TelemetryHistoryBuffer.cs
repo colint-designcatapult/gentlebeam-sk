@@ -68,6 +68,32 @@ public sealed class TelemetryHistoryBuffer
             return result;
         }
     }
+    public IReadOnlyList<UcsiTelemetrySample> GetSince(DateTimeOffset earliestUtc)
+    {
+        lock (_sync)
+        {
+            int resultCount = 0;
+            for (int index = 0; index < _count; index++)
+            {
+                if (GetAtOffset(index).ReceivedAtUtc >= earliestUtc)
+                    resultCount++;
+            }
+
+            if (resultCount == 0)
+                return Array.Empty<UcsiTelemetrySample>();
+
+            var result = new UcsiTelemetrySample[resultCount];
+            int destination = 0;
+            for (int index = 0; index < _count; index++)
+            {
+                UcsiTelemetrySample sample = GetAtOffset(index);
+                if (sample.ReceivedAtUtc >= earliestUtc)
+                    result[destination++] = sample;
+            }
+            return result;
+        }
+    }
+
 
     public IReadOnlyList<UcsiTelemetrySample> GetAfter(long sequence)
     {

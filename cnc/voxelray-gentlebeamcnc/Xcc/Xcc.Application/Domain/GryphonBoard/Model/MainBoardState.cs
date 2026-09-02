@@ -9,7 +9,7 @@ namespace Xcc.Application.Domain.GryphonBoard.Model
 {
     public class MainBoardState : IMainBoardStateManagement
     {
-        public GcbEmissionPlan CurrentPlan { get; private set; } = null!;
+        public GcbOperationalPoint? CurrentEmission { get; private set; }
         public ISystemTelemetry? SystemTelemetry { get; private set; } = null!;
         public GcbStateNew? State => SystemTelemetry?.ControlBoardState;
         public bool IsPlanStaged { get; protected set; } = false;
@@ -69,9 +69,10 @@ namespace Xcc.Application.Domain.GryphonBoard.Model
             Session = session;
         }
 
-        public void SetCurrentPlan(GcbEmissionPlan plan)
+        public void SetCurrentEmission(GcbOperationalPoint emission)
         {
-            CurrentPlan = plan;
+            emission.InitialRemainingPointTime = emission.RemainingPointTime;
+            CurrentEmission = emission;
         }
 
         public void OnSystemTelemetryChanged(ISystemTelemetry? systemTelemetry)
@@ -92,10 +93,6 @@ namespace Xcc.Application.Domain.GryphonBoard.Model
             GcbDataStore.SystemTelemetry = systemTelemetry;
         }
 
-        public GcbOperationalPoint CurrentPoint()
-        {
-            throw new NotImplementedException();
-        }
         #endregion private methods
     }
 }

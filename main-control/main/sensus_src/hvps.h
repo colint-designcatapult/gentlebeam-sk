@@ -41,7 +41,7 @@
 #define MIN_KV		0.0f
 
 #if defined(CALIBRATION_MODE)
-#define MAX_MA		2.0f
+#define MAX_MA		4.0f
 #define MIN_MA		0.0f
 #else
 #define MAX_MA		8.0f

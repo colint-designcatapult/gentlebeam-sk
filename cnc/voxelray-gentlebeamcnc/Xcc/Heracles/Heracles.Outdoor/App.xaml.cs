@@ -168,6 +168,7 @@ namespace Heracles.External
                 containerRegistry.RegisterManySingleton<DummyMainBoardModel>();
                 containerRegistry.RegisterSingleton<ITelemetryService, DummyTelemetryService>();
                 //containerRegistry.RegisterSingleton<ILogService, TextLogService>();
+                containerRegistry.RegisterSingleton<IQcbService, MockQcbService>();
             }
             else
             {
@@ -177,13 +178,12 @@ namespace Heracles.External
                 containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
                 containerRegistry.RegisterManySingleton<GcbTelemetryService>();
                 containerRegistry.RegisterManySingleton<MainBoardModelBase>();
+                containerRegistry.RegisterSingleton<IQcbService, GcbQcbService>();
                 #endregion
             }
 
             containerRegistry.RegisterSingleton<IGcbIndicators, GcbIndicators>();
             containerRegistry.RegisterManySingleton<WarmupService>();
-            containerRegistry.RegisterSingleton<IQcbService, MockQcbService>();
-            containerRegistry.RegisterSingleton<IQcbReadingModel, MockQcbReadingModel>();
 
             if (heraclesExternalSettings.UseDummyDatabase)
             {

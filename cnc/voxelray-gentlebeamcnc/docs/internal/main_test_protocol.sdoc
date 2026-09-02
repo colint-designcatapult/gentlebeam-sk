@@ -613,15 +613,17 @@ STEPS: >>>
 5. Select QC Collimator in the Type dropdown. 
 
 6. Press the save button.
+
+7. Close and reopen the Collimator Management tab.
 <<<
 EXPECTED_BEHAVIOR: >>>
-3 - The collimator registration form should be opened, and the serial of the QC collimator should be populated. 
+3 - The collimator registration form should be opened, and the serial of the QC collimator should be populated.
 
-5 - Energy and SSD should be hidden. 
+5 - Energy and SSD should be hidden.
 
 6 - Active should be selected. 
 
-7 - QC collimator should be added to the list 
+7 - The QC collimator should be present in the list with Active selected after the tab is reopened.
 
 Observed behavior 
 
@@ -916,13 +918,8 @@ o Applicator ID (2) [Raw]
 
 o Buttons [Raw] 
 
-5. Locate and verify the Operational points section displays: 
 
-o Current Point 
-
-o Total Points 
-
-6. Locate and verify the Timers section displays the following parameters: 
+5. Locate and verify the Timers section displays the following parameters: 
 
 o 
 
@@ -2174,9 +2171,11 @@ Active : mark as active
 9.Click the "v" check in the Active checkbox to remove the "v"(uncheck) 
 
 10.Click the Save button
+
+11.Close and reopen the Target Management tab.
 <<<
 EXPECTED_BEHAVIOR: >>>
-The target should appear with an empty checkbox under the Active column in the Targets list view.
+The target should appear with an empty checkbox under the Active column in the Targets list view after the tab is reopened.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2317,16 +2316,24 @@ Energy [kV]: 50(Select from the drop-down menu)
 
 14.Click the "Save" button under "Prescription". 
 
-15.Click Verify to verify plan. 
+15. Click Verify to verify the plan.
 
-16.Navigate to Treatment tab 
+16. Navigate to the Treatment tab.
 
-17.Click the Load For Treatment button.
+17. While the External application remains connected, connect a second instrumented client to each of the database service's ``PlanEvents`` and ``LoadForTreatmentEvents`` streams.
+
+18. Click the Load For Treatment button.
+
+19. Run the treatment-plan validation tests with one valid field, no field, a null field, and multiple fields.
 <<<
 EXPECTED_BEHAVIOR: >>>
-20.The "Load for Treatment" button should become clickable, allowing the user to load the plan for treatment 
+18. The Load For Treatment button is enabled and accepts the action.
 
-21.The plan should be sent to the Heracles External unit. Additionally, the plan should be visible in the external application.
+18. The External application and the second load-for-treatment subscriber each receive exactly one event for the same Pending plan, and the plan is visible in the External application.
+
+18. The Internal application and the second plan-status subscriber each receive exactly one plan event for that same Pending plan. No connected subscriber consumes the event intended for another subscriber.
+
+19. Exactly one valid field is accepted. Each other shape is rejected before the plan is accepted for loading.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -6940,25 +6947,18 @@ RELATIONS:
 UID: TC-H10SG-415
 TITLE: Quality Assurance - Quality Checks Reports
 STATEMENT: >>>
-This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+Verify the internal report represents each requested QA emission without firmware point
+metadata.
 <<<
 STEPS: >>>
-1. Log in to the External application. 
-
-2. Navigate to the Quality Checks tab in the Quality Assurance view. 
-
-3. Select Energy 50/70/100 in the Energy drop-down. 
-
-4. Press prepare 
-
-5. Press Start QC 
-
-6. Log in to the application. 
-
-7. Navigate to the Quality Checks tab in the Quality Assurance view.
+1. In the External application's Beam QA Checks view, select an energy and exactly one listed emission.
+2. Prepare and Beam On that selected emission.
+3. Log in to the Internal application and open the Quality Assurance report.
+4. Select the matching collimator, energy, SSD, and performed date.
 <<<
 EXPECTED_BEHAVIOR: >>>
-7 - The Quality Checks result performed using the external application is visible with the intensity data read from the QC panel.
+1. The report contains the selected requested QA emission with its current, measured intensities, and reference deviations.
+2. The report contains no row for an unselected emission and does not depend on a firmware point index.
 <<<
 RELATIONS:
 - TYPE: Parent

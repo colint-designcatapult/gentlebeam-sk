@@ -27,6 +27,7 @@ int32_t hvps_stability_counter = 0;
 int32_t hvps_uncontrolled_counter = 0;
 int32_t hvps_ma_thresh = 0;
 int32_t hvps_kv_oot_counter = 0;
+static XState hvps_stability_state = STATE_UNKNOWN;
 
 static void check_hvps_kv();
 static void check_hvps_ma();
@@ -68,9 +69,17 @@ static void check_hvps_stability()
 	bool heater_stable = false;
 	bool kv_stable = false;
 	
+	XState current_state = (XState)system_status[SS_STATE].i;
+	if(current_state != hvps_stability_state)
+	{
+		hvps_stability_timer = 0;
+		hvps_stability_counter = 0;
+		hvps_uncontrolled_counter = 0;
+		hvps_stability_state = current_state;
+	}
 	hvps_stability_timer++;
 	
-	switch(system_status[SS_STATE].i)
+	switch(current_state)
 	{
 		case STATE_CONDITIONING:
 			heater_stable = tolerance_check_rel(htr_target, htr_actual, htr_tolerance);
@@ -218,11 +227,15 @@ static void check_hvps_stability()
 				hvps_stability_counter = 0;
 			}
 			break;
+		case STATE_FAULT_DISCHARGE:
 		case STATE_DISCHARGE:
-			//TBD TODO add check to see that warmup bit is not set maybe???
-			//TBD TODO && (htr state == stable) maybe??
-			heater_stable = tolerance_check_rel(htr_target, htr_actual, htr_tolerance);
-			kv_stable = tolerance_check_abs(kv_target, kv_actual, kv_tolerance);
+			// Zero targets need absolute/off checks; relative tolerance at zero
+			// requires an exact 0.0 feedback value and can hold Discharge forever.
+			heater_stable = htr_target <= 0
+				? htr_actual <= HEATER_MIN_FEEDBACK
+				: tolerance_check_rel(htr_target, htr_actual, htr_tolerance);
+			heater_stable &= (!hvps_sys_stat_check(HVPS_SYS_STAT_WARMING));
+			kv_stable = kv_actual < (LOW_KV_THRESH - 1.0f);
 			
 			if(hvps_stability_timer > DISCHARGE_TIMEOUT)
 			{
@@ -235,7 +248,7 @@ static void check_hvps_stability()
 #if defined(CALIBRATION_MODE)
 					report_typed_fault4(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f).", MAKE_ARG(kv_target), MAKE_ARG(DISCHARGE_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual));
 #else
-					report_typed_fault5(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(kv_target), MAKE_ARG(DISCHARGE_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual), MAKE_ARG((uint32_t)kv_output));
+					report_typed_fault5(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(kv_target), MAKE_ARG(hvps_stability_timer), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual), MAKE_ARG((uint32_t)kv_output));
 #endif
 				}
 			}
@@ -246,7 +259,7 @@ static void check_hvps_stability()
 			break;
 		case STATE_TERMINATION:
 			heater_stable = tolerance_check_rel(htr_target, htr_actual, htr_tolerance);
-			kv_stable = tolerance_check_abs(kv_target, kv_actual, kv_tolerance);
+			kv_stable = kv_actual < (LOW_KV_THRESH - 1.0f);
 			
 			if(hvps_stability_timer > TERMINATION_TIMEOUT)
 			{
@@ -259,7 +272,7 @@ static void check_hvps_stability()
 #if defined(CALIBRATION_MODE)
 					report_typed_fault4(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f).", MAKE_ARG(kv_target), MAKE_ARG(DISCHARGE_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual));
 #else
-					report_typed_fault5(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(kv_target), MAKE_ARG(TERMINATION_TIMEOUT * HVPS_MONITOR_MS / 1000u), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual), MAKE_ARG((uint32_t)kv_output));
+					report_typed_fault5(FAULT_KV, "Did not hit kV target %f in %u seconds (tolerance: %f, actual: %f, output: %u).", MAKE_ARG(kv_target), MAKE_ARG(hvps_stability_timer), MAKE_ARG(kv_tolerance), MAKE_ARG(kv_actual), MAKE_ARG((uint32_t)kv_output));
 #endif
 				}
 			}
@@ -309,10 +322,12 @@ static void check_hvps_kv()
 				hvps_kv_oot_counter = 0;
 			}
 			break;
+		case STATE_FAULT_DISCHARGE:
 		case STATE_DISCHARGE:
 		case STATE_TERMINATION:
 		case STATE_SETUP:
 		case STATE_LAUNCHING:
+		case STATE_CALIBRATION:
 			//Do nothing here, defer to stability monitoring here
 			break;
 		default:

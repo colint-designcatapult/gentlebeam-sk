@@ -10,11 +10,14 @@
 
 #ifndef STATE_MACHINE_H_
 #define STATE_MACHINE_H_
+#include <stdbool.h>
+
 
 #define MAX_EVENT_QUEUE_SIZE	50
 #define PRIMED_STANDBY_TICKS	3000
 #define FAULT_STANDBY_TICKS		1800
 #define STANDBY_TICKS			1200
+#define CONDITIONING_HOLD_DECI_SECONDS	(15 * 60 * 10)
 
 typedef enum xMode
 {
@@ -45,6 +48,8 @@ typedef enum xState
 	STATE_DISCHARGE,
 	STATE_FAULT,			//16
 	STATE_SYSTEM_CRASH,
+	STATE_CALIBRATION = 22,
+	STATE_FAULT_DISCHARGE,
 	NUM_SYSTEM_STATES,
 	STATE_UNKNOWN = 0xFFFFFFFF	//Unknown state, force uint32_t size
 } XState;
@@ -66,6 +71,7 @@ typedef enum eventType
 	EVENT_PC_CLEAR_FAULT,
 	EVENT_HVPS_CHECK,
 	EVENT_HVPS_SP_REACHED,
+	EVENT_CONDITIONING_HOLD_COMPLETE,
 	EVENT_OP_COMPLETE,
 	EVENT_ENTER_BOOTLOADER,
 	EVENT_CLEAR_PULSE_DONE,
@@ -75,6 +81,8 @@ typedef enum eventType
 void init_state_machine();
 void queue_sm_event(EventType ev);
 void process_state_machine();
+bool try_enter_calibration_state(void);
+bool exit_calibration_state(void);
 
 
 #endif /* STATE_MACHINE_H_ */

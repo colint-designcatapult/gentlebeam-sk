@@ -9,7 +9,7 @@ namespace Heracles.Application.Domain.DataManagement.System.QualityCheck
     {
         public QcSampleField() : this(NewEntryId)
         { }
-        public DateTime CreationDate { set; get; }
+        public DateTime CreationDate { set; get; } = DateTime.Now;
         public long QcSampleId { set; get; }
         public TreatmentFieldName Name { set; get; }
     }

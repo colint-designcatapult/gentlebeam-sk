@@ -63,30 +63,6 @@ namespace Heracles.External.AppServices
             HeaterCurrent = heaterCurrent;
         }
 
-        public GcbEmissionPlan GetEmissionPlan()
-        {
-            var plan = new GcbEmissionPlan();
-            var totalPoints = Fields.Count;
-            foreach (var field in Fields)
-            {
-                plan.AddPoint(new GcbOperationalPoint
-                {
-                    PointIndex = plan.TotalPoints,
-                    TotalPointTime = (float)field.Duration,
-                    RemainingPointTime = (float)field.RemainingTime,
-                    SetpointKv = EnergyConverter.Convert(CollimatorConfiguration.Energy),
-                    TargetMA = (float)field.Planned.Current,
-
-                    // TODO: we don't apply magnetometer now, just get calibrated coilX/Y
-                    FilamentSetpoint = (float)HeaterCurrent,
-                    FocusCoilSetpoint = Convert.ToSingle(field.ExecutionParameters.FocusCurrent),
-                    XCoilSetpoint = Convert.ToSingle(field.ExecutionParameters.XDeflectionCurrent),
-                    YCoilSetpoint = Convert.ToSingle(field.ExecutionParameters.YDeflectionCurrent),
-                    AutoExecution = true
-                });
-            }
-            return plan;
-        }
     }
 
     public class TreatmentPreparationService
@@ -167,7 +143,7 @@ namespace Heracles.External.AppServices
                 return new TreatmentPlan(
                     treatment: nextTreatment,
                     collimatorConfiguration: collimatorProfile.CollimatorConfiguration,
-                    fields: plan.TreatmentFields.Select(
+                    fields: treatmentInfo.Plan.TreatmentFields.Select(
                         f => new TreatmentPlanItem(
                             planned: f,
                             actual: nextTreatment.GetField(f.Name),
@@ -250,7 +226,7 @@ namespace Heracles.External.AppServices
             var prevFractionNumber = lastTreatment?.Fraction ?? 0;
             var prevCumulativeDose = lastTreatment?.CumulativeDose ?? 0;
             var dailyDose = treatmentInfo.Prescription.DailyDose;
-            return new Treatment
+            var treatment = new Treatment
             {
                 Id = BaseEntry.NEW_ENTRY_ID,
                 CreationDate = DateTime.Now,
@@ -262,6 +238,7 @@ namespace Heracles.External.AppServices
                 Fraction = prevFractionNumber + 1,
                 CumulativeDose = prevCumulativeDose + dailyDose
             };
+            return new Treatment(treatment, treatmentInfo.Plan);
         }
     }
 }

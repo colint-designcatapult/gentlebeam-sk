@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using Prism.Mvvm;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
@@ -9,20 +8,18 @@ namespace Xcc.Application.Domain.GryphonBoard.Model.Indicators
 {
     public class HVSetupProgress : BindableBase
     {
-        struct Context
+        readonly struct Context
         {
-            public int PointIndex { get; } = 0;
-            public float Setpoint_kV { get; } = 0;
+            public float SetpointKv { get; }
 
-            public Context(int pointIndex, float setpoint_kV)
+            public Context(float setpointKv)
             {
-                PointIndex = pointIndex;
-                Setpoint_kV = setpoint_kV;
+                SetpointKv = setpointKv;
             }
 
             public int GetProgress(float kvFeedback)
             {
-                return (int)((kvFeedback / Setpoint_kV) * 100);
+                return (int)((kvFeedback / SetpointKv) * 100);
             }
         }
 
@@ -53,11 +50,10 @@ namespace Xcc.Application.Domain.GryphonBoard.Model.Indicators
             {
                 if (systemTelemetry.ControlBoardState == GcbStateNew.HVSetup)
                 {
-                    if (_context?.PointIndex != systemTelemetry.CurrentOperationalPoint)
+                    if (_context is null)
                     {
-                        var pointIndex = systemTelemetry.CurrentOperationalPoint;
                         Value = 0;
-                        _context = new Context(pointIndex, setpoint_kV: GetKvSetpoint(pointIndex));
+                        _context = new Context(GetKvSetpoint());
                     }
 
                     Value = Math.Max(
@@ -84,9 +80,10 @@ namespace Xcc.Application.Domain.GryphonBoard.Model.Indicators
             _context = null;
         }
 
-        private float GetKvSetpoint(int pointIndex)
+        private float GetKvSetpoint()
         {
-            return MainBoardModel.CurrentPlan.Points.ElementAt(pointIndex).SetpointKv;
+            return MainBoardModel.CurrentEmission?.SetpointKv
+                ?? throw new InvalidOperationException("No current emission.");
         }
     }
 }

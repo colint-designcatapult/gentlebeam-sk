@@ -140,24 +140,28 @@ RELATIONS:
 UID: TC-H1FWHVPSIB-6
 TITLE: Functional 2 - Test Case
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall be able to write a specified flash memory page with
-provided data from the PC.
+The HVPS interface bootloader firmware shall write application data provided by the PC through
+application-relative page index 180.
 <<<
 PREREQUISITES: >>>
 * The system is ready to start.
-* Flash memory is present which contains firmware application.
+* A bootloader-compatible application image contains known, non-erased data at application-relative
+  page index 180.
+* A flash inspection tool is available to read the programmed application memory.
 <<<
 STEPS: >>>
 1. Start the system from power.
 2. Do not load any treatment plan.
-3. Utilize the bootloader utility to load a new set of application firmware.
-4. Record the utility log to ensure application writes data to flash memory.
+3. Utilize the bootloader utility to load the prepared application firmware image.
+4. Record the utility log for the write to application-relative page index 180.
+5. Read back application-relative page index 180 with the flash inspection tool.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. Verify system starts up successfully.
 2. Verify system does not have any treatment plan loaded on it.
-3. Verify the system is off.
-4. Verify system starts up successfully.
+3. Verify the bootloader utility completes the application load without rejecting page index 180.
+4. Verify the utility log reports that page index 180 was written successfully.
+5. Verify the read-back data at page index 180 matches the prepared application image.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -172,20 +176,23 @@ The HVPS interface bootloader firmware shall be able to erase a predetermined ar
 memory, corresponding to the application firmware programming area.
 <<<
 PREREQUISITES: >>>
-* The system is ready to start.
-* Flash memory is present which contains firmware application.
+* The system is ready to start in bootloader mode.
+* The application programming area contains known, non-erased marker data in its first page and at
+  application-relative page index 180.
+* A protocol-compatible tool can send an erase command and inspect MCU flash memory.
 <<<
 STEPS: >>>
-1. Start the system from power.
-2. Do not load any treatment plan.
-3. Utilize the bootloader utility to load a new set of application firmware from the flash memory.
-4. Record the utility log to ensure application erases MCU memory.
+1. Start the system from power in bootloader mode.
+2. Use the protocol-compatible tool to send an erase command.
+3. Record the bootloader response.
+4. Read back the marker locations in the first application page and at application-relative page
+   index 180.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify system starts up successfully.
-2. Verify system does not have any treatment plan loaded on it.
-3. Verify the new firmware application is loaded successfully.
-4. Verify application erases MCU memory.
+1. Verify system starts up successfully in bootloader mode.
+2. Verify the bootloader reports that the erase completed.
+3. Verify the erase response is received before inspecting flash.
+4. Verify both marker locations contain the erased flash value.
 <<<
 RELATIONS:
 - TYPE: Parent

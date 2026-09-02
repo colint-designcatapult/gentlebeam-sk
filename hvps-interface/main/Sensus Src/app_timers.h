@@ -8,7 +8,6 @@ extern volatile bool toggle_grid_clock;
 
 extern volatile int32_t int_adc_ms;
 extern volatile int32_t comm_ms;
-extern volatile int32_t kv_ramp_ms;
 extern volatile int32_t fil_ramp_ms;
 extern volatile int32_t lock_timer_ms;
 extern volatile int32_t io_ms;

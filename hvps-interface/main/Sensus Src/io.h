@@ -55,6 +55,8 @@ void process_io();
 void lock_hv();
 void lock_grid();
 
+void shutdown_beam();
+
 void interlock_test(uint32_t param);
 
 

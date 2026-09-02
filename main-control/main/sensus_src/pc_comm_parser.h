@@ -192,17 +192,21 @@ enum warmupCmdFields
 	WARMUP_CMD_COUNT
 };
 
-enum newSessionCmdFields
+enum newSessionReqFields
 {
-	NEW_SES_CMD_POINTS = 0,
-	NEW_SES_CMD_ID,
-	NEW_SES_CMD_COUNT	
+	NEW_SES_REQ_COUNT = 0
+};
+
+enum newSessionResFields
+{
+	NEW_SES_RES_STATUS = 0,
+	NEW_SES_RES_ID,
+	NEW_SES_RES_COUNT
 };
 
 enum opCmdFields
 {
-	OP_CMD_POINT_IDX = 0,
-	OP_CMD_TOTAL_TIME,
+	OP_CMD_TOTAL_TIME = 0,
 	OP_CMD_REMAIN_TIME,
 	OP_CMD_KV,
 	OP_CMD_MA,
@@ -210,7 +214,6 @@ enum opCmdFields
 	OP_CMD_X_COIL,
 	OP_CMD_Y_COIL,
 	OP_CMD_F_COIL,
-	OP_CMD_AUTO_EXEC,
 	OP_CMD_AUTHENTICATION,
 	OP_CMD_COUNT
 };
@@ -218,14 +221,12 @@ enum opCmdFields
 
 enum opReqFields
 {
-	OP_REQ_POINT_IDX = 0,
-	OP_REQ_COUNT
+	OP_REQ_COUNT = 0
 };
 
-enum epRespFields
+enum opRespFields
 {
 	OP_RES_STATUS = 0,
-	OP_RES_POINT_IDX,
 	OP_RES_TOTAL_TIME,
 	OP_RES_REMAIN_TIME,
 	OP_RES_KV,
@@ -234,7 +235,6 @@ enum epRespFields
 	OP_RES_X_COIL,
 	OP_RES_Y_COIL,
 	OP_RES_F_COIL,
-	OP_RES_AUTO_EXEC,
 	OP_RES_COUNT
 };
 

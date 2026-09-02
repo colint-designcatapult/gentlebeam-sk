@@ -6,6 +6,7 @@ namespace Xcc.Test.Xcc.Core.Models;
 
 internal class SystemTelemetryTests
 {
+    [TestCase(GcbStateNew.FaultDischarge, true)]
     [TestCase(GcbStateNew.Fault, true)]
     [TestCase(GcbStateNew.ColdFault, true)]
     [TestCase(GcbStateNew.WarmupFault, true)]

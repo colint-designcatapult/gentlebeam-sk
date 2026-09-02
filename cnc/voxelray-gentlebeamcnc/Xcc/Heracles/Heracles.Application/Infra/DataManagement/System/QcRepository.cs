@@ -72,7 +72,12 @@ namespace Heracles.Application.Infra.DataManagement.System
             foreach (var field in fields)
             {
                 var storedField = await qcSampleFieldCommands.CreateAsync(
-                    new QcSampleField { Name = field.Name, QcSampleId = storedSample.Id }
+                    new QcSampleField
+                    {
+                        CreationDate = storedSample.CreationDate,
+                        Name = field.Name,
+                        QcSampleId = storedSample.Id
+                    }
                 );
                     
                 if (field.Intensities != null)

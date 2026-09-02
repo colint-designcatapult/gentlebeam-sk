@@ -16,6 +16,8 @@ volatile int32_t qc_reset_count_ms = 0;
 
 uint16_t QC1_data = 0;
 uint16_t QC2_data = 0;
+volatile bool QC1_connected = false;
+volatile bool QC2_connected = false;
 
 static uint8_t adc_rx_buf[2];
 static uint8_t current_devAddr = 0;
@@ -33,20 +35,52 @@ static volatile bool reset_i2c1 = false;
 static volatile bool reset_i2c2 = false;
 
 #define DEBOUNCE_TIME_MS 				100
+void init_qc(void)
+{
+	QC1_data = 0;
+	QC2_data = 0;
+	QC1_connected = false;
+	QC2_connected = false;
+	adc_ready = true;
+	adc1_needs_prime = true;
+	adc2_needs_prime = true;
+	adc1_discard_next = true;
+	adc2_discard_next = true;
+	adc_tx_cplt = false;
+	read_first = true;
+	error_count = 0;
+	reset_i2c1 = false;
+	reset_i2c2 = false;
+	qc_reset_count_ms = 0;
+}
+
 
 /* Start asynchronous conversion read */
 HAL_StatusTypeDef Read_ADC121C021_Conversion_IT(uint8_t devAddr)
 {
-	if (hi2c1.State != HAL_I2C_STATE_READY || HAL_GPIO_ReadPin(IO_Ready_GPIO_Port, IO_Ready_Pin) != IO_READY_STATE_READY) {
+	if (HAL_GPIO_ReadPin(IO_Ready_GPIO_Port, IO_Ready_Pin) != GPIO_PIN_SET) {
+		QC1_connected = false;
+		QC2_connected = false;
+	    return HAL_BUSY;
+	}
+	if (hi2c1.State != HAL_I2C_STATE_READY) {
 	    return HAL_BUSY;
 	}
 
     uint8_t cmd = CONVERSION_REG;
-    adc_ready = false;
     current_devAddr = devAddr;
 
     // Step 1: transmit register pointer (non-blocking)
-    return HAL_I2C_Master_Transmit_IT(&hi2c1, devAddr, &cmd, 1);
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit_IT(&hi2c1, devAddr, &cmd, 1);
+    adc_ready = status != HAL_OK;
+    if (status != HAL_OK) {
+    	if (devAddr == ADC1_ADDRESS) {
+    		QC1_connected = false;
+    	} else if (devAddr == ADC2_ADDRESS) {
+    		QC2_connected = false;
+    	}
+    }
+    return status;
 }
 
 /* Edge detection function for pin IO_Ready */
@@ -122,18 +156,21 @@ void process_qc(void)
 
 	if (adc1_needs_prime && adc_ready)
 	{
-		adc1_needs_prime = false;
-		/* Force ADC internal pointer + start conversion */
-		Read_ADC121C021_Conversion_IT(ADC1_ADDRESS);
-		adc1_discard_next = true;
+		if (Read_ADC121C021_Conversion_IT(ADC1_ADDRESS) == HAL_OK)
+		{
+			adc1_needs_prime = false;
+			adc1_discard_next = true;
+		}
 		return;
 	}
 	if (adc2_needs_prime && adc_ready)
 	{
-		adc2_needs_prime = false;
-	    Read_ADC121C021_Conversion_IT(ADC2_ADDRESS);
-	    adc2_discard_next = true;
-	    return;
+		if (Read_ADC121C021_Conversion_IT(ADC2_ADDRESS) == HAL_OK)
+		{
+			adc2_needs_prime = false;
+			adc2_discard_next = true;
+		}
+		return;
 	}
 
 
@@ -178,6 +215,8 @@ void process_qc(void)
 
 void I2C_Reset(I2C_HandleTypeDef *hi2c)
 {
+    QC1_connected = false;
+    QC2_connected = false;
     adc_tx_cplt = false;
     adc_ready = true;
     adc1_needs_prime = true;
@@ -298,26 +337,22 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
     {
-    	// Combine two bytes and mask to get 12-bit ADC result
+    	// Combine two bytes and mask to get 12-bit ADC result.
     	uint16_t result = (((uint16_t)adc_rx_buf[0] << 8) | adc_rx_buf[1]) & 0x0FFF;
-
-        /*if (current_devAddr == (uint8_t)ADC1_ADDRESS) {
-            QC1_data = result;
-        }
-        if (current_devAddr == (uint8_t)ADC2_ADDRESS) {
-            QC2_data = result;
-        }*/
+        HAL_GPIO_TogglePin(IO_LED_AMBER_GPIO_Port, IO_LED_AMBER_Pin);
 
         if (current_devAddr == ADC1_ADDRESS)
         {
+            QC1_connected = true;
             if (adc1_discard_next) {
-                adc1_discard_next = false;   // throw away this sample
+                adc1_discard_next = false;
             } else {
                 QC1_data = result;
             }
         }
         else if (current_devAddr == ADC2_ADDRESS)
         {
+            QC2_connected = true;
             if (adc2_discard_next) {
                 adc2_discard_next = false;
             } else {
@@ -332,6 +367,11 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1) {
+        if (current_devAddr == ADC1_ADDRESS) {
+        	QC1_connected = false;
+        } else if (current_devAddr == ADC2_ADDRESS) {
+        	QC2_connected = false;
+        }
         adc_tx_cplt = false;
         adc_ready = true; // allow retry
         adc1_needs_prime = true;

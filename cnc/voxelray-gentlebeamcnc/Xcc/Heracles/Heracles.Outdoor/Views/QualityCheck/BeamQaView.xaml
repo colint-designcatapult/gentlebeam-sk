@@ -4,7 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     
     xmlns:prism="http://prismlibrary.com/" 
     prism:ViewModelLocator.AutoWireViewModel="True"
@@ -13,7 +12,6 @@
     xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
     xmlns:viewModels="clr-namespace:Heracles.External.ViewModels.QualityCheck" 
     xmlns:enums2="clr-namespace:Heracles.External.Models"
-    xmlns:behaviors="clr-namespace:Xcc.Application.UI.Behaviors;assembly=Xcc.Application"
     
     UseLayoutRounding="True"
     FontFamily="{StaticResource BaseFont}"
@@ -138,14 +136,10 @@
             Tag="{StaticResource QualityCheckFieldsListHeaderTemplate}"
             ItemTemplate="{StaticResource QualityCheckFieldsListItemTemplate}"
             ItemsSource="{Binding FieldsViewSource.View}"
-            SelectionMode="Extended"
-            IsHitTestVisible="{Binding IsCurrentViewModelRunning, Converter={convx:InverseBooleanConverter}}"
-            behaviors:BindableMultipleSelectionBehaviour.SelectedItems="{Binding FieldsSelectionModel.TreatmentFieldListSelection}">
-
-            <i:Interaction.Behaviors>
-                <behaviors:BindableMultipleSelectionBehaviour/>
-            </i:Interaction.Behaviors>
-        </ListView>
+            SelectionMode="Single"
+            SelectedItem="{Binding SelectedEmission}"
+            IsEnabled="{Binding UIStateMachine.IsPlanStaged, Converter={convx:InverseBooleanConverter}}"
+            IsHitTestVisible="{Binding IsCurrentViewModelRunning, Converter={convx:InverseBooleanConverter}}"/>
 
 
         <!--X-Ray control buttons-->

@@ -139,21 +139,37 @@ RELATIONS:
 UID: TC-H10TG-121
 TITLE: Quality Assurance - Daily Warmup
 STATEMENT: >>>
-This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+Verify the daily fast-warmup and conditioning controls use the deployed targets and report
+a safety rejection without recording a completed procedure.
+<<<
+PREREQUISITES: >>>
+1. The system is operational and can be returned to COLD state
+2. Heater-current command telemetry and warmup history are available for observation
 <<<
 STEPS: >>>
-1. Log in to the External application. 
-
-2. Navigate to the Startup Cycle tab in the Quality Assurance view. 
-
-3. Press Warmup.
+1. Log in to the External application and navigate to Startup Cycle in Quality Assurance
+2. In COLD state, engage either e-stop and attempt fast warmup
+3. Release both e-stops, start fast warmup, and observe the commanded heater-current target
+   and warmup history when the procedure completes
+4. Return to COLD, start conditioning, and observe the commanded target and warmup history
+   when the procedure completes
 <<<
 EXPECTED_BEHAVIOR: >>>
-3 - The warmup process is performed, and a new record is added to the warmup report.
+1. The rejected fast-warmup attempt displays an error that the current state is not
+   permitted and directs the operator to verify both e-stops; no completed record is added
+2. With both e-stops released, fast warmup commands its configured target and completion
+   adds a record to warmup history.
+3. Conditioning commands its configured target and completion adds a record to warmup history.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-1
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-29
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-30
   ROLE: Verifies
 
 [TEST_CASE]
@@ -375,18 +391,20 @@ STATEMENT: >>>
 This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
 <<<
 STEPS: >>>
-1. Log in to the External application. 
+1. Log in to the External application.
 
-2. Navigate to the Beam QA Checks tab in the Quality Assurance view. 
+2. Navigate to the Beam QA Checks tab in the Quality Assurance view.
 
-3. Select Energy 50/70/100 in the Energy drop-down. 
+3. Select Energy 50/70/100 in the Energy drop-down.
 
-4. Press prepare 
+4. Select exactly one emission in the Target list.
 
-5. Press Beam-On to Start QC
+5. Press Prepare.
+
+6. Press Beam On to start QC.
 <<<
 EXPECTED_BEHAVIOR: >>>
-3 - The action of QualityCheck triggered by the user is logged.
+6 - The QualityCheck action triggered by the user is logged for the selected emission.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -407,9 +425,12 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H10TG-116
-TITLE: Treatment View - Error Handling Received From Record and verify (DB)
+TITLE: Treatment View - Database Communication Error
 STATEMENT: >>>
 This test case verifies proper error handling and reporting. It validates that appropriate error messages are displayed and logged when system errors occur.
+<<<
+PREREQUISITES: >>>
+The database connection is available at test start and can be interrupted safely.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -420,19 +441,17 @@ STEPS: >>>
 
 4. Press the Beam-On button to trigger emission delivery. 
 
-5. Stop the Record and Verify docker in the internal system during the emission. 
+5. Interrupt the application's database connection during the emission.
 
 6. Go to Log view.
 <<<
 EXPECTED_BEHAVIOR: >>>
-6 - An error about the DB communication lost during emission should be displayed in the log list.
+6 - The application shall notify the operator that database communication was lost,
+and the same communication error shall be displayed in the log list.
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-283
-  ROLE: Verifies
-- TYPE: Parent
-  VALUE: RQ-H10TG-285
+  VALUE: RQ-H10TG-288
   ROLE: Verifies
 
 [TEST_CASE]
@@ -555,8 +574,11 @@ TITLE: Users Authorization
 STATEMENT: >>>
 This test case verifies user authorization and access control. It validates that users can only access features they have permission to use.
 <<<
+PREREQUISITES: >>>
+An authenticated test account without physics quality-assurance permission is available.
+<<<
 STEPS: >>>
-1. Log in to the External application. 
+1. Log in to the External application with the test account.
 
 2. Navigate to the Quality Assurance view. 
 
@@ -567,7 +589,7 @@ EXPECTED_BEHAVIOR: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-279
+  VALUE: RQ-H10TG-287
   ROLE: Verifies
 
 [TEST_CASE]
@@ -630,8 +652,11 @@ TITLE: Users Authorization
 STATEMENT: >>>
 This test case verifies user authorization and access control. It validates that users can only access features they have permission to use.
 <<<
+PREREQUISITES: >>>
+An authenticated test account without treatment permission is available.
+<<<
 STEPS: >>>
-1. Log in to the External application. 
+1. Log in to the External application with the test account.
 
 2. Observe the left panel menu.
 <<<
@@ -640,7 +665,7 @@ EXPECTED_BEHAVIOR: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-279
+  VALUE: RQ-H10TG-287
   ROLE: Verifies
 
 [TEST_CASE]
@@ -700,25 +725,52 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H10TG-136
-TITLE: Quality Assurance - Perform Quality Checks - Intesity
+TITLE: Quality Assurance - QC Measurement Acquisition and Diagnostics
 STATEMENT: >>>
-This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+Verify that the QC path acquires detector measurements through main control, records the returned intensities, exposes detector diagnostic telemetry, and reports connection or acquisition failures.
+<<<
+PREREQUISITES: >>>
+1. Run the External application with the GCB, main-control board, head, and QC detector connected.
+2. Provide an approved QC detector signal source with distinguishable channel values and the ability to control detector connectivity.
+3. Connect a UCSI diagnostic client that can subscribe to and record system telemetry.
 <<<
 STEPS: >>>
-1. Log in to the External application. 
+1. Log in to the External application and start recording system telemetry with the UCSI diagnostic client.
 
-2. Navigate to the Beam QA Checks tab in the Quality Assurance view. 
+2. In the diagnostic client, observe ``system.QcChannel0Reading``, ``system.QcChannel1Reading``, ``system.QcAdc1Connected``, and ``system.QcAdc2Connected``.
 
-3. Select Energy 50/70/100 in the Energy drop-down. 
+3. Navigate to the Beam QA Checks tab in the Quality Assurance view.
 
-4. Press prepare 
+4. Select Energy 50/70/100 in the Energy drop-down and select exactly one emission in the Target list.
 
-5. Press Beam-On to Start QC 
+5. Press Prepare.
 
-6. Toggle to report view
+6. Press Beam On and observe the QC command trace until the selected emission completes.
+
+7. Toggle to report view, compare the acquired channel 0 and channel 1 values with their displayed intensity positions, and inspect the unused positions.
+
+8. Stop the diagnostic recording and inspect the recorded QC channel readings and ADC connection states.
+
+9. Disconnect the QC detector, select one emission again, and press Prepare.
+
+10. Reconnect the detector, prepare the emission, arrange for the QC stop command to return no readings, and press Beam On.
 <<<
 EXPECTED_BEHAVIOR: >>>
-6 - The table shows the intensities measured for the selected Applicator, Energy level performed on a specific date.
+1 - UCSI records live QC diagnostic telemetry from the connected system.
+
+2 - Both channel readings are identified in counts, and both ADC connection states reflect the connected detector hardware.
+
+5 - Prepare succeeds only after the detector responds to the QC-board connection check through main control.
+
+6 - After emission begins, the trace contains a QC start command with a 1000 ms acquisition window followed by a QC stop command. The raw response contains accumulated channel 0 and channel 1 values, a sample count, and two reserved fields; the application preserves the sample count separately and maps the remaining values to its five-position result.
+
+7 - The report contains exactly the selected Target for the selected Applicator and Energy level. The acquired channel 0 and channel 1 values occupy their corresponding intensity positions, unused positions are zero, and no rows exist for unselected Targets.
+
+8 - The recording preserves the typed QC channel readings and ADC connection states observed during the acquisition.
+
+9 - Prepare returns the application to StandBy and displays a preparation error; no emission can be started while the detector is unavailable.
+
+10 - The application stops the emission, displays an acquisition error, and does not create a QC result when no measurement is returned.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -759,19 +811,28 @@ RELATIONS:
 UID: TC-H10TG-149
 TITLE: Treatment View - Treatment Plan Confirmation
 STATEMENT: >>>
-This test case verifies treatment plan operations and management. It ensures that treatment plans are properly created, modified, and applied.
+This test verifies that one valid treatment field produces one scalar firmware session.
 <<<
 STEPS: >>>
-White box testing: 
+Automated test:
 
-1. Open xcc solution in an IDE ( Visual Studio or VSCode). 
-
-2. Search for SendOperationalPoints function
+1. Run the treatment-plan field-rule and single-emission main-board contract tests.
 <<<
 EXPECTED_BEHAVIOR: >>>
-2 - verify that this function is being called with operation = confirmation for each operational point before starting a plan.
+1. Verify missing, null, and additional treatment fields are rejected before a firmware command is sent.
+2. Verify one valid treatment field sends one new-session request with no payload.
+3. Verify one load and one confirmation carry one scalar emission without point metadata.
 <<<
 RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-9
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-31
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-32
+  ROLE: Verifies
 - TYPE: Parent
   VALUE: RQ-H10TG-34
   ROLE: Verifies
@@ -887,7 +948,7 @@ Test Steps:
 EXPECTED_BEHAVIOR: >>>
 The interface shall display the history of quality test results. 
 
-The results will include the current and the intensity for each operational point. 
+The results will include the current and intensity for each requested QA emission.
 
 The operator will be able to filter the results by the collimator type, energy level, and the date the test was performed.
 <<<
@@ -980,17 +1041,15 @@ RELATIONS:
 UID: TC-H10TG-148
 TITLE: Treatment View - Confirmation of Treatment Plan
 STATEMENT: >>>
-This test case verifies treatment plan operations and management. It ensures that treatment plans are properly created, modified, and applied.
+This test verifies that scalar parameters are confirmed only after staging succeeds.
 <<<
 STEPS: >>>
-White box testing: 
+Automated test:
 
-1. Open the xcc solution in an IDE ( Visual Studio or VSCode). 
-
-2. Search for SendOperationalPoints is called.
+1. Run the single-emission main-board contract tests.
 <<<
 EXPECTED_BEHAVIOR: >>>
-2 - Verify that the command is sent after the plan is staged and the state is GcbStateNew.Staged
+1. Verify confirmation is sent in Staged for the same scalar emission that was loaded.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1004,7 +1063,8 @@ RELATIONS:
 UID: TC-H10TG-81
 TITLE: Treatment Console - Radiation Emission Control - Resume Beam On process after error is cleared - Test Case
 STATEMENT: >>>
-Verify that the Resume button correctly resumes emission from the latest operational point and remaining time after an clearing an error.
+Verify that Resume reconfirms and releases the same scalar emission and remaining time
+after an error is cleared.
 <<<
 PREREQUISITES: >>>
 1)Create treatment field with duration of 12 Seconds and Load a plan for treatment in the Heracles Internal unit . 
@@ -1179,9 +1239,6 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-26
   ROLE: Verifies
-- TYPE: Parent
-  VALUE: RQ-H10TG-32
-  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H10TG-44
@@ -1265,7 +1322,7 @@ STEPS: >>>
 5. Open Log viewer
 <<<
 EXPECTED_BEHAVIOR: >>>
-5 - Verify that the error from FW is logged in the system log.
+5 - Verify that the error from FW is logged the system readiness status.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1293,7 +1350,7 @@ STEPS: >>>
 
 4. Press the Beam-On button to trigger emission delivery. 
 
-5. Press the Beam-On button to trigger emission delivery. 
+5. Wait until the system enters the Emission state.
 
 6. Press the Stop button to stop the emission.
 <<<
@@ -1302,7 +1359,7 @@ EXPECTED_BEHAVIOR: >>>
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H10TG-97
+  VALUE: RQ-H10TG-3
   ROLE: Verifies
 
 [TEST_CASE]
@@ -1540,40 +1597,40 @@ RELATIONS:
 UID: TC-H10TG-135
 TITLE: Quality Assurance - Perform Quality Checks - Deviation
 STATEMENT: >>>
-This test case verifies quality assurance checks and validations. It ensures that the system properly executes quality control procedures.
+This test case verifies QC deviation reporting and every QC acceptance decision used to gate
+treatment preparation.
+<<<
+PREREQUISITES: >>>
+1. Store two referenced QC samples for one collimator and energy configuration, with the newer
+   reference containing known nonzero diode values and unused zero-valued channels.
+2. Make the latest reference more than 24 hours old.
 <<<
 STEPS: >>>
-1. Log in to the External application. 
-
-2. Navigate to the Beam QA Checks tab in the Quality Assurance view. 
-
-3. Select Energy 50/70/100 in the Energy drop-down. 
-
-4. Press prepare 
-
-5. Press Beam-On to Start QC 
-
-6. Toggle to report view 
-
-7. Select Applicator Size and Energy Level as performed in previous steps. 
-
-8. Select reference QC result ( The reference is marked with [ref] label in the performed dropdown) 
-
-9. Observe Intensity results 
-
-10. Select the Last QC result (The last QC is the first item in the Performed dropdown) 
-
-11. Observe the Intensity result. 
-
-12. Select Deviation 
-
-13. Observe the Intensity deviation result. 
-
-14. Calculate the deviation of the last result from the reference result.
+1. Log in to Heracles External and open Beam QA Checks.
+2. Select the same collimator, energy, and QA emission as the stored references.
+3. Prepare and emit a current QC sample within 24 hours of the test.
+4. Open the report view, select the configuration, inspect the reference and latest results,
+   switch to Deviation, and independently calculate each displayed deviation.
+5. Exercise samples just inside and just outside positive and negative 3 percent deviation.
+6. Exercise matching zero values, a nonzero value against a zero reference, a missing QA
+   emission, and a mismatched diode-value count.
+7. Exercise a configuration with no samples, one whose latest sample is older than 24 hours,
+   and a current unapproved sample with no reference.
+8. Mark the current sample approved and repeat the acceptance evaluation without a reference.
+9. Run the QC treatment acceptance service tests.
 <<<
 EXPECTED_BEHAVIOR: >>>
-
-14 - The table shows the deviation from the intensities of the reference QC for the selected Applicator, Energy level.
+1. Reporting and acceptance use the newest reference and the newest current sample for the
+   selected configuration.
+2. Displayed deviations match the independent calculations.
+3. A sample passes only when every available diode value has an absolute deviation of less
+   than 3 percent; deviation outside the limit in either direction fails the sample.
+4. Matching zero values have zero deviation. A nonzero value against a zero reference, missing
+   or null data, or a mismatched QA-emission or diode-value shape fails acceptance.
+5. No sample or a latest sample older than 24 hours returns ``Missing``; a current unapproved
+   sample without a reference returns ``NoReference``.
+6. A current sample with persisted approval returns ``Accepted`` without a reference.
+7. The automated tests produce the same status for every boundary and data-shape case.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1590,6 +1647,9 @@ RELATIONS:
   ROLE: Verifies
 - TYPE: Parent
   VALUE: RQ-H10TG-280
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-282
   ROLE: Verifies
 
 [TEST_CASE]
@@ -1645,33 +1705,45 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H10TG-288
-TITLE: Prevent Treatment Initiation for Unapproved Failed QC Tests
+TITLE: QC Approval Authentication, Persistence, and Treatment Gate
 STATEMENT: >>>
-This test case verifies that the system properly prevents or restricts certain operations. It validates that access control and business logic constraints are correctly enforced.
+This test case verifies that failed QC results and an excessive magnetometer correction-value
+delta block treatment, that QC approval requires authentication, and that rejected and
+successful approval decisions persist correctly.
+<<<
+PREREQUISITES: >>>
+1. Store a current failed QC result for the configuration required by a treatment plan.
+2. Provision a user with a known username, password, and email address.
+3. Store Front and Back Magnetometer Correction Matrix values whose delta exceeds the
+   configured ``maxMagnetomerDiff`` for the treatment configuration.
 <<<
 STEPS: >>>
-1. Log in to the External application. 
-
-2. Navigate to the treatment view. 
-
-3. Press the Prepare button to prepare the treatment. 
-
-4. Log in to the Internal application. 
-
-5. Navigate to the Quality Assurance view. 
-
-6. Approve the latest QC test. 
-
-7. Log in to the External application. 
-
-8. Navigate to the treatment view. 
-
-9. Press the Prepare button to prepare the treatment.
+1. In Heracles External, load the treatment plan and press Prepare.
+2. In Heracles Internal, open the Quality Assurance approval interface and attempt to approve
+   the failed result with an unknown username and then with the known username and an incorrect
+   password.
+3. Restart Heracles Internal, reopen the QC result, and inspect its approval state.
+4. Approve the same result using a case variant of the known username and its correct password.
+5. Restart Heracles Internal, reopen the result, and inspect the stored approver.
+6. Return to the treatment plan in Heracles External and press Prepare.
+7. Run the SQLite QC approval persistence tests.
+8. With the excessive magnetometer delta still stored, load the applicable treatment plan and
+   press Prepare.
+9. Reduce the stored delta to the configured limit or below, reload the plan, and press Prepare.
 <<<
 EXPECTED_BEHAVIOR: >>>
-3 - An error message appears, alerting the user that the treatment cannot be delivered because the most recent QC test failed. 
-
-9 - After approving the QC test, the prepare button is successfully triggered and the treatment can be delivered.
+1. The unapproved failed result blocks Prepare and produces the QC failure indication.
+2. Both invalid approval attempts are rejected as unauthenticated and leave the result
+   unapproved after restart.
+3. Valid credentials approve the selected result, and the user's email address remains stored
+   as the approver after restart.
+4. Username matching accepts the tested case variant; the password must match.
+5. The current approved result is accepted and no longer blocks Prepare.
+6. The automated tests confirm rejection without mutation, persisted approver identity for
+   valid credentials, and a not-found response for a nonexistent sample after authentication.
+7. The excessive magnetometer delta blocks Prepare and identifies the correction-value
+   constraint.
+8. At or below the configured limit, the magnetometer check no longer blocks Prepare.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1840,15 +1912,12 @@ STEPS: >>>
 
 4. Press the Beam-On button to trigger emission delivery. 
 
-5. Stop the Record and Verify docker in the internal system during the emission.
+5. Interrupt the application's database connection during the emission.
 <<<
 EXPECTED_BEHAVIOR: >>>
 5 - An error message should be displayed about the DB communication error during emission.
 <<<
 RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H10TG-283
-  ROLE: Verifies
 - TYPE: Parent
   VALUE: RQ-H10TG-22
   ROLE: Verifies
@@ -1940,7 +2009,7 @@ This test case verifies the handling of errors and faults in the system. It ensu
 STEPS: >>>
 1. Log in to the External application. 
 
-2. Stop the Record and Verify docker in the internal system during the emission. 
+2. Interrupt the application's database connection.
 
 3. Navigate to the treatment view.
 <<<
@@ -2067,21 +2136,40 @@ TITLE: Physics View - Load collimator physics data
 STATEMENT: >>>
 This test case verifies the functionality and operation of Physics View. It validates that the component behaves according to specifications and system requirements.
 <<<
+PREREQUISITES: >>>
+Use a controlled authoritative database containing applicator configurations A and B with distinct energies and presets. Give each preset distinct coil, correction-matrix, heater-current, output-factor, and reference-field values, and include intentionally different records under an unrelated preset. Keep access available to replace this data and to temporarily fail all physics-data reads.
+<<<
 STEPS: >>>
-1. Log in to the External application. 
+1. Log in to the External application.
 
-2. Navigate to the Physics tab in the Quality Assurance view. 
+2. Navigate to the Physics tab in the Quality Assurance view and press the Refresh icon.
 
-3. Select the connected applicator size from the Applicator Size dropdown menu. 
+3. Select applicator configuration A and its energy.
 
-4. Select the Energy level of the connected collimator. 
+4. Observe the Applicator Size and Energy options, X Coil, Y Coil, Focus, and Heater Current. Capture the configuration-list responses from the database service.
 
-5. Enter duration of 10 sec. 
+5. In the authoritative database, change A's physics values, remove B, and add configuration C with a different energy and preset.
 
-6. Observe X Coil, Y Coil, Focus, and Heater current value
+6. In the External Physics view, press the Refresh icon, then inspect the Applicator Size and Energy options.
+
+7. Select the updated A and then C, observing the displayed physics values and the database service's configuration-list responses.
+
+8. Make every physics-data read fail and press the Refresh icon.
+
+9. Restore the database service and press the Refresh icon again.
 <<<
 EXPECTED_BEHAVIOR: >>>
-6 - Validate that the values loaded are the ones configured in the physics configuration ( in the internal application)
+2. The view publishes the complete A-and-B configuration snapshot after refresh; it does not expose a partially rebuilt list.
+
+4. The displayed values equal A's authoritative values. Each preset, coil, correction-matrix, heater-current, output-factor, reference-field, and filtered-collimator response contains only records whose parent identifier matches its request; the unrelated preset's records are not used.
+
+6. The refreshed options contain A and C, and stale configuration B is no longer selectable.
+
+7. Updated A and C each display their own current authoritative physics values, with no stale values from the prior snapshot.
+
+8. The application reports that the physics configuration could not be loaded. The log identifies each failed applicator configuration by identifier, type, and energy.
+
+9. The retry succeeds and republishes the complete current A-and-C snapshot.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2444,21 +2532,53 @@ RELATIONS:
 UID: TC-H10TG-146
 TITLE: Treatment View - Treatment Plan Staging - 2
 STATEMENT: >>>
-The objective is to verify that the staging request includes the total number of operational points for the treatment plan and that the response to the request includes a session ID.
+The objective is to verify that the staging request has no operational-point count payload
+and that its response contains a session ID.
 <<<
 STEPS: >>>
-White box testing:
+Automated test:
 
-1. Open the xcc solution in an IDE (Visual Studio or VSCode).
-
-2. Search for LoadPlan() command.
+1. Run the GCB new-session command and response contract tests.
 <<<
 EXPECTED_BEHAVIOR: >>>
-2 - Verify that the session id is created and that the request includes the total of operational points.
+1. Verify the new-session request has zero payload words.
+2. Verify the response contains the status and session ID only.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10TG-31
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H10TG-297
+TITLE: Device Information Version and Telemetry Selection
+STATEMENT: >>>
+Verify that System Information displays the release version reported by main control and
+that telemetry-layout selection depends on the reported firmware mode rather than the
+release version text.
+<<<
+PREREQUISITES: >>>
+1. A GCB protocol fixture can provide valid 19-word device-information and telemetry packets.
+<<<
+STEPS: >>>
+1. Start the external application with the fixture reporting a supported firmware mode and
+   a known release version string.
+2. Open System Information and record the main control board version.
+3. Send valid telemetry and observe the Treatment view.
+4. Change only the device-information release version string, then repeat the telemetry.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The device-information packet is accepted.
+2. System Information displays the exact reported release version string.
+3. The telemetry layout for the reported mode is selected and telemetry is displayed.
+4. Telemetry remains accepted under the same mode after only the release version changes.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10TG-286
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10TG-2
   ROLE: Verifies
 
 [[/SECTION]]

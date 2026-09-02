@@ -6,7 +6,6 @@
 
 volatile int32_t int_adc_ms;
 volatile int32_t comm_ms;
-volatile int32_t kv_ramp_ms;
 volatile int32_t fil_ramp_ms;
 volatile int32_t lock_timer_ms;
 volatile int32_t io_ms;
@@ -25,7 +24,6 @@ void update_timers()
 {
 	int_adc_ms--;
 	comm_ms--;
-	kv_ramp_ms--;
 	fil_ramp_ms--;
 	lock_timer_ms--;
 	io_ms--;

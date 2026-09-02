@@ -6,7 +6,7 @@ namespace Heracles.External.Models.CollimatorConfiguration
 {
     public interface ICollimatorCalibrationModel
     {
-        Task<CollimatorCalibrationInfoStore> FetchCalibrationDataAsync();
+        Task<CollimatorCalibrationInfoStore> FetchCalibrationDataAsync(bool forceRefresh = false);
     }
 
     public class CollimatorCalibrationModel : ICollimatorCalibrationModel
@@ -16,6 +16,8 @@ namespace Heracles.External.Models.CollimatorConfiguration
         private readonly ILogWriter _logWriter;
         private readonly CollimatorCalibrationInfoStore _calibrationStore;
         private Task<CollimatorCalibrationInfoStore> _fetchDataTask;
+        private readonly object _fetchTaskLock = new();
+        private readonly SemaphoreSlim _fetchSemaphore = new(1, 1);
 
         public CollimatorCalibrationModel(
             ICollimatorModel collimatorModel,
@@ -37,76 +39,76 @@ namespace Heracles.External.Models.CollimatorConfiguration
             };
         }
 
-        public Task<CollimatorCalibrationInfoStore> FetchCalibrationDataAsync()
+        public Task<CollimatorCalibrationInfoStore> FetchCalibrationDataAsync(bool forceRefresh = false)
         {
-            if (_fetchDataTask == null || _fetchDataTask.IsFaulted)
+            lock (_fetchTaskLock)
             {
-                _fetchDataTask = RunFetchTask();
-            }
+                if (forceRefresh || _fetchDataTask == null || _fetchDataTask.IsFaulted)
+                {
+                    _fetchDataTask = RunFetchTask();
+                }
 
-            return _fetchDataTask;
+                return _fetchDataTask;
+            }
         }
 
-        private Task<CollimatorCalibrationInfoStore> RunFetchTask()
+        private async Task<CollimatorCalibrationInfoStore> RunFetchTask()
         {
-            return Task.Run(async () =>
+            await _fetchSemaphore.WaitAsync();
+            try
             {
-                // We get all actual applicators, so we need to exclude any QC applicator configuration from the list
-                var properConfigs = _collimatorModel.CollimatorConfigurations?
+                // We get all actual applicators, so we need to exclude any QC applicator configuration from the list.
+                var properConfigs = _collimatorModel.CollimatorConfigurations
                     .Where(c => c.Type != Core.Enums.TargetType.TargetType_QC_Collimator)
                     .ToList();
-                var fetchTasks = properConfigs.Select(x => _= FetchSingleCalibrationSafelyAsync(x)).ToList();
+                var fetchTasks = properConfigs.Select(FetchSingleCalibrationSafelyAsync).ToList();
                 await Task.WhenAll(fetchTasks);
 
-                // Select just ones that succeeded and put them into store:
-                var configsWithActualResult = properConfigs.Zip(fetchTasks.Select(t => t.Result)).Where(c => c.Second != null);
-                foreach (var (config, result) in configsWithActualResult)
+                var fetchedConfigurations = properConfigs
+                    .Zip(fetchTasks.Select(task => task.Result))
+                    .Where(pair => pair.Second != null)
+                    .ToDictionary(pair => pair.First.Id, pair => pair.Second);
+                _calibrationStore.Replace(fetchedConfigurations);
+
+                if (properConfigs.Count > 0 && fetchedConfigurations.Count == 0)
                 {
-                    _calibrationStore[config.Id] = result;
+                    throw new InvalidOperationException(
+                        $"Failed to load calibration data for all {properConfigs.Count} applicator configurations.");
                 }
 
-                // Return updated store state to indicate that we're done
                 return _calibrationStore;
-            });
+            }
+            finally
+            {
+                _fetchSemaphore.Release();
+            }
         }
 
-        private Task<ICollimatorCalibrationInfo> FetchSingleCalibrationSafelyAsync(ICollimatorConfiguration baseConfiguration)
+        private async Task<ICollimatorCalibrationInfo> FetchSingleCalibrationSafelyAsync(
+            ICollimatorConfiguration baseConfiguration)
         {
-            return Task.Run(async () => {
-                try
-                {
-                    return await _calibrationRepository.FetchConfigurationInfoAsync(baseConfiguration);
-                }
-                catch //(Exception ex) 
-                {
-                    //_ = _logWriter.LogAsync(
-                    //    $"Cannot load calibration data for the applicator configuration id={baseConfiguration.Id}: {ex.Message}",
-                    //    Xcc.Core.Enums.LogRecordSeverity.Warn, Xcc.Core.Enums.LogRecordType.System);
-                    return null;
-                }
-            });
+            try
+            {
+                return await _calibrationRepository.FetchConfigurationInfoAsync(baseConfiguration);
+            }
+            catch (Exception ex)
+            {
+                _ = _logWriter.LogAsync(
+                    $"Cannot load calibration data for applicator configuration " +
+                    $"id={baseConfiguration.Id}, type={baseConfiguration.Type}, energy={baseConfiguration.Energy}: " +
+                    ex.GetBaseException().Message,
+                    Xcc.Core.Enums.LogRecordSeverity.Warn,
+                    Xcc.Core.Enums.LogRecordType.System);
+                return null;
+            }
         }
 
         private void OnCollimatorModelUpdate()
         {
-            Task previousTask = _fetchDataTask;
-            // TODO: we'd better stop previous task,
-            // but now we just wait for current one to finish and run fetch again
-            _fetchDataTask = Task.Run(async () => {
-                if (previousTask != null)
-                {
-                    try
-                    {
-                        await previousTask;
-                    }
-                    catch (Exception ex)
-                    {
-                        _ = _logWriter.LogAsync($"FetchDataTask failed: {ex.Message}", Xcc.Core.Enums.LogRecordSeverity.Error, Xcc.Core.Enums.LogRecordType.System);
-                    }
-                }
-
-                return await RunFetchTask();
-            });
+            lock (_fetchTaskLock)
+            {
+                _fetchDataTask = null;
+            }
         }
 
 

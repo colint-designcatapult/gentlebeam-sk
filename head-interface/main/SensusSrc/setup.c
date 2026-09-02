@@ -28,6 +28,7 @@ void run_setup()
 #if !defined(CALIBRATION_MODE)
 	init_buttons();
 	//init_leds();
+	init_qc();
 	//init_collimator();
 	init_1wire();
 #endif

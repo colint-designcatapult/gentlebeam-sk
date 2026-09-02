@@ -67,8 +67,8 @@ The head interface firmware is used to read various input data from peripherals 
 sensors, magnetometers, and collimator identification. This firmware sends feedback information to the
 main control application firmware. The head interface firmware can also set various patterns to the head
 base LED ring for visual indication. The pattern is based off commands received from the main control
-application firmware. The head interface FW can also enable and disable alignment lasers or illumination
-LEDs based on membrane keypad inputs.
+application firmware. The head interface firmware cycles the illumination LED mode in response to
+the illumination membrane-button input.
 <<<
 
 [[/SECTION]]
@@ -228,11 +228,11 @@ TITLE: Input Signals
 STATEMENT: >>>
 The firmware has 5 inputs which represent five different physical buttons which the system user
 can press. These five inputs are debounced by sampling the state of the input signals every time a
-processing flag gets set. This processing flag is set every 1 msec. Once an input displays a toggled
-value, the firmware begins a debounce countdown. During this debounce period, any bouncing
-signals are ignored. After the debounce period is over, the firmware checks to see if the input truly
-did toggle or if it was just noise. If the signal indicates a 'true' toggle, the firmware updates the
-changed button input states for processing and reporting to the main control application firmware.
+processing flag gets set. This processing flag is set every 1 msec. When an input first differs from
+its stored state, the firmware starts a 30 msec debounce countdown and ignores further transitions
+during the countdown. When the countdown expires, the firmware samples the input again. If it
+still differs from the stored state, the firmware updates the button state for processing and
+reporting to the main control application firmware.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -246,8 +246,10 @@ RELATIONS:
 UID: SW-H1FHI-28
 TITLE: Output Signals
 STATEMENT: >>>
-The firmware controls one digital output signal. The digital output signal controls the output state
-of the illumination LEDs.
+The firmware controls the brightness and effects of the illumination LEDs through one PWM output.
+Off uses 0% duty cycle, Dim Brightness uses 10%, Normal Brightness uses 20%, and High Brightness
+uses 30%. The Breathing Effect follows a smooth cycle from 0% to 30% and back to 0% over a
+3-second period.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -314,23 +316,22 @@ RELATIONS:
 UID: SW-H1FHI-33
 TITLE: Control Communication Interface
 STATEMENT: >>>
-The firmware communicates with the main control board via one of the microcontroller's serial
-UART interfaces. The firmware both receives and transmits data on this UART port. Due to the
-nature of UART having independent transmit and receive lines, the transmit and receive
-functionality operate independently. As the UART baud rate is relatively slow compared to the
-processing speed of the microcontroller, both sending and receiving data is performed with nonblocking
-interrupt callback functions.
+The firmware communicates with the main control board via the microcontroller's USART2 serial
+interface. The firmware both receives and transmits data on this UART port, and its UART callbacks
+ignore completion events from other UART instances. Because UART has independent transmit and
+receive lines, the transmit and receive functionality operates independently. Sending and receiving
+data is performed with nonblocking interrupt callback functions.
 
-Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
-the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
+Transmitted data is sent as a buffer of bytes representing a single data packet to the main control
+board. The interrupt callback occurs once all data bytes have been transmitted. The firmware sets a flag
 when transmission is initiated, and clears the flag after transmission is finished, so as to not create
 transmission conflicts on the transmit line.
 
-Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
-available. The parsing of the received byte is done to determine whether a complete data packet
-has been received from the PC, as according to the communication protocol. Once a completed
-data packet has been received, the firmware sets a flag for further data processing outside of the
-parsing inside of the interrupt callback.
+Reception is performed one byte at a time. Each receive interrupt stores the completed byte in a
+32-byte ring buffer and immediately re-arms USART2 reception for the next byte. The processing loop
+drains queued bytes in order and parses them according to the communication protocol. If the ring
+buffer fills before it is drained, reception continues by discarding the oldest unread byte and
+recording the overflow.
 
 As transmission on UART is asynchronous both in terms of clock as well as word alignment (within
 a packet), a 'sync value' is utilized at the start of each packet to help synchronize communication
@@ -387,7 +388,9 @@ STATEMENT: >>>
 After monitoring for debouncing, the firmware also performs specific actions based on which
 buttons were pressed. The following actions are mapped to specific button presses:
 
-- Detection of a release of the LED button shall result in the head interface firmware advancing the illumination LED output to the next mode in the sequence: Dim Brightness → Normal Brightness → High Brightness → Breathing Effect → Off → Dim Brightness (repeat).
+- A detected press of the LED button advances the illumination LEDs to the next mode in the
+  following sequence: Dim Brightness, Normal Brightness, High Brightness, Breathing Effect, Off,
+  then back to Dim Brightness.
 <<<
 RELATIONS:
 - TYPE: Parent

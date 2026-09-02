@@ -10,6 +10,7 @@ using Heracles.Application.Models.Supervision;
 using Heracles.Application.Models.Supervision.DisruptiveActions;
 using Heracles.Application.Models.Treatment;
 using Heracles.Core.Enums;
+using Heracles.Core.Models.EMR;
 using Heracles.Indoor.ViewModels.Dialogs;
 using Prism.Commands;
 using Prism.Events;
@@ -437,7 +438,7 @@ namespace Heracles.Indoor.ViewModels
                         ?? throw new NullReferenceException(StringConstants.EMR.CannotFindApplicatorConfigErrorMessage);
 
                     dwellTime = TreatmentDoseCalculation.CalculateDuration(
-                        Application.Models.PlanModel.DefaultTreatmentFieldName,
+                        TreatmentPlanFieldRules.RequiredFieldName,
                         applicatorConfiguration,
                         prescription.DailyDose);
                 }
@@ -503,7 +504,7 @@ namespace Heracles.Indoor.ViewModels
                 if (recalculate == DialogBoxResult.Yes)
                 {
                     // update the field
-                    var treatmentField = PlanModel.TreatmentFields.FirstOrDefault();
+                    var treatmentField = PlanModel.TreatmentField;
                     if (PlanModel.Prescription?.DailyDose == null)
                     {
                         PopUpService.LogAndShowError(
@@ -526,7 +527,7 @@ namespace Heracles.Indoor.ViewModels
                     if (PlanModel.Prescription?.Energy != null)
                         treatmentField.Current = CurrentCalculator.CalculateCurrent(PlanModel.Prescription.Energy);
 
-                    PlanModel.AddOrUpdateField(treatmentField);
+                    PlanModel.UpdateTreatmentField(treatmentField);
 
                     TreatmentInfoStore.Prescription.DwellTime = treatmentField.DwellTime;
 

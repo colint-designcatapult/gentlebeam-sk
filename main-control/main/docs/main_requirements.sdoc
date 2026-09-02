@@ -150,8 +150,9 @@ UID: RQ-H1FWMC-7
 TYPE: Safety
 TITLE: Emission indicator
 STATEMENT: >>>
-The firmware shall enable an external emission indicator during the emission state when
-there is an ongoing emission
+The firmware shall enable the external emission indicators only after all required safety
+interlocks permit an accepted emission-start request, keep them enabled while emission is
+ongoing, and disable them when emission is stopped.
 <<<
 
 [REQUIREMENT]
@@ -162,7 +163,10 @@ STATEMENT: >>>
 The firmware shall monitor every physical Port C interlock input and throw a fault when an
 interlock required by the compiled firmware mode and current system state is not in its
 good condition. Inputs not required in the current state shall remain monitored and
-reported. Interlocks include:
+reported.
+
+The firmware shall prevent progression toward energization while either required
+emergency-stop interlock is open and shall report an interlock fault. Interlocks include:
 
 - Door, base e-stop, and remote e-stop
 - KUKA 1 and KUKA 2 readiness
@@ -252,10 +256,9 @@ UID: RQ-H1FWMC-17
 TYPE: Functional
 TITLE: Operation 08: Ready
 STATEMENT: >>>
-For the operational points which are NOT the first executions of a treatment plan (whether
-an initial run or resumed plan), the firmware shall utilize the auto-execute parameter in
-the treatment plan to determine if the emission of the point should be automatically
-executed without requiring PC intervention.
+Whenever the firmware enters the ready state for an initial or resumed emission, it shall
+remain non-emitting until the PC sends an explicit point-scope release command. The
+firmware shall not automatically release an emission.
 <<<
 
 [REQUIREMENT]
@@ -263,9 +266,9 @@ UID: RQ-H1FWMC-18
 TYPE: Functional
 TITLE: Operation 08: Ready
 STATEMENT: >>>
-For the first operational point in the execution of a treatment plan (whether an initial run
-or resumed plan), the firmware shall remain in the ready state and not proceed with
-emission until receiving an initiation command from the PC.
+Each treatment session shall contain one operational point. Completion of that point shall
+end the session through discharge; the firmware shall not prepare another point within the
+same session.
 <<<
 
 [REQUIREMENT]
@@ -310,9 +313,9 @@ UID: RQ-H1FWMC-23
 TYPE: Functional
 TITLE: Treatment plan reporting
 STATEMENT: >>>
-The firmware shall respond with an out of bounds error message if the PC sends an out of
-bounds request for the operational point parameters of a treatment plan. A valid request
-will be the operational point index value, between 0 and 62.
+The firmware shall return the scalar operational point parameters for an indexless query.
+Indexed operational-point query payloads shall be rejected by strict packet-length
+validation.
 <<<
 
 [REQUIREMENT]
@@ -320,10 +323,9 @@ UID: RQ-H1FWMC-24
 TYPE: Functional
 TITLE: Operation 04: Treatment plan confirmation
 STATEMENT: >>>
-The firmware shall not consider a treatment plan as a whole to be confirmed unless all
-operational points are each individually confirmed, without interruption of standby
-timeout or system faults. Individual operational points will be considered confirmed on
-receipt of confirmation parameters which match staged parameters
+The firmware shall not consider a treatment plan confirmed until its singular operational
+point is confirmed without interruption by a standby timeout or system fault. The point is
+confirmed only when the received scalar parameters match the staged parameters.
 <<<
 
 [REQUIREMENT]
@@ -370,18 +372,8 @@ UID: RQ-H1FWMC-29
 TYPE: Functional
 TITLE: Operation 04: Treatment plan confirmation
 STATEMENT: >>>
-The firmware shall respond to out of bounds treatment plan operational point
-confirmation parameters from the PC with an error reply indicating out of bounds values
-have been received. Out of bounds values are those which are outside of the range of
-acceptable values. Acceptable values will be:
-
-- Acceleration potential (kV), range 0 to 100 kV
-- Emission current (mA), range 0 to 1 mA
-- Total delivery time, range 0 to 300 seconds
-- Remaining delivery time, range 0 to total delivery time
-- Beam optic focus adjustment values, range 0 to 3A
-- Beam optic deflection adjustment values, range -1.5A to +1.5A
-- Filament current (mA), range 0 to 3999 mA
+The firmware shall reject treatment parameters that fall outside the configured acceptable
+operating ranges.
 <<<
 
 [REQUIREMENT]
@@ -389,17 +381,9 @@ UID: RQ-H1FWMC-30
 TYPE: Functional
 TITLE: Operation 04: Treatment plan confirmation
 STATEMENT: >>>
-The firmware shall acknowledge the receipt of valid treatment plan operational point
-confirmation parameters received from the PC. A valid treatment plan includes the
-following parameters for an operational point:
-
-- Acceleration potential (kV), range 0 to 100 kV
-- Emission current (mA), range 0 to 1 mA
-- Total delivery time, range 0 to 300 seconds
-- Remaining delivery time, range 0 to total delivery time
-- Beam optic focus adjustment values, range 0 to 3A
-- Beam optic deflection adjustment values, range -1.5A to +1.5A
-- Filament current (mA), range 0 to 3999 mA
+The firmware shall acknowledge valid treatment parameters received from the PC. A valid
+request shall contain the supported acceleration-potential, emission-current, delivery-time,
+beam-optics, and filament-current parameters within their configured operating ranges.
 <<<
 
 [REQUIREMENT]
@@ -407,9 +391,9 @@ UID: RQ-H1FWMC-31
 TYPE: Functional
 TITLE: Operation 04: Treatment plan confirmation
 STATEMENT: >>>
-The firmware shall accept confirmation of treatment plan operational points from the PC
-after the staging process has been completed, responding with an error message if
-operational point confirmation is attempted outside of this confirmation process
+The firmware shall accept confirmation of the singular scalar operational point after
+staging completes and shall return an error if confirmation is attempted outside that
+process.
 <<<
 
 [REQUIREMENT]
@@ -417,10 +401,9 @@ UID: RQ-H1FWMC-32
 TYPE: Functional
 TITLE: Operation 03.1: Treatment staging - new session commencement
 STATEMENT: >>>
-The firmware shall, upon the receipt of a valid command for the beginning of a new
-staging, generate and relay a session ID as a response to the PC. A staging request from
-the PC includes the total number of operational points for the plan, ranging from 1 to 5
-points and is received during the primed state.
+The firmware shall accept an argument-free new-session command while in the primed state,
+create storage for exactly one scalar operational point, and return a generated session ID
+to the PC.
 <<<
 
 [REQUIREMENT]
@@ -448,9 +431,8 @@ UID: RQ-H1FWMC-35
 TYPE: Functional
 TITLE: Operation 01: Filament conditioning
 STATEMENT: >>>
-The firmware shall respond to an out of bounds target value in a filament conditioning
-request with an out of bounds value response. An out of bounds parameter is outside of
-the range of acceptable values, which is 2000 to 4000 mA
+The firmware shall reject a filament-conditioning target outside the configured acceptable
+range.
 <<<
 
 [REQUIREMENT]
@@ -467,8 +449,9 @@ UID: RQ-H1FWMC-37
 TYPE: Functional
 TITLE: Operation 01: Filament conditioning
 STATEMENT: >>>
-The firmware shall be able to perform a filament conditioning process, in which the
-filament current is ramped up to a target value before ramping back down to off
+The firmware shall ramp the filament current to the requested conditioning target and
+maintain the stable target for a prescribed conditioning period before completing the
+procedure.
 <<<
 
 [REQUIREMENT]
@@ -493,9 +476,7 @@ UID: RQ-H1FWMC-40
 TYPE: Functional
 TITLE: Operation 03.1: Treatment staging - new session commencement
 STATEMENT: >>>
-The firmware shall respond to an out-of-bound new staging session request from the PC
-with an error reply indicating out-of-bound values have been received. An out of bounds
-parameter is outside of the range of acceptable values, 1 to 5 points
+The firmware shall reject malformed or unsupported staging-session requests.
 <<<
 
 [REQUIREMENT]
@@ -503,7 +484,7 @@ UID: RQ-H1FWMC-41
 TYPE: Functional
 TITLE: Operation 02: Warmup procedure
 STATEMENT: >>>
-The firmware shall respond to an out of bounds warmup request from the PC with an error reply indicating out of bounds values have been received. An out of bounds parameter is outside of the range of acceptable values. A warmup valid request will contain a target filament current value for the warmup that is between 2000 mA and 3500 mA
+The firmware shall reject a warmup target outside the configured acceptable range.
 <<<
 
 [REQUIREMENT]
@@ -652,17 +633,18 @@ UID: RQ-H1FWMC-64
 TYPE: Safety
 TITLE: Temperature monitoring
 STATEMENT: >>>
-The firmware shall monitor the Peltier heatsink temperature and report a fault when it is
-above 55C
+The firmware shall report a fault when the Peltier heatsink temperature exceeds the
+configured high-temperature safety limit.
 <<<
 
 [REQUIREMENT]
 UID: RQ-H1FWMC-65
 TYPE: Functional
-TITLE: Temperature monitoring
+TITLE: Cooling control
 STATEMENT: >>>
-The firmware shall adjust the system cabinet fan speed based on the cabinet temperature
-feedback in order to provide additional cooling when temperatures increase.
+The firmware shall adjust the system cabinet fan speed from temperature feedback, maintain
+coolant circulation for a bounded post-operation cooldown, and avoid stale pressure
+measurements when evaluating cooling faults.
 <<<
 
 [REQUIREMENT]
@@ -670,8 +652,8 @@ UID: RQ-H1FWMC-66
 TYPE: Safety
 TITLE: Temperature monitoring
 STATEMENT: >>>
-The firmware shall monitor the system cabinet temperature and report a fault when it is
-above 50C
+The firmware shall report a fault when the system cabinet temperature exceeds the
+configured high-temperature safety limit.
 <<<
 
 [REQUIREMENT]
@@ -679,8 +661,8 @@ UID: RQ-H1FWMC-68
 TYPE: Safety
 TITLE: HVPS Interface Communication
 STATEMENT: >>>
-The firmware shall monitor communication with the HVPS interface board and report a
-fault if no communication is received for no longer than 1 second
+The firmware shall monitor communication with the HVPS interface board, report a fault when
+communication is lost, and provide a visual indication of communication activity.
 <<<
 
 [REQUIREMENT]
@@ -752,9 +734,8 @@ UID: RQ-H1FWMC-76
 TYPE: Functional
 TITLE: Operation 02: Warmup procedure
 STATEMENT: >>>
-The firmware shall be able to perform a warmup procedure from the cold state if a valid
-warmup request is received from the PC. A warmup request will contain a target filament
-current value for the warmup that is between 2000 mA and 3500 mA
+The firmware shall start warmup from COLD only when the PC supplies a configured valid
+target and all required safety interlocks permit operation.
 <<<
 
 [REQUIREMENT]
@@ -762,7 +743,9 @@ UID: RQ-H1FWMC-77
 TYPE: Safety
 TITLE: Fault mode
 STATEMENT: >>>
-The firmware shall terminate any ongoing emission whenever a fault mode is entered.
+The firmware shall terminate any ongoing emission when a fault is detected, command
+energized outputs to a safe condition, and complete the required discharge before entering
+the latched fault state.
 <<<
 
 [REQUIREMENT]
@@ -770,8 +753,9 @@ UID: RQ-H1FWMC-78
 TYPE: Functional
 TITLE: Fault information
 STATEMENT: >>>
-The firmware shall clear all latched fault records and category flags when requested by the
-PC. Clearing shall increment the fault-clear epoch and publish an empty active-fault list.
+When the firmware accepts a PC clear-fault directive, it shall request that the HVPS clear
+its faults, clear the main-control latched fault information, and report the result to the
+PC.
 <<<
 
 [REQUIREMENT]
@@ -788,7 +772,8 @@ UID: RQ-H1FWMC-80
 TYPE: Functional
 TITLE: Fault mode
 STATEMENT: >>>
-The main control application firmware shall enter a fault mode when a fault is detected.
+The firmware shall enter safe fault handling when a fault or internal control-processing
+failure is detected and shall prevent unsafe state progression.
 <<<
 
 [REQUIREMENT]
@@ -796,10 +781,8 @@ UID: RQ-H1FWMC-81
 TYPE: Functional
 TITLE: Treatment plan reporting
 STATEMENT: >>>
-The main control application firmware shall be able to reply to the PC on a request for the
-currently programmed treatment plan parameters of a specified operational point,
-responding with the operational point parameters on receipt of a valid request. A valid
-request will be the operational point index value, between 0 and 62.
+The firmware shall return the currently programmed scalar treatment parameters in response
+to a valid PC query.
 <<<
 
 [REQUIREMENT]
@@ -807,17 +790,9 @@ UID: RQ-H1FWMC-82
 TYPE: Functional
 TITLE: Operation 03.2: Treatment staging
 STATEMENT: >>>
-The firmware shall acknowledge the receipt of valid treatment plan staging parameters
-received from the PC. A valid treatment plan includes the following parameter types for an
-operational point:
-
-- Acceleration potential (kV), range 0 to 100 kV
-- Emission current (mA), range 0 to 1 mA
-- Total delivery time, range 0 to 300 seconds
-- Remaining delivery time, range 0 to total delivery time
-- Beam optic focus adjustment values, range 0 to 3A
-- Beam optic deflection adjustment values, range -1.5A to +1.5A
-- Filament current (mA), range 0 to 3999 mA
+The firmware shall accept one scalar treatment point containing the supported
+acceleration-potential, emission-current, delivery-time, beam-optics, and filament-current
+parameters when they are within their configured operating ranges.
 <<<
 
 [REQUIREMENT]
@@ -827,12 +802,11 @@ TITLE: Report telemetry to PC
 STATEMENT: >>>
 The firmware shall transmit monitored system parameter values to the PC as unsolicited UDP
 telemetry packets every 10 ms (100 Hz) and in response to a telemetry request from the PC.
-The parameter layout shall correspond to the compiled firmware mode (normal or calibration)
-and include the applicable values from the following categories:
+The telemetry parameter layout shall include the applicable values from the following
+categories:
 
 - Control-board state, runtime, fault flags, indicator state, and all physical interlock inputs
 - The state-dependent mask identifying which interlock inputs are currently required
-- Current and total operational points in the treatment plan
 - Internal and backup timer states and values
 - Applicator, button, coolant, magnetometer, coil, ion-pump, and temperature values
 - HVPS runtime, I/O and status flags, setpoints, feedback values, and power limits
@@ -888,9 +862,9 @@ UID: RQ-H1FWMC-306
 TYPE: Functional
 TITLE: Report device information to PC
 STATEMENT: >>>
-The firmware shall transmit a UDP device-information packet to the PC once per second and
-in response to a device-information request. The packet shall identify the firmware major,
-minor, and level version, application CRC, and firmware mode.
+The firmware shall periodically report its device information to the PC and respond to a
+device-information request. The reported information shall identify the main-control and
+HVPS-interface firmware releases and operating modes.
 <<<
 
 [[/SECTION]]

@@ -76,8 +76,8 @@ The HVPS interface application firmware is used to control and receive feedback 
 
 The HVPS interface application firmware reports data back to and receives commands from the main
 control application firmware. The HVPS interface application firmware contains routines to ramp up
-the filament current, as well as the high voltage. It contains a PID loop for regulating the
-emission output to a given setpoint.
+the filament current, as well as the high voltage. It contains a feedback-control loop for
+regulating the emission output to a given setpoint.
 
 The HVPS interface application firmware runs on the MCU of the HVPS interface board.
 <<<
@@ -134,7 +134,8 @@ UID: RQ-H1FWHVPS-5
 TYPE: Functional
 TITLE: HVPS digital status signals
 STATEMENT: >>>
-The firmware shall be able to read and report digital I/O status signals from the HVPS
+The firmware shall read and report each HVPS digital status input according to its asserted
+state. Reported fault statuses shall remain latched until explicitly cleared.
 <<<
 
 [REQUIREMENT]
@@ -210,8 +211,8 @@ UID: RQ-H1FWHVPS-14
 TYPE: Functional
 TITLE: Control loop
 STATEMENT: >>>
-The firmware shall implement a control loop in order to automatically adjust output parameters
-during x-ray emission in order to help stabilize emission output
+The firmware shall use high-voltage and cathode-current feedback to adjust output commands
+during X-ray emission and stabilize emission output within the configured operating limits.
 <<<
 
 [REQUIREMENT]
@@ -219,8 +220,9 @@ UID: RQ-H1FWHVPS-17
 TYPE: Functional
 TITLE: Filament current ramp up
 STATEMENT: >>>
-The firmware shall be able to ramp up the filament current at a rate not greater than 250mA every
-second
+The firmware shall ramp filament current at a controlled rate, determine when the requested
+target is stable, and terminate the ramp when the commanded and measured currents remain
+unacceptably different.
 <<<
 
 [REQUIREMENT]
@@ -228,15 +230,33 @@ UID: RQ-H1FWHVPS-18
 TYPE: Functional
 TITLE: Logging
 STATEMENT: >>>
-The firmware shall provide non-blocking, interrupt-driven UART logging over USART3 using a ring buffer.
+The firmware shall provide diagnostic logging without blocking application processing.
 <<<
 
 [REQUIREMENT]
 UID: RQ-H1FWHVPS-19
 TYPE: Functional
-TITLE: FTDI UART Communication and Configuration Interface Module
+TITLE: FTDI Host Interface
 STATEMENT: >>>
-The firmware shall provide an FTDI UART communication interface that receives and validates protocol messages, processes GET and SET commands for individual device configuration parameters, processes bulk-read commands for all configuration values, setpoints, and feedback values, returns responses for valid requests, and supports bootloader entry by erasing the CRC flash page and performing a system reset.
+The firmware shall provide an FTDI UART interface through which a connected host can read device
+parameters, update supported configuration parameters, and request bootloader entry.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-20
+TYPE: Functional
+TITLE: Firmware version reporting
+STATEMENT: >>>
+The firmware shall report its release version when requested by the main control board.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPS-21
+TYPE: Functional
+TITLE: Development-build boot validation bypass
+STATEMENT: >>>
+Development firmware shall support a boot-validation bypass that is not enabled in release
+firmware.
 <<<
 
 [[/SECTION]]

@@ -1,7 +1,9 @@
+#include "ftdi_log.h"
 #include "main.h"
 #include "stdbool.h"
 #include "math.h"
 #include "FreeRTOS.h"
+#include "stm32f3xx_hal_gpio.h"
 #include "task.h"
 
 #include "monitoring.h"
@@ -16,8 +18,14 @@
 
 #define CONTROL_TASK_STACK_WORDS		256U
 #define CONTROL_TASK_PRIORITY			32U
-#define CONTROL_PERIOD_S				0.005f
+#define CONTROL_PERIOD_MS				5U
+#define CONTROL_PERIOD_S				(CONTROL_PERIOD_MS / 1000.0f)
 #define CONTROL_ADC_WAIT_TICKS			pdMS_TO_TICKS(10U)
+#define GRID_MA_HOLD_FRACTION			0.01f
+#define FIL_RAMP_PERIOD_MS				3U
+#define FIL_RAMP_RATE_MA_PER_S			750.0f
+#define RAMP_STABILITY_TIME_MS			4000U
+#define FIL_FB_FAULT_TIME_MS			6000U
 
 #define ADS8325_REFERENCE_VOLTS			4.096f
 #define ADS8325_CODE_RANGE				65536.0f
@@ -98,7 +106,7 @@ void setup_system_monitoring()
     config_vals[SYS_CONFIG_MAX_PWR] = 400;
     config_vals[SYS_CONFIG_MIN_GRID] = 100;
 
-    config_vals[SYS_CONFIG_RUN_PID] = 0;
+    config_vals[SYS_CONFIG_RUN_PID] = 1;
 #endif
 
 	config_vals[SYS_CONFIG_MAX_GRID] = 600;
@@ -111,15 +119,15 @@ void setup_system_monitoring()
 	config_vals[SYS_CONFIG_FIL_LIM] = 3250;
 
 	config_vals[SYS_CONFIG_KV_BOUND] = 0.1;
-	config_vals[SYS_CONFIG_KV_RAMP_FAST] = 5;
-	config_vals[SYS_CONFIG_KV_RAMP_SLOW] = 0.5;
+	config_vals[SYS_CONFIG_KV_RAMP_FAST] = 20;
+	config_vals[SYS_CONFIG_KV_RAMP_SLOW] = 5;
 
 	config_vals[SYS_CONFIG_GRID_KP_50] = -25.0f;
 	config_vals[SYS_CONFIG_GRID_KP_70] = -35.0f;
 	config_vals[SYS_CONFIG_GRID_KP_100] = -150.0f;
 	config_vals[SYS_CONFIG_GRID_INTEGRAL_TIME] = 0.2f;
-	config_vals[SYS_CONFIG_GRID_SLEW_DOWN] = 10000.0f;
-	config_vals[SYS_CONFIG_GRID_SLEW_UP] = 3000.0f;
+	config_vals[SYS_CONFIG_GRID_SLEW_DOWN] = 3000.0f;
+	config_vals[SYS_CONFIG_GRID_SLEW_UP] = 1000.0f;
 
 	//Initialize set points
 	setpoints[SP_PWR] = 0;
@@ -184,13 +192,12 @@ static void control_task(void *argument)
 #else
 		bool kv_ramp_allowed = true;
 #endif
-		if (kv_ramp_allowed && sys_stat_check(SYS_KV_RAMPING)
-				&& (kv_ramp_ms <= 0))
+		if (kv_ramp_allowed && sys_stat_check(SYS_KV_RAMPING))
 		{
-			kv_ramp_ms = 1000;
 			kv_command_pending = process_kv_ramp(&kv_command);
 		}
 		grid_command_pending = run_grid_ctrl(&grid_command);
+
 		taskEXIT_CRITICAL();
 
 		if (kv_command_pending)
@@ -302,18 +309,20 @@ float sys_fb_vals_get(unsigned int index)
 static void handle_hv_int(uint32_t rose, uint32_t fell)
 {
     if (fell & IO_BIT(IN_HV_INT))
-    {
-        lock_hv();
+	{
+		ftdi_log_write(LOG_LEVEL_WARN, "Hv int fell");
+        shutdown_beam();
         clear_sys_bit(SYS_EMISSION_ON);
     }
-#ifdef CALIBRATION_MODE
     else if (rose & IO_BIT(IN_HV_INT))
     {
+#ifdef CALIBRATION_MODE
         set_sys_bit(SYS_HV_CTRL_EN);
         HAL_GPIO_WritePin(GPIOE, IO_PFC_ALLOWED_Pin | IO_HV_ALLOWED_Pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(GPIOD, IO_SEND_READY_Pin, GPIO_PIN_SET);
-    }
 #endif
+		ftdi_log_write(LOG_LEVEL_WARN, "Hv int rose");
+    }
 }
 
 static void handle_grid_int(uint32_t rose, uint32_t fell)
@@ -322,21 +331,22 @@ static void handle_grid_int(uint32_t rose, uint32_t fell)
     {
         lock_grid();
         clear_sys_bit(SYS_EMISSION_ON);
+		ftdi_log_write(LOG_LEVEL_WARN, "Grid int fell");
     }
-#ifdef CALIBRATION_MODE
     else if (rose & IO_BIT(IN_GRID_INT))
     {
+#ifdef CALIBRATION_MODE
         set_sys_bit(SYS_GRID_CTRL_EN);
-    }
 #endif
+		ftdi_log_write(LOG_LEVEL_WARN, "Grid int rose");
+    }
 }
 
 static void handle_master_fault(uint32_t rose, uint32_t fell)
 {
     if (rose & IO_BIT(IN_MASTER_FAULT))
     {
-        lock_hv();
-        lock_grid();
+        shutdown_beam();
         HAL_GPIO_WritePin(GPIOB, IO_PS_OK_Pin, GPIO_PIN_RESET);
     }
     else if (fell & IO_BIT(IN_MASTER_FAULT))
@@ -349,6 +359,7 @@ static void handle_beam_ctrl(uint32_t rose, uint32_t fell)
 {
     if (rose & IO_BIT(IN_BEAM_CTRL))
     {
+		ftdi_log_write(LOG_LEVEL_WARN, "Beam ctrl rose");
         if (sys_stat_check(SYS_HV_CTRL_EN) && sys_stat_check(SYS_GRID_CTRL_EN))
         {
 #ifdef CALIBRATION_MODE
@@ -356,15 +367,23 @@ static void handle_beam_ctrl(uint32_t rose, uint32_t fell)
 #else
             set_sys_bit(SYS_EMISSION_ON);
             HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_SET);
+
+			if(HAL_GPIO_ReadPin(IO_GRID_INT_IN_GPIO_Port, IO_GRID_INT_IN_Pin) == GPIO_PIN_SET
+					&& HAL_GPIO_ReadPin(IO_BEAM_EN_IN_GPIO_Port, IO_BEAM_EN_IN_Pin) == GPIO_PIN_SET
+					&& HAL_GPIO_ReadPin(IO_HV_INT_IN_GPIO_Port, IO_HV_INT_IN_Pin) == GPIO_PIN_SET) {
+				set_sys_bit(SYS_CAL_GRID_INT_EN);
+			}
 #endif
         }
         //TBD TODO else throw fault
     }
     else if (fell & IO_BIT(IN_BEAM_CTRL))
     {
-#ifdef CALIBRATION_MODE
+		ftdi_log_write(LOG_LEVEL_WARN, "Beam ctrl fell");
+#ifndef CALIBRATION_MODE
         clear_sys_bit(SYS_CAL_GRID_INT_EN);
 #else
+		clear_sys_bit(SYS_CAL_GRID_INT_EN);
         clear_sys_bit(SYS_EMISSION_ON);
         HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_RESET);
 #endif
@@ -628,7 +647,7 @@ void process_monitoring()
 #endif
 			if(fil_ramp_ms <= 0)
 			{
-				fil_ramp_ms = 1000;
+				fil_ramp_ms = FIL_RAMP_PERIOD_MS;
 				process_fil_ramp();
 			}
 #ifndef CALIBRATION_MODE
@@ -685,15 +704,15 @@ static void update_kv_ramp()
 		}
 		else if(kv_err > -5)
 		{
-	        kv_out -= config_vals[SYS_CONFIG_KV_RAMP_SLOW];
+	        kv_out -= config_vals[SYS_CONFIG_KV_RAMP_SLOW] * CONTROL_PERIOD_S;
 		}
 		else if(kv_err > -20)
 		{
-	        kv_out -= config_vals[SYS_CONFIG_KV_RAMP_SLOW]*4;
+	        kv_out -= config_vals[SYS_CONFIG_KV_RAMP_SLOW] * 4.0f * CONTROL_PERIOD_S;
 		}
 		else
 		{
-	        kv_out -= config_vals[SYS_CONFIG_KV_RAMP_FAST];
+	        kv_out -= config_vals[SYS_CONFIG_KV_RAMP_FAST] * CONTROL_PERIOD_S;
 		}
 	}
 	else if(kv_stat == KV_UP)
@@ -706,15 +725,15 @@ static void update_kv_ramp()
 		}
 		else if(kv_err < 5)
 		{
-			kv_out += config_vals[SYS_CONFIG_KV_RAMP_SLOW];
+			kv_out += config_vals[SYS_CONFIG_KV_RAMP_SLOW] * CONTROL_PERIOD_S;
 		}
 		else if(kv_err < 20)
 		{
-			kv_out += config_vals[SYS_CONFIG_KV_RAMP_SLOW]*4;
+			kv_out += config_vals[SYS_CONFIG_KV_RAMP_SLOW] * 4.0f * CONTROL_PERIOD_S;
 		}
 		else
 		{
-			kv_out += config_vals[SYS_CONFIG_KV_RAMP_FAST];
+			kv_out += config_vals[SYS_CONFIG_KV_RAMP_FAST] * CONTROL_PERIOD_S;
 		}
 
 		if(kv_out >= 50 && fb_err > 50)
@@ -728,7 +747,8 @@ static void update_kv_ramp()
 	{
 		if(kv_err_pct >= -2 && kv_err_pct <= 2)
 		{
-			if(kv_stability_count++ > 2)
+			kv_stability_count += CONTROL_PERIOD_MS;
+			if(kv_stability_count >= RAMP_STABILITY_TIME_MS)
 			{
 				kv_stability_count = 0;
 				clear_sys_bit(SYS_KV_RAMPING);
@@ -801,7 +821,8 @@ static void get_fil_ramp()
 	{
 		if(fil_err_pct >= -2 && fil_err_pct <= 2)
 		{
-			if(fil_stability_count++ > 2)
+			fil_stability_count += FIL_RAMP_PERIOD_MS;
+			if(fil_stability_count >= RAMP_STABILITY_TIME_MS)
 			{
 				fil_stability_count = 0;
 				clear_sys_bit(SYS_WARMING);
@@ -817,20 +838,13 @@ static void get_fil_ramp()
 	{
 		fil_stability_count = 0;
 
-		if(sys_stat_check(SYS_FAST_WARMUP_EN))
-		{
-			fil_out += 40;
-		}
-		else
-		{
-			fil_out += 20;
-		}
+		fil_out += FIL_RAMP_RATE_MA_PER_S * (FIL_RAMP_PERIOD_MS / 1000.0f);
 
 		if(fil_out >= 1000 && fb_err > 300)
 		{
-			fil_fb_count++;
+			fil_fb_count += FIL_RAMP_PERIOD_MS;
 
-			if(fil_fb_count > 5)
+			if(fil_fb_count >= FIL_FB_FAULT_TIME_MS)
 			{
 				fil_fb_count = 0;
 				fil_out = 0;
@@ -850,7 +864,7 @@ static void get_fil_ramp()
 	}
 }
 
-#if 1
+#if 0
 #define GRID_MAX_STEP 			25
 
 static bool run_grid_ctrl(float *command)
@@ -952,6 +966,12 @@ static bool run_grid_ctrl(float *command)
 		grid_out = maximum_grid;
 		*command = grid_out;
 		return true;
+	}
+
+	float ma_hold_tolerance = fabsf(setpoints[SP_MA]) * GRID_MA_HOLD_FRACTION;
+	if (fabsf(error) <= ma_hold_tolerance)
+	{
+		return false;
 	}
 
 	grid_integral += (grid_previous_kp - kp) * error;

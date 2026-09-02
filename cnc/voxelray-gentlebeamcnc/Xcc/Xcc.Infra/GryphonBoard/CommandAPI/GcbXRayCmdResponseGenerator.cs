@@ -121,7 +121,6 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 packetCounter: packetCounter,
                 payload: [
                     (int)status,
-                    point.PointIndex,
                     point.TotalPointTime,
                     point.RemainingPointTime,
                     point.SetpointKv,
@@ -130,7 +129,6 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                     point.XCoilSetpoint,
                     point.YCoilSetpoint,
                     point.FocusCoilSetpoint,
-                    point.AutoExecution ? 1 : 0,
                     ]);
         }
 
@@ -151,6 +149,45 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 packetType: (uint)GCBPacketType.DirectiveCmdResponse,
                 packetCounter: packetCounter,
                 payload: [ (int)status /*cmd processing status*/ ]);
+        }
+
+        public static byte[] GenerateQcbResponse(
+            uint packetCounter,
+            GCBPacketType responseType,
+            params float[] readings)
+        {
+            if(responseType != GCBPacketType.QcbPingResponse
+                && responseType != GCBPacketType.QcbReadingsCommandResponse)
+            {
+                throw new ArgumentOutOfRangeException(nameof(responseType));
+            }
+            if(readings is null || readings.Length != 5)
+            {
+                throw new ArgumentException("A QCB response requires exactly five readings.", nameof(readings));
+            }
+
+            return UdpPacketBuilder.BuildRawPacket(
+                packetType: (uint)responseType,
+                packetCounter: packetCounter,
+                payload: readings.Select(value => new UdpPacket.Field(value)).ToList());
+        }
+
+        public static byte[] GenerateQcbReadingsResponse(
+            uint packetCounter,
+            float channel0,
+            float channel1,
+            uint sampleCount)
+        {
+            var packet = new UdpPacket(
+                (uint)GCBPacketType.QcbReadingsCommandResponse,
+                packetCounter,
+                5);
+            packet[0] = channel0;
+            packet[1] = channel1;
+            packet[2] = sampleCount;
+            packet[3] = 0.0f;
+            packet[4] = 0.0f;
+            return packet.UpdateCRC().Buffer;
         }
 
 

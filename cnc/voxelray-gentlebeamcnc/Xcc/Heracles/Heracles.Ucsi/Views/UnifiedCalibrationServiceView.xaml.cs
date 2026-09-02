@@ -532,6 +532,15 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
         }
     }
 
+    private void OnEmissionInputKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if(e.Key != Key.Return || sender is not System.Windows.Controls.TextBox textBox)
+            return;
+
+        textBox.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.UpdateSource();
+        e.Handled = true;
+    }
+
     /// <summary>
     /// Handles Enter key press in System Config TextBox inputs.
     /// When Enter is pressed, executes the SetCommand if it can execute (connection established and buttons enabled).

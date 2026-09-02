@@ -1,5 +1,5 @@
 [DOCUMENT]
-TITLE: Heracles Unified Calibration and Service Interface Software Requirements Specification
+TITLE: Heracles UCSI Software Requirements Specification
 UID: DHF-HRC-UCSI-0001
 METADATA:
   COMPONENT: heracles-ucsi
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-This document defines the software requirements for the Heracles Unified Calibration and Service Interface (UCSI).
+This document defines the software requirements for the Heracles UCSI service interface.
 <<<
 
 [[/SECTION]]
@@ -38,7 +38,7 @@ Abbreviation/Term    Definition
 HVPS                 High Voltage Power Supply
 SDS                  Software Design Specification
 SRS                  Software Requirements Specification
-UCSI                 Unified Calibration and Service Interface
+UCSI                 Heracles technician-facing service interface
 ===================  ==========================================
 <<<
 
@@ -61,15 +61,15 @@ UID: RQ-UCSI-002
 TYPE: Functional
 TITLE: System telemetry and status
 STATEMENT: >>>
-The software shall allow the operator to view current system operating parameters, communication status, system status, interlock status, and active faults.
+The software shall allow the operator to view current system operating parameters, communication status, system status, interlock status, active faults, and operational logs, and to save the displayed logs to a file.
 <<<
 
 [REQUIREMENT]
 UID: RQ-UCSI-003
 TYPE: Functional
-TITLE: Telemetry monitoring
+TITLE: Telemetry monitoring and session data
 STATEMENT: >>>
-The software shall allow the operator to select system operating parameters for numerical monitoring and graphical display of their telemetry history.
+The software shall allow the operator to select system operating parameters for numerical monitoring and graphical display of their telemetry history. The software shall record live telemetry sessions, load recorded sessions for play, pause, and timeline seeking, return from replay to live monitoring, and preserve recent live telemetry in CSV exports requested by the operator or created automatically for fault diagnosis.
 <<<
 
 [REQUIREMENT]
@@ -94,6 +94,45 @@ TYPE: Functional
 TITLE: Control system configuration
 STATEMENT: >>>
 The software shall allow the operator to view and set control system configuration values for service activities.
+<<<
+
+[REQUIREMENT]
+UID: RQ-UCSI-007
+TYPE: Functional
+TITLE: Version information
+STATEMENT: >>>
+The software shall display version information for the GCB firmware, HVPS firmware, and CNC software.
+<<<
+
+[REQUIREMENT]
+UID: RQ-UCSI-008
+TYPE: Functional
+TITLE: Standalone fault clearing
+STATEMENT: >>>
+The standalone UCSI application shall allow the operator to clear active system faults. The clear-faults command shall be unavailable when UCSI is hosted by the system PC software.
+<<<
+
+[REQUIREMENT]
+UID: RQ-UCSI-009
+TYPE: Functional
+TITLE: HVPS fault-status display
+STATEMENT: >>>
+The software shall display the HVPS fault statuses reported by system telemetry.
+<<<
+
+[REQUIREMENT]
+UID: RQ-UCSI-010
+TYPE: Functional
+TITLE: Telemetry-gated service and one-point test emission
+STATEMENT: >>>
+The software shall maintain communication with the GCB and shall transmit operator-issued
+service commands only when current live telemetry reports a control state that permits the
+requested action. The software shall prevent those commands during telemetry replay and
+when live telemetry is missing or stale.
+
+The software shall allow a qualified operator to run and stop a one-point X-ray test
+emission using parameters within the configured service limits. The command sequence shall
+advance only after current live telemetry confirms each required control-state transition.
 <<<
 
 [[/SECTION]]

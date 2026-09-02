@@ -60,7 +60,7 @@ namespace Heracles.Application.UI.ViewModels
             eventAggregator.GetEvent<OnQcSampleApproveClickedEvent>().Subscribe(OnApproveClicked);
 
             CollimatorModel.PropertyChanged += (s, e) => {
-                if (e.PropertyName == nameof(ICollimatorModel.Collimators))
+                if (e.PropertyName == nameof(ICollimatorModel.CollimatorConfigurations))
                 {
                     GetAvailableTargetTypes();
                 }
@@ -193,10 +193,11 @@ namespace Heracles.Application.UI.ViewModels
         {
             try
             {
-                var collimators = CollimatorModel.Collimators.Where(c => c.Configuration != null && c.IsActive).DistinctBy(x => x.Configuration.Type);
-
-                AvailableTargetTypeValues = collimators.Select(c => c.Configuration.Type)
-                    .Where(type => type != TargetType.TargetType_QC_Collimator).Order();
+                AvailableTargetTypeValues = CollimatorModel.CollimatorConfigurations
+                    .Select(configuration => configuration.Type)
+                    .Where(type => type != TargetType.TargetType_QC_Collimator)
+                    .Distinct()
+                    .Order();
             }
             catch (Exception ex)
             {
@@ -237,11 +238,9 @@ namespace Heracles.Application.UI.ViewModels
 
         private ICollimatorConfiguration GetCollimatorConfiguration()
         {
-            return CollimatorModel.Collimators?.FirstOrDefault(c =>
-                c.IsActive && 
-                c.Configuration.Type == CollimatorType &&
-                c.Configuration.Energy == Energy
-            )?.Configuration;
+            return Energy.HasValue
+                ? CollimatorModel.FindConfigurationByType(CollimatorType, Energy.Value)
+                : null;
         }
 
         private void OnCollimatorChanged()

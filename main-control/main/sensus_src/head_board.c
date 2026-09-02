@@ -15,10 +15,9 @@
 #include "system_parameters.h"
 #include "state_machine.h"
 #include "head_board.h"
-#if defined(CALIBRATION_MODE)
-#include "sys_config_defaults.h"
-#include "pc_msg_processing.h"
-#endif
+
+#define HB_QC_READING_MASK		0x0FFFu
+#define HB_QC_CONNECTED_FLAG	0x8000u
 
 struct io_descriptor *hb_io;
 volatile uint32_t hb_rx_idx = 0;
@@ -35,27 +34,15 @@ static struct timer_task VTIMER_hb_check;
 volatile int hb_no_comm = 0;
 uint32_t hb_comm_error_count = 0;
 
-uint8_t mag_hb_rx_buf[MAG_RX_MSG_SIZE];
-uint8_t mag_hb_rx_processing_buf[MAG_RX_MSG_SIZE];
 VariableValue mag_cal_array[HB_NUM_MAG_CAL];
 int32_t mag_window_samples = 100;
 
-#if defined(CALIBRATION_MODE)
-uint32_t pres_cnt = 0;
-uint32_t flow_cnt = 0;
-uint32_t temp_cnt = 0;
-#endif
 
 static void send_mag_cal_window(int samples);
 
 static bool hb_rx_packet_check();
-#if !defined(CALIBRATION_MODE)
 static void extract_hb_rx_data();
-#endif
-static void extract_hb_cal_rx();
-#if defined(CALIBRATION_MODE)
-static void update_hb_params(float pres, float flow, float temp);
-#endif
+static void calculate_diodes(uint32_t diodes);
 
 static void hb_uart_rx_cb(const struct usart_async_descriptor *const io_descr);
 static void hb_uart_tx_cb(const struct usart_async_descriptor *const io_descr);
@@ -85,30 +72,25 @@ void init_head_board()
 	hb_tx_queue[6] = 0;
 	hb_tx_queue[7] = 0;
 
-#if !defined(CALIBRATION_MODE)
 	//Initialize vtimer task to check head board communication
 	VTIMER_hb_check.interval = HB_COMM_TIMEOUT_MS;
 	VTIMER_hb_check.cb = hb_timeout_check;
 	VTIMER_hb_check.mode = TIMER_TASK_REPEAT;
 	timer_add_task(&VTIMER, &VTIMER_hb_check);
-#endif
 }
 
 static void hb_timeout_check(const struct timer_task *const timer_task)
 {
-#if !defined(CALIBRATION_MODE)
 	//Check to see if no comms received from HB
 	//TBD TODO magic number
 	if(++hb_no_comm > 2)
 	{
 		report_typed_fault1(FAULT_HEADBOARD_COMM, "No head-board response was received within %u ms.", MAKE_ARG(HB_COMM_TIMEOUT_MS));
 	}
-#endif
 }
 
 void set_led_sequence(int led_idx)
 {
-#if !defined(CALIBRATION_MODE)
 	if(led_idx < 0 || led_idx > 255)
 	{
 		return;
@@ -139,7 +121,6 @@ void set_led_sequence(int led_idx)
 			gpio_set_pin_level(GPIO(GPIO_PORTD, 23), false);
 			break;
 	}
-#endif
 }
 
 void set_mag_cal_window(int samples)
@@ -182,14 +163,10 @@ void process_hb()
 	{
 		hb_rx_ready = false;
 
-#if defined(CALIBRATION_MODE)
-		extract_hb_cal_rx();
-#else
 		if(hb_rx_packet_check())
 		{
 			extract_hb_rx_data();
 		}
-#endif
 
 	}
 	
@@ -224,14 +201,12 @@ static bool hb_rx_packet_check()
 	//Verify CRC from message
 	uint32_t *crc_val = (uint32_t *)(hb_rx_processing_buf + (HB_RX_CRC*HB_FIELD_SIZE));
 	uint32_t crc_calc =  (uint32_t)crc_ccitt_1d0f(hb_rx_processing_buf, HB_RX_CRC*HB_FIELD_SIZE);
-#if !defined(CALIBRATION_MODE)
 #ifdef HEAD_COMM_TEST_MODE
 	if(system_status[SS_STATE].i == STATE_WARMUP)
 	{
 		crc_calc = 0x00;
 		report_typed_fault1(FAULT_HEADBOARD_COMM, "No head-board response was received within %u ms.", MAKE_ARG(HB_COMM_TIMEOUT_MS));
 	}
-#endif
 #endif
 	if(*crc_val != crc_calc)
 	{
@@ -243,7 +218,6 @@ static bool hb_rx_packet_check()
 	return true;
 }
 
-#if !defined(CALIBRATION_MODE)
 static void extract_hb_rx_data()
 {	
 	float data_val = 0;
@@ -271,9 +245,17 @@ static void extract_hb_rx_data()
 		memcpy(&u_data_val,hb_rx_processing_buf+(HB_RX_COL_HIGH*HB_FIELD_SIZE), sizeof(uint32_t));
 		system_status[SS_COLLIMATOR_HIGH].u = u_data_val;
 		
-		//Save QC collimator data
+		//Save QC ADC readings and per-device I2C connection state.
 		memcpy(&u_data_val,hb_rx_processing_buf+(HB_RX_QC_VAL*HB_FIELD_SIZE), sizeof(uint32_t));
-		
+#if !defined(CALIBRATION_MODE)
+		uint16_t qc_adc_2 = (uint16_t)(u_data_val & 0xFFFFu);
+		uint16_t qc_adc_1 = (uint16_t)(u_data_val >> 16);
+		system_status[SS_QC_CHANNEL_0].f = (float)(qc_adc_2 & HB_QC_READING_MASK);
+		system_status[SS_QC_CHANNEL_1].f = (float)(qc_adc_1 & HB_QC_READING_MASK);
+		system_status[SS_QC_ADC_I2C_STATUS].u =
+			((qc_adc_1 & HB_QC_CONNECTED_FLAG) != 0u ? 1u : 0u) |
+			((qc_adc_2 & HB_QC_CONNECTED_FLAG) != 0u ? 2u : 0u);
+#endif
 		//Calculate the total QC readings if running emission
 		if(system_status[SS_STATE].i == STATE_EMISSION)
 		{
@@ -293,67 +275,27 @@ static void extract_hb_rx_data()
 		}
 	}
 }
-#endif
 
-static void extract_hb_cal_rx()
-{
-	//Second memcpy is done outside of interrupts to prevent any accidental overwrites
-	memcpy(mag_cal_array, mag_hb_rx_processing_buf+MAG_SYNC_COUNT, HB_NUM_MAG_CAL*sizeof(int32_t));
-
-#if defined(CALIBRATION_MODE)
-	float pres = mag_cal_array[HB_MAG_CAL_X1_SQ_2].f;
-	float flow = mag_cal_array[HB_MAG_CAL_Y1_SQ_2].f;
-	float temp = mag_cal_array[HB_MAG_CAL_Z1_SQ_2].f;
-	
-	system_status[SS_WATER_PRESSURE].f = pres;
-	system_status[SS_WATER_FLOW_RATE].f = flow;
-	system_status[SS_WATER_TEMP].f = temp;
-	
-	update_hb_params(pres, flow, temp);
-#endif
-
-	//DEBUG MAG CAL
-	if(mag_cal_array[HB_MAG_CAL_X1_SUM].i != 0 || mag_cal_array[HB_MAG_CAL_X2_SUM].i != 0)
-	{
-		gpio_toggle_pin_level(IO_LED5);
-	}
-}
 
 static void hb_uart_rx_cb(const struct usart_async_descriptor *const io_descr)
 {
 	uint8_t read_byte = 0;
 	io_read(hb_io, &read_byte, 1);
 
-#if defined (CALIBRATION_MODE)
-	if(hb_rx_idx < MAG_SYNC_COUNT && read_byte != MAG_SYNC_VAL)
-#else
 	if(hb_rx_idx < HB_SYNC_COUNT && read_byte != HB_SYNC_VAL)
-#endif
 	{
 		hb_rx_idx = 0;
 	}
 	else
 	{
-#if defined(CALIBRATION_MODE)
-		mag_hb_rx_buf[hb_rx_idx++] = read_byte;
-#else
 		hb_rx_buf[hb_rx_idx++] = read_byte;
-#endif
 	}
 	
 	//Once buffer is full, copy bytes and set flag for processing
-#if defined(CALIBRATION_MODE)
-	if(hb_rx_idx >= MAG_RX_MSG_SIZE)
-#else
 	if(hb_rx_idx >= HB_RX_MSG_SIZE)
-#endif
 	{
 		hb_rx_idx = 0;
-#if defined(CALIBRATION_MODE)
-		memcpy(mag_hb_rx_processing_buf, mag_hb_rx_buf, MAG_RX_MSG_SIZE);
-#else
 		memcpy(hb_rx_processing_buf, hb_rx_buf, HB_RX_MSG_SIZE);
-#endif
 		hb_no_comm = 0;
 		hb_rx_ready = true;
 	}
@@ -364,12 +306,11 @@ static void hb_uart_tx_cb(const struct usart_async_descriptor *const io_descr)
 	hb_tx_busy = false;
 }
 
-#if !defined(CALIBRATION_MODE)
-void calculate_diodes(uint32_t diodes)
+static void calculate_diodes(uint32_t diodes)
 {
 	// diodes: upper 2 bytes are Diode 1 value, lower 2 are Diode 2
-	float diode_0 = (float)(diodes & 0x0000FFFF);
-	float diode_1 = (float)((diodes & 0xFFFF0000) >> 16);
+	float diode_0 = (float)(diodes & HB_QC_READING_MASK);
+	float diode_1 = (float)((diodes >> 16) & HB_QC_READING_MASK);
 	
 	qc_reading_buf[0].f += diode_0;
 	qc_reading_buf[1].f += diode_1;
@@ -377,48 +318,3 @@ void calculate_diodes(uint32_t diodes)
 	qc_reading_buf[3].f = 0;
 	qc_reading_buf[4].f = 0;
 }
-#endif
-
-#if defined(CALIBRATION_MODE)
-static void update_hb_params(float pres, float flow, float temp)
-{	
-	if (flow < DEFAULT_WTR_F_LO_ERR)
-	{
-		if (flow_cnt++ > 10)
-		{
-			flow_cnt = 0;
-			fault_detected(FLOW_FAULT, true);
-		}
-	}
-	else
-	{
-		fault_detected(FLOW_FAULT, false);
-	}
-	
-	if (pres < DEFAULT_WTR_P_LO_ERR)
-	{
-		if (pres_cnt++ > 10)
-		{
-			pres_cnt = 0;
-			fault_detected(PRES_FAULT, true);
-		}
-	}
-	else
-	{
-		fault_detected(PRES_FAULT, false);
-	}
-	
-	if (temp > DEFAULT_WTR_TEMP_ERR)
-	{
-		if (temp_cnt++ > 10)
-		{
-			temp_cnt = 0;
-			fault_detected(TEMP_FAULT, true);
-		}
-	}
-	else
-	{
-		fault_detected(TEMP_FAULT, false);
-	}
-}
-#endif

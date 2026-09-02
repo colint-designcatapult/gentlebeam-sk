@@ -23,7 +23,6 @@ namespace Heracles.Application.Infra.DataManagement.EMR
         Task UnloadFromTreatmentAsync(long planId);
         Task<ITreatmentField> CreateTreatmentFieldAsync(ITreatmentField treatmentField);
         Task<ITreatmentField> UpdateTreatmentFieldAsync(ITreatmentField? old, ITreatmentField treatmentField);
-        Task DeleteTreatmentFieldAsync(long treatmentFieldId);
     }
 
     public class PlanRepository : IPlanRepository
@@ -46,6 +45,7 @@ namespace Heracles.Application.Infra.DataManagement.EMR
                 TargetTypeConverter.GetIndexToTreatmentFieldNameMapping(collimatorType);
             
             var orderedFields = await FetchTreatmentFieldsAsync(planId);
+            TreatmentPlanFieldRules.EnsureValid(orderedFields);
             foreach (var field in orderedFields)
             {
                 field.DisplayValue = TargetTypeConverter.GetBackwardFieldNameMapping(treatmentFieldNameMapping, field.Name);
@@ -55,15 +55,16 @@ namespace Heracles.Application.Infra.DataManagement.EMR
         
         public async Task<(IPlan, ICollection<ITreatmentField>)> SaveAsync(IPlan plan, IEnumerable<ITreatmentField> treatmentFields)
         {
+            var list = treatmentFields?.ToList() ?? new List<ITreatmentField>();
+            TreatmentPlanFieldRules.EnsureValid(list);
+
             IPlan savedPlan;
             if (BaseEntry.IsBlankEntry(plan))
                 savedPlan = await PlanCommands.CreateAsync(plan);
             else
                 savedPlan = await PlanCommands.UpdateAsync(null, plan);
 
-            var list = treatmentFields.ToList();
-
-            var savedTreatmentFields = new List<ITreatmentField>(list);
+            var savedTreatmentFields = new List<ITreatmentField>(list.Count);
             foreach (var tf in list)
             {
                 tf.PlanId = savedPlan.Id;
@@ -99,8 +100,10 @@ namespace Heracles.Application.Infra.DataManagement.EMR
         public async Task<ICollection<ITreatmentField>> FetchOrderedTreatmentFieldsAsync(long planId)
         {
             var fetchedTreatmentFields = await FetchTreatmentFieldsAsync(planId);
+            var orderedFields = fetchedTreatmentFields.OrderBy(field => field.Id).ToList();
+            TreatmentPlanFieldRules.EnsureValid(orderedFields);
 
-            return fetchedTreatmentFields.OrderBy(field => field.Id).ToList();
+            return orderedFields;
         }
 
         public Task<IPlan> CreatePlanAsync(IPlan plan)
@@ -125,17 +128,15 @@ namespace Heracles.Application.Infra.DataManagement.EMR
 
         public Task<ITreatmentField> CreateTreatmentFieldAsync(ITreatmentField treatmentField)
         {
+            TreatmentPlanFieldRules.EnsureValid(new[] { treatmentField });
             return TreatmentFieldCommands.CreateAsync(treatmentField);
         }
 
         public Task<ITreatmentField> UpdateTreatmentFieldAsync(ITreatmentField? old, ITreatmentField treatmentField)
         {
+            TreatmentPlanFieldRules.EnsureValid(new[] { treatmentField });
             return TreatmentFieldCommands.UpdateAsync(old, treatmentField);
         }
 
-        public Task DeleteTreatmentFieldAsync(long treatmentFieldId)
-        {
-            return TreatmentFieldCommands.DeleteAsync(treatmentFieldId);
-        }
     }
 }

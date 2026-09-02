@@ -12,7 +12,9 @@ public sealed class IntensityServiceImpl : IntensityService.IntensityServiceBase
     public override async Task<ListIntensitiesResponse> ListIntensities(
         ListIntensitiesRequest request, ServerCallContext context)
     {
-        var items = await _repo.ReadAllAsync();
+        IList<Intensity> items = request.HasQcsampleFieldsId
+            ? await _repo.ReadByParentIdAsync(request.QcsampleFieldsId)
+            : await _repo.ReadAllAsync();
         var r = new ListIntensitiesResponse();
         r.Intensities.AddRange(items);
         return r;

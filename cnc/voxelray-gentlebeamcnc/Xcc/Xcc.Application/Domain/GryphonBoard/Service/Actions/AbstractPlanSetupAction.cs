@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xcc.Core.Domain.GryphonBoard;
@@ -27,33 +28,29 @@ namespace Xcc.Application.Domain.GryphonBoard.Service.Actions
             this.setupActionType = setupActionType;
         }
 
-        private async Task SendOperationalPointsAsync(
-            GcbEmissionPlan plan,
+        private async Task SendOperationalPointAsync(
+            GcbOperationalPoint emission,
             OperationalPointCmdType commandType,
             GcbSession session,
             CancellationToken token)
         {
-            logService.Log($"SendOperationalPoints", LogRecordSeverity.Info, LogRecordType.System);
+            logService.Log("SendOperationalPoint", LogRecordSeverity.Info, LogRecordType.System);
+            logService.Log($"Energy={emission.SetpointKv}", LogRecordSeverity.Info, LogRecordType.System);
+            logService.Log($"TotalPointTime={emission.TotalPointTime}", LogRecordSeverity.Info, LogRecordType.System);
+            logService.Log($"RemainingPointTime={emission.RemainingPointTime}", LogRecordSeverity.Info, LogRecordType.System);
+            logService.Log($"TargetMA={emission.TargetMA}", LogRecordSeverity.Info, LogRecordType.System);
+            logService.Log($"FilamentSetpoint={emission.FilamentSetpoint}", LogRecordSeverity.Info, LogRecordType.System);
 
-            foreach (var op in plan.Points)
-            {
-                logService.Log($"OperationalPointIndex={op.PointIndex}", LogRecordSeverity.Info, LogRecordType.System);
-                logService.Log($"Energy={op.SetpointKv}", LogRecordSeverity.Info, LogRecordType.System);
-                logService.Log($"TotalPointTime={op.TotalPointTime}", LogRecordSeverity.Info, LogRecordType.System);
-                logService.Log($"RemainingPointTime={op.RemainingPointTime}", LogRecordSeverity.Info, LogRecordType.System);
-                logService.Log($"TargetMA={op.TargetMA}", LogRecordSeverity.Info, LogRecordType.System);
-                logService.Log($"FilamentSetpoint={op.FilamentSetpoint}", LogRecordSeverity.Info, LogRecordType.System);
-
-                await gcbCommands.SendOperationalPoint(commandType, op, session);
-
-                token.ThrowIfCancellationRequested();
-            }
+            await gcbCommands.SendOperationalPoint(commandType, emission, session);
+            token.ThrowIfCancellationRequested();
         }
 
         protected override async Task RunActionAsync(CancellationToken token)
         {
-            await SendOperationalPointsAsync(
-                MainBoard.CurrentPlan,
+            var emission = MainBoard.CurrentEmission
+                ?? throw new InvalidOperationException("Cannot configure the board without an emission.");
+            await SendOperationalPointAsync(
+                emission,
                 setupActionType,
                 MainBoard.Session!.Value,
                 token);

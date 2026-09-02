@@ -70,8 +70,8 @@ The head interface firmware is used to read various input data from peripherals 
 sensors, magnetometers, and collimator identification. This firmware sends feedback information to the
 main control application firmware. The head interface firmware can also set various patterns to the head
 base LED ring for visual indication. The pattern is based off commands received from the main control
-application firmware. The head interface FW can also enable and disable alignment lasers or illumination
-LEDs based on membrane keypad inputs.
+application firmware. The head interface firmware cycles the illumination LED mode in response to
+the illumination membrane-button input.
 <<<
 
 [[/SECTION]]
@@ -115,7 +115,10 @@ UID: RQ-H1FHI-6
 TYPE: Functional
 TITLE: Illumination LEDs
 STATEMENT: >>>
-The head interface firmware shall, upon detection of each press of the associated membrane button, cycle the illumination LEDs on the head LED board through the following modes in sequence: Dim Brightness → Normal Brightness → High Brightness → Breathing Effect → Off → Dim Brightness (repeat).
+The head interface firmware shall advance the illumination LEDs on the head LED board to the next
+mode each time the associated membrane button is pressed. The modes shall cycle in the following
+order: Dim Brightness, Normal Brightness, High Brightness, Breathing Effect, Off, then back to Dim
+Brightness.
 <<<
 
 [REQUIREMENT]
@@ -123,8 +126,8 @@ UID: RQ-H1FHI-8
 TYPE: Functional
 TITLE: Main Board Communication
 STATEMENT: >>>
-The head interface board shall periodically report values to the main control board at a rate
-greater than 1 Hz
+The head interface firmware shall receive control commands from the main control board and
+periodically report monitored values at the required rate.
 <<<
 
 [REQUIREMENT]

@@ -2,6 +2,7 @@
 using Heracles.Core.Enums;
 using Prism.Mvvm;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Xcc.Application.AppLayer.Service.TreatmentConsole;
@@ -17,20 +18,36 @@ namespace Heracles.Application.AppLayer.Collimators
         private IHead _activeHead;
 
         public IHead ActiveHead { get => _activeHead; private set => SetProperty(ref _activeHead, value); }
-        public ObservableCollection<ICollimatorConfiguration> CollimatorConfigurations => _collimatorConfigurations;
+        public ObservableCollection<ICollimatorConfiguration> CollimatorConfigurations
+        {
+            get => _collimatorConfigurations;
+            private set => SetProperty(ref _collimatorConfigurations, value);
+        }
         public ObservableCollection<ICollimator> Collimators
         {
             get => _collimators;
             private set => SetProperty(ref _collimators, value);
         }
         public ICollimator ActiveCollimator { get => _activeCollimator; private set => SetProperty(ref _activeCollimator, value); }
-
-        public void Reset(IHead activeHead)
+        public void Reset(
+            IHead activeHead,
+            IEnumerable<ICollimatorConfiguration> configurations,
+            IEnumerable<ICollimator> collimators)
         {
-            Collimators.Clear();
+            var configurationSnapshot = configurations.ToList();
+            var configurationById = configurationSnapshot.ToDictionary(configuration => configuration.Id);
+            var collimatorSnapshot = collimators.ToList();
+            foreach (var collimator in collimatorSnapshot)
+            {
+                configurationById.TryGetValue(collimator.CollimatorConfigurationId, out var configuration);
+                collimator.Configuration = configuration;
+            }
+
             ActiveCollimator = null;
-            CollimatorConfigurations.Clear();
             ActiveHead = activeHead;
+            _collimatorConfigurations = new ObservableCollection<ICollimatorConfiguration>(configurationSnapshot);
+            Collimators = new ObservableCollection<ICollimator>(collimatorSnapshot);
+            RaisePropertyChanged(nameof(CollimatorConfigurations));
         }
 
         public void AddConfiguration(ICollimatorConfiguration configuration)

@@ -72,6 +72,42 @@ public class CollimatorServiceTests
             Times.Once);
     }
 
+    [Test]
+    public void Reset_PublishesCompleteConfigurationSnapshotOnce()
+    {
+        var model = new CollimatorModel();
+        var head = new Head { Id = 1, Serial = "head" };
+        var first = new CollimatorConfiguration { Id = 1 };
+        var second = new CollimatorConfiguration { Id = 2 };
+        var collimator = new Collimator
+        {
+            Id = 3,
+            Serial = "applicator",
+            CollimatorConfigurationId = second.Id,
+            IsActive = true,
+        };
+        var notificationCount = 0;
+        var observedConfigurationCount = 0;
+        model.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(CollimatorModel.CollimatorConfigurations))
+            {
+                notificationCount++;
+                observedConfigurationCount = model.CollimatorConfigurations.Count;
+            }
+        };
+
+        model.Reset(head, [first, second], [collimator]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(notificationCount, Is.EqualTo(1));
+            Assert.That(observedConfigurationCount, Is.EqualTo(2));
+            Assert.That(model.Collimators, Has.Count.EqualTo(1));
+            Assert.That(model.Collimators[0].Configuration, Is.SameAs(second));
+        });
+    }
+
     private static CollimatorModel CreateModel(
         out IHead head,
         out ICollimatorConfiguration configuration)
@@ -85,8 +121,7 @@ public class CollimatorServiceTests
             SsdType = SsdType.SsdType50mm,
         };
         var model = new CollimatorModel();
-        model.Reset(head);
-        model.AddConfiguration(configuration);
+        model.Reset(head, [configuration], []);
         return model;
     }
 }

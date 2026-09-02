@@ -15,11 +15,11 @@ namespace Heracles.External.ViewModels.QualityCheck
         IAuthorizedUserStore userStore,
         ILogWriter logWriter)
     {
-        public async Task SaveQcSampleReportAsync(QualityCheckPlan plan)
+        public async Task SaveQcSampleReportAsync(IQcSampleFieldEntry field)
         {
             try
             {
-                var savedSamples = await SaveQcEntriesAsync(plan.Fields);
+                var savedSamples = await SaveQcEntriesAsync(new[] { field });
                 if (savedSamples is not null && savedSamples.Count > 0)
                 {
                     // We get only those samples that match the current applicator configuration:
@@ -62,11 +62,12 @@ namespace Heracles.External.ViewModels.QualityCheck
                     continue; // Just in case
                 }
 
-                var firstField = fields.First();
+                var firstField = oneSampleFields.First();
                 var sampleConfig = firstField.Configuration;
 
                 var sample = new QcSampleHeader
                 {
+                    CreationDate = DateTime.Now,
                     CollimatorConfigurationId = configId,
                     EmissionCurrent = (float)CurrentCalculator.CalculateCurrent(sampleConfig.Energy),
                     HeaterCurrent = (float)firstField.FilamentSetpoint,

@@ -334,8 +334,10 @@ namespace Heracles.External.ViewModels
 
         private void UpdatePlanActualTimeAndXrayTime()
         {
-            // First get actual/remaining times from the board's current plan
-            PlanModel.UpdateActualTime(MainBoardModel.CurrentPlan);
+            if (MainBoardModel.CurrentEmission is { } emission)
+            {
+                PlanModel.UpdateActualTime(emission);
+            }
             RecalculateInitialXrayTime();
         }
         
@@ -379,7 +381,7 @@ namespace Heracles.External.ViewModels
                 AuthorizedUserStore.AuthorizedUser.Role.Permissions.Treatment;
 
             return PlanModel.Plan != null
-                   && PlanModel.TreatmentFields is {Count: > 0}
+                   && TreatmentPlanFieldRules.IsValid(PlanModel.TreatmentFields)
                    && userHasPermission
                    && base.CanPrepare();
         }
@@ -457,18 +459,14 @@ namespace Heracles.External.ViewModels
             Task updateAfterEmissionTask = Task.CompletedTask;
             try
             {
-                var telemetry = GCBDataStore.SystemTelemetry ?? throw new Exception("GCB telemetry connection lost.");
+                _ = GCBDataStore.SystemTelemetry
+                    ?? throw new Exception("GCB telemetry connection lost.");
 
-                // Store what was the current point before emission
-                PreviousOperationPointIndex = telemetry.CurrentOperationalPoint;
-
-                // Store initial emission time of the current point to calc progress over the plan
                 UpdatePlanActualTimeAndXrayTime();
-
-                XrayPointStartTime = (PreviousOperationPointIndex < PlanModel.TreatmentFields.Count)
-                    ? PlanModel.TreatmentFields[PreviousOperationPointIndex].Actual
-                    : 0.0;
-                UpdateBeamOnProgress(Convert.ToSingle(PlanModel.TotalDuration), Convert.ToSingle(XrayTime));
+                XrayPointStartTime = PlanModel.TreatmentFields[0].Actual;
+                UpdateBeamOnProgress(
+                    Convert.ToSingle(PlanModel.TotalDuration),
+                    Convert.ToSingle(XrayTime));
 
                 UIStateMachine.RequestStateSwitch(UIMacroState.Emission);
                 Debug.WriteLine($"Update UI state machine: State={UIStateMachine.State}, LB=({UIStateMachine.LeftButton.State}, {UIStateMachine.LeftButton.IsEnabled}), " +
@@ -555,8 +553,16 @@ namespace Heracles.External.ViewModels
             }
         }
 
-        protected override GcbEmissionPlan BuildGcbEmissionPlan()
+        protected override GcbOperationalPoint BuildGcbOperationalPoint(int fieldIndex)
         {
+            if (fieldIndex != 0)
+            {
+                throw new InvalidOperationException(
+                    "Treatment plans support only treatment field index 0.");
+            }
+
+            TreatmentPlanFieldRules.EnsureValid(PlanModel.TreatmentFields);
+            var field = PlanModel.TreatmentFields[0];
             var coilConfigurations = CollimatorConfigurationStore.CoilConfigurations;
             double? heaterCurrent = CollimatorConfigurationStore.HeaterCurrent.HeaterCurrent;
             if (heaterCurrent is null)
@@ -564,39 +570,35 @@ namespace Heracles.External.ViewModels
                 throw new NullReferenceException("Invalid applicator configuration, heater current value is missing");
             }
 
-            GcbEmissionPlan plan = new();
-          
-            foreach (var field in PlanModel.TreatmentFields)
+            var coilSetpoints = coilConfigurations.FirstOrDefault(c => c.FieldName == field.Name);
+            if (coilSetpoints is null)
             {
-                var coilSetpoints = coilConfigurations.FirstOrDefault(c => c.FieldName == field.Name);
-                if (coilSetpoints is null)
-                {
-                    throw new NullReferenceException("Invalid applicator configuration, coil configuration data is missing");
-                }
-
-                float totalTime = (float)field.DwellTime;
-                float remainingTime = totalTime - (float)field.Actual;
-
-                GcbOperationalPoint op = new GcbOperationalPoint
-                {
-                    PointIndex = plan.TotalPoints,
-                    TotalPointTime = totalTime,
-                    RemainingPointTime = remainingTime,
-                    SetpointKv = EnergyConverter.Convert(field.Energy),
-                    TargetMA = Convert.ToSingle(field.Current),
-
-                    // TODO: we don't apply magnetometer now, just get calibrated coilX/Y
-                    FocusCoilSetpoint = Convert.ToSingle(coilSetpoints.FocusCurrent),
-                    FilamentSetpoint = (float)heaterCurrent.Value,
-                    XCoilSetpoint = Convert.ToSingle(coilSetpoints.XDeflectionCurrent),
-                    YCoilSetpoint = Convert.ToSingle(coilSetpoints.YDeflectionCurrent),
-                    AutoExecution = GetPlanAutoExecutionFlag()
-                };
-
-                plan.AddPoint(op);
+                throw new NullReferenceException("Invalid applicator configuration, coil configuration data is missing");
             }
 
-            return plan;
+            float totalTime = (float)field.DwellTime;
+            return new GcbOperationalPoint
+            {
+                TotalPointTime = totalTime,
+                RemainingPointTime = totalTime - (float)field.Actual,
+                SetpointKv = EnergyConverter.Convert(field.Energy),
+                TargetMA = Convert.ToSingle(field.Current),
+                FocusCoilSetpoint = Convert.ToSingle(coilSetpoints.FocusCurrent),
+                FilamentSetpoint = (float)heaterCurrent.Value,
+                XCoilSetpoint = Convert.ToSingle(coilSetpoints.XDeflectionCurrent),
+                YCoilSetpoint = Convert.ToSingle(coilSetpoints.YDeflectionCurrent)
+            };
+        }
+
+        protected override int FindNextPendingEmissionIndex(int startIndex)
+        {
+            if (!TreatmentPlanFieldRules.IsValid(PlanModel.TreatmentFields) || startIndex > 0)
+            {
+                return -1;
+            }
+
+            var field = PlanModel.TreatmentFields[0];
+            return field.DwellTime - field.Actual >= PlanCompletedThreshold ? 0 : -1;
         }
 
         /// <summary>
@@ -752,86 +754,46 @@ namespace Heracles.External.ViewModels
                             await Task.Delay(50, AppGlobals.AppCancellationTokenSource.Token);
                         }
 
-                        var telemetry = GCBDataStore?.SystemTelemetry;
+                        _ = GCBDataStore.SystemTelemetry;
 
-                        var totalOperationalPoints = telemetry?.TotalOperationalPoints ?? 0;
+                        var boardEmission = await MainBoardModel.QueryEmissionFromGCB();
+                        var expectedEmission = BuildGcbOperationalPoint(0);
 
-                        //read plan from the board and check whether it was started or not
-                        var gcbPlan = await MainBoardModel.QueryPlanFromGCB();
-
-                        if (gcbPlan.TotalPoints == 0)
+                        if (boardEmission.TotalPointTime == boardEmission.RemainingPointTime)
                         {
+                            _ = LogWriter.LogAsync(
+                                "GCB has an emission already, but it was not started yet",
+                                LogRecordSeverity.Info,
+                                LogRecordType.System);
                             MakeLoadedPlanPending();
                             return;
                         }
 
-                        if (telemetry.CurrentOperationalPoint >= gcbPlan.TotalPoints)
+                        if (!expectedEmission.IsSamePoint(boardEmission))
                         {
-                            _ = LogWriter.LogAsync($"Failed to recover the Plan: telemetry.CurrentOperationalPoint ({telemetry.CurrentOperationalPoint}) >= gcbPlan.TotalPoints ({gcbPlan.TotalPoints})", LogRecordSeverity.Warn, LogRecordType.System);
+                            _ = LogWriter.LogAsync(
+                                "Previous treatment emission does not match the loaded treatment field",
+                                LogRecordSeverity.Warn,
+                                LogRecordType.System);
                             MakeLoadedPlanPending();
                             return;
                         }
 
-                        var currentPoint = gcbPlan[telemetry.CurrentOperationalPoint];
-
-                        if (telemetry.CurrentOperationalPoint == 0 &&
-                            currentPoint.TotalPointTime == currentPoint.RemainingPointTime)
+                        MainBoardModel.SetCurrentEmission(boardEmission);
+                        var treatmentField = PlanModel.TreatmentFields[0];
+                        double actualFromGcb =
+                            boardEmission.TotalPointTime - boardEmission.RemainingPointTime;
+                        if (actualFromGcb - treatmentField.Actual > PlanCompletedThreshold)
                         {
-                            _ = LogWriter.LogAsync("GCB has a Plan already, but it was not started yet", LogRecordSeverity.Info, LogRecordType.System);
-                            MakeLoadedPlanPending();
-                            return;
-                        }
-
-                        //PlanModel.TreatmentFields.Last().Actual--; // todo: for debug
-
-                        if (totalOperationalPoints != PlanModel.TreatmentFields.Count)
-                        {
-                            _ = LogWriter.LogAsync("Previous Plan was not unloaded correctly", LogRecordSeverity.Warn, LogRecordType.System);
-                        }
-                        else
-                        {
-                            // Next, check if board plan remaining times more or less match the DB state
-
-                            GcbEmissionPlan emissionPlan = BuildGcbEmissionPlan();
-                            MainBoardModel.SetCurrentPlan(emissionPlan);
-
-                            try
-                            {
-                                if (emissionPlan.IsSameAs(gcbPlan))
-                                {
-                                    MainBoardModel.SetCurrentPlan(gcbPlan);
-
-                                    var previousPointIndex = telemetry.CurrentOperationalPoint;
-                                    // check current and previous point
-                                    var startIndex = Math.Max(previousPointIndex - 1, 0);
-                                    var stopIndex = Math.Min(previousPointIndex, totalOperationalPoints - 1);
-
-                                    double actualEnergy;
-
-                                    for (var i = startIndex; i <= stopIndex; i++)
-                                    {
-                                        var actualFromGcb = gcbPlan[i].TotalPointTime - gcbPlan[i].RemainingPointTime;
-
-                                        var currentTreatmentField = PlanModel.TreatmentFields[i];
-                                        if (actualFromGcb - currentTreatmentField.Actual > PlanCompletedThreshold)
-                                        {
-                                            currentTreatmentField.Actual = actualFromGcb;
-                                            _ = LogWriter.LogAsync($"TreatmentField[{i + 1}].Actual was taken from GCB ({actualFromGcb} sec)", LogRecordSeverity.Info, LogRecordType.System);
-
-                                            if (i < actualFields.Count)
-                                                actualEnergy = actualFields[i].ActualEnergy;
-                                            else
-                                                actualEnergy = 0.0;
-
-                                            await UpdateActualTreatmentField(currentTreatmentField, actualEnergy); // do not overwrite ActualEnergy value 
-                                        }
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                _ = LogWriter.LogAsync($"Plan recovery: failed to update the Plan from GCB. {ex.Message}", LogRecordSeverity.Warn, LogRecordType.System);
-                            }
+                            treatmentField.Actual = actualFromGcb;
+                            double actualEnergy = actualFields
+                                .FirstOrDefault(field => field.Name == TreatmentPlanFieldRules.RequiredFieldName)
+                                ?.ActualEnergy ?? 0.0;
+                            await UpdateActualTreatmentField(treatmentField, actualEnergy);
+                            _ = LogWriter.LogAsync(
+                                $"Treatment field actual time was taken from GCB ({actualFromGcb} sec)",
+                                LogRecordSeverity.Info,
+                                LogRecordType.System);
                         }
 
                         if (IsPlanCompleted())
@@ -1008,73 +970,50 @@ namespace Heracles.External.ViewModels
             {
                 await Semaphore.WaitAsync();
 
-                if (GcbState == GcbStateNew.Emission ||
-                    PreviousGcbState == GcbStateNew.Emission)
+                if (PlanModel.TreatmentFields is not { Count: 1 } fields)
                 {
-                    int operationalPointIndex = telemetry.CurrentOperationalPoint;
+                    UpdateTreatmentFieldSelection(null);
+                    return;
+                }
+
+                var field = fields[0];
+                if (GcbState == GcbStateNew.Emission)
+                {
                     float timerValue = telemetry.PrimaryTimerValue;
-
-                    if (operationalPointIndex != PreviousOperationPointIndex)
+                    field.Actual = XrayPointStartTime + timerValue;
+                    UpdateBeamOnProgress(
+                        Convert.ToSingle(PlanModel.TotalDuration),
+                        Convert.ToSingle(XrayTime + timerValue));
+                    UpdateTreatmentFieldSelection(field);
+                    ActualTreatmentFieldModel.AddEnergyValue(telemetry.KvFeedback);
+                    await UpdateActualTreatmentField(
+                        field,
+                        ActualTreatmentFieldModel.AverageEnergy);
+                }
+                else if (PreviousGcbState == GcbStateNew.Emission)
+                {
+                    await MainBoardModel.UpdateCurrentEmissionFromGCB();
+                    if (MainBoardModel.CurrentEmission is { } emission)
                     {
-                        var fields = PlanModel.TreatmentFields;
-                        if (PreviousOperationPointIndex >= 0 && fields is not null && fields.Count > PreviousOperationPointIndex)
-                        {
-                            var previousTf = fields[PreviousOperationPointIndex];
-                            
-                            previousTf.Actual = previousTf.DwellTime;
-                            RecalculateInitialXrayTime();
-                            XrayPointStartTime = 0;
-
-                            await MainBoardModel.UpdatePlanPointFromGCB(PreviousOperationPointIndex);
-                            var previousPoint = MainBoardModel.CurrentPlan[PreviousOperationPointIndex];
-
-                            previousTf.Actual = previousPoint.TotalPointTime - previousPoint.RemainingPointTime;
-                            if (previousTf.DwellTime - previousTf.Actual < PlanCompletedThreshold)
-                            {
-                                previousTf.IsDone = true;
-                            }
-
-                            _ = LogWriter.LogAsync($"Query point response: TotalPointTime={previousPoint.TotalPointTime} RemainingPointTime={previousPoint.RemainingPointTime} Actual={previousTf.Actual}", LogRecordSeverity.Info, LogRecordType.System);
-                            await UpdateActualTreatmentField(previousTf, ActualTreatmentFieldModel.AverageEnergy);
-                            //_ = LogService.LogAsync($"UpdateEmissionTreatmentField: operationalPointIndex={operationalPointIndex}, timerValue {timerValue} _xrayTime {_xrayTime} TotalDuration {PlanModel.TotalDuration}", LogRecordSeverity.Info, LogRecordType.System);
-                        }
-                    }
-
-                    if (operationalPointIndex < PlanModel.TreatmentFields?.Count)
-                    {
-                        var tf = PlanModel.TreatmentFields[operationalPointIndex];
-
-                        if (operationalPointIndex != PreviousOperationPointIndex)
-                        {
-                            PreviousOperationPointIndex = operationalPointIndex;
-                            XrayPointStartTime = tf.Actual;
-                        }
-
-                        UpdateBeamOnProgress(Convert.ToSingle(PlanModel.TotalDuration), Convert.ToSingle(XrayTime + timerValue));
-
-                        tf.Actual = XrayPointStartTime + timerValue;
-                        if (tf.DwellTime - tf.Actual < PlanCompletedThreshold)
-                        {
-                            tf.IsDone = true;
-                        }
-
-                        UpdateTreatmentFieldSelection(tf);
-
-                        ActualTreatmentFieldModel.AddEnergyValue(telemetry.KvFeedback);
-
-                        await UpdateActualTreatmentField(tf, ActualTreatmentFieldModel.AverageEnergy);
-                    }
-                    else if (PlanModel.TreatmentFields == null
-                             || PlanModel.TreatmentFields.Count == 0
-                             || telemetry.CurrentOperationalPoint >= PlanModel.TreatmentFields.Count)
-                    {
-                        UpdateTreatmentFieldSelection(null);
+                        field.Actual = emission.ActualDuration;
+                        field.IsDone =
+                            emission.RemainingPointTime < PlanCompletedThreshold;
+                        RecalculateInitialXrayTime();
+                        UpdateBeamOnProgress(
+                            Convert.ToSingle(PlanModel.TotalDuration),
+                            Convert.ToSingle(XrayTime));
+                        await UpdateActualTreatmentField(
+                            field,
+                            ActualTreatmentFieldModel.AverageEnergy);
+                        _ = LogWriter.LogAsync(
+                            $"Query emission response: TotalPointTime={emission.TotalPointTime} RemainingPointTime={emission.RemainingPointTime} Actual={field.Actual}",
+                            LogRecordSeverity.Info,
+                            LogRecordType.System);
                     }
                 }
-                else
+                else if (PlanModel.SelectedTreatmentField != null)
                 {
-                    if (PlanModel.SelectedTreatmentField != null)
-                        UpdateTreatmentFieldSelection(null);
+                    UpdateTreatmentFieldSelection(null);
                 }
             }
             finally

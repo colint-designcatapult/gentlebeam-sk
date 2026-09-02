@@ -12,7 +12,8 @@ public sealed class HeaterCurrentConfigServiceImpl : HeaterCurrentConfigService.
     public override async Task<ListHeaterCurrentConfigsResponse> ListHeaterCurrentConfigs(
         ListHeaterCurrentConfigsRequest request, ServerCallContext context)
     {
-        var items = await _repo.ReadAllAsync();
+        var items = (await _repo.ReadAllAsync())
+            .Where(item => item.PresetConfigurationId == request.PresetConfigurationId);
         var r = new ListHeaterCurrentConfigsResponse();
         r.HeaterCurrentConfigs.AddRange(items);
         return r;

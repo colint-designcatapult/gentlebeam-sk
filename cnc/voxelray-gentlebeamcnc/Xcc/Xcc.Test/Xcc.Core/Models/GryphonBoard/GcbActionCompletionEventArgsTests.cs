@@ -6,7 +6,7 @@ namespace Xcc.Test.Xcc.Core.Models.GryphonBoard
     {
         [TestCase(GcbActionType.NewSession)]
         [TestCase(GcbActionType.StartBeamOn)]
-        [TestCase(GcbActionType.OnePointCompleted)]
+        [TestCase(GcbActionType.BeamOnCompleted)]
         [TestCase(GcbActionType.Stop)]
         public void GcbActionCompletionEventArgs_GettersSetters(GcbActionType actionType)
         {

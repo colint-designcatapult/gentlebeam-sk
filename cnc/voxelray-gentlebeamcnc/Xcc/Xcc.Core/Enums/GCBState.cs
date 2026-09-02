@@ -29,6 +29,8 @@ namespace Xcc.Core.Enums
         /// <summary>
         /// State between Cold and WarmUp. Can be reached from Conditioning
         /// </summary>
-        StandBy = 21 
+        StandBy = 21,
+        Calibration = 22,
+        FaultDischarge = 23,
     }
 }

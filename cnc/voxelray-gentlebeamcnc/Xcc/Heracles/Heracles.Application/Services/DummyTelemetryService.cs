@@ -76,13 +76,11 @@ namespace Heracles.Application.Services
         public IDecodedTelemetryFrameSink DecodedTelemetryFrameSink { get; }
         public IDebugSettings DebugSettings { get; }
 
-        private int _currentOperationalPoint = 0;
-        private int _totalOperationPoints = 0;
         private float _energy = 0;
         private float _currentTimerValue = 0.0f;
         private ulong _serial = 0x1234567890ABCDEF;//0;
         private SystemFault _faultBit = SystemFault.Reserved;
-        private IList<GcbOperationalPoint> _emissionSteps;
+        private GcbOperationalPoint? _emission;
 
         private CancellationTokenSource _cancellationTokenSource;
         private CancellationTokenSource CancellationTokenSource { 
@@ -108,15 +106,9 @@ namespace Heracles.Application.Services
         }
         #endregion ITelemetryService
 
-        public void SetPlan(ICollection<GcbOperationalPoint> gcbOperationalPoints)
+        public void SetEmission(GcbOperationalPoint emission)
         {
-            _emissionSteps = new List<GcbOperationalPoint>(gcbOperationalPoints);
-            _totalOperationPoints = _emissionSteps.Count();
-            for (_currentOperationalPoint = 0; _currentOperationalPoint < _totalOperationPoints; _currentOperationalPoint++)
-            {
-                if (_emissionSteps[_currentOperationalPoint].RemainingPointTime > 0.1)
-                    break;
-            }
+            _emission = emission;
         }
 
         private object ParseValue(PropertyInfo property, string value)
@@ -175,16 +167,14 @@ namespace Heracles.Application.Services
 
                     case DummyXrayStatus.Started:
                         CancellationTokenSource = new CancellationTokenSource();
-                        GenerateBeamOnTelemetry(args.Parameter as IList<GcbOperationalPoint>);
+                        GenerateBeamOnTelemetry((GcbOperationalPoint)args.Parameter);
                         break;
 
                     case DummyXrayStatus.Stopped:
                         GenerateStoppedTelemetry(_state);
                         break;
                     case DummyXrayStatus.ClearPlan:
-                        _currentOperationalPoint = 0;
-                        _totalOperationPoints = 0;
-                        _emissionSteps = null;
+                        _emission = null;
                         CancellationTokenSource = new CancellationTokenSource();
                         GenerateDischargeTelemetry(Convert.ToInt32(args.Parameter));
                         break;
@@ -208,7 +198,7 @@ namespace Heracles.Application.Services
                         GenerateTelemetry((int)_state);
                         CancellationTokenSource = new CancellationTokenSource();
                         await Task.Delay(300);
-                        GenerateDischargeTelemetry(3000, GcbStateNew.Fault, GcbStateNew.Fault);
+                        GenerateDischargeTelemetry(3000, GcbStateNew.FaultDischarge, GcbStateNew.Fault);
                         break;
                     case DummyXrayStatus.Conditioning:
                         CancellationTokenSource = new CancellationTokenSource();
@@ -217,7 +207,7 @@ namespace Heracles.Application.Services
                         break;
 
                     case DummyXrayStatus.SetPlan:
-                        SetPlan(args.Parameter as IList<GcbOperationalPoint>);
+                        SetEmission((GcbOperationalPoint)args.Parameter);
                         GenerateTelemetry((int)_state);
                         break;
 
@@ -268,7 +258,6 @@ namespace Heracles.Application.Services
 
         private SystemNormalTelemetry BuildBasicTelemetry(
             GcbStateNew? state = null,
-            int? currentOperationalPoint = null,
             float? primaryTimerValue = null,
             float? secondaryTimer1Value = null,
             float? secondaryTimer2Value = null,
@@ -301,8 +290,6 @@ namespace Heracles.Application.Services
                 CollimatorId1 = (uint)(_serial & 0xffffffff),
                 CollimatorId2 = (uint)(_serial >> 32),
                 CollimatorSerial = _serial,
-                CurrentOperationalPoint = currentOperationalPoint ?? _currentOperationalPoint,
-                TotalOperationalPoints = _totalOperationPoints,
                 PrimaryTimerValue = primaryTimerValue ?? _currentTimerValue,
                 SecondaryTimer1Value = secondaryTimer1Value ?? _currentTimerValue,
                 SecondaryTimer2Value = secondaryTimer2Value ?? Math.Max(0, _currentTimerValue),
@@ -364,7 +351,6 @@ namespace Heracles.Application.Services
                         heaterCurrentSetpoint: current,
                         heaterCurrentFeedback: current));
 
-                    //Debug.WriteLine($"DebugTelemetry: Launching point={_currentOperationalPoint} time={_currentTimerValue}");
 
 
                     await Task.Delay((int)(timerSec * 1000 / steps), tokenSource.Token);
@@ -375,102 +361,68 @@ namespace Heracles.Application.Services
             AppGlobals.AppCancellationTokenSource.Token).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
-        private void GenerateBeamOnTelemetry(ICollection<GcbOperationalPoint> emissionSteps)
+        private void GenerateBeamOnTelemetry(GcbOperationalPoint emission)
         {
             var tokenSource = CancellationTokenSource;
-            if (emissionSteps == null)
+            if (_emission is null)
             {
-                _faultBit = SystemFault.FilamentFault;
-                SetGCBState(GcbStateNew.Fault);
-                return;
-            }
-
-            if (_emissionSteps == null)
-            {
-                SetPlan(emissionSteps);
+                SetEmission(emission);
             }
 
             var timerMs = 299;
-
             Task.Run(async () =>
             {
+                GcbOperationalPoint step = _emission!.Value;
                 _currentTimerValue = 0;
-                _energy = 0;
-                while (_currentOperationalPoint < _totalOperationPoints)
+                _energy = step.SetpointKv;
+
+                float totalRemainingDuration = step.RemainingPointTime;
+                if (totalRemainingDuration < 0.05)
                 {
-                    GcbOperationalPoint step = _emissionSteps[_currentOperationalPoint];
-                    _energy = step.SetpointKv;
+                    GenerateDischargeTelemetry(3000);
+                    return;
+                }
 
-                    float totalRemainingDuration = step.RemainingPointTime; // if it was interrupted
+                float heaterCurrent = step.FilamentSetpoint;
+                GenerateLaunchingTelemetry(2, heaterCurrent / 2.0f, heaterCurrent);
+                await Task.Delay(timerMs);
 
-                    if (totalRemainingDuration < 0.05)
+                Func<float, float> calculateEnergyDeflection =
+                    timerValue => (int)timerValue % 2 == 0
+                        ? 0.1f * timerValue
+                        : -0.1f * timerValue;
+
+                _currentTimerValue = timerMs / 1000.0f;
+                while (_currentTimerValue <= totalRemainingDuration)
+                {
+                    if (IsCancellationRequested(tokenSource))
                     {
-                        _currentOperationalPoint++;
-                        continue;
+                        _emission = step;
+                        return;
                     }
 
-                    _currentTimerValue = 0.0f;
+                    float energyDeflection = calculateEnergyDeflection(_currentTimerValue);
+                    GenerateEmissionTelemetry(
+                        1.23f + _currentTimerValue / 100.0f,
+                        _energy + energyDeflection);
 
-                    float heaterCurrent = step.FilamentSetpoint;
-                    float initialHeaterCurrent = heaterCurrent / 2.0f;
-                    GenerateLaunchingTelemetry(2, initialHeaterCurrent, heaterCurrent);
+                    _currentTimerValue += timerMs / 1000.0f;
+                    step.RemainingPointTime = Math.Max(
+                        0,
+                        totalRemainingDuration - _currentTimerValue);
+                    _emission = step;
                     await Task.Delay(timerMs);
-
-                    float energyDeflection = 0.0f;
-
-                    Func<float, float> calculateEnergyDeflection = (timerValue) => ((int)timerValue % 2 == 0) ? 0.1f * timerValue : -1.0f * 0.1f * timerValue;
-
-                    _currentTimerValue = timerMs / 1000.0f;
-                    while (_currentTimerValue <= totalRemainingDuration)
-                    {
-
-                        if (IsCancellationRequested(tokenSource))
-                        {
-                            _emissionSteps[_currentOperationalPoint] = step;
-                            return;
-                        }
-
-                        energyDeflection = calculateEnergyDeflection(_currentTimerValue);
-                        
-
-                        GenerateEmissionTelemetry(1.23f + _currentTimerValue / 100.0f, _energy + energyDeflection);
-
-                        _currentTimerValue += timerMs / 1000.0f;
-                        step.RemainingPointTime = totalRemainingDuration - _currentTimerValue;
-                        await Task.Delay(timerMs);
-
-                        //// Temp: go to fault state during the emission
-                        //await GenerateFaultDischargingTelemetry();
-                        //return;
-                    }
-
-                    energyDeflection = calculateEnergyDeflection(_currentTimerValue);
-
-                    // Finalize with total duration:
-                    _currentTimerValue = totalRemainingDuration - 0.01f; // to imitate actual situation on the board with underexposure of .01 sec
-                    GenerateEmissionTelemetry(1.23f + _currentTimerValue / 100.0f, _energy + energyDeflection);
-
-                    _currentOperationalPoint++;
-                    if (!step.AutoExecution)
-                    {
-                        break;
-                    }
                 }
 
-                //_energy = 0;
-                if (_totalOperationPoints > 0
-                    && _currentOperationalPoint < _totalOperationPoints
-                    && _emissionSteps.Last().AutoExecution == false)
-                {
-                    _currentTimerValue = 0; // reset timer to show proper next point telemetry
-                    // go back to ready state
-                    GenerateAfterEmissionTelemetry((int)GcbStateNew.Ready, _currentOperationalPoint);
-                }
-                else
-                {
-                    await GenerateTerminationTelemetry();
-                    GenerateAfterEmissionTelemetry((int)GcbStateNew.Staged, _currentOperationalPoint);
-                }
+                _currentTimerValue = Math.Max(0, totalRemainingDuration - 0.01f);
+                step.RemainingPointTime = Math.Max(
+                    0,
+                    totalRemainingDuration - _currentTimerValue);
+                _emission = step;
+                GenerateEmissionTelemetry(
+                    1.23f + _currentTimerValue / 100.0f,
+                    _energy + calculateEnergyDeflection(_currentTimerValue));
+                GenerateDischargeTelemetry(3000);
             },
             AppGlobals.AppCancellationTokenSource.Token);
         }
@@ -639,13 +591,6 @@ namespace Heracles.Application.Services
                 heaterCurrentFeedback: emissionCurrent));
         }
 
-        private void GenerateAfterEmissionTelemetry(int gcbState, int nextPointIndex)
-        {
-            SetTelemetry(BuildBasicTelemetry(
-                state: (GcbStateNew)gcbState,
-                currentOperationalPoint: nextPointIndex));
-            //Debug.WriteLine($"DebugTelemetry: Emission point={_currentOperationalPoint} time={_currentTimerValue}");
-        }
 
         public void Dispose()
         {

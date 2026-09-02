@@ -40,19 +40,17 @@ float hvps_config[HVPS_CONF_COUNT];
 
 float internal_voltages[INTERNAL_V_COUNT];
 
-//Operational points for treatment plan
-VariableValue operational_points[MAX_OPERATIONAL_POINTS][OP_PARAM_COUNT];
+//Operational point for treatment plan
+VariableValue operational_point[OP_PARAM_COUNT];
 uint32_t plan_info[NUM_PLAN_INFO];
 
 #if !defined(CALIBRATION_MODE)
-//QC data
-VariableValue qc_data[MAX_OPERATIONAL_POINTS][QC_DATA_RES_COUNT];
 
 VariableValue qc_reported[QC_DATA_RES_COUNT];
 
 VariableValue qc_ping_buf[QC_DATA_RES_COUNT];
-VariableValue qc_reading_buf[QC_DATA_RES_COUNT];
 #endif
+VariableValue qc_reading_buf[QC_DATA_RES_COUNT];
 
 uint32_t qc_samples = 0;
 
@@ -82,8 +80,7 @@ void init_system_parameters()
 	
 	//Clear treatment plan
 	clear_treatment_plan();
-	
-	
+		
 #if !defined(CALIBRATION_MODE)
 	init_qc_ping_buf();
 	reset_qc_reading_buf();
@@ -102,36 +99,10 @@ void init_system_parameters()
 //Wipe the existing treatment plan
 void clear_treatment_plan()
 {
-	system_status[SS_OP_COUNT].i = 0;
-	system_status[SS_OP_IDX].i = 0;
-	//Clear plan info table
 	memset(plan_info, 0, sizeof(uint32_t) * NUM_PLAN_INFO);
-	//Clear operational point table
-	memset(operational_points, 0, sizeof(VariableValue) * MAX_OPERATIONAL_POINTS * OP_PARAM_COUNT);
+	memset(operational_point, 0, sizeof(VariableValue) * OP_PARAM_COUNT);
 }
 
-//Update flags to indicate how many and which operation points need to be confirmed
-void set_plan_flags()
-{
-	uint32_t op_cnt_mod = 0;
-	
-	//Set plan target flag bits to check plan loading and confirmation
-	if(system_status[SS_OP_COUNT].i < 32)
-	{
-		plan_info[PLAN_TARGET_BITS_1] = ((uint32_t)(1 << system_status[SS_OP_COUNT].i)) - 1;
-	}
-	//Have explicit definition for exactly 32 bits in case of compiler issues
-	else if(system_status[SS_OP_COUNT].i == 32)
-	{
-		plan_info[PLAN_TARGET_BITS_1] = 0xFFFFFFFF;
-	}
-	else
-	{
-		op_cnt_mod = system_status[SS_OP_COUNT].i - 32;
-		plan_info[PLAN_TARGET_BITS_1] = 0xFFFFFFFF;
-		plan_info[PLAN_TARGET_BITS_2] = ((uint32_t)(1 << op_cnt_mod)) - 1;
-	}
-}
 
 bool verify_keys_ok()
 {
@@ -238,38 +209,24 @@ void report_ext_adc_y_coil_v(float voltage)
 
 void report_ext_adc_f_coil_cur(float voltage)
 {
-	float offset_factor = 0;	
-#if defined(CALIBRATION_MODE)
-	float scaling_factor = 0.6;
-#else
+	float offset_factor = 0;
 	float scaling_factor = 600;
-#endif
 	
 	system_status[SS_F_COIL_CURRENT].f = (voltage * scaling_factor) - offset_factor;
 }
 
 void report_ext_adc_x_coil_cur(float voltage)
 {
-#if defined(CALIBRATION_MODE)
-	float scaling_factor = 0.6;
-	float offset_factor = 1.5;
-#else
 	float scaling_factor = 600;
 	float offset_factor = 1500;
-#endif
 
 	system_status[SS_X_COIL_CURRENT].f = (voltage * scaling_factor) - offset_factor;
 }
 
 void report_ext_adc_y_coil_cur(float voltage)
 {
-#if defined(CALIBRATION_MODE)
-	float scaling_factor = 0.6;
-	float offset_factor = 1.5;
-#else
 	float scaling_factor = 600;
 	float offset_factor = 1500;
-#endif
 
 	system_status[SS_Y_COIL_CURRENT].f = (voltage * scaling_factor) - offset_factor;
 }
@@ -513,7 +470,6 @@ static float get_heatsink_temp(float voltage)
 }
 #endif
 
-#if !defined(CALIBRATION_MODE)
 //Save reported values from the head board
 void report_hb_data(uint32_t hb_idx, float data)
 {
@@ -550,7 +506,6 @@ void report_hb_data(uint32_t hb_idx, float data)
 			break;
 	}
 }
-#endif
 
 void report_peltier_temp(float temperature)
 {
@@ -558,30 +513,6 @@ void report_peltier_temp(float temperature)
 }
 
 #if !defined(CALIBRATION_MODE)
-void report_qc_well_data(int16_t *qc_raw)
-{
-	if(qc_raw == NULL) return;
-	
-	//Get current OP index
-	int op_idx = system_status[SS_OP_IDX].i;
-	
-	//TBD TODO get state here, if not in control, report error
-	
-	//Iterate over reported QC values
-	for(int i = 0; i < QC_DATA_COUNT; i++)
-	{
-		//Save NAN value if an error is reported
-		if(qc_raw[i] == QC_ERROR_VALUE)
-		{
-			qc_data[op_idx][i+1].i = QC_NAN_OUTPUT;
-		}
-		//Otherwise convert value to voltage
-		else
-		{
-			qc_data[op_idx][i+1].f = ((float)(qc_raw[i])) / QC_VOLTAGE_SCALE;
-		}
-	}
-}
 
 void init_qc_ping_buf()
 {
@@ -593,7 +524,7 @@ void init_qc_ping_buf()
 		}
 		else
 		{
-			qc_reading_buf[i].f = 0;			
+			qc_ping_buf[i].f = 0;
 		}
 	}	
 }
@@ -608,6 +539,9 @@ void reset_qc_reading_buf()
 	{
 		qc_reading_buf[i].f = 0;
 	}
+	system_status[SS_QC_CHANNEL_0].f = 0;
+	system_status[SS_QC_CHANNEL_1].f = 0;
+	qc_samples = 0;
 }
 
 void reset_qc_reading()
@@ -624,14 +558,9 @@ void reset_qc_reading()
 
 void report_qc_reading()
 {
-	//Clear QC reading table with NaN values
-	memset(qc_reported, 0xFF, sizeof(VariableValue) * QC_DATA_RES_COUNT);
-	
-	//Initialize values
-	for(int i = 0; i < QC_DATA_RES_COUNT; i++)
-	{
-		qc_reported[i].f = qc_reading_buf[i].f;
-	}
+	//Return the accumulated diode values and the number of head-board samples.
+	memcpy(qc_reported, qc_reading_buf, sizeof(qc_reported));
+	qc_reported[2].u = qc_samples;
 }
 #endif
 

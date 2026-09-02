@@ -161,7 +161,7 @@ STATEMENT: >>>
 
       %% Core states
       Cold(["Cold<br/>disable HV<br/>disable emission<br/>outputs to 0<br/>stop cooling"])
-      Conditioning(["Conditioning<br/>verify estops<br/>set heater<br/>start cooling"])
+      Conditioning(["Conditioning<br/>verify estops<br/>set heater<br/>start cooling<br/>hold stable target 15 min"])
       Warmup(["Warmup<br/>enable fast warmup<br/>set heater<br/>start cooling"])
       WarmupFault(["Warmup Fault<br/>heater = 0<br/>stop cooling"])
 
@@ -196,8 +196,8 @@ STATEMENT: >>>
       Cold -->|PC STOP| Cold
 
       %% Conditioning
-      Conditioning -->|HVPS SP REACHED| Primed
-      Conditioning -->|FAULT| Cold
+      Conditioning -->|TARGET STABLE 15 MIN| Primed
+      Conditioning -->|FAULT| WarmupFault
 
       %% Warmup
       Warmup -->|HVPS SP REACHED| Primed
@@ -281,16 +281,12 @@ STATEMENT: >>>
         External_GUI->>Boards: New session command
         Boards-->>External_GUI: Session ID (STAGING)
 
-        loop foreach operational point
-            External_GUI->>Boards: Send point info
-        end
+        External_GUI->>Boards: Send scalar emission info
 
         External_GUI->>Boards: Stage plan command
         Boards-->>External_GUI: Plan staged (STAGED)
 
-        loop foreach operational point
-            External_GUI->>Boards: Confirm point info
-        end
+        External_GUI->>Boards: Confirm scalar emission info
 
         External_GUI->>Boards: Release plan command
 
@@ -302,9 +298,7 @@ STATEMENT: >>>
         User->>External_GUI: Start emission
         External_GUI->>Boards: Release point command
 
-        loop foreach operational point
-            Boards->>HVPS: Run emission
-        end
+        Boards->>HVPS: Run one emission
     </pre>
 <<<
 
@@ -401,6 +395,11 @@ The firmware controls several digital output signals. The functionality for the 
 - Emission indicator enable
 - Timer start signal
 - Fan and pump enable signals
+
+The direct-start handler first evaluates the required-interlock readiness check. When the
+check passes, it asserts both ``IO_INDICATORS_EN`` and on-board ``IO_LED6`` before queuing
+the corresponding HVPS start command. When the check fails, it performs neither action.
+The stop handler deasserts both outputs before queuing the corresponding HVPS stop command.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -537,6 +536,11 @@ Transmitted data is sent as a buffer of bytes, representing a singular data pack
 Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is available. The parsing of the received byte is done to determine whether a complete data packet has been received from the PC, as according to the communication protocol. Once a completed data packet has been received, the firmware sets a flag for further data processing outside of the parsing inside of the interrupt callback.
 
 As transmission on UART is asynchronous both in terms of clock as well as word alignment (within a packet), a 'sync value' is utilized at the start of each packet to help synchronize communication in case of any lost or missing bytes.
+
+When processing an HVPS status message that passes checksum validation, the firmware
+toggles on-board LED4 once before copying and reporting the received status. The status
+processing path does not toggle LED4 again, so repeated valid messages produce a visible
+communication-activity blink.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -559,6 +563,16 @@ The PC can also request telemetry, device information, and an indexed fault entr
 used because timely delivery is more important than retransmitting stale real-time data.
 Application payloads use the PC-Firmware Communication Protocol framing and CRC described
 in the appendix.
+
+During HVPS-interface initialization, the firmware queues command ``0x7F`` to request that
+board's release version. The UART receive path recognizes the 13-word ``VRSN`` frame,
+validates its additive checksum, and caches the returned 32-byte version field and
+operating-mode identifier.
+
+The 19-word PC device-information payload contains the main-control 32-byte release version,
+application CRC, and operating mode, followed by the cached HVPS-interface 32-byte release
+version and operating mode. Until a valid HVPS version response is received, the cached
+version is ``unavailable`` and its operating-mode identifier is invalid.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -631,7 +645,24 @@ RELATIONS:
 UID: SW-H1FWMC-187
 TITLE: State Machine
 STATEMENT: >>>
-The firmware utilizes a state machine to perform the steps required for emission and execution of a treatment plan. The state machine relies on a state variable to keep track of the current state and utilizes 'events' to transition between states. The 'events' can be triggered by a variety of occurrences in the system, most often commands from the PC, stabilization of values from the HVPS, and well as any detected faults. The execution of functionality of the states is performed by calling on functions from an array of functions. The value of the state is used as the index to determine which function in the array to execute. Additional details on the state machine can be seen in the state machine diagram, as well as in the sections pertaining to each individual state.
+The firmware uses a state variable and queued events to execute treatment-plan and
+emission state transitions. Events originate from PC commands, HVPS stabilization, timers,
+and detected faults. Event identifiers outside the valid enumeration are rejected.
+
+Valid events enter a circular FIFO with separate read and write indices and one reserved
+slot. The producer and consumer each perform data and index updates inside a critical
+section. The producer stores an event before publishing the new write index. The consumer
+copies the next event to a local value before advancing the read index, so a concurrently
+queued event cannot be partially published, overwritten, or dispatched twice. When the
+next write index would equal the read index, the producer leaves the queue unchanged and
+latches a ``FAULT_MEMORY`` record with the message ``State machine event queue overflow``.
+
+The processing loop drains accepted events in FIFO order and dispatches each local event
+through the function-table entry selected by the current state. The table defaults every
+entry to the crash handler before known states are assigned. A state index outside the
+table bounds is also routed directly to the crash handler. That handler disables the
+high-voltage and emission interlocks, commands HVPS and coil outputs to zero, stops the
+coolant pump and external indicators, and sets the system-crash state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -651,11 +682,19 @@ RELATIONS:
 UID: SW-H1FWMC-188
 TITLE: General System Monitoring: Fan Control
 STATEMENT: >>>
-The firmware will continuously check at periodic intervals, various measured and reported temperature feedback signals to adjust output fan speed settings.
+The firmware periodically evaluates temperature feedback and the current system state to
+control cooling outputs. While high voltage can be present from setup through discharge,
+the cabinet fan is driven at 4.9 V. Otherwise the cabinet fan uses nominal 30°C, 25°C, and
+20°C transition points for 4.9 V, 4.5 V, and 4.1 V operation, with a 3.7 V minimum and
+2°C downward hysteresis.
 
-The cabinet fans are adjusted based on the cabinet temperature sensor feedback, with higher temperatures corresponding to higher fan speeds. The cabinet temperature change is relatively slow, and as such no hysteresis implementation is needed.
+Enabling the coolant pump cancels a pending shutdown, asserts the pump output, and drives
+its fan at 1.85 V. A request to disable an active pump keeps the pump and fan operating for
+three minutes of post-operation cooling; expiry then deasserts the pump and sets its fan
+voltage to zero.
 
-The heatsink fan is adjusted based on the heatsink temperature sensor feedback, with higher temperatures corresponding to higher fan speeds. The heatsink temperature change is relatively fast, and as such a hysteresis functionality is also implemented in the fan speed adjustment to prevent frequent oscillation of the fan speed.
+The heatsink fan is adjusted based on heatsink-temperature feedback, with higher
+temperatures corresponding to higher fan speeds.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -669,16 +708,15 @@ RELATIONS:
 UID: SW-H1FWMC-189
 TITLE: General System Monitoring: System Faults
 STATEMENT: >>>
-The firmware will continuously check at periodic intervals, various measured and reported feedback signals and statuses of the system to detect faults. If any issues are detected, a fault condition may be thrown away. The following are monitored conditions for fault reporting:
+The firmware periodically evaluates measured and reported feedback to detect cooling
+faults. Coolant temperature above 35°C, Peltier heatsink temperature above 50°C, and
+cabinet temperature above 40°C produce their corresponding temperature fault reports.
+Coolant pressure and flow limits are evaluated while the pump is operating; pressure
+debounce counters are cleared while it is off so stale samples cannot cause a later fault.
 
-- Communication timeout with the PC
-- Interlock fault
-- Ion Repeller overcurrent and out of tolerance voltage readings
-- Cooling system pressure overload
-- Cooling system over temperature
-- Cooling system experiencing insufficient or excessive flow.
-- Heatsink over temperature
-- Deflection or focus coil out of tolerance feedback
+The same monitoring cycle also detects communication timeouts, interlock faults, ion
+repeller overcurrent or voltage deviations, and deflection or focus-coil feedback
+deviations.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -695,6 +733,12 @@ RELATIONS:
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWMC-62
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-64
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-66
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -746,7 +790,15 @@ RELATIONS:
 UID: SW-H1FWMC-193
 TITLE: State: Conditioning
 STATEMENT: >>>
-The conditioning state is for when the system is slowly ramping up the filament current to 'condition' the source. Conditioning completes once the reported filament value from the HVPS interface board reaches the target filament current. The firmware will transition the system back to cold state once that target setpoint has been reached. Alternatively, if the PC sends a stop command, the firmware will also transition back to the cold state. If a fault occurs during the conditioning state, the system will instead transition to the warmup fault state.
+On entry to conditioning, the firmware sets the requested filament current, enables the
+coolant pump, and clears the conditioning hold timer. The first indication that the HVPS
+filament has reached and stabilized at the target starts a 9,000-deci-second (15-minute)
+hold. Later stabilization indications do not restart an active hold. When the timer expires,
+the firmware marks it completed before queuing one completion event and transitions to
+primed state.
+
+A PC stop returns the system to cold state. A fault during conditioning transitions the
+system to warmup-fault state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -770,6 +822,12 @@ UID: SW-H1FWMC-194
 TITLE: State: Warmup
 STATEMENT: >>>
 The warmup state is for when the system is ramping up the filament current to reach a level where the filament is at a temperature that can sustain lower levels of emission. Due to the nature of the HVPS filament control (constant current) and the system characteristics (increased resistance with increased temperature), and the nature of the filament and cathode sensitivity, it is not advisable to go to a higher current which could sustain the intended target levels of emission output.
+
+Before queuing entry to warmup, the PC command handler requires COLD state, verifies both
+emergency-stop inputs, and then validates the target. An open emergency stop produces an
+``SPR_ACCESS_ERROR`` response rather than acknowledging a transition that cannot occur.
+The state-entry handler verifies the emergency stops again; failure reports an interlock
+fault and returns before changing the heater, coolant pump, or state.
 
 Warmup completes once the reported filament value from the HVPS interface board stabilizes at the target filament current. The firmware will transition to primed state once that target setpoint has been reached if no current plan is loaded, otherwise it will transition to the staged state.
 
@@ -844,9 +902,13 @@ RELATIONS:
 UID: SW-H1FWMC-198
 TITLE: State: Staged
 STATEMENT: >>>
-The staged state is for when the PC has completed a loading of a plan but has yet to release the plan for execution. Before the release of the plan is allowed, the PC must confirm all the operational points which have been loaded into the current treatment plan.
+The staged state is for when the PC has completed loading one scalar emission but has not
+yet released it for execution. Before plan release is allowed, the PC must confirm that
+emission.
 
-On an error, the system enters fault state. On a standby event, which can be initiated by the PC or after a timeout, the firmware transitions from the staged state to discharge state. If the firmware receives a wipe plan command, it will transition the state back to primed. If the firmware receives a valid plan release command once all the points have been confirmed, the system is transitioned into the HVPS check state.
+On an error, the system enters fault state. On standby, the firmware transitions to
+discharge. A wipe command returns it to primed. A valid plan release after scalar
+confirmation transitions the system into the HVPS check state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -890,9 +952,11 @@ RELATIONS:
 UID: SW-H1FWMC-201
 TITLE: State: Ready
 STATEMENT: >>>
-The ready state is for when the system has high voltage ramped up to the target setpoint for the operational point but has not yet begun emission. On an error the firmware transitions to the fault state. If the firmware receives a stop command from the PC, it will transition to the termination state. If the firmware receives a standby command, either through the PC or via a timeout, it will transition to the discharge state. If the firmware receives a release point command, it will transition into the launching state.
-
-In the ready state if the current operational point is indicated for automatic execution, the firmware will self-request a release point command for automatic point execution. Otherwise, the PC must send the release point command.
+The ready state is for when the system has high voltage ramped to the scalar emission
+setpoint but has not begun emission. On an error the firmware transitions to fault. A stop
+command transitions to termination, and a standby command or timeout transitions to
+discharge. Only an explicit point-scope release command from the PC transitions to
+launching; there is no automatic release path.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -920,9 +984,12 @@ RELATIONS:
 UID: SW-H1FWMC-203
 TITLE: State: Emission
 STATEMENT: >>>
-The emission state is when the system is performing radiation emission output. On an error, the system enters fault state. If the PC sends a stop command, the firmware will transition to the termination state.
+The emission state is when the system is performing radiation emission output. On an
+error, the system enters fault state. If the PC sends a stop command, the firmware
+transitions to termination so the same remaining time can be reconfirmed and resumed.
 
-If the system completes the execution of the operational point without interruption, which is marked by the expiration of the operational point's target treatment time, then the firmware will either go to the termination state if it is the last operational point in the treatment plan, or it will go to the setup state to prepare for the next operational point in the treatment plan.
+When the scalar emission completes without interruption, the firmware always transitions
+to discharge. It never returns to setup for another point in the same session.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -974,11 +1041,23 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H1FWMC-206
-TITLE: State: Fault
+TITLE: States: Fault Discharge and Fault
 STATEMENT: >>>
-The fault state is for when a system error has occurred while the filament was already running at or above the target warmup setpoint. The firmware can transition out of the fault state and into warmup state after receiving a reset fault command from the PC.
+When a fault is detected from an operating state in which high voltage or filament power
+may still be energized, the firmware enters Fault Discharge. Entry disables the
+high-voltage interlock, pauses the external timers, disables the emission indicators,
+commands the HVPS kV, filament, and grid setpoints to zero, and commands all three coil
+outputs to zero. The cabinet fan remains at high speed during this discharge.
+
+Fault Discharge continues until kV feedback is below 4 kV, filament feedback is at or
+below 700 mA, and the HVPS warming status is clear. The firmware then enters the latched
+Fault state, disables the emission and grid interlocks, and reasserts the zero output
+commands. A further fault event during Fault Discharge transitions immediately to Fault.
 <<<
 RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-77
+  ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWMC-78
   ROLE: Refines
@@ -992,11 +1071,10 @@ TITLE: System Status (Telemetry)
 STATEMENT: >>>
 The firmware collects monitored values in a system-status array used as the source of truth
 for firmware decisions and telemetry serialization. Every 10 ms, it serializes the array
-using the normal or calibration layout selected at compile time and sends it to the CNC.
-The normal telemetry layout appends the raw state-dependent required-interlock mask. The
-calibration layout publishes the same mask in its first reserved word so its established
-payload count and field positions remain unchanged. Both layouts publish the complete
-physical interlock-input mask. Telemetry requests use the same serializers.
+and sends it to the CNC. The telemetry layout appends the raw state-dependent
+required-interlock mask and publishes the complete physical and required interlock masks,
+head-interface coolant values, buttons, collimator ID, and magnetometer values. Telemetry
+requests use the same serializer.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1005,11 +1083,12 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H1FWMC-208
-TITLE: Treatment Plan (Operational Points)
+TITLE: Treatment Session (Scalar Emission)
 STATEMENT: >>>
-Each treatment plan is stored in memory as an array of operational points. The firmware will execute each operational point in the sequence in which they are stored in the array. The operational points are stored based on the index value provided when the PC sends over the operational point data.
-
-Each operational point is a collection of fields representing the emission. These fields are the operational point index within the treatment plan, the total treatment time of the point, the remaining treatment time of the point, the high voltage kV of the point, the target emission current mA of the point, the initial filament current of the point, the X, Y and focus coil current values of the point, and whether or not the point should be auto-executed by firmware.
+Each treatment session stores exactly one scalar operational point. The point contains
+total treatment time, remaining treatment time, high-voltage kV, target emission current
+mA, filament current, and X, Y, and focus coil currents. The session contains no point
+count, point index, or automatic-execution field.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1063,6 +1142,12 @@ compares only those required bits with the sampled input status. A mismatch reco
 interlock fault and initiates the existing latched-fault transition. Inputs omitted from
 the required mask remain visible for diagnostics but do not independently create an
 interlock fault in that state.
+
+Before changing from cold to conditioning, the transition routine verifies both the base
+and remote emergency-stop inputs. If either input is open, it reports a
+``FAULT_INTERLOCK`` record with the message ``Cannot condition with e-stops open`` and
+returns while still cold, before changing the heater command, starting the coolant pump,
+or selecting the conditioning state.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1078,7 +1163,7 @@ TITLE: Head Interface Board Data
 STATEMENT: >>>
 The transmitted data to the head interface board is the desired indicator LED output, representing the current state of the system. As this is a simple single byte value, it is sent multiple times in a single data packet, to help the head interface board firmware to detect any transmission errors.
 
-The received data from the head interface board are cooling system feedback values monitored at the system's x-ray head, as well as the reported values of other x-ray head peripherals such as the state of the buttons, and the values from the magnetometers and collimator. All values are reported in 4-byte fields separated by delimiters. As the collimator ID value is a 64-bit value, there are two 4byte fields which together represent the 64-bit ID.
+The received data from the head interface board are cooling system feedback values monitored at the system's x-ray head, as well as the reported values of other x-ray head peripherals such as the state of the buttons, and the values from the magnetometers and collimator. All values are reported in 4-byte fields separated by delimiters. As the collimator ID value is a 64-bit value, there are two 4byte fields which together represent the 64-bit ID. The main-control firmware uses this head-interface packet layout in every build mode.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1155,11 +1240,17 @@ TITLE: Fault Clearing
 STATEMENT: >>>
 The main control board has hardware which latches fault conditions and disables interlocks
 so that emission is safely terminated and cannot be resumed until action is taken by the
-firmware. On a PC clear-fault request, the firmware pulses the hardware clear output,
-increments the software clear epoch, empties the latched fault-record table, clears the
-software category flags, and publishes an empty fault update. The firmware cannot override
-an active hardware fault; any remaining condition re-latches the interlocks and can create
-a new software fault record.
+firmware. After the PC directive identifier and confirmation match for a clear-fault
+request, the directive handler queues both the main-control clear-fault state-machine event
+and an HVPS clear-fault command with zero-valued parameters. This directive has no state
+gate. The handler leaves the PC directive response as successful without waiting for an
+HVPS response; a confirmation mismatch returns an invalid response and queues neither
+action.
+
+The state-machine event pulses the hardware clear output, increments the software clear
+epoch, empties the latched fault-record table, clears the software category flags, and
+publishes an empty fault update. The firmware cannot override an active hardware fault; any
+remaining condition re-latches the interlocks and can create a new software fault record.
 <<<
 RELATIONS:
 - TYPE: Parent

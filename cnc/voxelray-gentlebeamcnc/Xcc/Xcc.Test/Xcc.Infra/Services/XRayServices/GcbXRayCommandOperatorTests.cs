@@ -6,10 +6,18 @@ using Xcc.Infra.GryphonBoard.CommandAPI;
 
 namespace Xcc.Test.Xcc.Infra.Services.XRayServices
 {
+    [NonParallelizable]
     internal class GcbXRayCommandOperatorTests
     {
         TestGcbXRayCommandOperator oldCommandOperator = new();
         GcbXRayCommandOperator commandOperator = new();
+
+        [SetUp]
+        public void SetUp()
+        {
+            oldCommandOperator = new();
+            commandOperator = new();
+        }
 
         [Test]
         public void GcbVersionInfoRequest_PacketCorrectnessTest()
@@ -77,13 +85,17 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
-        public void GcbNewSessionCmd_PacketCorrectnessTest()
+        public void GcbNewSessionCmd_HasNoPayload()
         {
-            const int totalPoints = 1;
-            var packet = commandOperator.GenerateNewSessionCmd(totalPoints);
-            var referencePacket = oldCommandOperator.GenerateNewSessionCmd(totalPoints);
+            var packet = commandOperator.GenerateNewSessionCmd();
+            var referencePacket = oldCommandOperator.GenerateNewSessionCmd();
+            var decoded = new UdpPacket(packet);
 
-            Assert.That(packet, Is.EqualTo(referencePacket));
+            Assert.Multiple(() =>
+            {
+                Assert.That(packet, Is.EqualTo(referencePacket));
+                Assert.That(decoded.PayloadLength, Is.Zero);
+            });
         }
 
         [TestCase(GCBPacketType.OperationalPointLoadingCmd)]
@@ -92,7 +104,6 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         {
             GcbOperationalPoint op = new GcbOperationalPoint
             {
-                PointIndex = 1,
                 TotalPointTime = 2.0f,
                 RemainingPointTime = 1.0f,
                 SetpointKv = 50.0f,
@@ -101,34 +112,70 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
                 XCoilSetpoint = 0.1f,
                 YCoilSetpoint = 0.2f,
                 FocusCoilSetpoint = 2000.0f,
-                AutoExecution = true
             };
 
             uint sessionId = 42;
-            var sessionKey = new GcbSecretKeySessionAuthentication(new GcbSession(sessionId, totalPoints:1));
+            var sessionKey = new GcbSecretKeySessionAuthentication(new GcbSession(sessionId));
             var packet = commandOperator.GenerateOperationalPointCmd(packetType, op, sessionKey);
             var referencePacket = oldCommandOperator.GenerateOperationalPointCmd(packetType, op, sessionId);
 
-            // Authentication code doesn't fit, so we can't verify it and CRC now, just check all the rest:
-            Assert.That(packet.Take(packet.Length - 8), Is.EqualTo(referencePacket.Take(referencePacket.Length - 8)));
+            var decoded = new UdpPacket(packet);
+            Assert.Multiple(() =>
+            {
+                Assert.That(decoded.PayloadLength, Is.EqualTo(9));
+                Assert.That(
+                    packet.Take(packet.Length - 8),
+                    Is.EqualTo(referencePacket.Take(referencePacket.Length - 8)));
+            });
         }
 
         [Test]
-        public void GcbOperationPointQuery_PacketCorrectnessTest()
+        public void GcbOperationPointQuery_HasNoPayload()
         {
-            const int pointIndex = 1;
-            
-            var packet = commandOperator.GenerateOperationalPointQueryCmd(pointIndex);
-            var referencePacket = oldCommandOperator.GenerateOperationalPointQueryCmd(pointIndex);
+            var packet = commandOperator.GenerateOperationalPointQueryCmd();
+            var referencePacket = oldCommandOperator.GenerateOperationalPointQueryCmd();
+            var decoded = new UdpPacket(packet);
 
-            Assert.That(packet, Is.EqualTo(referencePacket));
+            Assert.Multiple(() =>
+            {
+                Assert.That(packet, Is.EqualTo(referencePacket));
+                Assert.That(decoded.PayloadLength, Is.Zero);
+            });
+        }
+
+        [Test]
+        public void GcbQcbPingCmd_EncodesFirmwarePacket()
+        {
+            var packet = new UdpPacket(commandOperator.GenerateQcbPingCmd());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(packet.PacketType, Is.EqualTo((uint)GCBPacketType.QcbPing));
+                Assert.That(packet.PayloadLength, Is.EqualTo(2));
+                Assert.That((uint)packet[0], Is.Zero);
+                Assert.That((uint)packet[1], Is.Zero);
+            });
+        }
+
+        [Test]
+        public void GcbQcbReadingsCmd_EncodesCommandAndSamplingWindow()
+        {
+            var packet = new UdpPacket(commandOperator.GenerateQcbReadingsCmd(1, 50));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(packet.PacketType, Is.EqualTo((uint)GCBPacketType.QcbReadingsCommand));
+                Assert.That(packet.PayloadLength, Is.EqualTo(2));
+                Assert.That((uint)packet[0], Is.EqualTo(1));
+                Assert.That((int)packet[1], Is.EqualTo(50));
+            });
         }
 
         [Test]
         public void GcbReleaseTreatmentPlan_PacketCorrectnessTest([Values] GCBReleaseCommandScope scope)
         {
             uint sessionId = 42;
-            var sessionKey = new GcbSecretKeySessionAuthentication(new GcbSession(sessionId, totalPoints: 1));
+            var sessionKey = new GcbSecretKeySessionAuthentication(new GcbSession(sessionId));
 
             var packet = commandOperator.GenerateReleaseTreatmentPlanCmd(scope, sessionKey);
             var referencePacket = oldCommandOperator.GenerateReleaseTreatmentPlanCmd(scope, sessionId);
@@ -202,34 +249,28 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         /// <summary>
-        /// This command is used to begin staging a new treatment plan. If successful, the firmware responds with a new session ID.
+        /// Starts authorization for one scalar emission.
         /// </summary>
-        /// <param name="totalPoints">The total requested number of points for the new plan</param>
-        /// <returns></returns>
-        public byte[] GenerateNewSessionCmd(int totalPoints)
+        public byte[] GenerateNewSessionCmd()
         {
-            byte[] bytesToSend = GenerateInitialArrayToSend((byte)GCBPacketType.NewSessionCmd, 2);
-
-            bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(totalPoints));
-            bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(0)); // reserved
-            byte[] crc = GetCRC(bytesToSend);// calculate CRC
-            return JoinByteArrays(bytesToSend, crc);// add the calculated crc to the buffer.
+            byte[] bytesToSend = GenerateInitialArrayToSend(
+                (byte)GCBPacketType.NewSessionCmd,
+                0);
+            byte[] crc = GetCRC(bytesToSend);
+            return JoinByteArrays(bytesToSend, crc);
         }
 
 
         /// <summary>
-        /// This command is used to request information on a staged treatment plan. Each command is used to request the information for a single point within the treatment plan.
+        /// Queries the scalar staged emission.
         /// </summary>
-        /// <param name="pointIndex"></param>
-        /// <returns></returns>
-        public byte[] GenerateOperationalPointQueryCmd(int pointIndex)
+        public byte[] GenerateOperationalPointQueryCmd()
         {
-            byte[] bytesToSend = GenerateInitialArrayToSend((byte)GCBPacketType.OperationalPointQueryCmd, 1);
-
-            bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(pointIndex));
-
-            byte[] crc = GetCRC(bytesToSend);// calculate CRC
-            return JoinByteArrays(bytesToSend, crc);// add the calculated crc to the buffer.
+            byte[] bytesToSend = GenerateInitialArrayToSend(
+                (byte)GCBPacketType.OperationalPointQueryCmd,
+                0);
+            byte[] crc = GetCRC(bytesToSend);
+            return JoinByteArrays(bytesToSend, crc);
         }
 
         public byte[] GenerateReleaseTreatmentPlanCmd(GCBReleaseCommandScope scope, uint sessionId)
@@ -269,11 +310,13 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         /// <param name="op"></param>
         /// <param name="sessionId"></param>
         /// <returns></returns>
-        public byte[] GenerateOperationalPointCmd(GCBPacketType packetType, GcbOperationalPoint op, uint sessionId)
+        public byte[] GenerateOperationalPointCmd(
+            GCBPacketType packetType,
+            GcbOperationalPoint op,
+            uint sessionId)
         {
-            byte[] bytesToSend = GenerateInitialArrayToSend((byte)packetType, 11);
+            byte[] bytesToSend = GenerateInitialArrayToSend((byte)packetType, 9);
 
-            bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(op.PointIndex));
             bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(op.TotalPointTime));
             bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(op.RemainingPointTime));
             bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(op.SetpointKv));
@@ -282,11 +325,9 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(op.XCoilSetpoint));
             bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(op.YCoilSetpoint));
             bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(op.FocusCoilSetpoint));
-
-            bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(op.AutoExecution ? 1 : 0));
             bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(sessionId));
-            byte[] crc = GetCRC(bytesToSend);// calculate CRC
-            return JoinByteArrays(bytesToSend, crc);// add the calculated crc to the buffer.
+            byte[] crc = GetCRC(bytesToSend);
+            return JoinByteArrays(bytesToSend, crc);
         }
 
         public GcbProcessingStatus ParseStatusResponse(byte[] data, GCBPacketType expectedPacketType, int expectedFieldsCount = 1)
@@ -348,24 +389,6 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             return bytesToSend;
         }
 
-        public byte[] GenerateQCDataQueryCmd(uint operationalPointIndex)
-        {
-            byte[] bytesToSend = {
-                0xFF, 0xFF, 0xFF, 0xFF,// sync
-                0xFF, 0xFF, 0xFF, 0xFF,// sync
-                0x0C, 0x00, 0x00 ,0x00,// type = 12 (0x0C)
-                0x22, 0x22, 0x22 ,0x22,// ID
-                0x02, 0x00, 0x00 ,0x00,// # of fields = 2 (0x02)
-            };
-            UpdatePacketID(bytesToSend);
-
-            bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(operationalPointIndex));//
-            bytesToSend = JoinByteArrays(bytesToSend, new byte[] { 0x00, 0x00, 0x00, 0x00 });// reserved for future use
-            byte[] crc = GetCRC(bytesToSend);// calculate CRC
-            bytesToSend = JoinByteArrays(bytesToSend, crc);// add the calculated crc to the buffer.
-
-            return bytesToSend;
-        }
 
         public byte[] GenerateReadMagnetometerCmd()
         {
@@ -378,7 +401,6 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
             };
             UpdatePacketID(bytesToSend);
 
-            //bytesToSend = JoinByteArrays(bytesToSend, BitConverter.GetBytes(operationalPointIndex));//
             bytesToSend = JoinByteArrays(bytesToSend, new byte[] { 0x00, 0x00, 0x00, 0x00 });// reserved for future use
             byte[] crc = GetCRC(bytesToSend);// calculate CRC
             bytesToSend = JoinByteArrays(bytesToSend, crc);// add the calculated crc to the buffer.

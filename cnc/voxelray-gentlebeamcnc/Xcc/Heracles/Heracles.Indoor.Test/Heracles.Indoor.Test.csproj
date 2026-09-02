@@ -33,6 +33,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Heracles.Indoor\Heracles.Indoor.csproj" />
+    <ProjectReference Include="..\Heracles.Indoor.SqliteGrpcServer\Heracles.Indoor.SqliteGrpcServer.csproj"
+                      Aliases="SqliteServer" />
   </ItemGroup>
 
   <ItemGroup>

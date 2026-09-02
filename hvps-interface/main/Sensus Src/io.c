@@ -90,8 +90,27 @@ void process_io()
 		}
 	}
 
-	process_hv_unlock();
-	process_grid_unlock();
+	if(sys_stat_check(SYS_DISCHARGING)) {
+		if(lock_timer_ms <= 0) {
+#ifdef CALIBRATION_MODE
+			clear_sys_bit(SYS_EMISSION_ON);
+			HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_RESET);
+
+			set_sys_bit(SYS_HV_CTRL_EN);
+			HAL_GPIO_WritePin(GPIOE, IO_PFC_ALLOWED_Pin|IO_HV_ALLOWED_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOD, IO_SEND_READY_Pin, GPIO_PIN_SET);
+#else
+			lock_grid();
+			lock_hv();
+#endif
+			clear_sys_bit(SYS_DISCHARGING);
+			lock_timer_ms = 0;
+		}
+	} else {
+		process_hv_unlock();
+		process_grid_unlock();
+	}
+
 }
 
 static void debounce_io()
@@ -170,6 +189,24 @@ void lock_grid()
 	HAL_GPIO_WritePin(GPIOE, IO_BEAM_ALLOWED_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOD, IO_SEND_READY_Pin, GPIO_PIN_RESET);
 	//disable_grid_clock();
+}
+
+void shutdown_beam()
+{
+	start_hv_unlock = false;
+	wait_hv_unlock = false;
+
+	// Onlt start discharge if not already
+	if(!sys_stat_check(SYS_DISCHARGING)) {
+		set_sys_bit(SYS_DISCHARGING);
+		lock_timer_ms = 5000;
+	}
+
+	clear_sys_bit(SYS_HV_CTRL_EN);
+	clear_sys_bit(SYS_EMISSION_ON);
+	HAL_GPIO_WritePin(GPIOE, IO_PFC_ALLOWED_Pin|IO_HV_ALLOWED_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOD, IO_SEND_READY_Pin, GPIO_PIN_RESET);
+	set_new_kv(0);
 }
 
 static void unlock_hv()

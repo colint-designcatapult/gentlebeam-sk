@@ -8,6 +8,7 @@
 #ifndef QC_H_
 #define QC_H_
 
+#include <stdbool.h>
 #include "main.h"
 
 // ADC I2C addresses
@@ -15,6 +16,7 @@
 #define ADC2_ADDRESS      (0x51 << 1)									//1010001	Address A1 - Floating/Ground
 
 #define CONVERSION_REG     0x00         // Pointer to Conversion Result Register
+#define QC_CONNECTION_FLAG 0x8000
 
 void init_qc(void);
 void process_qc(void);
@@ -27,6 +29,8 @@ void I2C_ForceBusRecovery(I2C_HandleTypeDef *hi2c);
 
 extern uint16_t QC1_data;
 extern uint16_t QC2_data;
+extern volatile bool QC1_connected;
+extern volatile bool QC2_connected;
 
 
 #endif /* QC_H_ */

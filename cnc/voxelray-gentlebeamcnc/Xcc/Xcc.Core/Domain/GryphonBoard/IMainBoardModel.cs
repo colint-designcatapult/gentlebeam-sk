@@ -7,11 +7,10 @@ namespace Xcc.Core.Domain.GryphonBoard
     public interface IMainBoardState
     {
         GcbStateNew? State { get; }
-        GcbEmissionPlan CurrentPlan { get; }
+        GcbOperationalPoint? CurrentEmission { get; }
         GcbSession? Session { get; }
         bool IsPlanStaged { get; }
         ISystemTelemetry? SystemTelemetry { get; }
-        GcbOperationalPoint CurrentPoint();
         // Methods for board state checks
         #region Board command predicates
         bool CanPrepare();
@@ -33,7 +32,7 @@ namespace Xcc.Core.Domain.GryphonBoard
     public interface IMainBoardStateManagement : IMainBoardState, ISystemTelemetryChanged
     {
         void SetSession(GcbSession session);
-        void SetCurrentPlan(GcbEmissionPlan plan);
+        void SetCurrentEmission(GcbOperationalPoint emission);
     }
 
     public interface IMainBoardAPI
@@ -49,15 +48,14 @@ namespace Xcc.Core.Domain.GryphonBoard
 
         #region Board command sequences
         /// <summary>
-        /// Sequence of warmup and Load calls.
+        /// Sequence of warmup and emission-load calls.
         /// </summary>
-        Task<bool> PreparePlan(GcbEmissionPlan plan, bool tryKeepPrevPlan);
+        Task<bool> PrepareEmission(GcbOperationalPoint emission, bool tryKeepPreviousEmission);
 
         Task<bool> SafeWarmup(WarmupParameters warmupParameters);
         Task BeamOn();
-        Task BeamOnOnePoint();
 
-        Task ResumePlan();
+        Task ResumeEmission();
         #endregion Board command sequences
         #endregion Active commands 
 
@@ -71,9 +69,8 @@ namespace Xcc.Core.Domain.GryphonBoard
         #region Board state queries
         Task<VersionInfo> GetVersionInfo();
         Task<FaultSnapshot> GetFaults();
-        Task<GcbOperationalPoint> QueryPointFromGCB(int index);
-        Task UpdatePlanPointFromGCB(int index);
-        Task<GcbEmissionPlan> QueryPlanFromGCB();
+        Task<GcbOperationalPoint> QueryEmissionFromGCB();
+        Task UpdateCurrentEmissionFromGCB();
 
         #endregion Board state queries
 
@@ -95,7 +92,6 @@ namespace Xcc.Core.Domain.GryphonBoard
         StagePlan,
         ReleasePlan,
         StartBeamOn,
-        OnePointCompleted,
         BeamOnCompleted,
         ClearPlan,
         ClearErrors,

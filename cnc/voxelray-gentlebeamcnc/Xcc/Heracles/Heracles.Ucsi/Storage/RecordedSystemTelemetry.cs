@@ -32,8 +32,6 @@ internal sealed class RecordedSystemTelemetry : ISystemTelemetry
     public uint? CollimatorId2 => Get<uint?>("system.CollimatorId2");
     public ulong? CollimatorSerial => Get<ulong?>("system.CollimatorSerial");
     public int ButtonsState => Get<int>("system.ButtonsState");
-    public int CurrentOperationalPoint => Get<int>("system.CurrentOperationalPoint");
-    public int TotalOperationalPoints => Get<int>("system.TotalOperationalPoints");
     public int InternalTimerState => Get<int>("system.InternalTimerState");
     public float PrimaryTimerValue => Get<float>("system.PrimaryTimerValue");
     public int Timer1State => Get<int>("system.Timer1State");
@@ -63,9 +61,13 @@ internal sealed class RecordedSystemTelemetry : ISystemTelemetry
     public float CabinetTemperature => Get<float>("system.CabinetTemperature");
     public TelemetryVector3? Mag1 { get; }
     public TelemetryVector3? Mag2 { get; }
+    public float? QcChannel0Reading => Get<float?>("system.QcChannel0Reading");
+    public float? QcChannel1Reading => Get<float?>("system.QcChannel1Reading");
+    public bool? QcAdc1Connected => Get<bool?>("system.QcAdc1Connected");
+    public bool? QcAdc2Connected => Get<bool?>("system.QcAdc2Connected");
 
     public bool IsFaultState() => ControlBoardState is
-        GcbStateNew.Fault or GcbStateNew.ColdFault or GcbStateNew.WarmupFault;
+        GcbStateNew.FaultDischarge or GcbStateNew.Fault or GcbStateNew.ColdFault or GcbStateNew.WarmupFault;
 
     public bool IsEmissionState() => ControlBoardState is
         GcbStateNew.Emission or GcbStateNew.Imaging;

@@ -11,6 +11,7 @@ using Prism.Mvvm;
 using ScottPlot.Plottables;
 using ScottPlot.WPF;
 using Xcc.Core.Domain.GryphonBoard;
+using Xcc.Application.UI.UserControls;
 
 namespace Heracles.Application.Test.Views;
 
@@ -96,6 +97,66 @@ internal sealed class UnifiedCalibrationServiceViewTests
             Assert.That(loggers, Has.All.Matches<DataLogger>(logger => !logger.ManageAxisLimits));
             Assert.That(plotControl.Plot.Axes.Bottom.Min, Is.EqualTo(15.5).Within(0.001));
             Assert.That(plotControl.Plot.Axes.Bottom.Max, Is.EqualTo(45.5).Within(0.001));
+        });
+    }
+
+    [Test]
+    [Apartment(ApartmentState.STA)]
+    public void EmissionTab_PrecedesHvpsAndContainsRequiredStateControls()
+    {
+        var view = new UnifiedCalibrationServiceView();
+        view.Measure(new System.Windows.Size(1400, 900));
+        view.Arrange(new System.Windows.Rect(0, 0, 1400, 900));
+        view.UpdateLayout();
+
+        System.Windows.Controls.TabControl tabs = FindVisualChild<System.Windows.Controls.TabControl>(view)
+            ?? throw new AssertionException("The primary tab control was not created.");
+        string?[] headers = tabs.Items
+            .Cast<System.Windows.Controls.TabItem>()
+            .Select(item => item.Header?.ToString())
+            .ToArray();
+        var stateText = (System.Windows.Controls.TextBlock)view.FindName("EmissionStateText");
+        var sliders = new[]
+        {
+            (System.Windows.Controls.Slider)view.FindName("EmissionXSlider"),
+            (System.Windows.Controls.Slider)view.FindName("EmissionYSlider"),
+            (System.Windows.Controls.Slider)view.FindName("EmissionFocusSlider"),
+            (System.Windows.Controls.Slider)view.FindName("EmissionTimerSlider"),
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(headers.Take(3), Is.EqualTo(new[] { "System Status", "Emission", "HVPS" }));
+            Assert.That(stateText.FontWeight, Is.EqualTo(FontWeights.Bold));
+            Assert.That(view.FindName("EmissionRunStopButton"), Is.Not.Null);
+            Assert.That(view.FindName("EmissionSequenceStatusText"), Is.Not.Null);
+            Assert.That(view.FindName("StopCalibrationButton"), Is.Not.Null);
+            Assert.That(sliders, Has.All.Matches<System.Windows.Controls.Slider>(
+                slider => slider.Orientation == System.Windows.Controls.Orientation.Horizontal));
+            Assert.That(view.FindName("EmissionUnavailableOverlay"), Is.Not.Null);
+            Assert.That(view.FindName("HvpsUnavailableOverlay"), Is.Not.Null);
+            Assert.That(view.FindName("CoilsUnavailableOverlay"), Is.Not.Null);
+        });
+    }
+
+    [Test]
+    [Apartment(ApartmentState.STA)]
+    public void Header_PlacesRadiationHazardIndicatorAtRightEdge()
+    {
+        var view = new UnifiedCalibrationServiceView();
+        view.Measure(new System.Windows.Size(1400, 900));
+        view.Arrange(new System.Windows.Rect(0, 0, 1400, 900));
+        view.UpdateLayout();
+
+        var indicator = (RadiationHazardControl)view.FindName("RadiationHazardIndicator");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(System.Windows.Controls.Grid.GetColumn(indicator), Is.EqualTo(2));
+            Assert.That(indicator.HorizontalAlignment, Is.EqualTo(HorizontalAlignment.Right));
+            Assert.That(indicator.VerticalAlignment, Is.EqualTo(VerticalAlignment.Center));
+            Assert.That(indicator.ActualWidth, Is.EqualTo(38));
+            Assert.That(indicator.ActualHeight, Is.EqualTo(38));
         });
     }
 

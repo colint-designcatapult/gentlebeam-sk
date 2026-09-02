@@ -12,7 +12,8 @@ public sealed class CoilConfigurationServiceImpl : CoilConfigurationService.Coil
     public override async Task<ListCoilConfigurationsResponse> ListCoilConfigurations(
         ListCoilConfigurationsRequest request, ServerCallContext context)
     {
-        var items = await _repo.ReadAllAsync();
+        var items = (await _repo.ReadAllAsync())
+            .Where(item => item.PresetConfigurationId == request.PresetConfigurationId);
         var r = new ListCoilConfigurationsResponse();
         r.CoilConfigurations.AddRange(items);
         return r;

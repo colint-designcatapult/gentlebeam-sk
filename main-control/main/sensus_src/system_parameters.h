@@ -14,6 +14,9 @@
 #define FW_NORMAL_MODE		0x0
 #define FW_CALIBRATION_MODE 0x494C4143 // Hex-encoded ASCII "CALI" 
 
+#define QC_DATA_RES_COUNT	5
+#define MAX_OPERATIONAL_POINTS	1
+
 #ifndef FW_VERSION
 // Specify default version 
 // During CI/CD the actual version is injected as a preprocessor definition
@@ -28,7 +31,6 @@
     #error "Exactly one of MRSRC or GBSRC must be set to 1"
 #endif
 
-#define MAX_OPERATIONAL_POINTS	36
 
 #define MAX_OP_KV				100
 #define MAX_OP_F_COIL			3000
@@ -66,8 +68,6 @@ enum systemStatusFields
 {
 	SS_MODE = 0,
 	SS_STATE,
-	SS_OP_IDX, //SS_OPERATIONAL_POINT
-	SS_OP_COUNT,
 	SS_I_TIMER_STATE,
 	SS_TIM_1_STATE,
 	SS_TIM_2_STATE,
@@ -111,12 +111,19 @@ enum systemStatusFields
 	SS_3P3V, //SS_3V3_SUPPLY
 	SS_5V, //SS_5V_SUPPLY
 	SS_12V, //SS_12V_SUPPLY
+	SS_COLLIMATOR_LOW,
+	SS_COLLIMATOR_HIGH,
+	SS_MAG_X,
+	SS_MAG_Y,
+	SS_MAG_Z,
+	SS_MAG_X2,
+	SS_MAG_Y2,
+	SS_MAG_Z2,
 	SS_COUNT
 };
 
 #else
 
-#define MAX_OPERATIONAL_POINTS	5
 
 #define MAX_OP_KV				100
 #define MAX_OP_F_COIL			3000
@@ -134,7 +141,6 @@ enum systemStatusFields
 #define REPELLER_TARGET				150
 
 #define QC_DATA_REQ_COUNT	2	
-#define QC_DATA_RES_COUNT	5
 
 #include "qc_well.h"
 #include "pc_comm_parser.h"
@@ -158,8 +164,6 @@ enum systemStatusFields
 	SS_COLLIMATOR_LOW,
 	SS_COLLIMATOR_HIGH,
 	SS_BUTTONS,
-	SS_OP_IDX,
-	SS_OP_COUNT,
 	SS_I_TIMER_STATE,
 	SS_INTERNAL_TIMER_VAL,
 	SS_TIM_1_STATE,
@@ -191,19 +195,20 @@ enum systemStatusFields
 	SS_MAG_X2,
 	SS_MAG_Y2,
 	SS_MAG_Z2,
-	SS_RESERVED_1,
+	SS_QC_CHANNEL_0,
 	SS_KV_SP,
 	SS_MA_LIM_SP,
 	SS_PWR_SP,
 	SS_REQUIRED_INTERLOCKS,
+	SS_QC_CHANNEL_1,
+	SS_QC_ADC_I2C_STATUS,
 	SS_COUNT
 };
 #endif
 
 enum treatmentPointsParams
 {
-	OP_POINT_IDX = 0,
-	OP_TOTAL_TIME,
+	OP_TOTAL_TIME = 0,
 	OP_REMAIN_TIME,
 	OP_KV,
 	OP_MA,
@@ -211,7 +216,6 @@ enum treatmentPointsParams
 	OP_X_COIL,
 	OP_Y_COIL,
 	OP_F_COIL,
-	OP_AUTO_EXEC,
 	OP_PARAM_COUNT
 };
 
@@ -253,12 +257,8 @@ enum interlockBP
 enum planInfo
 {
 	PLAN_STAGED_BOOL = 0,
-	PLAN_TARGET_BITS_1,
-	PLAN_TARGET_BITS_2,
-	PLAN_LOADING_FLAGS_1,
-	PLAN_LOADING_FLAGS_2,
-	PLAN_CONFIRMATION_FLAGS_1,
-	PLAN_CONFIRMATION_FLAGS_2,
+	PLAN_LOADED_BOOL,
+	PLAN_CONFIRMED_BOOL,
 	NUM_PLAN_INFO
 };
 
@@ -275,19 +275,19 @@ enum internalVoltages
 extern pcVerRes device_information;
 extern VariableValue system_status[SS_COUNT];
 extern float hvps_config[HVPS_CONF_COUNT];
-extern VariableValue operational_points[MAX_OPERATIONAL_POINTS][OP_PARAM_COUNT];
+extern VariableValue operational_point[OP_PARAM_COUNT];
 extern uint32_t plan_info[NUM_PLAN_INFO];
 
 #if !defined(CALIBRATION_MODE)
-extern VariableValue qc_data[MAX_OPERATIONAL_POINTS][QC_DATA_RES_COUNT];
 
 extern VariableValue qc_reported[QC_DATA_RES_COUNT];
 
 extern VariableValue qc_ping_buf[QC_DATA_RES_COUNT];
-extern VariableValue qc_reading_buf[QC_DATA_RES_COUNT];
 
-extern uint32_t qc_samples;
 #endif
+
+extern VariableValue qc_reading_buf[QC_DATA_RES_COUNT];
+extern uint32_t qc_samples;
 
 extern float internal_voltages[INTERNAL_V_COUNT];
 
@@ -301,12 +301,8 @@ void report_qc_reading();
 #endif
 
 void clear_treatment_plan();
-void set_plan_flags();
 
-#if !defined(CALIBRATION_MODE)
 void report_hb_data(uint32_t hb_idx, float data);
-void report_qc_well_data(int16_t *qc_data);
-#endif
 void report_ext_timer_values(uint32_t state, uint32_t ticks, bool primary);
 void report_peltier_temp(float temperature);
 void report_hvps_data(VariableValue *hvps_data);

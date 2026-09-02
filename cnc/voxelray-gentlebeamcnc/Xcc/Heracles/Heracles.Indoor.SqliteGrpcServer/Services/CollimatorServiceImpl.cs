@@ -12,9 +12,10 @@ public sealed class CollimatorServiceImpl : CollimatorService.CollimatorServiceB
     public override async Task<ListCollimatorsResponse> ListCollimators(
         ListCollimatorsRequest request, ServerCallContext context)
     {
+        var all = await _repo.ReadAllAsync();
         IList<Collimator> items = request.HasCollimatorConfigurationId
-            ? await _repo.ReadByParentIdAsync(request.CollimatorConfigurationId)
-            : await _repo.ReadAllAsync();
+            ? all.Where(item => item.CollimatorConfigurationId == request.CollimatorConfigurationId).ToList()
+            : all;
         var r = new ListCollimatorsResponse();
         r.Collimators.AddRange(items);
         return r;

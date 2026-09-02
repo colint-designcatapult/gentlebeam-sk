@@ -102,7 +102,8 @@ public sealed class UcsiLogBuffer : ILogWriter
 public sealed class StandaloneUcsiLifecycle(
     ITelemetrySessionCoordinator coordinator,
     ITelemetryService telemetryService,
-    IAppGlobals appGlobals) : IAsyncDisposable
+    IAppGlobals appGlobals,
+    FaultTelemetryExportService faultTelemetryExportService) : IAsyncDisposable
 {
     private bool _started;
     private bool _disposed;
@@ -112,6 +113,7 @@ public sealed class StandaloneUcsiLifecycle(
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_started)
             return;
+        faultTelemetryExportService.Start();
         coordinator.Start();
         telemetryService.Start();
         _started = true;
@@ -124,6 +126,7 @@ public sealed class StandaloneUcsiLifecycle(
         _disposed = true;
         if (_started)
             telemetryService.Stop();
+        await faultTelemetryExportService.DisposeAsync().ConfigureAwait(false);
         await coordinator.DisposeAsync().ConfigureAwait(false);
         telemetryService.Dispose();
         appGlobals.AppCancellationTokenSource.Cancel();

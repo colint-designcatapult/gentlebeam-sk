@@ -321,9 +321,15 @@ uint32_t get_sys_data(int field_idx)
 			break;
 #if !defined(CALIBRATION_MODE)
 		case CC_TX_QC_VAL:
-			//cram the two 16-bit values into the 32-bit array position
-			output_val |= ((uint32_t)QC1_data << 16);   // Upper 16 bits
-			output_val |= (uint32_t)QC2_data & 0xFFFF;  // Lower 16 bits
+		{
+			//Pack two 12-bit ADC readings plus their I2C connection flags.
+			uint16_t qc1 = QC1_data & 0x0FFF;
+			uint16_t qc2 = QC2_data & 0x0FFF;
+			if (QC1_connected) qc1 |= QC_CONNECTION_FLAG;
+			if (QC2_connected) qc2 |= QC_CONNECTION_FLAG;
+			output_val = ((uint32_t)qc1 << 16) | qc2;
+			break;
+		}
 #endif
 		default:
 			break;

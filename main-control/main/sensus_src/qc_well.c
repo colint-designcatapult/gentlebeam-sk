@@ -46,12 +46,6 @@ void init_qc_well()
 	
 	init_crc16_tab();
 	
-#if !defined(CALIBRATION_MODE)
-	for(int op_idx = 0; op_idx < MAX_OPERATIONAL_POINTS; op_idx++)
-	{
-		qc_data[op_idx][0].i = op_idx;
-	}
-#endif
 	
 	VTIMER_qc_check.interval = 500;
 	VTIMER_qc_check.cb = qc_timer;
@@ -101,7 +95,6 @@ static void read_qc()
 	bool msg_ok = true;
 	uint16_t *qc_u16_buf = (uint16_t *)qc_rx_buf;
 	
-	memcpy(qc_raw_buf, qc_rx_buf+4, sizeof(uint16_t)*QC_DATA_COUNT);
 	
 	for(int i = 0; i < QC_RX_START_COUNT; i++)
 	{
@@ -121,7 +114,7 @@ static void read_qc()
 	
 	if(msg_ok)
 	{
-		report_qc_well_data((int16_t*)(qc_u16_buf+QC_RX_START_COUNT));
+		memcpy(qc_raw_buf, qc_rx_buf+4, sizeof(uint16_t)*QC_DATA_COUNT);
 	}
 	
 	qc_rx_idx = 0;
