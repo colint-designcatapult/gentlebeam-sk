@@ -652,6 +652,9 @@ static void goto_primed_state()
 {
 	//Restart standby timer
 	standby_deci_seconds = PRIMED_STANDBY_TICKS;
+
+	//Turn off heater when primed
+	set_hvps_heater(0.0f);
 	
 	//Ensure all plan information is cleared
 	clear_treatment_plan();
