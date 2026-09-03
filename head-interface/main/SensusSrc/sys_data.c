@@ -322,12 +322,14 @@ uint32_t get_sys_data(int field_idx)
 #if !defined(CALIBRATION_MODE)
 		case CC_TX_QC_VAL:
 		{
-			//Pack two 12-bit ADC readings plus their I2C connection flags.
-			uint16_t qc1 = QC1_data & 0x0FFF;
-			uint16_t qc2 = QC2_data & 0x0FFF;
-			if (QC1_connected) qc1 |= QC_CONNECTION_FLAG;
-			if (QC2_connected) qc2 |= QC_CONNECTION_FLAG;
-			output_val = ((uint32_t)qc1 << 16) | qc2;
+			//Wire channel 0 carries PC2; compatibility channel 1 remains disconnected.
+			QcSnapshot snapshot;
+			qc_get_snapshot(&snapshot);
+			uint16_t channel0 = snapshot.channel0_reading & 0x0FFFu;
+			uint16_t channel1 = snapshot.channel1_reading & 0x0FFFu;
+			if (snapshot.channel0_connected) channel0 |= QC_CONNECTION_FLAG;
+			if (snapshot.channel1_connected) channel1 |= QC_CONNECTION_FLAG;
+			output_val = ((uint32_t)channel1 << 16) | channel0;
 			break;
 		}
 #endif

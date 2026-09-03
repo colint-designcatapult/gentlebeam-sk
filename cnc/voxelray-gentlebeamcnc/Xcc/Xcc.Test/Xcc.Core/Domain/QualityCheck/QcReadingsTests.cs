@@ -1,24 +1,29 @@
-﻿using Xcc.Core.Domain.QualityCheck;
+using System;
+using System.Collections.Generic;
+using NUnit.Framework;
+using Xcc.Core.Domain.QualityCheck;
 
 namespace Xcc.Test.Xcc.Core.Domain.QualityCheck
 {
     public class QcReadingsTests
     {
         [Test]
-        public void QcReadings_Ctor_Throws()
+        public void Constructor_ExposesImmutableTwoChannelContract()
         {
-            var ex = Assert.Throws<ArgumentNullException>(() => new QcReadings(null));
-            Assert.That(ex!.Message, Does.Contain("no data"));
-        }
-        
-        [Test]
-        public void QcReadings_Ctor()
-        {
-            var input = new float[] { 1.1f, 2.2f, 3.3f };
+            var sut = new QcReadings(11u, 22u, 33u, 44u);
 
-            var sut = new QcReadings(input);
+            Assert.Multiple(() =>
+            {
+                Assert.That(sut.Channel0Accumulation, Is.EqualTo(11u));
+                Assert.That(sut.Channel1Accumulation, Is.EqualTo(22u));
+                Assert.That(sut.Channel0SampleCount, Is.EqualTo(33u));
+                Assert.That(sut.Channel1SampleCount, Is.EqualTo(44u));
+                Assert.That(sut.Accumulations, Is.EqualTo(new uint[] { 11u, 22u }));
+            });
 
-            Assert.That(sut.Data, Is.EqualTo(input));
+            var mutableView = (IList<uint>)sut.Accumulations;
+            Assert.Throws<NotSupportedException>(() => mutableView[0] = 99u);
+            Assert.That(sut.Channel0Accumulation, Is.EqualTo(11u));
         }
     }
 }

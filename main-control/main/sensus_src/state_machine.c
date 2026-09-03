@@ -310,6 +310,10 @@ static void run_crash_state(EventType ev)
 	enable_hv(false);
 	//Disable EMISSION interlock
 	enable_ecc(false);
+	enable_grid(false);
+#if !defined(CALIBRATION_MODE)
+	qc_session_stop();
+#endif
 	
 	//Ensure kV, source heater and grid voltages are 0
 	set_hvps_kv(0, 0);
@@ -1018,8 +1022,29 @@ static void run_launching_state(EventType ev)
 	}
 	else if(ev == EVENT_HVPS_SP_REACHED)
 	{
+#if !defined(CALIBRATION_MODE)
+		QcSessionStatus qc_status = qc_session_get_status();
+		if(qc_status == QC_SESSION_ARMED)
+		{
+			qc_session_start_for_emission();
+		}
+		else
+		{
+			goto_emission_state();
+		}
+#else
 		goto_emission_state();
+#endif
 	}
+#if !defined(CALIBRATION_MODE)
+	else if(ev == EVENT_QC_ACCUMULATION_ACTIVE)
+	{
+		if(qc_session_get_status() == QC_SESSION_ACCUMULATING)
+		{
+			goto_emission_state();
+		}
+	}
+#endif
 }
 
 static void goto_emission_state()
@@ -1051,7 +1076,7 @@ static void run_emission_state(EventType ev)
 	}
 	else if(ev == EVENT_PC_STOP)
 	{
-		goto_termination_state();
+		goto_discharge_state();
 	}
 	else if(ev == EVENT_OP_COMPLETE)
 	{
@@ -1070,8 +1095,12 @@ static void goto_termination_state()
 	
 	while(sys_now() < time_set){}
 	
-	//Disable EMISSION interlock
+	//Disable both physical emission enables before stopping QC acquisition.
 	enable_ecc(false);
+	enable_grid(false);
+#if !defined(CALIBRATION_MODE)
+	qc_session_stop();
+#endif
 	
 	//Pause timers
 	pause_ext_timers();
@@ -1115,6 +1144,9 @@ static void enter_discharge_state(XState target_state)
 {
 	//Disable HV interlock
 	enable_hv(false);
+#if !defined(CALIBRATION_MODE)
+	qc_session_stop();
+#endif
 
 	//Stop an active emission while outputs ramp to zero.
 	pause_ext_timers();

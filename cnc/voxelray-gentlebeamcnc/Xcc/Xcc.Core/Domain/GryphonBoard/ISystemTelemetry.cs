@@ -46,6 +46,8 @@ public interface ISystemTelemetry
     TelemetryVector3? Mag2 { get; }
     float? QcChannel0Reading { get; }
     float? QcChannel1Reading { get; }
+    uint? QcChannel0Accumulation { get; }
+    uint? QcChannel1Accumulation { get; }
     bool? QcAdc1Connected { get; }
     bool? QcAdc2Connected { get; }
 

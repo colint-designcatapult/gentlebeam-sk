@@ -306,12 +306,14 @@ configured UART baud rate and reports values to the main control board at a rate
 PREREQUISITES: >>>
 1. The system is powered on and ready to run.
 2. A UART control and monitoring tool is connected to the head interface's main-control UART.
-3. The tool can send a valid 8-byte indicator LED control packet and timestamp reported data packets.
+3. The tool can send a valid 12-byte normal-firmware control packet and timestamp reported data
+   packets. For calibration firmware, it can send the legacy 8-byte indicator control packet.
 <<<
 STEPS: >>>
 1. Configure the control and monitoring tool for the head interface UART baud rate.
-2. Send a valid 8-byte control packet as one contiguous transmission, without delays between bytes,
-   requesting a known indicator LED state.
+2. Send a valid 12-byte normal-firmware control packet as one contiguous transmission, without
+   delays between bytes. Request a known indicator LED state in bytes 0 through 7 and Stopped QC
+   state in bytes 8 through 11 using duplicated values and complements.
 3. Observe the indicator LED ring.
 4. Monitor and timestamp the data packets reported by the head interface for at least 2 seconds.
 <<<
@@ -448,25 +450,33 @@ RELATIONS:
 UID: TC-H1FHI-54
 TITLE: QC Read - Test Case
 STATEMENT: >>>
-The service user should be able to view system flow values in the
-services screen.
+Verify the single-diode analog QC acquisition lifecycle, wire-channel mapping, DMA half-boundary
+stop behavior, and error reporting.
 <<<
 PREREQUISITES: >>>
-1. The user should be service user
-2. The system should be powered on without any collimator connected to it.
-3. The system should be in service mode
+1. The system, QC collimator, main-control board, and head-interface board are connected.
+2. PC2 (``ADC1_IN12``) can be driven with a known voltage within the ADC input range.
+3. TIM2 update triggers and DMA2 Stream 0 timing can be observed, and an ADC or DMA fault can be
+   injected.
 <<<
 STEPS: >>>
-1. The QC collimator should be connected by service user
-2. Check the head interface board
-3. Run a QC procedure
-4. Check the QC Diode readings
+1. Confirm idle PC2 monitoring, then command Accumulating and wait for Active.
+2. Hold PC2 at a known ADC code through at least one complete 32-sample DMA burst.
+3. Command Stopped before half-transfer in one run and after half-transfer in a second run.
+4. Repeat acquisition while injecting an ADC or DMA error.
+5. Read the head-interface report after each transition.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the collimator is connected
-2. Verify system is ready to use and there is QC data below the low threshold
-3. Verify the QC procedure begins
-4. Verify the QC reading increases significantly when the QC procedure is running
+1. Temperature and pressure monitoring stop before TIM2-triggered ADC1 DMA sampling begins, and
+   only ADC1 DMA2 Stream 0 callbacks affect QC acquisition.
+2. PC2 values accumulate only in wire channel 0; each full burst adds 32 samples. Wire channel 1
+   remains at zero samples, zero accumulation, and disconnected.
+3. Stop before half-transfer adds no samples from that burst. Stop after half-transfer preserves
+   exactly the first 16 conversions and completes after the second 16 conversions.
+4. No DMA half is counted twice. The report contains both wire-channel sums, both counts, and a
+   coherent Active, Complete, or Error state.
+5. An injected error invalidates the active transfer, reports Error, preserves committed data only,
+   and restores the software-triggered ADC1 monitoring sequence.
 <<<
 RELATIONS:
 - TYPE: Parent

@@ -222,7 +222,7 @@ STATEMENT: >>>
 
       %% Ready → emission flow
       Ready -->|PC RELEASE POINT| Launching
-      Launching -->|HVPS SP REACHED| Emission
+      Launching -->|HVPS SP REACHED; non-QC or QC Active acknowledged| Emission
 
       %% Emission loop
       Emission -->|OP COMPLETE| Ready
@@ -970,7 +970,16 @@ RELATIONS:
 UID: SW-H1FWMC-202
 TITLE: State: Launching
 STATEMENT: >>>
-The launching state is for the system to ramp up the filament current so that the cathode is warm enough for targeted emission output. The firmware also sets the deflection and focusing coil outputs in this state. If an error occurs, the firmware transitions into fault state. If the PC sends a stop command, the firmware transitions to termination state. Otherwise, once the filament current has stabilized at the target current, the firmware transitions into the emission state.
+The launching state ramps filament current and sets the deflection and focusing coil outputs while
+emission remains disabled. For an ordinary emission, reaching the HVPS setpoint permits the
+transition to Emission. For a QC-armed emission, the firmware first sends the head-interface
+Accumulating command and remains in Launching until the head reports an Active edge. A stale
+Complete report cannot satisfy this gate. Head command retries are bounded; a timeout or Error
+keeps radiation disabled, sends a Stopped command, reports a QC fault, and transitions through the
+normal fault handling. A PC Clear Faults command resets the main QC session and its PC result to
+Idle/zero, retransmits Stopped until the head confirms a safe terminal state, and accepts the
+head's retained Error state as confirmation that acquisition is no longer active. A PC stop
+transitions to Termination.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1161,9 +1170,20 @@ RELATIONS:
 UID: SW-H1FWMC-294
 TITLE: Head Interface Board Data
 STATEMENT: >>>
-The transmitted data to the head interface board is the desired indicator LED output, representing the current state of the system. As this is a simple single byte value, it is sent multiple times in a single data packet, to help the head interface board firmware to detect any transmission errors.
+In normal firmware, the packet transmitted to the head interface is 12 bytes. Bytes 0 through 7
+carry the duplicated indicator LED command and complements. Bytes 8 through 11 independently
+carry the duplicated desired QC acquisition state and complements. The QC command is retried at
+100 ms intervals for at most one second while the LED command remains independently persistent.
+Calibration firmware retains the legacy 8-byte command.
 
-The received data from the head interface board are cooling system feedback values monitored at the system's x-ray head, as well as the reported values of other x-ray head peripherals such as the state of the buttons, and the values from the magnetometers and collimator. All values are reported in 4-byte fields separated by delimiters. As the collimator ID value is a 64-bit value, there are two 4byte fields which together represent the 64-bit ID. The main-control firmware uses this head-interface packet layout in every build mode.
+The normal-firmware packet received from the head interface retains the established cooling,
+button, collimator-ID, and magnetometer fields and appends unsigned 32-bit QC channel 0 and
+channel 1 accumulation sums, their independent sample counts, and the head QC state. Channel 0
+contains the analog PC2 diode acquisition. Channel 1 is retained for wire compatibility and is
+reported as zero samples, zero accumulation, and disconnected. Main control snapshots the five
+values once per valid head packet, forwards them without local re-accumulation, and accepts
+Complete only after observing Active for the current session. Calibration firmware retains the
+legacy receive layout.
 <<<
 RELATIONS:
 - TYPE: Parent

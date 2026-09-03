@@ -16,6 +16,9 @@
 #include "hvps.h"
 #include "state_machine.h"
 #include "faults.h"
+#ifndef CALIBRATION_MODE
+#include "head_board.h"
+#endif
 
 #define FAULT_REPLAY_INTERVAL_MS 1000u
 
@@ -236,6 +239,9 @@ void clear_faults(void)
 {
 	gpio_set_pin_level(IO_LED1, true);
 	pulse_fault_clear();
+#ifndef CALIBRATION_MODE
+	qc_session_reset();
+#endif
 
 	CRITICAL_SECTION_ENTER()
 	fault_latched = false;

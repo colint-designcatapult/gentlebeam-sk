@@ -760,40 +760,40 @@ static void process_cal_mag_command(uint32_t *data)
 #else
 static void process_qc_command(uint32_t *data)
 {
-		uint32_t data_1 = data[0];
-		uint32_t data_2 = data[1]; // TODO: implement the sampling rate setup
-		
-		switch(data_1)
+	uint32_t command = data[QC_REQ_COMMAND];
+	(void)data[QC_REQ_RESERVED];
+
+	switch(command)
+	{
+		case 1:
 		{
-			case 1:
-			// StartGetResult
-			reset_qc_reading_buf();
-			reset_qc_reading();
-			break;
-			case 2:
-			// StopGetResult
-			report_qc_reading();
-			if(qc_reading_buf[0].f < QC_MIN_READ)
+			QcSessionStatus response_status;
+			if(qc_session_get_status() == QC_SESSION_ARMED)
 			{
-				report_typed_fault3(FAULT_QC, "QC channel 0 reading %f is below the minimum %f after %u samples.", MAKE_ARG(qc_reading_buf[0].f), MAKE_ARG((float)QC_MIN_READ), MAKE_ARG(qc_samples));
+				response_status = QC_SESSION_ARMED;
 			}
-			else if(qc_reading_buf[1].f < QC_MIN_READ)
+			else if(system_status[SS_STATE].i == STATE_READY)
 			{
-				report_typed_fault3(FAULT_QC, "QC channel 1 reading %f is below the minimum %f after %u samples.", MAKE_ARG(qc_reading_buf[1].f), MAKE_ARG((float)QC_MIN_READ), MAKE_ARG(qc_samples));
+				response_status = qc_session_arm();
 			}
-			else if(qc_reading_buf[0].f > QC_MAX_READ)
+			else
 			{
-				report_typed_fault3(FAULT_QC, "QC channel 0 reading %f is above the maximum %f after %u samples.", MAKE_ARG(qc_reading_buf[0].f), MAKE_ARG((float)QC_MAX_READ), MAKE_ARG(qc_samples));
+				response_status = QC_SESSION_ERROR;
 			}
-			else if(qc_reading_buf[1].f > QC_MAX_READ)
-			{
-				report_typed_fault3(FAULT_QC, "QC channel 1 reading %f is above the maximum %f after %u samples.", MAKE_ARG(qc_reading_buf[1].f), MAKE_ARG((float)QC_MAX_READ), MAKE_ARG(qc_samples));
-			}
-			break;
-			default:
-			report_typed_fault2(FAULT_QC, "QC command was %u; expected %u.", MAKE_ARG(data_1), MAKE_ARG(2));
+			qc_reported[QC_RES_SESSION_STATUS].u = (uint32_t)response_status;
 			break;
 		}
+		case 2:
+			qc_session_stop();
+			break;
+		default:
+			qc_reported[QC_RES_SESSION_STATUS].u = QC_SESSION_ERROR;
+			report_typed_fault1(
+				FAULT_QC,
+				"QC command was %u; expected 1 or 2.",
+				MAKE_ARG(command));
+			break;
+	}
 }
 #endif
 

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Globalization;
 using System.Windows.Data;
 using Heracles.Application.AppLayer.Collimators;
 using Heracles.Application.AppLayer.Patient.Planning;
@@ -40,8 +39,6 @@ namespace Heracles.External.ViewModels.QualityCheck
 {
     public class BeamQaViewModel : OperatePlanViewModelBase
     {
-        private const int NumberOfQcDiodes = 5;
-        private const int QcSamplingWindowMs = 1000;
 
         #region Contructors
         public BeamQaViewModel()
@@ -282,58 +279,6 @@ namespace Heracles.External.ViewModels.QualityCheck
             },
             canExecuteMethod: CanRemove);
 
-        private DelegateCommand? _qcTestCommand;
-
-        public DelegateCommand QCTestCommand => _qcTestCommand ??= new DelegateCommand(
-            async () =>
-            {
-                bool isAlive;
-                try
-                {
-                    isAlive = await QcbService.PingBoardAsync();
-                    LogInfoSystem($"QCB ping: isAlive = {isAlive}");
-                }
-                catch (Exception ex)
-                {
-                    LogInfoSystem($"QCB ping: exception {ex.Message}");
-                    isAlive = false;
-                }
-
-                if (isAlive)
-                {
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            var status = await QcbService.StartQCReadingsAsync(NumberOfQcDiodes);
-                            bool isStarted = status == QcbCommandResponseStatus.StartConfirmed;
-                            LogInfoSystem($"QCB readings: isStarted = {isStarted}");
-                            if (!isStarted)
-                            {
-                                return;
-                            }
-
-                            var time = HeraclesExternalSettings.QcFieldDuration * 1000;
-                            await Task.Delay(time);
-                            var readings = await QcbService.StopQCReadingsAsync(NumberOfQcDiodes);
-                            if (readings != null)
-                            {
-                                LogInfoSystem($"QCB readings after {time}ms: " + string.Join(" ", readings.Data.Select(x => x.ToString(CultureInfo.CurrentCulture))));
-                            }
-                            else
-                            {
-                                LogInfoSystem("QCB readings: no response");
-                            }
-
-                            DialogService.Report("QCB", "QCB readings test is done. See debug log for details.", ReportType.Info);
-                        }
-                        catch (Exception ex)
-                        {
-                            LogInfoSystem($"QCB Start/Stop exception: {ex.Message}");
-                        }
-                    });
-                }
-            });
 
         #endregion Commands
 
@@ -567,7 +512,8 @@ namespace Heracles.External.ViewModels.QualityCheck
 
             using var tokenSource = new CancellationTokenSource();
             Task updateAfterEmissionTask = Task.CompletedTask;
-
+            bool startAttempted = false;
+            bool stopCompleted = false;
             try
             {
                 if (ActiveEmissionIndex < 0 || ActiveEmissionIndex >= QcPlan.Fields.Count)
@@ -584,6 +530,14 @@ namespace Heracles.External.ViewModels.QualityCheck
                 XrayPointStartTime = field.Actual;
                 UpdateBeamOnProgress(field.Duration, XrayTime);
 
+                startAttempted = true;
+                var startStatus = await QcbService.StartQCReadingsAsync();
+                if (startStatus != QcbCommandResponseStatus.StartConfirmed)
+                {
+                    throw new InvalidOperationException(
+                        "Main-control rejected the QC reading start command.");
+                }
+
                 UIStateMachine.RequestStateSwitch(UIMacroState.Emission);
                 _ = LogWriter.LogAsync(
                     $"Run QC emission {ActiveEmissionIndex + 1} by {UserStore.AuthorizedUser.EmailAddress}",
@@ -594,29 +548,12 @@ namespace Heracles.External.ViewModels.QualityCheck
                     () => UpdateAfterEmission(tokenSource.Token),
                     tokenSource.Token);
                 Task beamOn = MainBoardModel.BeamOn();
-                await WaitForEmissionAsync(beamOn, tokenSource.Token);
-
-                var startStatus = await QcbService.StartQCReadingsAsync(
-                    NumberOfQcDiodes,
-                    QcSamplingWindowMs);
-                if (startStatus != QcbCommandResponseStatus.StartConfirmed)
-                {
-                    await MainBoardModel.Stop();
-                    throw new InvalidOperationException(
-                        "Main-control rejected the QC reading start command.");
-                }
-
-                await Task.Delay(QcSamplingWindowMs, tokenSource.Token);
-                var readings = await QcbService.StopQCReadingsAsync(NumberOfQcDiodes);
-                if (readings is null)
-                {
-                    await MainBoardModel.Stop();
-                    throw new InvalidOperationException(
-                        "Main-control returned no QC readings.");
-                }
-
                 await beamOn;
                 await updateAfterEmissionTask;
+
+                QcReadings readings = await QcbService.StopQCReadingsAsync();
+                stopCompleted = true;
+
                 await MainBoardModel.UpdateCurrentEmissionFromGCB();
                 if (MainBoardModel.CurrentEmission is not { } completedEmission)
                 {
@@ -687,6 +624,20 @@ namespace Heracles.External.ViewModels.QualityCheck
             {
                 await tokenSource.CancelAsync();
                 await WaitAndIgnoreTaskExceptionsAsync(updateAfterEmissionTask);
+                if (startAttempted && !stopCompleted)
+                {
+                    try
+                    {
+                        _ = await QcbService.StopQCReadingsAsync();
+                    }
+                    catch (Exception cleanupException)
+                    {
+                        _ = LogWriter.LogAsync(
+                            $"QC cleanup stop failed: {cleanupException.Message}",
+                            LogRecordSeverity.Error,
+                            LogRecordType.System);
+                    }
+                }
                 SelectedEmission = null;
                 FieldsSelectionModel.SelectField(null);
                 IsCurrentViewModelRunning = false;
@@ -725,19 +676,6 @@ namespace Heracles.External.ViewModels.QualityCheck
                 : 0.0;
         }
 
-        private async Task WaitForEmissionAsync(Task beamOn, CancellationToken token)
-        {
-            while(GCBDataStore.SystemTelemetry?.ControlBoardState != GcbStateNew.Emission)
-            {
-                if(beamOn.IsCompleted)
-                {
-                    await beamOn;
-                    throw new InvalidOperationException("QC point completed without entering emission.");
-                }
-
-                await Task.Delay(10, token);
-            }
-        }
 
         protected override GcbOperationalPoint BuildGcbOperationalPoint(int fieldIndex)
         {

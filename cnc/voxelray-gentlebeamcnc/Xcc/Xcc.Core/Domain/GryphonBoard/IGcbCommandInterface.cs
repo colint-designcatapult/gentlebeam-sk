@@ -40,7 +40,7 @@ namespace Xcc.Core.Domain.GryphonBoard
         Task Conditioning(float conditioningSetpoint);
         Task WarmUp(float warmupSetpoint);
         Task<bool> PingQcb();
-        Task StartQcbReadings(int samplingWindowMs);
+        Task StartQcbReadings();
         Task<Xcc.Core.Domain.QualityCheck.QcReadings> StopQcbReadings();
         Task SendHvpsKv(float kvSetpoint, float powerSetpoint);
         Task SendHvpsMaLimit(float maSetpoint);

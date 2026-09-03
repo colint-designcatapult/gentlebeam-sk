@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Empyrean.Common.Infra.Networking.Udp;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
+using Xcc.Core.Domain.QualityCheck;
 using Xcc.Core.Logging;
 using Xcc.Infra.GryphonBoard.Comm;
 using static System.Formats.Asn1.AsnWriter;
@@ -15,6 +17,8 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
         #region Constants
         private const int DelayAfterSendRequestFailureMilliseconds = 1000;
         private const int QcbResponseFieldCount = 5;
+        private const int QcbStopDeadlineMilliseconds = 2000;
+        private const int QcbPollIntervalMilliseconds = 50;
         #endregion Constants
 
         public GcbCommandInterface(
@@ -267,34 +271,80 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             return Math.Abs((float)response[0] - 1.0f) < float.Epsilon;
         }
 
-        public async Task StartQcbReadings(int samplingWindowMs)
+        public async Task StartQcbReadings()
         {
-            byte[] data = GcbXRayCommandOperator.GenerateQcbReadingsCmd(1, samplingWindowMs);
-            byte[] responseData = await SendRequestSeveralTimes(data);
-            ParseAndValidateResponseData(
-                responseData,
-                GCBPacketType.QcbReadingsCommandResponse,
-                QcbResponseFieldCount);
-        }
-
-        public async Task<Xcc.Core.Domain.QualityCheck.QcReadings> StopQcbReadings()
-        {
-            byte[] data = GcbXRayCommandOperator.GenerateQcbReadingsCmd(2, 0);
+            byte[] data = GcbXRayCommandOperator.GenerateQcbReadingsCmd(1u);
             byte[] responseData = await SendRequestSeveralTimes(data);
             UdpPacket response = ParseAndValidateResponseData(
                 responseData,
                 GCBPacketType.QcbReadingsCommandResponse,
                 QcbResponseFieldCount);
+            QcSessionStatus status = (QcSessionStatus)(uint)response[4];
+            if (status != QcSessionStatus.Armed)
+            {
+                throw new QcAcquisitionException(
+                    $"Main-control rejected QC acquisition start with status {status}.");
+            }
+        }
 
-            var readings = new float[QcbResponseFieldCount];
-            readings[0] = response[0];
-            readings[1] = response[1];
-            // Response index 2 is the firmware sample count, not a diode value.
-            uint sampleCount = response[2];
-            readings[2] = 0;
-            readings[3] = response[3];
-            readings[4] = response[4];
-            return new Xcc.Core.Domain.QualityCheck.QcReadings(readings, sampleCount);
+        public async Task<QcReadings> StopQcbReadings()
+        {
+            Stopwatch deadline = Stopwatch.StartNew();
+            while (deadline.ElapsedMilliseconds < QcbStopDeadlineMilliseconds)
+            {
+                int remaining = QcbStopDeadlineMilliseconds - checked((int)deadline.ElapsedMilliseconds);
+                byte[] data = GcbXRayCommandOperator.GenerateQcbReadingsCmd(2u);
+                byte[]? responseData;
+                try
+                {
+                    responseData = (await GcbCommandsAsyncService
+                        .SendRequestAsync(data, Math.Max(1, remaining)))!;
+                }
+                catch (Exception exception) when (
+                    exception is UdpException or InvalidOperationException &&
+                    deadline.ElapsedMilliseconds < QcbStopDeadlineMilliseconds)
+                {
+                    await DelayForQcbPollAsync(deadline);
+                    continue;
+                }
+                if (responseData is null || responseData.Length == 0)
+                {
+                    await DelayForQcbPollAsync(deadline);
+                    continue;
+                }
+
+                UdpPacket response = ParseAndValidateResponseData(
+                    responseData,
+                    GCBPacketType.QcbReadingsCommandResponse,
+                    QcbResponseFieldCount);
+                QcSessionStatus status = (QcSessionStatus)(uint)response[4];
+                if (status == QcSessionStatus.Complete)
+                {
+                    return new QcReadings(
+                        response[0],
+                        response[1],
+                        response[2],
+                        response[3]);
+                }
+                if (status == QcSessionStatus.Error)
+                {
+                    throw new QcAcquisitionException(
+                        "Main-control reported a QC acquisition error.");
+                }
+                if (status is not (
+                    QcSessionStatus.Starting or
+                    QcSessionStatus.Accumulating or
+                    QcSessionStatus.Stopping))
+                {
+                    throw new QcAcquisitionException(
+                        $"Main-control returned unexpected QC status {status} while stopping.");
+                }
+
+                await DelayForQcbPollAsync(deadline);
+            }
+
+            throw new TimeoutException(
+                $"QC acquisition did not complete within {QcbStopDeadlineMilliseconds} ms.");
         }
 
         public async Task SendHvpsKv(float kvSetpoint, float powerSetpoint)
@@ -658,6 +708,15 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
             byte[] responseData = await SendRequestSeveralTimes(data);
 
             return ParseOperationalPointData(responseData);
+        }
+
+        private static async Task DelayForQcbPollAsync(Stopwatch deadline)
+        {
+            int remaining = QcbStopDeadlineMilliseconds - checked((int)deadline.ElapsedMilliseconds);
+            if (remaining > 0)
+            {
+                await Task.Delay(Math.Min(QcbPollIntervalMilliseconds, remaining));
+            }
         }
 
         public async Task<VersionInfo> GetVersionInfo()

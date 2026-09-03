@@ -11,7 +11,6 @@ void update_system_timers()
 	update_led_ms--;
 	button_process_ready = true;
 	collim_ms--;
-	qc_reset_count_ms++;
 	led_ring_ms--;
 #endif
 }

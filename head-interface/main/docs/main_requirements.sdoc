@@ -187,8 +187,8 @@ UID: RQ-H1FHI-53
 TYPE: Safety
 TITLE: QC Read
 STATEMENT: >>>
-The head interface firmware shall be able to read and report x-ray sensor data from two diodes
-when a quality check collimator is mounted
+The head interface firmware shall be able to read and report x-ray sensor data from one analog
+diode when a quality check collimator is mounted
 <<<
 
 [REQUIREMENT]

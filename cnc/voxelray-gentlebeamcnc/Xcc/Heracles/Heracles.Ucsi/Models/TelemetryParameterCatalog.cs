@@ -194,6 +194,8 @@ public sealed class TelemetryParameterCatalog
             {
                 nameof(ISystemTelemetry.QcChannel0Reading) => "QC Channel 0 Reading",
                 nameof(ISystemTelemetry.QcChannel1Reading) => "QC Channel 1 Reading",
+                nameof(ISystemTelemetry.QcChannel0Accumulation) => "QC Channel 0 Accumulation",
+                nameof(ISystemTelemetry.QcChannel1Accumulation) => "QC Channel 1 Accumulation",
                 nameof(ISystemTelemetry.QcAdc1Connected) => "QC ADC 1 Connected",
                 nameof(ISystemTelemetry.QcAdc2Connected) => "QC ADC 2 Connected",
                 _ => null,

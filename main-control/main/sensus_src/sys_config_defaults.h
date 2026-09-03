@@ -116,8 +116,6 @@
 
 #define DEFAULT_MA_THRESH	0.25
 
-#define QC_MAX_READ		819000
-#define QC_MIN_READ		0
 #endif
 
 #endif /* SYS_CONFIG_DEFAULTS_H_ */

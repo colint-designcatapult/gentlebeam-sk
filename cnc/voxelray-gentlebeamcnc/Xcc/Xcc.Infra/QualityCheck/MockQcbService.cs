@@ -6,14 +6,10 @@ using Xcc.Core.Enums;
 
 namespace Xcc.Infra.QualityCheck
 {
-    /// <summary>
-    /// Mock implementation of IQcbService for testing without physical QCB hardware.
-    /// Returns synthetic quality check data as placeholder until new I2C-based QC collimator integration is complete.
-    /// </summary>
     public class MockQcbService : IQcbService
     {
         private readonly ILogWriter _logWriter;
-        private bool _isStarted = false;
+        private bool _isStarted;
 
         public MockQcbService(ILogWriter logWriter)
         {
@@ -22,44 +18,33 @@ namespace Xcc.Infra.QualityCheck
 
         public void Start()
         {
-            // Mock: board is always "connected"
-            _logWriter.LogAsync("MockQcbService: Start - Mock QCB service initialized", LogRecordSeverity.Info, LogRecordType.System).Wait();
+            _logWriter.LogAsync(
+                "MockQcbService: Start - Mock QCB service initialized",
+                LogRecordSeverity.Info,
+                LogRecordType.System).Wait();
         }
 
-        public Task<bool> PingBoardAsync()
-        {
-            // Mock: always returns true (board is connected)
-            return Task.FromResult(true);
-        }
+        public Task<bool> PingBoardAsync() => Task.FromResult(true);
 
-        public Task<QcbCommandResponseStatus> StartQCReadingsAsync(int numberOfDiodes, int samplingIntervalMs = 50)
+        public Task<QcbCommandResponseStatus> StartQCReadingsAsync()
         {
-            // Mock: always succeeds
             _isStarted = true;
             return Task.FromResult(QcbCommandResponseStatus.StartConfirmed);
         }
 
-        public Task<QcReadings?> StopQCReadingsAsync(int numberOfDiodes)
+        public Task<QcReadings> StopQCReadingsAsync()
         {
-            // Mock: return synthetic data - 5 equal diodes at 1.0f intensity
             if (!_isStarted)
             {
-                return Task.FromResult<QcReadings?>(null);
+                throw new InvalidOperationException("QC acquisition has not been started.");
             }
 
             _isStarted = false;
-            var mockData = new float[numberOfDiodes];
-            for (int i = 0; i < numberOfDiodes; i++)
-            {
-                mockData[i] = 1.0f; // Baseline mock intensity
-            }
-
-            return Task.FromResult<QcReadings?>(new QcReadings(mockData));
+            return Task.FromResult(new QcReadings(1u, 1u, 1u, 1u));
         }
 
         public void Dispose()
         {
-            // Mock: no resources to dispose
         }
     }
 }

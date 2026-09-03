@@ -9,7 +9,11 @@
 #define CC_DELIM_VAL	0xA5
 #define CC_TERM_VAL		0x99
 
+#if defined(CALIBRATION_MODE)
 #define CC_RX_NUM		8
+#else
+#define CC_RX_NUM		12
+#endif
 
 enum
 {
@@ -31,10 +35,33 @@ enum
 	CC_TX_MAG_Z_2,
 #if !defined(CALIBRATION_MODE)
 	CC_TX_QC_VAL,
+	CC_TX_QC_ACCUMULATION_0,
+	CC_TX_QC_ACCUMULATION_1,
+	CC_TX_QC_SAMPLE_COUNT_0,
+	CC_TX_QC_SAMPLE_COUNT_1,
+	CC_TX_QC_ACQUISITION_STATE,
 #endif
 	CC_TX_CRC,
 	CC_TX_NUM_FIELDS
 };
+#if !defined(CALIBRATION_MODE)
+#define CC_QC_ANALOG_WIRE_CHANNEL	0u
+#define CC_QC_UNUSED_WIRE_CHANNEL	1u
+
+typedef enum
+{
+	CC_QC_DESIRED_STOPPED = 0,
+	CC_QC_DESIRED_ACCUMULATING = 1
+} CcQcDesiredState;
+
+typedef enum
+{
+	CC_QC_STATE_STOPPED = 0,
+	CC_QC_STATE_ACTIVE,
+	CC_QC_STATE_COMPLETE,
+	CC_QC_STATE_ERROR
+} CcQcAcquisitionState;
+#endif
 
 enum
 {

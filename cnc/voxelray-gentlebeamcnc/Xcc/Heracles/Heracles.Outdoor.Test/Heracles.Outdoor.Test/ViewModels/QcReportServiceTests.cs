@@ -27,7 +27,7 @@ internal class QcReportServiceTests
         var field = new QcSampleFieldEntry(configuration.Object, filamentSetpoint: 1.0)
         {
             Name = TreatmentFieldName.PlusC,
-            Intensities = new QcReadings([10, 20, 30, 40, 50]),
+            Intensities = new QcReadings(10u, 20u, 30u, 40u),
         };
 
         var reportList = new Mock<IQcReportListModel>();
@@ -43,7 +43,7 @@ internal class QcReportServiceTests
                     header,
                     fields.Select(value => new QcField(
                         value.Name,
-                        value.Intensities.Data
+                        value.Intensities.Accumulations
                             .Select(reading => (double?)reading)
                             .ToArray())))));
         var userStore = new Mock<IAuthorizedUserStore>();

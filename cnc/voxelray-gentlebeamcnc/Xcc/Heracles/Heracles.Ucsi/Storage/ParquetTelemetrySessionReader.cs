@@ -23,8 +23,8 @@ public sealed class ParquetTelemetrySessionReader(
             reader = await ParquetReader.CreateAsync(
                 fullPath,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
-            ValidateMetadata(reader);
-            Dictionary<string, DataField> fields = ValidateSchema(reader);
+            string schemaVersion = ValidateMetadata(reader);
+            Dictionary<string, DataField> fields = ValidateSchema(reader, schemaVersion);
             IReadOnlyList<ReplayRowGroupIndex> index = await BuildIndexAsync(
                 reader,
                 fields,
@@ -44,17 +44,21 @@ public sealed class ParquetTelemetrySessionReader(
         }
     }
 
-    private void ValidateMetadata(ParquetReader reader)
+    private static string ValidateMetadata(ParquetReader reader)
     {
         if (reader.CustomMetadata is null
             || !reader.CustomMetadata.TryGetValue("ucsi.schema.version", out string? schemaVersion)
-            || !string.Equals(schemaVersion, ParquetTelemetrySessionWriter.SchemaVersion, StringComparison.Ordinal))
+            || (schemaVersion != "1"
+                && schemaVersion != ParquetTelemetrySessionWriter.SchemaVersion))
         {
             throw new InvalidDataException("Unsupported or missing UCSI telemetry schema version.");
         }
+        return schemaVersion;
     }
 
-    private Dictionary<string, DataField> ValidateSchema(ParquetReader reader)
+    private Dictionary<string, DataField> ValidateSchema(
+        ParquetReader reader,
+        string schemaVersion)
     {
         var expected = new List<DataField>
         {
@@ -64,12 +68,22 @@ public sealed class ParquetTelemetrySessionReader(
             new DataField<string>("SourceKind", false),
             new DataField<byte[]>("RawDatagram", true),
         };
-        expected.AddRange(catalog.All.Select(descriptor => descriptor.CreateParquetField()));
+        IEnumerable<TelemetryParameterDescriptor> descriptors = catalog.All;
+        if (schemaVersion == "1")
+        {
+            descriptors = descriptors.Where(descriptor =>
+                descriptor.Id != "system.QcChannel0Accumulation"
+                && descriptor.Id != "system.QcChannel1Accumulation");
+        }
+        expected.AddRange(descriptors.Select(descriptor => descriptor.CreateParquetField()));
 
         DataField[] actualFields = reader.Schema.GetDataFields();
         var actual = actualFields.ToDictionary(field => field.Name, StringComparer.Ordinal);
         if (actual.Count != expected.Count)
-            throw new InvalidDataException("The telemetry schema column count does not match version 1.");
+        {
+            throw new InvalidDataException(
+                $"The telemetry schema column count does not match version {schemaVersion}.");
+        }
 
         foreach (DataField expectedField in expected)
         {
@@ -217,12 +231,20 @@ internal sealed class ParquetReplaySession : IAsyncDisposable
                 await group.ReadAsync<long>(_fields["ElapsedTicks"], elapsed, cancellationToken: cancellationToken).ConfigureAwait(false);
                 foreach (TelemetryParameterDescriptor descriptor in descriptors)
                 {
-                    IParquetColumnReader column = ParquetColumnReaderFactory.Create(
-                        descriptor,
-                        _fields[descriptor.ParquetColumnName]);
-                    await column.ReadAsync(group, groupIndex.RowCount, cancellationToken).ConfigureAwait(false);
                     List<TelemetryGraphPoint> destination = points[descriptor.Id];
                     IDictionary<string, double> descriptorCategories = categories[descriptor.Id];
+                    if (!_fields.TryGetValue(descriptor.ParquetColumnName, out DataField? field))
+                    {
+                        for (int row = 0; row < elapsed.Length; row++)
+                        {
+                            if (elapsed[row] >= startElapsedTicks && elapsed[row] <= endElapsedTicks)
+                                destination.Add(new TelemetryGraphPoint(elapsed[row], null));
+                        }
+                        continue;
+                    }
+
+                    IParquetColumnReader column = ParquetColumnReaderFactory.Create(descriptor, field);
+                    await column.ReadAsync(group, groupIndex.RowCount, cancellationToken).ConfigureAwait(false);
                     for (int row = 0; row < elapsed.Length; row++)
                     {
                         if (elapsed[row] < startElapsedTicks || elapsed[row] > endElapsedTicks)
@@ -448,9 +470,9 @@ internal sealed class LoadedReplayGroup
         var columns = new Dictionary<string, IParquetColumnReader>(catalog.All.Count, StringComparer.Ordinal);
         foreach (TelemetryParameterDescriptor descriptor in catalog.All)
         {
-            IParquetColumnReader column = ParquetColumnReaderFactory.Create(
-                descriptor,
-                fields[descriptor.ParquetColumnName]);
+            if (!fields.TryGetValue(descriptor.ParquetColumnName, out DataField? field))
+                continue;
+            IParquetColumnReader column = ParquetColumnReaderFactory.Create(descriptor, field);
             await column.ReadAsync(reader, metadata.RowCount, cancellationToken).ConfigureAwait(false);
             columns.Add(descriptor.Id, column);
         }
@@ -461,7 +483,13 @@ internal sealed class LoadedReplayGroup
     {
         var values = new Dictionary<string, object?>(catalog.All.Count, StringComparer.Ordinal);
         foreach (TelemetryParameterDescriptor descriptor in catalog.All)
-            values.Add(descriptor.Id, _columns[descriptor.Id].GetValue(row));
+        {
+            values.Add(
+                descriptor.Id,
+                _columns.TryGetValue(descriptor.Id, out IParquetColumnReader? column)
+                    ? column.GetValue(row)
+                    : null);
+        }
 
         var telemetry = new RecordedSystemTelemetry(values);
         IReadOnlyList<FaultEntry> faults = BuildFaults(values);

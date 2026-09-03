@@ -346,16 +346,19 @@ RELATIONS:
 UID: SW-H1FHI-34
 TITLE: Control Communication Data
 STATEMENT: >>>
-The data received from the main control board is the desired indicator LED output, representing the
-current state of the system. As this is a simple single byte value, it is sent by the main control board
-multiple times in a single data packet, to help the head interface board firmware to detect any
-transmission errors.
+In normal firmware, the data received from the main control board is a 12-byte command. Bytes
+0 through 7 contain the desired indicator LED output as duplicated values and complements.
+Bytes 8 through 11 contain the desired QC acquisition state using the same duplicated-value and
+complement integrity check. Invalid integrity fields are ignored. Calibration firmware retains the
+legacy 8-byte indicator-only command.
 
-The transmitted data to the head interface board are cooling system feedback values monitored at
-the system's x-ray head, as well as the reported values of other x-ray head peripherals such as the
-state of the buttons, and the values from the magnetometers and collimator. All values are reported
-in 4-byte fields separated by delimiters. As the collimator ID value is a 64-bit value, there are two
-4byte fields which together represent the 64-bit ID.
+The normal-firmware data transmitted to the main control board includes cooling feedback, buttons,
+magnetometers, and the 64-bit collimator ID in the established fields. It appends the unsigned
+32-bit channel 0 and channel 1 QC accumulation sums, their independent unsigned sample counts,
+and the QC acquisition state. Channel 0 contains the diode connected directly to PC2
+(``ADC1_IN12``). Channel 1 remains in the packet for wire compatibility and is reported as zero
+samples, zero accumulation, and disconnected. Calibration firmware retains the legacy packet
+layout.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -430,7 +433,25 @@ RELATIONS:
 UID: SW-H1FHI-39
 TITLE: Quality Control (QC)
 STATEMENT: >>>
-Two external ADCs capture X-ray sensor data from two diodes when a quality-check collimator is installed. The firmware periodically reads both ADCs, which share the same I²C bus but have different addresses despite being the same model. It alternates between the two devices, retrieves their conversion data, and forwards the results to the main control board, which then sends the data to the PC for quality analysis.
+One analog X-ray detector diode is connected directly to PC2 (``ADC1_IN12``) and maps to wire
+channel 0. Wire channel 1 is retained for compatibility but has no detector and remains zero and
+disconnected. While idle, PC2 is included in the interrupt-driven ADC1 monitoring sequence so the
+instantaneous reading remains available.
+
+An accepted Accumulating command suspends temperature and pressure monitoring, configures ADC1
+for TIM2 update triggering, and starts a finite normal-mode DMA2 Stream 0 burst into 32 unsigned
+halfword samples. TIM2 continues its LED-ring PWM role and produces an ADC trigger at approximately
+111.1 Hz. The first 16 conversions are consumed at DMA half-transfer and the final 16 at
+transfer-complete. Each half is consumed at most once before the next finite burst starts, and each
+12-bit conversion is added to channel 0's unsigned 32-bit sum and sample count.
+
+Stop is bounded at a DMA half boundary. A request before half-transfer aborts the burst without
+counting it; a request after half-transfer preserves the first half and lets the second half finish
+before publishing Complete. ADC or DMA errors invalidate the active transfer, preserve only
+already committed halves, and publish Error. Complete and Error both restore the software-triggered
+ADC1 monitoring sequence. Command transitions occur in the scheduler rather than inside UART or
+DMA callbacks. A reported snapshot copies both sums, both counts, and state atomically so one
+main-control packet cannot mix values from different acquisition instants.
 <<<
 RELATIONS:
 - TYPE: Parent

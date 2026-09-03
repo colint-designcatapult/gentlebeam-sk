@@ -10,6 +10,10 @@
 
 #ifndef HEAD_BOARD_H_
 #define HEAD_BOARD_H_
+#include "system_parameters.h"
+#if !defined(CALIBRATION_MODE)
+#include "pc_comm_parser.h"
+#endif
 
 #define HB_COMM_VERSION_MAJ		'2'
 #define HB_COMM_VERSION_MIN		'0'
@@ -42,6 +46,13 @@ enum
 	HB_RX_MAG_Y_2,
 	HB_RX_MAG_Z_2,
 	HB_RX_QC_VAL,
+#if !defined(CALIBRATION_MODE)
+	HB_RX_QC_ACCUMULATION_0,
+	HB_RX_QC_ACCUMULATION_1,
+	HB_RX_QC_SAMPLE_COUNT_0,
+	HB_RX_QC_SAMPLE_COUNT_1,
+	HB_RX_QC_ACQUISITION_STATE,
+#endif
 	HB_RX_CRC,
 	HB_RX_NUM_FIELDS
 };
@@ -85,12 +96,36 @@ enum
 #define MAG_SYNC_COUNT		8
 #define MAG_RX_MSG_SIZE		((HB_NUM_MAG_CAL+2)*sizeof(int32_t))
 
+#if defined(CALIBRATION_MODE)
 #define HB_TX_MSG_SIZE		8
+#else
+#define HB_TX_MSG_SIZE		12
+#endif
 
 
 #define HB_COMM_TIMEOUT_MS	500
 #define HB_LED_MS			100
 #define MAX_HB_ERRORS		2
+#if !defined(CALIBRATION_MODE)
+#define HB_QC_ANALOG_WIRE_CHANNEL	0u
+#define HB_QC_UNUSED_WIRE_CHANNEL	1u
+#define HB_QC_COMMAND_RETRY_MS		100u
+#define HB_QC_ACK_TIMEOUT_MS			1000u
+
+typedef enum
+{
+	HB_QC_DESIRED_STOPPED = 0,
+	HB_QC_DESIRED_ACCUMULATING = 1
+} HbQcDesiredState;
+
+typedef enum
+{
+	HB_QC_STATE_STOPPED = 0,
+	HB_QC_STATE_ACTIVE,
+	HB_QC_STATE_COMPLETE,
+	HB_QC_STATE_ERROR
+} HbQcAcquisitionState;
+#endif
 
 enum
 {
@@ -115,6 +150,14 @@ void process_hb();
 void set_led_sequence(int led_idx);
 
 void set_mag_cal_window(int samples);
+#if !defined(CALIBRATION_MODE)
+void set_qc_desired_state(HbQcDesiredState desired_state);
+void qc_session_reset(void);
+QcSessionStatus qc_session_arm(void);
+void qc_session_start_for_emission(void);
+void qc_session_stop(void);
+QcSessionStatus qc_session_get_status(void);
+#endif
 
 
 #endif /* HEAD_BOARD_H_ */

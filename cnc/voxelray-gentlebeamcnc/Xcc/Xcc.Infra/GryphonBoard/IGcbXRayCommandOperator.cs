@@ -19,7 +19,7 @@ namespace Xcc.Infra.GryphonBoard
         byte[] GenerateConditioningCmd(float filamentSetpoint);
         byte[] GenerateWarmupCmd(float filamentSetpoint);
         byte[] GenerateQcbPingCmd();
-        byte[] GenerateQcbReadingsCmd(uint command, int samplingWindowMs);
+        byte[] GenerateQcbReadingsCmd(uint command);
         byte[] GenerateCalibrationHvpsKvCmd(float kvSetpoint);
         byte[] GenerateCalibrationHvpsPowerCmd(float powerSetpoint);
         byte[] GenerateCalibrationHvpsMaLimitCmd(float maSetpoint);

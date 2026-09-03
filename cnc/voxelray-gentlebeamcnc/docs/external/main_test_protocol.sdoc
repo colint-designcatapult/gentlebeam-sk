@@ -737,7 +737,8 @@ PREREQUISITES: >>>
 STEPS: >>>
 1. Log in to the External application and start recording system telemetry with the UCSI diagnostic client.
 
-2. In the diagnostic client, observe ``system.QcChannel0Reading``, ``system.QcChannel1Reading``, ``system.QcAdc1Connected``, and ``system.QcAdc2Connected``.
+2. In the diagnostic client, observe both QC instantaneous readings, both QC accumulations, and
+   both ADC connection states.
 
 3. Navigate to the Beam QA Checks tab in the Quality Assurance view.
 
@@ -747,30 +748,41 @@ STEPS: >>>
 
 6. Press Beam On and observe the QC command trace until the selected emission completes.
 
-7. Toggle to report view, compare the acquired channel 0 and channel 1 values with their displayed intensity positions, and inspect the unused positions.
+7. Toggle to report view and compare the acquired channel 0 and channel 1 accumulation values.
 
-8. Stop the diagnostic recording and inspect the recorded QC channel readings and ADC connection states.
+8. Stop the diagnostic recording and inspect the recorded QC readings, accumulations, and ADC
+connection states.
 
 9. Disconnect the QC detector, select one emission again, and press Prepare.
 
-10. Reconnect the detector, prepare the emission, arrange for the QC stop command to return no readings, and press Beam On.
+10. Reconnect the detector, prepare the emission, arrange for QC start rejection and then for a
+pending stop response beyond two seconds, and press Beam On for each case.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1 - UCSI records live QC diagnostic telemetry from the connected system.
 
-2 - Both channel readings are identified in counts, and both ADC connection states reflect the connected detector hardware.
+2 - Both channel readings and accumulations are identified in counts, and both ADC connection
+states reflect the connected detector hardware.
 
-5 - Prepare succeeds only after the detector responds to the QC-board connection check through main control.
+5 - Prepare succeeds only after the detector responds to the QC-board connection check through
+main control.
 
-6 - After emission begins, the trace contains a QC start command with a 1000 ms acquisition window followed by a QC stop command. The raw response contains accumulated channel 0 and channel 1 values, a sample count, and two reserved fields; the application preserves the sample count separately and maps the remaining values to its five-position result.
+6 - The trace sends ``[Start, 0]`` before Beam On and receives Armed before radiation is requested.
+After the emission, ``[Stop, 0]`` responses are polled within one shared two-second deadline until
+Complete. The five unsigned response words are channel 0 sum, channel 1 sum, channel 0 count,
+channel 1 count, and numeric session status.
 
-7 - The report contains exactly the selected Target for the selected Applicator and Energy level. The acquired channel 0 and channel 1 values occupy their corresponding intensity positions, unused positions are zero, and no rows exist for unselected Targets.
+7 - The report contains exactly the selected Target for the selected Applicator and Energy level,
+with exactly two measured accumulation rows and no rows for unselected Targets.
 
-8 - The recording preserves the typed QC channel readings and ADC connection states observed during the acquisition.
+8 - UCSI records both live accumulation fields in schema version 2; replaying a version 1 recording
+represents the absent accumulation fields as null rather than rejecting the file.
 
-9 - Prepare returns the application to StandBy and displays a preparation error; no emission can be started while the detector is unavailable.
+9 - Prepare returns the application to StandBy and displays a preparation error; no emission can
+start while the detector is unavailable.
 
-10 - The application stops the emission, displays an acquisition error, and does not create a QC result when no measurement is returned.
+10 - Start rejection prevents Beam On and triggers one best-effort Stop. A stop deadline expiry
+stops emission, displays an acquisition error, and creates no QC result.
 <<<
 RELATIONS:
 - TYPE: Parent

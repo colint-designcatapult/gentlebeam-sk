@@ -7,6 +7,9 @@
 #include "leds.h"
 #include "checksum.h"
 #include "dotstar.h"
+#if !defined(CALIBRATION_MODE)
+#include "qc.h"
+#endif
 
 volatile int32_t control_comm_ms = 50;
 
@@ -31,7 +34,11 @@ uint8_t mag_cal_tx_out[NUM_MAG_TX_CAL*sizeof(uint32_t)];
 
 bool mag_rolling = true;
 
+#if !defined(CALIBRATION_MODE)
+static void copy_sys_data(uint32_t field_idx, const QcSnapshot *qc_snapshot);
+#else
 static void copy_sys_data(uint32_t field_idx);
+#endif
 static void parse_comm_rx();
 static void process_comm_rx_packet();
 
@@ -157,10 +164,18 @@ void process_control_comm()
 //For regular execution
 #else
 
+#if !defined(CALIBRATION_MODE)
+	QcSnapshot qc_snapshot;
+	qc_get_snapshot(&qc_snapshot);
+#endif
 	//Copy data into TX buffer
 	for(int i = CC_TX_INFO; i < CC_TX_CRC; i++)
 	{
+#if !defined(CALIBRATION_MODE)
+		copy_sys_data(i, &qc_snapshot);
+#else
 		copy_sys_data(i);
+#endif
 	}
 
 	//Calculate CRC and place in TX buffer
@@ -195,31 +210,52 @@ static void parse_comm_rx()
 
 static void process_comm_rx_packet()
 {
-	//TBD TODO, add in additional byte checks if desired
-	if(control_comm_rx_buf[4] == control_comm_rx_buf[5])
-	{
 //For magnetometer calibration only, determine if window is rolling or not
 #if defined(MAG_CAL) || defined(CALIBRATION_MODE)
-		uint32_t window_val = (uint32_t)control_comm_rx_buf[4];
-		window_val &= 0xFF;
-		if(window_val == 252)
-		{
-			mag_rolling = true;
-		}
-		else if(window_val == 253)
-		{
-			mag_rolling = false;
-		}
-		update_mag_cal_window((int32_t)window_val);
-//For regular execution, update LED sequence
-#else
-//		set_new_led_sequence((int)control_comm_rx_buf[5]);
-		process_led_sequence(control_comm_rx_buf[5]);
-#endif
+	if(control_comm_rx_buf[4] != control_comm_rx_buf[5])
+	{
+		return;
 	}
+	uint32_t window_val = (uint32_t)control_comm_rx_buf[4];
+	window_val &= 0xFF;
+	if(window_val == 252)
+	{
+		mag_rolling = true;
+	}
+	else if(window_val == 253)
+	{
+		mag_rolling = false;
+	}
+	update_mag_cal_window((int32_t)window_val);
+//For regular execution, update persistent LED and QC desired states
+#else
+	uint8_t led = control_comm_rx_buf[4];
+	uint8_t qc_desired = control_comm_rx_buf[8];
+	bool led_valid =
+		led == control_comm_rx_buf[5] &&
+		control_comm_rx_buf[6] == (uint8_t)(0xFFu - led) &&
+		control_comm_rx_buf[7] == (uint8_t)(0xFFu - led);
+	bool qc_valid =
+		qc_desired == control_comm_rx_buf[9] &&
+		control_comm_rx_buf[10] == (uint8_t)(0xFFu - qc_desired) &&
+		control_comm_rx_buf[11] == (uint8_t)(0xFFu - qc_desired) &&
+		qc_desired <= (uint8_t)QC_DESIRED_ACCUMULATING;
+	if(led_valid)
+	{
+		process_led_sequence(led);
+	}
+	if(qc_valid)
+	{
+		qc_set_desired_state((QcDesiredState)qc_desired);
+	}
+#endif
 }
 
+#if !defined(CALIBRATION_MODE)
+static void copy_sys_data(uint32_t field_idx, const QcSnapshot *qc_snapshot)
+#else
 static void copy_sys_data(uint32_t field_idx)
+#endif
 {
 	//Check for valid index
 	if(field_idx >= CC_TX_NUM_FIELDS)
@@ -227,6 +263,37 @@ static void copy_sys_data(uint32_t field_idx)
 		return;
 	}
 	uint32_t* output_val = (uint32_t *)(control_tx_out + (CC_FIELD_SIZE * field_idx));
+#if !defined(CALIBRATION_MODE)
+	switch(field_idx)
+	{
+		case CC_TX_QC_VAL:
+		{
+			uint16_t channel0 = qc_snapshot->channel0_reading & 0x0FFFu;
+			uint16_t channel1 = qc_snapshot->channel1_reading & 0x0FFFu;
+			if(qc_snapshot->channel0_connected) channel0 |= QC_CONNECTION_FLAG;
+			if(qc_snapshot->channel1_connected) channel1 |= QC_CONNECTION_FLAG;
+			*output_val = ((uint32_t)channel1 << 16) | channel0;
+			return;
+		}
+		case CC_TX_QC_ACCUMULATION_0:
+			*output_val = qc_snapshot->channel0_accumulation;
+			return;
+		case CC_TX_QC_ACCUMULATION_1:
+			*output_val = qc_snapshot->channel1_accumulation;
+			return;
+		case CC_TX_QC_SAMPLE_COUNT_0:
+			*output_val = qc_snapshot->channel0_sample_count;
+			return;
+		case CC_TX_QC_SAMPLE_COUNT_1:
+			*output_val = qc_snapshot->channel1_sample_count;
+			return;
+		case CC_TX_QC_ACQUISITION_STATE:
+			*output_val = (uint32_t)qc_snapshot->acquisition_state;
+			return;
+		default:
+			break;
+	}
+#endif
 	*output_val = get_sys_data(field_idx);
 }
 

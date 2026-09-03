@@ -50,6 +50,8 @@ namespace Xcc.Infra.GryphonBoard
         RequiredInterlockFlags,
         QcChannel1Reading,
         QcAdcI2cStatus,
+        QcChannel0Accumulation,
+        QcChannel1Accumulation,
         PayloadFields, // number of fields in total
     }
 

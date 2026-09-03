@@ -63,11 +63,6 @@ void run_loop()
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-	//TBD TODO differentiate by handler
-	/*if(hi2c->Instance == I2C2)
-	{
-		mag_i2c_rx_cb(2);
-	}*/
 	if(hi2c->Instance == I2C3)
 	{
 		mag_i2c_rx_cb(3);
@@ -96,10 +91,37 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
+{
+#if !defined(CALIBRATION_MODE)
+	if(hadc->Instance == ADC1)
+	{
+		qc_adc_half_complete_callback(hadc);
+	}
+#else
+	(void)hadc;
+#endif
+}
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	if(hadc->Instance == ADC1)
 	{
+#if !defined(CALIBRATION_MODE)
+		if(qc_adc_complete_callback(hadc))
+		{
+			return;
+		}
+#endif
 		adc_cb();
 	}
+}
+
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
+{
+#if !defined(CALIBRATION_MODE)
+	(void)qc_adc_error_callback(hadc);
+#else
+	(void)hadc;
+#endif
 }

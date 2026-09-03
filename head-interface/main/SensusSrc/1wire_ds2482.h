@@ -134,6 +134,7 @@ uchar OWReadBit();
 uchar OWTouchBit(uchar sendbit);
 unsigned char docrc8(unsigned char value);
 void init_1wire();
+void process_1wire_i2c_recovery(void);
 
 void get_col_id(uint8_t *buf, int size);
 

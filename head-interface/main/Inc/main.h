@@ -43,6 +43,7 @@ extern ADC_HandleTypeDef hadc1;
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
 extern I2C_HandleTypeDef hi2c3;
+extern DMA_HandleTypeDef hdma_adc1;
 
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim10;
@@ -75,6 +76,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define IO_WATER_TEMP_Pin GPIO_PIN_0
 #define IO_WATER_TEMP_GPIO_Port GPIOC
+#define IO_QC_DIODE_Pin GPIO_PIN_2
+#define IO_QC_DIODE_GPIO_Port GPIOC
 #define IO_WATER_PRESSURE_Pin GPIO_PIN_0
 #define IO_WATER_PRESSURE_GPIO_Port GPIOA
 #define IO_CB_TX_Pin GPIO_PIN_2

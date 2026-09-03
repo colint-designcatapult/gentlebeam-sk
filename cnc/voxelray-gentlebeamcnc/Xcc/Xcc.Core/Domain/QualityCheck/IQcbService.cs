@@ -7,8 +7,8 @@ namespace Xcc.Core.Domain.QualityCheck
     {
         void Start();
         Task<bool> PingBoardAsync();
-        Task<QcbCommandResponseStatus> StartQCReadingsAsync(int numberOfDiodes, int samplingIntervalMs = 50);
-        Task<QcReadings?> StopQCReadingsAsync(int numberOfDiodes);
+        Task<QcbCommandResponseStatus> StartQCReadingsAsync();
+        Task<QcReadings> StopQCReadingsAsync();
     }
 
     public enum QcbCommandResponseStatus

@@ -158,16 +158,16 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
-        public void GcbQcbReadingsCmd_EncodesCommandAndSamplingWindow()
+        public void GcbQcbReadingsCmd_EncodesCommandAndReservedZero()
         {
-            var packet = new UdpPacket(commandOperator.GenerateQcbReadingsCmd(1, 50));
+            var packet = new UdpPacket(commandOperator.GenerateQcbReadingsCmd(1u));
 
             Assert.Multiple(() =>
             {
                 Assert.That(packet.PacketType, Is.EqualTo((uint)GCBPacketType.QcbReadingsCommand));
                 Assert.That(packet.PayloadLength, Is.EqualTo(2));
-                Assert.That((uint)packet[0], Is.EqualTo(1));
-                Assert.That((int)packet[1], Is.EqualTo(50));
+                Assert.That((uint)packet[0], Is.EqualTo(1u));
+                Assert.That((uint)packet[1], Is.Zero);
             });
         }
 

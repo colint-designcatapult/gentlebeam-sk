@@ -380,7 +380,7 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
         }
 
         [Test]
-        public async Task QcbStartCommand_SendsStartAndSamplingWindow()
+        public async Task QcbStartCommand_SendsStartAndReservedZero()
         {
             byte[]? request = null;
             fakeCommunicationService.Setup(service => service.SendRequestAsync(It.IsAny<byte[]>()))
@@ -388,38 +388,107 @@ namespace Xcc.Test.Xcc.Infra.Services.XRayServices
                 .ReturnsAsync(GcbXRayCmdResponseGenerator.GenerateQcbResponse(
                     0,
                     GCBPacketType.QcbReadingsCommandResponse,
-                    0, 0, 0, 0, 0));
+                    0u, 0u, 0u, 0u, (uint)QcSessionStatus.Armed));
 
-            await MakeService(useFakeCommandOperator: false).StartQcbReadings(50);
+            await MakeService(useFakeCommandOperator: false).StartQcbReadings();
 
             var packet = new UdpPacket(request!);
             Assert.Multiple(() =>
             {
                 Assert.That(packet.PacketType, Is.EqualTo((uint)GCBPacketType.QcbReadingsCommand));
-                Assert.That((uint)packet[0], Is.EqualTo(1));
-                Assert.That((int)packet[1], Is.EqualTo(50));
+                Assert.That((uint)packet[0], Is.EqualTo(1u));
+                Assert.That((uint)packet[1], Is.Zero);
             });
         }
 
         [Test]
-        public async Task QcbStopCommand_ReturnsFirmwareReadings()
+        public async Task QcbStopCommand_ReturnsFiveUnsignedFirmwareWords()
         {
-            float[] expected = [12.5f, 23.5f, 0, 0, 0];
-            const uint expectedSampleCount = 9;
-            fakeCommunicationService.Setup(service => service.SendRequestAsync(It.IsAny<byte[]>()))
+            const uint channel0 = 0xF0000001u;
+            const uint channel1 = 23u;
+            const uint channel0Samples = 9u;
+            const uint channel1Samples = 10u;
+            fakeCommunicationService
+                .Setup(service => service.SendRequestAsync(It.IsAny<byte[]>(), It.IsAny<int>()))
                 .ReturnsAsync(GcbXRayCmdResponseGenerator.GenerateQcbReadingsResponse(
                     0,
-                    expected[0],
-                    expected[1],
-                    expectedSampleCount));
+                    channel0,
+                    channel1,
+                    channel0Samples,
+                    channel1Samples,
+                    (uint)QcSessionStatus.Complete));
 
             QcReadings readings = await MakeService(useFakeCommandOperator: false).StopQcbReadings();
 
             Assert.Multiple(() =>
             {
-                Assert.That(readings.Data, Is.EqualTo(expected));
-                Assert.That(readings.SampleCount, Is.EqualTo(expectedSampleCount));
+                Assert.That(readings.Channel0Accumulation, Is.EqualTo(channel0));
+                Assert.That(readings.Channel1Accumulation, Is.EqualTo(channel1));
+                Assert.That(readings.Channel0SampleCount, Is.EqualTo(channel0Samples));
+                Assert.That(readings.Channel1SampleCount, Is.EqualTo(channel1Samples));
             });
+        }
+
+        [Test]
+        public async Task QcbStopCommand_PollsPendingStatusesUntilComplete()
+        {
+            byte[] Response(QcSessionStatus status) =>
+                GcbXRayCmdResponseGenerator.GenerateQcbReadingsResponse(
+                    0, 101u, 202u, 3u, 4u, (uint)status);
+            fakeCommunicationService
+                .SetupSequence(service => service.SendRequestAsync(It.IsAny<byte[]>(), It.IsAny<int>()))
+                .ReturnsAsync(Response(QcSessionStatus.Starting))
+                .ReturnsAsync(Response(QcSessionStatus.Accumulating))
+                .ReturnsAsync(Response(QcSessionStatus.Stopping))
+                .ReturnsAsync(Response(QcSessionStatus.Complete));
+
+            QcReadings readings = await MakeService(useFakeCommandOperator: false).StopQcbReadings();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(readings.Accumulations, Is.EqualTo(new uint[] { 101u, 202u }));
+                Assert.That(readings.Channel0SampleCount, Is.EqualTo(3u));
+                Assert.That(readings.Channel1SampleCount, Is.EqualTo(4u));
+            });
+            fakeCommunicationService.Verify(
+                service => service.SendRequestAsync(It.IsAny<byte[]>(), It.IsAny<int>()),
+                Times.Exactly(4));
+        }
+
+        [Test]
+        public void QcbStopCommand_ErrorStatusFailsImmediately()
+        {
+            fakeCommunicationService
+                .Setup(service => service.SendRequestAsync(It.IsAny<byte[]>(), It.IsAny<int>()))
+                .ReturnsAsync(GcbXRayCmdResponseGenerator.GenerateQcbReadingsResponse(
+                    0, 0u, 0u, 0u, 0u, (uint)QcSessionStatus.Error));
+
+            Assert.ThrowsAsync<QcAcquisitionException>(
+                async () => await MakeService(useFakeCommandOperator: false).StopQcbReadings());
+            fakeCommunicationService.Verify(
+                service => service.SendRequestAsync(It.IsAny<byte[]>(), It.IsAny<int>()),
+                Times.Once);
+        }
+
+        [Test]
+        public void QcbStopCommand_UsesOneTwoSecondDeadline()
+        {
+            fakeCommunicationService
+                .Setup(service => service.SendRequestAsync(It.IsAny<byte[]>(), It.IsAny<int>()))
+                .ReturnsAsync(GcbXRayCmdResponseGenerator.GenerateQcbReadingsResponse(
+                    0, 0u, 0u, 0u, 0u, (uint)QcSessionStatus.Stopping));
+            var elapsed = System.Diagnostics.Stopwatch.StartNew();
+
+            Assert.ThrowsAsync<TimeoutException>(
+                async () => await MakeService(useFakeCommandOperator: false).StopQcbReadings());
+
+            elapsed.Stop();
+            Assert.That(elapsed.Elapsed, Is.InRange(TimeSpan.FromMilliseconds(1900), TimeSpan.FromMilliseconds(2600)));
+            fakeCommunicationService.Verify(
+                service => service.SendRequestAsync(
+                    It.IsAny<byte[]>(),
+                    It.Is<int>(timeout => timeout > 0 && timeout <= 2000)),
+                Times.AtLeast(2));
         }
 
 

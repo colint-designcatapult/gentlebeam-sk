@@ -63,6 +63,8 @@ internal sealed class RecordedSystemTelemetry : ISystemTelemetry
     public TelemetryVector3? Mag2 { get; }
     public float? QcChannel0Reading => Get<float?>("system.QcChannel0Reading");
     public float? QcChannel1Reading => Get<float?>("system.QcChannel1Reading");
+    public uint? QcChannel0Accumulation => Get<uint?>("system.QcChannel0Accumulation");
+    public uint? QcChannel1Accumulation => Get<uint?>("system.QcChannel1Accumulation");
     public bool? QcAdc1Connected => Get<bool?>("system.QcAdc1Connected");
     public bool? QcAdc2Connected => Get<bool?>("system.QcAdc2Connected");
 

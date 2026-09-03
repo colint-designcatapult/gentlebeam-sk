@@ -1,389 +1,408 @@
-/*
- * qc.c
- *
- *  Created on: Sep 5, 2025
- *      Author: Steve Holman
- */
-
-#include "qc.h"
+#include "stm32f4xx_hal.h"
 #include "main.h"
-#include <stdbool.h>
-#include "sys_data.h"
-#include "timer.h"
 
-extern I2C_HandleTypeDef hi2c1;
-volatile int32_t qc_reset_count_ms = 0;
+#include "adc.h"
+#include "qc.h"
 
-uint16_t QC1_data = 0;
-uint16_t QC2_data = 0;
-volatile bool QC1_connected = false;
-volatile bool QC2_connected = false;
 
-static uint8_t adc_rx_buf[2];
-static uint8_t current_devAddr = 0;
-static uint32_t conversion_start_tick = 0;
-static volatile bool adc_ready = true;
-static volatile bool adc1_needs_prime = true;
-static volatile bool adc2_needs_prime = true;
-static volatile bool adc1_discard_next = true;
-static volatile bool adc2_discard_next = true;
-static volatile bool adc_tx_cplt = false;
+static uint16_t channel0_reading;
+static uint16_t channel1_reading;
+static volatile bool channel0_connected;
+static volatile bool channel1_connected;
 
-static volatile bool read_first = true;
-static volatile uint8_t error_count = 0;
-static volatile bool reset_i2c1 = false;
-static volatile bool reset_i2c2 = false;
+static uint16_t qc_dma_buffer[QC_DMA_SAMPLES];
+static volatile QcDesiredState desired_state = QC_DESIRED_STOPPED;
+static volatile QcDesiredState applied_desired_state = QC_DESIRED_STOPPED;
+static volatile QcMode qc_mode = QC_MODE_IDLE;
+static volatile QcAcquisitionState acquisition_state = QC_ACQUISITION_STOPPED;
+static volatile uint32_t accumulations[2];
+static volatile uint32_t sample_counts[2];
+static volatile bool dma_transfer_valid;
+static volatile bool dma_half_processed;
+static volatile bool stop_requested;
+static volatile bool stop_before_half;
+static volatile bool adc_owned_by_qc;
+static volatile bool adc_stop_pending;
 
-#define DEBOUNCE_TIME_MS 				100
+static void apply_desired_state(void);
+static void begin_dma_session(void);
+static HAL_StatusTypeDef configure_qc_adc(void);
+static HAL_StatusTypeDef start_dma_burst(void);
+static void process_dma_samples(uint32_t offset, uint32_t count);
+static void stop_adc_dma(void);
+static void finish_session(void);
+static void enter_acquisition_error(void);
+static void invalidate_dma_transfer(void);
+static void resume_monitoring_adc(void);
+
 void init_qc(void)
 {
-	QC1_data = 0;
-	QC2_data = 0;
-	QC1_connected = false;
-	QC2_connected = false;
-	adc_ready = true;
-	adc1_needs_prime = true;
-	adc2_needs_prime = true;
-	adc1_discard_next = true;
-	adc2_discard_next = true;
-	adc_tx_cplt = false;
-	read_first = true;
-	error_count = 0;
-	reset_i2c1 = false;
-	reset_i2c2 = false;
-	qc_reset_count_ms = 0;
-}
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
 
+    channel1_reading = 0;
+    channel0_reading = 0;
+    channel1_connected = false;
+    channel0_connected = false;
+    accumulations[0] = 0;
+    accumulations[1] = 0;
+    sample_counts[0] = 0;
+    sample_counts[1] = 0;
+    desired_state = QC_DESIRED_STOPPED;
+    applied_desired_state = QC_DESIRED_STOPPED;
+    qc_mode = QC_MODE_IDLE;
+    acquisition_state = QC_ACQUISITION_STOPPED;
+    dma_transfer_valid = false;
+    dma_half_processed = false;
+    stop_requested = false;
+    stop_before_half = false;
+    adc_owned_by_qc = false;
+    adc_stop_pending = false;
 
-/* Start asynchronous conversion read */
-HAL_StatusTypeDef Read_ADC121C021_Conversion_IT(uint8_t devAddr)
-{
-	if (HAL_GPIO_ReadPin(IO_Ready_GPIO_Port, IO_Ready_Pin) != GPIO_PIN_SET) {
-		QC1_connected = false;
-		QC2_connected = false;
-	    return HAL_BUSY;
-	}
-	if (hi2c1.State != HAL_I2C_STATE_READY) {
-	    return HAL_BUSY;
-	}
-
-    uint8_t cmd = CONVERSION_REG;
-    current_devAddr = devAddr;
-
-    // Step 1: transmit register pointer (non-blocking)
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit_IT(&hi2c1, devAddr, &cmd, 1);
-    adc_ready = status != HAL_OK;
-    if (status != HAL_OK) {
-    	if (devAddr == ADC1_ADDRESS) {
-    		QC1_connected = false;
-    	} else if (devAddr == ADC2_ADDRESS) {
-    		QC2_connected = false;
-    	}
+    if (primask == 0u)
+    {
+        __enable_irq();
     }
-    return status;
 }
 
-/* Edge detection function for pin IO_Ready */
-static void IO_Ready_Edge_Detect(void)
+void qc_set_desired_state(QcDesiredState state)
 {
-	static IO_ReadyState_t last_stable = IO_READY_STATE_NOT_READY;
-	static IO_ReadyState_t last_sample = IO_READY_STATE_NOT_READY;
-	static uint32_t last_change_time = 0;
+    if (state != QC_DESIRED_STOPPED && state != QC_DESIRED_ACCUMULATING)
+    {
+        return;
+    }
 
-	IO_ReadyState_t current = HAL_GPIO_ReadPin(IO_Ready_GPIO_Port, IO_Ready_Pin);
-	uint32_t now = HAL_GetTick();
-
-	// Detect change in raw signal
-	if (current != last_sample) {
-		last_change_time = now;
-		last_sample = current;
-	}
-
-	// If stable long enough → accept new state
-	if ((now - last_change_time) >= DEBOUNCE_TIME_MS) {
-		if (last_stable != current) {
-			// Edge detected
-			if (current == IO_READY_STATE_READY) {
-//				HAL_UART_Transmit_IT(&huart6,
-//					(uint8_t*)"IO_READY_RISING_EDGE\n",
-//					strlen("IO_READY_RISING_EDGE\n"));
-				// Reset I2C1 peripheral
-				reset_i2c1 = true;
-			} else {
-//				HAL_UART_Transmit_IT(&huart6,
-//					(uint8_t*)"IO_READY_FALLING_EDGE\n",
-//					strlen("IO_READY_FALLING_EDGE\n"));
-			}
-			last_stable = current;
-		}
-	}
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    desired_state = state;
+    if (primask == 0u)
+    {
+        __enable_irq();
+    }
 }
 
-/* Process function: kick off new reads if bus is free */
+void qc_get_snapshot(QcSnapshot *snapshot)
+{
+    if (snapshot == NULL)
+    {
+        return;
+    }
+
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    snapshot->channel0_accumulation = accumulations[0];
+    snapshot->channel1_accumulation = accumulations[1];
+    snapshot->channel0_sample_count = sample_counts[0];
+    snapshot->channel1_sample_count = sample_counts[1];
+    snapshot->acquisition_state = acquisition_state;
+    snapshot->channel0_reading = channel0_reading;
+    snapshot->channel1_reading = channel1_reading;
+    snapshot->channel0_connected = channel0_connected;
+    snapshot->channel1_connected = channel1_connected;
+    if (primask == 0u)
+    {
+        __enable_irq();
+    }
+}
+
+void qc_update_idle_reading(uint16_t reading)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    if (qc_mode == QC_MODE_IDLE ||
+        qc_mode == QC_MODE_COMPLETE ||
+        qc_mode == QC_MODE_ERROR)
+    {
+        channel0_reading = reading & 0x0FFFu;
+        channel0_connected = true;
+        channel1_reading = 0;
+        channel1_connected = false;
+    }
+    if (primask == 0u)
+    {
+        __enable_irq();
+    }
+}
+
 void process_qc(void)
 {
-	IO_Ready_Edge_Detect();
+    apply_desired_state();
 
-	//Check if the i2c bus is stuck first
-	//static uint32_t i2c_stuck_counter = 0;
-
-	// Check if bus appears stuck
-	if (hi2c1.State != HAL_I2C_STATE_READY)
-	{
-		if (reset_i2c1 && qc_reset_count_ms > 200)
-		{
-			reset_i2c1 = false;
-			qc_reset_count_ms = 0;
-			I2C_ForceBusRecovery(&hi2c1);
-		}
-		return;
-	}
-	else
-	{
-		qc_reset_count_ms = 0; // reset counter when bus healthy
-	}
-
-	if (reset_i2c1) {
-		reset_i2c1 = false;
-		I2C_Reset(&hi2c1);  // clear BUSY
-		return;
-	}
-	if (reset_i2c2) {
-		reset_i2c2 = false;
-		I2C_Reset(&hi2c2);  // clear BUSY
-		return;
-	}
-
-	if (adc1_needs_prime && adc_ready)
-	{
-		if (Read_ADC121C021_Conversion_IT(ADC1_ADDRESS) == HAL_OK)
-		{
-			adc1_needs_prime = false;
-			adc1_discard_next = true;
-		}
-		return;
-	}
-	if (adc2_needs_prime && adc_ready)
-	{
-		if (Read_ADC121C021_Conversion_IT(ADC2_ADDRESS) == HAL_OK)
-		{
-			adc2_needs_prime = false;
-			adc2_discard_next = true;
-		}
-		return;
-	}
-
-
-	if (adc_tx_cplt && (HAL_GetTick() - conversion_start_tick) >= 2)
-	{
-		adc_tx_cplt = false;
-		// Step 2: read two data bytes
-		//HAL_I2C_Master_Receive_IT(&hi2c1, current_devAddr, adc_rx_buf, 2);
-		if (HAL_I2C_Master_Receive_IT(&hi2c1, current_devAddr, adc_rx_buf, 2) != HAL_OK)
-		{
-		    adc_ready = true;
-		    adc1_needs_prime = true;
-		    adc2_needs_prime = true;
-		}
-	}
-
-	//Then move ahead with reading it
-    if (adc_ready && hi2c1.State == HAL_I2C_STATE_READY)
+    if (adc_stop_pending)
     {
-    	HAL_StatusTypeDef status;
-
-        // Alternate between ADC1 and ADC2
-        if (read_first) {
-            status = Read_ADC121C021_Conversion_IT((uint8_t)ADC1_ADDRESS);
-        } else {
-            status = Read_ADC121C021_Conversion_IT((uint8_t)ADC2_ADDRESS);
-        }
-
-        if (status != HAL_OK) {
-			error_count++;
-			if (error_count > 3) {
-				I2C_Reset(&hi2c1);   // try to recover after 3 consecutive failures
-				error_count = 0;
-			}
-		} else {
-			read_first = !read_first;
-			error_count = 0;
-		}
+        adc_stop_pending = false;
+        stop_adc_dma();
     }
 
-}
-
-void I2C_Reset(I2C_HandleTypeDef *hi2c)
-{
-    QC1_connected = false;
-    QC2_connected = false;
-    adc_tx_cplt = false;
-    adc_ready = true;
-    adc1_needs_prime = true;
-    adc2_needs_prime = true;
-    adc1_discard_next = true;
-    adc2_discard_next = true;
-
-	__HAL_I2C_DISABLE(hi2c);
-    __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_BERR | I2C_FLAG_ARLO | I2C_FLAG_AF | I2C_FLAG_OVR);
-	// Reset HAL state & error
-	hi2c->State = HAL_I2C_STATE_RESET;
-	hi2c->ErrorCode = HAL_I2C_ERROR_NONE;
-
-    // Re-init (uses hi2c->Init filled by CubeMX)
-	if (HAL_I2C_Init(hi2c) != HAL_OK)
-	{
-
-	}
-
-    __HAL_I2C_ENABLE(hi2c);
-    hi2c->State = HAL_I2C_STATE_READY;
-}
-
-
-void I2C_ForceBusRecovery(I2C_HandleTypeDef *hi2c)
-{
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    adc_tx_cplt = false;
-    adc_ready = true;
-    adc1_needs_prime = true;
-    adc2_needs_prime = true;
-    adc1_discard_next = true;
-    adc2_discard_next = true;
-
-    // 1️⃣ Deinitialize the I2C peripheral
-    HAL_I2C_DeInit(hi2c);
-
-    // 2️⃣ Configure SCL and SDA as GPIO outputs (open-drain)
-    if (hi2c->Instance == I2C1)
+    if (qc_mode == QC_MODE_DMA_STARTING)
     {
-        __HAL_RCC_GPIOB_CLK_ENABLE();
-        GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9; // PB8=SCL, PB9=SDA for I2C1
-        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-        GPIO_InitStruct.Pull = GPIO_NOPULL;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-        // 3️⃣ Toggle SCL manually ~10 times to free the line
-        for (int i = 0; i < 10; i++)
+        if (stop_requested)
         {
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
-			for (volatile int delay = 0; delay < 10; delay++) {};
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
-			for (volatile int delay = 0; delay < 10; delay++) {};
+            finish_session();
         }
-
-        // 4️⃣ Check if SDA is now released
-        if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) == GPIO_PIN_RESET)
+        else if (start_dma_burst() != HAL_OK)
         {
-            // SDA still stuck — perform full peripheral reset
-            __HAL_RCC_I2C1_FORCE_RESET();
-			for (volatile int delay = 0; delay < 100; delay++) {};
-            __HAL_RCC_I2C1_RELEASE_RESET();
+            enter_acquisition_error();
         }
-
     }
-    if (hi2c->Instance == I2C2)
-	{
-		__HAL_RCC_GPIOB_CLK_ENABLE();
-		GPIO_InitStruct.Pin = GPIO_PIN_3 | GPIO_PIN_10;
-		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-		// 3️⃣ Toggle SCL manually ~10 times to free the line
-		for (int i = 0; i < 10; i++)
-		{
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
-			for (volatile int delay = 0; delay < 10; delay++) {};
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
-			for (volatile int delay = 0; delay < 10; delay++) {};
-		}
-
-		// 4️⃣ Check if SDA is now released
-		if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_3) == GPIO_PIN_RESET)
-		{
-			// SDA still stuck — perform full peripheral reset
-			__HAL_RCC_I2C2_FORCE_RESET();
-			for (volatile int delay = 0; delay < 100; delay++) {};
-			__HAL_RCC_I2C2_RELEASE_RESET();
-		}
-
-	}
-
-    // 5️⃣ Reinitialize I2C pins and peripheral
-    HAL_I2C_Init(hi2c);
-}
-
-
-
-
-/* Called when TX completes (register pointer sent) */
-void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
-{
-    if (hi2c->Instance == I2C1)
+    else if (qc_mode == QC_MODE_DMA_ACTIVE)
     {
-    	conversion_start_tick = HAL_GetTick();
-    	adc_tx_cplt = true;
-        // Step 2: read two data bytes
-    	//HAL_I2C_Master_Receive_IT(hi2c, current_devAddr, adc_rx_buf, 2);
-
-    }
-}
-
-/* Called when RX completes (data received) */
-void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
-{
-    if (hi2c->Instance == I2C1)
-    {
-    	// Combine two bytes and mask to get 12-bit ADC result.
-    	uint16_t result = (((uint16_t)adc_rx_buf[0] << 8) | adc_rx_buf[1]) & 0x0FFF;
-        HAL_GPIO_TogglePin(IO_LED_AMBER_GPIO_Port, IO_LED_AMBER_Pin);
-
-        if (current_devAddr == ADC1_ADDRESS)
+        if (stop_requested && stop_before_half && dma_transfer_valid)
         {
-            QC1_connected = true;
-            if (adc1_discard_next) {
-                adc1_discard_next = false;
-            } else {
-                QC1_data = result;
+            qc_mode = QC_MODE_DMA_STOPPING;
+            stop_adc_dma();
+            invalidate_dma_transfer();
+            finish_session();
+        }
+        else if (!dma_transfer_valid && !stop_requested)
+        {
+            if (start_dma_burst() != HAL_OK)
+            {
+                enter_acquisition_error();
             }
         }
-        else if (current_devAddr == ADC2_ADDRESS)
-        {
-            QC2_connected = true;
-            if (adc2_discard_next) {
-                adc2_discard_next = false;
-            } else {
-                QC2_data = result;
-            }
-        }
+    }
 
-        adc_ready = true;
+    if ((qc_mode == QC_MODE_COMPLETE || qc_mode == QC_MODE_ERROR) && adc_owned_by_qc)
+    {
+        resume_monitoring_adc();
     }
 }
 
-void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
+static void apply_desired_state(void)
 {
-    if (hi2c->Instance == I2C1) {
-        if (current_devAddr == ADC1_ADDRESS) {
-        	QC1_connected = false;
-        } else if (current_devAddr == ADC2_ADDRESS) {
-        	QC2_connected = false;
-        }
-        adc_tx_cplt = false;
-        adc_ready = true; // allow retry
-        adc1_needs_prime = true;
-        adc2_needs_prime = true;
-        adc1_discard_next = true;
-        adc2_discard_next = true;
-        reset_i2c1 = true;
-        //I2C_Reset(hi2c);  // clear BUSY
+    QcDesiredState requested = desired_state;
+    if (requested == applied_desired_state)
+    {
+        return;
     }
-    else if (hi2c->Instance == I2C2) {
-    	reset_i2c2 = true;
-    	//I2C_Reset(hi2c);
+    applied_desired_state = requested;
+
+    if (requested == QC_DESIRED_ACCUMULATING)
+    {
+        if (qc_mode == QC_MODE_IDLE ||
+            qc_mode == QC_MODE_COMPLETE ||
+            qc_mode == QC_MODE_ERROR)
+        {
+            begin_dma_session();
+        }
+        return;
     }
 
+    if (qc_mode == QC_MODE_DMA_STARTING)
+    {
+        stop_requested = true;
+    }
+    else if (qc_mode == QC_MODE_DMA_ACTIVE)
+    {
+        stop_requested = true;
+        stop_before_half = !dma_half_processed;
+        if (!dma_transfer_valid)
+        {
+            finish_session();
+        }
+    }
+    else if (qc_mode == QC_MODE_DMA_STOPPING)
+    {
+        stop_requested = true;
+    }
+    else if (qc_mode == QC_MODE_IDLE &&
+             acquisition_state != QC_ACQUISITION_COMPLETE &&
+             acquisition_state != QC_ACQUISITION_ERROR)
+    {
+        acquisition_state = QC_ACQUISITION_STOPPED;
+    }
 }
+
+static void begin_dma_session(void)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    accumulations[0] = 0;
+    accumulations[1] = 0;
+    sample_counts[0] = 0;
+    sample_counts[1] = 0;
+    channel1_reading = 0;
+    channel1_connected = false;
+    stop_requested = false;
+    stop_before_half = false;
+    dma_transfer_valid = false;
+    dma_half_processed = false;
+    acquisition_state = QC_ACQUISITION_STOPPED;
+    qc_mode = QC_MODE_DMA_STARTING;
+    if (primask == 0u)
+    {
+        __enable_irq();
+    }
+}
+
+static HAL_StatusTypeDef configure_qc_adc(void)
+{
+    if (adc_suspend() != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
+    adc_owned_by_qc = true;
+
+    hadc1.Init.ContinuousConvMode = DISABLE;
+    hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+    hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T2_TRGO;
+    hadc1.Init.DMAContinuousRequests = ENABLE;
+    hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+    if (HAL_ADC_Init(&hadc1) != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
+
+    ADC_ChannelConfTypeDef config = {0};
+    config.Channel = QC_ANALOG_ADC_CHANNEL;
+    config.Rank = 1;
+    config.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+    return HAL_ADC_ConfigChannel(&hadc1, &config);
+}
+
+static HAL_StatusTypeDef start_dma_burst(void)
+{
+    if (!adc_owned_by_qc && configure_qc_adc() != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
+
+    dma_transfer_valid = true;
+    dma_half_processed = false;
+    HAL_StatusTypeDef status = HAL_ADC_Start_DMA(
+        &hadc1,
+        (uint32_t *)qc_dma_buffer,
+        QC_DMA_SAMPLES);
+    if (status != HAL_OK)
+    {
+        invalidate_dma_transfer();
+        return status;
+    }
+
+    acquisition_state = QC_ACQUISITION_ACTIVE;
+    qc_mode = QC_MODE_DMA_ACTIVE;
+    return HAL_OK;
+}
+
+void qc_adc_half_complete_callback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc != &hadc1 || !dma_transfer_valid || dma_half_processed)
+    {
+        return;
+    }
+    if (stop_requested && stop_before_half)
+    {
+        return;
+    }
+
+    process_dma_samples(0u, QC_DMA_HALF_SAMPLES);
+    dma_half_processed = true;
+}
+
+bool qc_adc_complete_callback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc != &hadc1 || !dma_transfer_valid)
+    {
+        return false;
+    }
+
+    if (stop_requested && stop_before_half)
+    {
+        stop_adc_dma();
+        invalidate_dma_transfer();
+        finish_session();
+        return true;
+    }
+
+    if (!dma_half_processed)
+    {
+        process_dma_samples(0u, QC_DMA_HALF_SAMPLES);
+        dma_half_processed = true;
+    }
+    process_dma_samples(QC_DMA_HALF_SAMPLES, QC_DMA_HALF_SAMPLES);
+
+    stop_adc_dma();
+    invalidate_dma_transfer();
+    if (stop_requested)
+    {
+        finish_session();
+    }
+    return true;
+}
+
+bool qc_adc_error_callback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc != &hadc1 || !adc_owned_by_qc)
+    {
+        return false;
+    }
+
+    channel0_connected = false;
+    invalidate_dma_transfer();
+    adc_stop_pending = true;
+    enter_acquisition_error();
+    return true;
+}
+
+static void process_dma_samples(uint32_t offset, uint32_t count)
+{
+    uint32_t sum = 0;
+    uint16_t last = 0;
+    for (uint32_t sample = 0; sample < count; sample++)
+    {
+        last = qc_dma_buffer[offset + sample] & 0x0FFFu;
+        sum += last;
+    }
+
+    accumulations[0] += sum;
+    sample_counts[0] += count;
+    channel0_reading = last;
+    channel0_connected = true;
+    accumulations[1] = 0;
+    sample_counts[1] = 0;
+    channel1_reading = 0;
+    channel1_connected = false;
+}
+
+static void stop_adc_dma(void)
+{
+    if (adc_owned_by_qc)
+    {
+        (void)HAL_ADC_Stop_DMA(&hadc1);
+    }
+}
+
+static void finish_session(void)
+{
+    invalidate_dma_transfer();
+    stop_requested = false;
+    stop_before_half = false;
+    acquisition_state = QC_ACQUISITION_COMPLETE;
+    qc_mode = QC_MODE_COMPLETE;
+}
+
+static void enter_acquisition_error(void)
+{
+    invalidate_dma_transfer();
+    stop_requested = false;
+    stop_before_half = false;
+    acquisition_state = QC_ACQUISITION_ERROR;
+    qc_mode = QC_MODE_ERROR;
+}
+
+static void invalidate_dma_transfer(void)
+{
+    dma_transfer_valid = false;
+    dma_half_processed = false;
+}
+
+static void resume_monitoring_adc(void)
+{
+    stop_adc_dma();
+    if (adc_resume() == HAL_OK)
+    {
+        adc_owned_by_qc = false;
+    }
+}
+

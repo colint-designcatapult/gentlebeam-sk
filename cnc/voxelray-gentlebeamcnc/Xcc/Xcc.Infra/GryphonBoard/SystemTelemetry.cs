@@ -52,6 +52,8 @@ public sealed class SystemNormalTelemetry : ISystemTelemetry
     public TelemetryVector3? Mag2 { get; init; }
     public float? QcChannel0Reading { get; init; }
     public float? QcChannel1Reading { get; init; }
+    public uint? QcChannel0Accumulation { get; init; }
+    public uint? QcChannel1Accumulation { get; init; }
     public bool? QcAdc1Connected { get; init; }
     public bool? QcAdc2Connected { get; init; }
 
@@ -118,6 +120,8 @@ public sealed class SystemCalibrationTelemetry : ISystemTelemetry
     public TelemetryVector3? Mag2 { get; init; }
     public float? QcChannel0Reading => null;
     public float? QcChannel1Reading => null;
+    public uint? QcChannel0Accumulation => null;
+    public uint? QcChannel1Accumulation => null;
     public bool? QcAdc1Connected => null;
     public bool? QcAdc2Connected => null;
 
@@ -218,6 +222,8 @@ internal sealed class NormalTelemetryState
     private TelemetryVector3 _mag2;
     private float _qcChannel0Reading;
     private float _qcChannel1Reading;
+    private uint _qcChannel0Accumulation;
+    private uint _qcChannel1Accumulation;
     private bool _qcAdc1Connected;
     private bool _qcAdc2Connected;
 
@@ -286,6 +292,8 @@ internal sealed class NormalTelemetryState
             packet[(int)NormalTelemetryField.Mag2Z]);
         _qcChannel0Reading = packet[(int)NormalTelemetryField.QcChannel0Reading];
         _qcChannel1Reading = packet[(int)NormalTelemetryField.QcChannel1Reading];
+        _qcChannel0Accumulation = packet[(int)NormalTelemetryField.QcChannel0Accumulation];
+        _qcChannel1Accumulation = packet[(int)NormalTelemetryField.QcChannel1Accumulation];
         uint qcAdcI2cStatus = packet[(int)NormalTelemetryField.QcAdcI2cStatus];
         _qcAdc1Connected = (qcAdcI2cStatus & 1u) != 0u;
         _qcAdc2Connected = (qcAdcI2cStatus & 2u) != 0u;
@@ -337,6 +345,8 @@ internal sealed class NormalTelemetryState
         Mag2 = _mag2,
         QcChannel0Reading = _qcChannel0Reading,
         QcChannel1Reading = _qcChannel1Reading,
+        QcChannel0Accumulation = _qcChannel0Accumulation,
+        QcChannel1Accumulation = _qcChannel1Accumulation,
         QcAdc1Connected = _qcAdc1Connected,
         QcAdc2Connected = _qcAdc2Connected,
     };

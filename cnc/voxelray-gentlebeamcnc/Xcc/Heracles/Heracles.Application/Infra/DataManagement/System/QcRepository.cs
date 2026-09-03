@@ -124,7 +124,7 @@ namespace Heracles.Application.Infra.DataManagement.System
         #region private methods
         private async Task<ICollection<IIntensity>> SaveIntensityValues(long fieldId, QcReadings intensities)
         {
-            var tasks = intensities.Data.Select(
+            var tasks = intensities.Accumulations.Select(
                 (value, i) => intensityCommands.CreateAsync(
                     new Intensity { DiodeName = Intensity.GetDiodeName(i), IntensityValue = value, QcSampleFieldId = fieldId }
                 ));

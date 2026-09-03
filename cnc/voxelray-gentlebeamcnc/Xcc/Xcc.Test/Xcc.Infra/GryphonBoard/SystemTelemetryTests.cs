@@ -58,6 +58,8 @@ internal class SystemTelemetryTests
         packet[(int)NormalTelemetryField.RequiredInterlockFlags] = (1u << 0) | (1u << 4);
         packet[(int)NormalTelemetryField.QcChannel1Reading] = 146.5f;
         packet[(int)NormalTelemetryField.QcAdcI2cStatus] = 3u;
+        packet[(int)NormalTelemetryField.QcChannel0Accumulation] = 0xF0000001u;
+        packet[(int)NormalTelemetryField.QcChannel1Accumulation] = 0xE0000002u;
 
         var telemetry = SystemNormalTelemetry.Parse(packet.UpdateCRC().Buffer);
 
@@ -121,10 +123,26 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.QcChannel1Reading, Is.EqualTo(146.5f));
             Assert.That(telemetry.QcAdc1Connected, Is.True);
             Assert.That(telemetry.QcAdc2Connected, Is.True);
+            Assert.That(telemetry.QcChannel0Accumulation, Is.EqualTo(0xF0000001u));
+            Assert.That(telemetry.QcChannel1Accumulation, Is.EqualTo(0xE0000002u));
             Assert.That(telemetry.KvSetpoint, Is.EqualTo(143.5f));
             Assert.That(telemetry.EmissionCurrentLimit, Is.EqualTo(144.5f));
             Assert.That(telemetry.HvpsPowerSetpoint, Is.EqualTo(145.5f));
             Assert.That(telemetry.IsEmissionState(), Is.True);
+        });
+    }
+
+    [Test]
+    public void NormalTelemetryFields_PreserveAppendOnlyQcIndices()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That((int)NormalTelemetryField.QcChannel0Reading, Is.EqualTo(40));
+            Assert.That((int)NormalTelemetryField.QcChannel1Reading, Is.EqualTo(45));
+            Assert.That((int)NormalTelemetryField.QcAdcI2cStatus, Is.EqualTo(46));
+            Assert.That((int)NormalTelemetryField.QcChannel0Accumulation, Is.EqualTo(47));
+            Assert.That((int)NormalTelemetryField.QcChannel1Accumulation, Is.EqualTo(48));
+            Assert.That((int)NormalTelemetryField.PayloadFields, Is.EqualTo(49));
         });
     }
 
@@ -246,6 +264,8 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.Mag2, Is.EqualTo(new TelemetryVector3(152.5f, 153.5f, 154.5f)));
             Assert.That(telemetry.QcChannel0Reading, Is.Null);
             Assert.That(telemetry.QcChannel1Reading, Is.Null);
+            Assert.That(telemetry.QcChannel0Accumulation, Is.Null);
+            Assert.That(telemetry.QcChannel1Accumulation, Is.Null);
             Assert.That(telemetry.QcAdc1Connected, Is.Null);
             Assert.That(telemetry.QcAdc2Connected, Is.Null);
             Assert.That(telemetry.IsFaultState(), Is.True);

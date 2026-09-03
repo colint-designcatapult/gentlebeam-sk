@@ -127,6 +127,7 @@ internal sealed class BeamQaTestContext
             .ReturnsAsync(true);
         MainBoard.Setup(value => value.BeamOn()).Returns(() =>
         {
+            Calls.Add("BeamOn");
             telemetryState = GcbStateNew.Emission;
             return Task.CompletedTask;
         });
@@ -143,10 +144,12 @@ internal sealed class BeamQaTestContext
             .Returns(new BeamOnProgress(MainBoard.Object));
         QcbService.Setup(value => value.PingBoardAsync()).ReturnsAsync(true);
         QcbService
-            .Setup(value => value.StartQCReadingsAsync(5, 1000))
+            .Setup(value => value.StartQCReadingsAsync())
+            .Callback(() => Calls.Add("StartQC"))
             .ReturnsAsync(QcbCommandResponseStatus.StartConfirmed);
         QcbService
-            .Setup(value => value.StopQCReadingsAsync(5))
+            .Setup(value => value.StopQCReadingsAsync())
+            .Callback(() => Calls.Add("StopQC"))
             .ReturnsAsync(Readings);
 
         Dispatcher
@@ -167,7 +170,7 @@ internal sealed class BeamQaTestContext
                 var storedFields = fields.Select(field =>
                     new QcField(
                         field.Name,
-                        field.Intensities.Data.Select(reading => (double?)reading).ToArray()));
+                        field.Intensities.Accumulations.Select(reading => (double?)reading).ToArray()));
                 return Task.FromResult<(IQcSampleHeader, IEnumerable<QcField>)>(
                     (header, storedFields));
             });
@@ -228,11 +231,12 @@ internal sealed class BeamQaTestContext
     public Mock<IDispatcherService> Dispatcher { get; } = new();
     public Mock<IQcbService> QcbService { get; } = new();
     public Mock<ICollimatorModel> CollimatorModel { get; } = new();
+    public List<string> Calls { get; } = [];
 
     public BeamQaViewModelHarness ViewModel { get; }
     public IQcSampleFieldEntry FirstField { get; }
     public IQcSampleFieldEntry SecondField { get; }
-    public QcReadings Readings { get; } = new([1, 2, 3, 4, 5]);
+    public QcReadings Readings { get; } = new(1u, 2u, 10u, 11u);
     public GcbOperationalPoint CompletedEmission { get; set; } = new()
     {
         TotalPointTime = 1,
@@ -290,6 +294,7 @@ internal class BeamQaSingleEmissionTests
             value => value.RequestStateSwitch(UIMacroState.StandBy),
             Times.Once);
         Assert.That(context.ViewModel.SelectedEmission, Is.Null);
+        Assert.That(context.Calls, Is.EqualTo(new[] { "StartQC", "BeamOn", "StopQC" }));
     }
 
     [Test]
@@ -333,7 +338,7 @@ internal class BeamQaSingleEmissionTests
         context.ReportList.Verify(value => value.AddNewSample(
             It.Is<QcSampleBindable>(sample =>
                 sample.Fields.Count == 1
-                && sample.Fields.Single().Values.Count == 5)), Times.Once);
+                && sample.Fields.Single().Values.Count == 2)), Times.Once);
     }
 
     [Test]
@@ -356,4 +361,57 @@ internal class BeamQaSingleEmissionTests
             Times.Exactly(2));
         context.MainBoard.Verify(value => value.BeamOn(), Times.Exactly(2));
     }
+    [Test]
+    public async Task RejectedStart_PreventsBeamAndRunsOneCleanupStop()
+    {
+        var context = new BeamQaTestContext();
+        context.QcbService
+            .Setup(value => value.StartQCReadingsAsync())
+            .ReturnsAsync(QcbCommandResponseStatus.StartRejected);
+        context.ViewModel.SelectedEmission = context.SecondField;
+        await context.ViewModel.PrepareSelectedEmission();
+
+        await context.ViewModel.RunSelectedEmission();
+
+        context.MainBoard.Verify(value => value.BeamOn(), Times.Never);
+        context.QcbService.Verify(value => value.StopQCReadingsAsync(), Times.Once);
+        context.Repository.Verify(value => value.CreateQcSampleAsync(
+            It.IsAny<IQcSampleHeader>(),
+            It.IsAny<IEnumerable<IQcSampleFieldEntry>>()), Times.Never);
+    }
+
+    [Test]
+    public async Task LostStartResponse_StillRunsOneCleanupStop()
+    {
+        var context = new BeamQaTestContext();
+        context.QcbService
+            .Setup(value => value.StartQCReadingsAsync())
+            .ThrowsAsync(new TimeoutException("lost response"));
+        context.ViewModel.SelectedEmission = context.SecondField;
+        await context.ViewModel.PrepareSelectedEmission();
+
+        await context.ViewModel.RunSelectedEmission();
+
+        context.MainBoard.Verify(value => value.BeamOn(), Times.Never);
+        context.QcbService.Verify(value => value.StopQCReadingsAsync(), Times.Once);
+    }
+
+    [Test]
+    public async Task StopFailure_NeverSavesPartialData()
+    {
+        var context = new BeamQaTestContext();
+        context.QcbService
+            .Setup(value => value.StopQCReadingsAsync())
+            .ThrowsAsync(new QcAcquisitionException("failed"));
+        context.ViewModel.SelectedEmission = context.SecondField;
+        await context.ViewModel.PrepareSelectedEmission();
+
+        await context.ViewModel.RunSelectedEmission();
+
+        context.QcbService.Verify(value => value.StopQCReadingsAsync(), Times.Exactly(2));
+        context.Repository.Verify(value => value.CreateQcSampleAsync(
+            It.IsAny<IQcSampleHeader>(),
+            It.IsAny<IEnumerable<IQcSampleFieldEntry>>()), Times.Never);
+    }
+
 }

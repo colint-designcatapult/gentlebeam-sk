@@ -729,9 +729,20 @@ RELATIONS:
 UID: SW-H10TG-259
 TITLE: Perform Quality Checks
 STATEMENT: >>>
-The external application routes QC-board ping, start, and stop commands through ``GcbCommandInterface`` and main control. A stop response contains accumulated channel 0 and channel 1 values, the firmware sample count, and two reserved fields. The command-response parser preserves the sample count as metadata and maps the remaining values into the application's five-position QC result contract, with unused intensity positions kept at zero.
+The external application routes QC-board ping and acquisition commands through
+``GcbCommandInterface`` and main control. The start request is exactly ``[1, 0]`` and must return
+Armed before Beam On is sent. The stop request is exactly ``[2, 0]``. Stop polls Starting,
+Accumulating, or Stopping responses within one shared two-second deadline; Complete returns the
+unsigned channel 0 sum, channel 1 sum, channel 0 sample count, channel 1 sample count, and numeric
+session status. Error or deadline expiry fails the acquisition.
 
-For service diagnosis, normal GCB telemetry is parsed into typed QC channel 0 and channel 1 readings in counts and ADC 1 and ADC 2 connection states. The UCSI telemetry catalog names and records these fields so detector input and connectivity can be inspected independently of the QC result report.
+``QcReadings`` retains its immutable two-channel wire result. Channel 0 carries the single analog
+diode acquisition; channel 1 remains present for compatibility and is zero and disconnected.
+Reports persist exactly the two accumulation values while retaining each channel's independent
+sample count as metadata. Normal GCB telemetry exposes both wire channels' accumulations,
+instantaneous readings, and ADC connection states. UCSI identifies all QC values in counts, records
+schema version 2 with the two accumulation columns, and reads schema version 1 recordings with
+those fields represented as null.
 
 The flow for performing Daily Quality Checks is:
 
@@ -778,31 +789,32 @@ The flow for performing Daily Quality Checks is:
 
        User->>QualityCheckViewModel: Beam On
        activate QualityCheckViewModel
+       QualityCheckViewModel->>GcbQcbService: start detector acquisition
+       GcbQcbService->>GcbCommandInterface: StartQcbReadings
+       GcbCommandInterface->>MainControl: [UDP] [Start, 0]
+       MainControl->>QcDetector: command Accumulating and wait for Active
+       QcDetector-->>MainControl: Active
+       MainControl-->>GcbCommandInterface: Armed
+       GcbCommandInterface-->>GcbQcbService: start accepted
+       GcbQcbService-->>QualityCheckViewModel: start accepted
        QualityCheckViewModel->>MainBoardModel: Beam On selected emission
        MainBoardModel-->>QualityCheckViewModel: emission entered
-       QualityCheckViewModel->>GcbQcbService: start detector acquisition, 1000 ms
-       GcbQcbService->>GcbCommandInterface: StartQcbReadings(1000)
-       GcbCommandInterface->>MainControl: [UDP] start QC readings, 1000 ms
-       MainControl->>QcDetector: acquire detector samples
-       MainControl-->>GcbCommandInterface: start confirmed
-       GcbCommandInterface-->>GcbQcbService: command accepted
-       GcbQcbService-->>QualityCheckViewModel: start confirmed
-       Note over QualityCheckViewModel: wait for the 1000 ms acquisition window
        QualityCheckViewModel->>GcbQcbService: stop readings
        GcbQcbService->>GcbCommandInterface: StopQcbReadings
-       GcbCommandInterface->>MainControl: [UDP] stop QC readings
-       MainControl->>QcDetector: stop and collect results
-       QcDetector-->>MainControl: channel 0 and channel 1 samples
-       MainControl-->>GcbCommandInterface: accumulated channels, sample count, two reserved fields
-       GcbCommandInterface-->>GcbQcbService: QcReadings with five positions and SampleCount
-       GcbQcbService-->>QualityCheckViewModel: selected-point readings
-       alt readings are missing
+       loop shared two-second deadline
+           GcbCommandInterface->>MainControl: [UDP] [Stop, 0]
+           MainControl-->>GcbCommandInterface: sums, counts, session status
+       end
+       GcbCommandInterface-->>GcbQcbService: immutable two-channel QcReadings
+       GcbQcbService-->>QualityCheckViewModel: selected-emission readings
+       alt acquisition failed or timed out
+           QualityCheckViewModel->>GcbQcbService: one best-effort Stop
            QualityCheckViewModel->>MainBoardModel: Stop
            QualityCheckViewModel-->>User: display acquisition error
-       else readings are present
+       else acquisition completed
            MainBoardModel-->>QualityCheckViewModel: selected emission completed
            QualityCheckViewModel->>MainBoardModel: reset timers and clear plan
-           QualityCheckViewModel->>QcReportService: save selected emission and readings
+           QualityCheckViewModel->>QcReportService: save selected emission and two channel sums
            QcReportService-->>QualityCheckViewModel: report saved
            Note over QualityCheckViewModel: return to StandBy and clear selection
            QualityCheckViewModel-->>User: selected emission completed

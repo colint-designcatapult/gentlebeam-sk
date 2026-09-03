@@ -202,6 +202,8 @@ enum systemStatusFields
 	SS_REQUIRED_INTERLOCKS,
 	SS_QC_CHANNEL_1,
 	SS_QC_ADC_I2C_STATUS,
+	SS_QC_ACCUMULATION_0,
+	SS_QC_ACCUMULATION_1,
 	SS_COUNT
 };
 #endif
@@ -286,8 +288,6 @@ extern VariableValue qc_ping_buf[QC_DATA_RES_COUNT];
 
 #endif
 
-extern VariableValue qc_reading_buf[QC_DATA_RES_COUNT];
-extern uint32_t qc_samples;
 
 extern float internal_voltages[INTERNAL_V_COUNT];
 
@@ -295,9 +295,6 @@ void init_system_parameters();
 
 #if !defined(CALIBRATION_MODE)
 void init_qc_ping_buf();
-void reset_qc_reading();
-void reset_qc_reading_buf();
-void report_qc_reading();
 #endif
 
 void clear_treatment_plan();

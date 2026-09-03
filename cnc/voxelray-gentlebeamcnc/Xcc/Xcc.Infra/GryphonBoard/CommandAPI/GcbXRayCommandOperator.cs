@@ -72,12 +72,12 @@ namespace Xcc.Infra.GryphonBoard.CommandAPI
                 payload: [0, 0]);
         }
 
-        public byte[] GenerateQcbReadingsCmd(uint command, int samplingWindowMs)
+        public byte[] GenerateQcbReadingsCmd(uint command)
         {
             return UdpPacketBuilder.BuildRawPacket(
                 packetType: (uint)GCBPacketType.QcbReadingsCommand,
                 packetCounter: ++packetCounter,
-                payload: [command, samplingWindowMs]);
+                payload: [command, 0u]);
         }
 
         /// <summary>

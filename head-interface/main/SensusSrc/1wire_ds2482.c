@@ -5,7 +5,6 @@
 #define DS2482
 #include "1wire_ds2482.h"
 #include "sys_data.h"
-#include "qc.h"
 
 #define POLL_LIMIT (200)
 
@@ -41,6 +40,58 @@ int rslt, cnt;
 static uchar I2C_address;
 int short_detected;
 int c1WS, cSPU, cPPM, cAPU;
+
+static volatile bool reset_i2c2;
+
+static void one_wire_i2c_reset(I2C_HandleTypeDef *hi2c);
+static void one_wire_i2c_force_bus_recovery(I2C_HandleTypeDef *hi2c);
+
+void process_1wire_i2c_recovery(void)
+{
+    if (reset_i2c2)
+    {
+        reset_i2c2 = false;
+        one_wire_i2c_reset(&hi2c2);
+    }
+}
+
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
+{
+    if (hi2c->Instance == I2C2)
+    {
+        reset_i2c2 = true;
+    }
+}
+
+static void one_wire_i2c_reset(I2C_HandleTypeDef *hi2c)
+{
+    (void)HAL_I2C_DeInit(hi2c);
+    (void)HAL_I2C_Init(hi2c);
+    __HAL_I2C_ENABLE(hi2c);
+}
+
+static void one_wire_i2c_force_bus_recovery(I2C_HandleTypeDef *hi2c)
+{
+    GPIO_InitTypeDef gpio = {0};
+    (void)HAL_I2C_DeInit(hi2c);
+
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    gpio.Pin = GPIO_PIN_3 | GPIO_PIN_10;
+    gpio.Mode = GPIO_MODE_OUTPUT_OD;
+    gpio.Pull = GPIO_NOPULL;
+    gpio.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOB, &gpio);
+    for (int pulse = 0; pulse < 10; pulse++)
+    {
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+        for (volatile int delay = 0; delay < 10; delay++) { }
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+        for (volatile int delay = 0; delay < 10; delay++) { }
+    }
+
+    (void)HAL_I2C_Init(hi2c);
+    __HAL_I2C_ENABLE(hi2c);
+}
 
 // Internal I2C Write
 HAL_StatusTypeDef I2C_Write(uint8_t *data, uint16_t length) {
@@ -250,7 +301,7 @@ int DS2482_reset(void)
 {
    uchar status;
 
-   I2C_ForceBusRecovery(&hi2c2);
+   one_wire_i2c_force_bus_recovery(&hi2c2);
    // Device Reset
    //   S AD,0 [A] DRST [A] Sr AD,1 [A] [SS] A\ P
    //  [] indicates from slave

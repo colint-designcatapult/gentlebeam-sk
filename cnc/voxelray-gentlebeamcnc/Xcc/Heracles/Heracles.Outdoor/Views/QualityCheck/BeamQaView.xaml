@@ -402,39 +402,6 @@
                    
                 </Grid>
 
-                <!--'QC-test' button-->
-                <Border Grid.Column="5" Width="24"
-                        Visibility="{Binding HeraclesExternalSettings.ShowDebugButtons, 
-                            Converter={convx:BooleanToVisibilityConverter Invisibility=Collapsed},
-                            FallbackValue=Collapsed}"/>
-                <Border
-                    Grid.Column="6"
-                    Width="250"
-                    Visibility="{Binding HeraclesExternalSettings.ShowDebugButtons, 
-                        Converter={convx:BooleanToVisibilityConverter Invisibility=Collapsed},
-                        FallbackValue=Collapsed}">
-                    <Button 
-                        Grid.Column="6"
-                        Command="{Binding QCTestCommand}"                    
-                        HorizontalContentAlignment="Stretch"
-                        VerticalContentAlignment="Stretch">
-
-                        <Grid>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Path 
-                                    Data="{StaticResource CircleIcon}" 
-                                    Style="{StaticResource XRayButtonsIconStyle}">
-
-                                    <Path.LayoutTransform>
-                                        <ScaleTransform ScaleX="-1"></ScaleTransform>
-                                    </Path.LayoutTransform>
-                                </Path>
-
-                                <TextBlock Text="Test QC Diodes" Style="{StaticResource TextBlockButtonStyle}"/>
-                            </StackPanel>
-                        </Grid>
-                    </Button>
-                </Border>
             </Grid>
         </Border>
 

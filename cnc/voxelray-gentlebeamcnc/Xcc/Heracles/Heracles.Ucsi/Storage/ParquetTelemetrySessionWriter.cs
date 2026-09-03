@@ -23,7 +23,7 @@ public sealed class ParquetTelemetrySessionWriter(
     TelemetryParameterCatalog catalog)
 {
     internal const int RowGroupSize = 10_000;
-    internal const string SchemaVersion = "1";
+    internal const string SchemaVersion = "2";
 
     private readonly TelemetryParameterCatalog _catalog = catalog;
 

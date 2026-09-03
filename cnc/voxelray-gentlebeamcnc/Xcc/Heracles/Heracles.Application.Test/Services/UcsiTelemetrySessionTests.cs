@@ -4,6 +4,8 @@ using Heracles.Ucsi.Services;
 using Heracles.Ucsi.Storage;
 using Heracles.Ucsi.ViewModels;
 using Moq;
+using Parquet;
+using Parquet.Schema;
 using Prism.Events;
 using Xcc.Application.Models;
 using Xcc.Core.Domain.GryphonBoard;
@@ -47,20 +49,28 @@ internal sealed class UcsiTelemetrySessionTests
 
         TelemetryParameterDescriptor qc0 = catalog.GetRequired("system.QcChannel0Reading");
         TelemetryParameterDescriptor qc1 = catalog.GetRequired("system.QcChannel1Reading");
+        TelemetryParameterDescriptor qcAccum0 = catalog.GetRequired("system.QcChannel0Accumulation");
+        TelemetryParameterDescriptor qcAccum1 = catalog.GetRequired("system.QcChannel1Accumulation");
         TelemetryParameterDescriptor qcAdc1 = catalog.GetRequired("system.QcAdc1Connected");
         TelemetryParameterDescriptor qcAdc2 = catalog.GetRequired("system.QcAdc2Connected");
         Assert.Multiple(() =>
         {
             Assert.That(qc0.DisplayName, Is.EqualTo("QC Channel 0 Reading"));
             Assert.That(qc1.DisplayName, Is.EqualTo("QC Channel 1 Reading"));
+            Assert.That(qcAccum0.DisplayName, Is.EqualTo("QC Channel 0 Accumulation"));
+            Assert.That(qcAccum1.DisplayName, Is.EqualTo("QC Channel 1 Accumulation"));
             Assert.That(qcAdc1.DisplayName, Is.EqualTo("QC ADC 1 Connected"));
             Assert.That(qcAdc2.DisplayName, Is.EqualTo("QC ADC 2 Connected"));
             Assert.That(qc0.Group, Is.EqualTo("Quality Control"));
             Assert.That(qc1.Group, Is.EqualTo("Quality Control"));
+            Assert.That(qcAccum0.Group, Is.EqualTo("Quality Control"));
+            Assert.That(qcAccum1.Group, Is.EqualTo("Quality Control"));
             Assert.That(qcAdc1.Group, Is.EqualTo("Quality Control"));
             Assert.That(qcAdc2.Group, Is.EqualTo("Quality Control"));
             Assert.That(qc0.Unit, Is.EqualTo("counts"));
             Assert.That(qc1.Unit, Is.EqualTo("counts"));
+            Assert.That(qcAccum0.Unit, Is.EqualTo("counts"));
+            Assert.That(qcAccum1.Unit, Is.EqualTo("counts"));
         });
 
         Assert.That(catalog.All, Has.Some.Matches<TelemetryParameterDescriptor>(parameter => parameter.IsMock));
@@ -139,6 +149,8 @@ internal sealed class UcsiTelemetrySessionTests
                 Assert.That(coordinator.TransportState, Is.EqualTo(SessionTransportState.Paused));
                 Assert.That(coordinator.SessionRowCount, Is.EqualTo(125));
                 Assert.That(coordinator.CurrentSample?.Telemetry.KvFeedback, Is.EqualTo(0));
+                Assert.That(coordinator.CurrentSample?.Telemetry.QcChannel0Accumulation, Is.EqualTo(1000u));
+                Assert.That(coordinator.CurrentSample?.Telemetry.QcChannel1Accumulation, Is.EqualTo(2000u));
             });
 
             IReadOnlyList<ReplayGraphSeries> graph = await coordinator.ReadReplayGraphSeriesAsync(
@@ -160,11 +172,47 @@ internal sealed class UcsiTelemetrySessionTests
             {
                 Assert.That(coordinator.CurrentSample?.Telemetry.KvFeedback, Is.EqualTo(124));
                 Assert.That(coordinator.CurrentSample?.Telemetry.EmissionCurrent, Is.EqualTo(12.4f).Within(0.001));
+                Assert.That(coordinator.CurrentSample?.Telemetry.QcChannel0Accumulation, Is.EqualTo(1124u));
+                Assert.That(coordinator.CurrentSample?.Telemetry.QcChannel1Accumulation, Is.EqualTo(2124u));
                 Assert.That(coordinator.CurrentSample?.Telemetry.Interlocks.IsRequired(SystemInterlock.DoorClosed), Is.True);
             });
 
             await coordinator.ReturnToLiveAsync();
             Assert.That(coordinator.Mode, Is.EqualTo(UcsiMode.Live));
+        }
+        finally
+        {
+            await coordinator.DisposeAsync();
+            if (Directory.Exists(directory))
+                Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Test]
+    public async Task VersionOneRecording_LoadsMissingAccumulationsAsNull()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"Ucsi-v1-{Guid.NewGuid():N}");
+        string path = Path.Combine(directory, "legacy.parquet");
+        Directory.CreateDirectory(directory);
+        TelemetrySessionCoordinator coordinator = CreateCoordinator(out _);
+        try
+        {
+            var catalog = new TelemetryParameterCatalog();
+            await WriteVersionOneFixtureAsync(path, catalog);
+            await coordinator.LoadReplayAsync(path);
+            IReadOnlyList<ReplayGraphSeries> graph = await coordinator.ReadReplayGraphSeriesAsync(
+                ["system.QcChannel0Accumulation", "system.QcChannel1Accumulation"],
+                0,
+                coordinator.TotalElapsedTicks,
+                4);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(coordinator.CurrentSample?.Telemetry.KvFeedback, Is.EqualTo(5));
+                Assert.That(coordinator.CurrentSample?.Telemetry.QcChannel0Accumulation, Is.Null);
+                Assert.That(coordinator.CurrentSample?.Telemetry.QcChannel1Accumulation, Is.Null);
+                Assert.That(graph.SelectMany(series => series.Points), Has.All.Property("Value").Null);
+            });
         }
         finally
         {
@@ -254,6 +302,65 @@ internal sealed class UcsiTelemetrySessionTests
         }
     }
 
+    private static async Task WriteVersionOneFixtureAsync(
+        string path,
+        TelemetryParameterCatalog catalog)
+    {
+        TelemetryParameterDescriptor[] descriptors = catalog.All
+            .Where(descriptor =>
+                descriptor.Id != "system.QcChannel0Accumulation"
+                && descriptor.Id != "system.QcChannel1Accumulation")
+            .ToArray();
+        MethodInfo createBuffer = typeof(TelemetryParameterDescriptor).GetMethod(
+            "CreateParquetBuffer",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        object[] buffers = descriptors
+            .Select(descriptor => createBuffer.Invoke(descriptor, [1])!)
+            .ToArray();
+        var sample = new UcsiTelemetrySample(
+            0,
+            DateTimeOffset.UtcNow,
+            0,
+            CreateTelemetry(5),
+            []);
+        foreach (object buffer in buffers)
+            buffer.GetType().GetMethod("Append")!.Invoke(buffer, [sample]);
+
+        DataField<long> sequence = new("Sequence", false);
+        DataField<long> received = new("ReceivedAtUtcTicks", false);
+        DataField<long> elapsed = new("ElapsedTicks", false);
+        DataField<string> sourceKind = new("SourceKind", false);
+        DataField<byte[]> rawDatagram = new("RawDatagram", true);
+        DataField[] parameterFields = buffers
+            .Select(buffer => (DataField)buffer.GetType().GetProperty("Field")!.GetValue(buffer)!)
+            .ToArray();
+        var fields = new List<Field> { sequence, received, elapsed, sourceKind, rawDatagram };
+        fields.AddRange(parameterFields);
+
+        await using var stream = File.Create(path);
+        await using ParquetWriter writer = await ParquetWriter.CreateAsync(
+            new ParquetSchema(fields),
+            stream);
+        writer.CustomMetadata = new Dictionary<string, string>
+        {
+            ["ucsi.schema.version"] = "1",
+            ["ucsi.capture.startUtc"] = sample.ReceivedAtUtc.ToString("O"),
+            ["ucsi.capture.rawDatagram"] = "true",
+        };
+        using ParquetRowGroupWriter group = writer.CreateRowGroup();
+        await group.WriteAsync<long>(sequence, new long[] { 0 });
+        await group.WriteAsync<long>(received, new long[] { sample.ReceivedAtUtc.UtcTicks });
+        await group.WriteAsync<long>(elapsed, new long[] { 0 });
+        await group.WriteAsync(sourceKind, new string[] { TelemetrySourceKind.Udp.ToString() });
+        await group.WriteAsync(rawDatagram, new byte[]?[] { null });
+        foreach (object buffer in buffers)
+        {
+            Task write = (Task)buffer.GetType().GetMethod("WriteAsync")!
+                .Invoke(buffer, [group, CancellationToken.None])!;
+            await write;
+        }
+    }
+
     private static TelemetrySessionCoordinator CreateCoordinator(out DecodedTelemetryFrameHub hub)
     {
         var catalog = new TelemetryParameterCatalog();
@@ -281,6 +388,8 @@ internal sealed class UcsiTelemetrySessionTests
         telemetry.SetupGet(value => value.KvFeedback).Returns(index);
         telemetry.SetupGet(value => value.EmissionCurrent).Returns(index / 10f);
         telemetry.SetupGet(value => value.HeaterCurrentFeedback).Returns(index / 20f);
+        telemetry.SetupGet(value => value.QcChannel0Accumulation).Returns((uint)(1000 + index));
+        telemetry.SetupGet(value => value.QcChannel1Accumulation).Returns((uint)(2000 + index));
         telemetry.SetupGet(value => value.Mag1).Returns(new TelemetryVector3(index, index + 1, index + 2));
         telemetry.Setup(value => value.IsFaultState()).Returns(false);
         telemetry.Setup(value => value.IsEmissionState()).Returns(false);

@@ -134,6 +134,7 @@ static uint32_t save_1_wire_byte()
 
 void process_collimator()
 {
+	process_1wire_i2c_recovery();
 	if(collim_ms > 0)
 	{
 		return;

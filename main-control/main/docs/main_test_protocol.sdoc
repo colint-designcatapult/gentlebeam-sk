@@ -524,21 +524,32 @@ RELATIONS:
 UID: TC-H1FWMC-103
 TITLE: Operation 09: Initiation
 STATEMENT: >>>
-When user runs a treatment plan and clicks the Beam-On button, the system enters Launching state first and then starts emission.
+When the user runs an ordinary treatment plan and clicks Beam On, the system enters Launching
+before emission. When a QC session is armed, Launching additionally waits for the head-interface
+Active acknowledgment before radiation can start.
 <<<
 PREREQUISITES: >>>
-1. System is ready to run
-2. A treatment plan is loaded and ready to run an emission
+1. System is ready to run.
+2. A treatment plan is loaded and ready to run an emission.
+3. For the QC run, the head interface can delay, acknowledge, or reject the Accumulating command.
 <<<
 STEPS: >>>
-1. Start the system
-2. Load a treatment plan
-3. Click the "Beam On" button
+1. Run an ordinary emission and observe Launching through emission start.
+2. Arm a QC session, press Beam On, and delay the head Active acknowledgment.
+3. Provide the Active acknowledgment and observe emission start.
+4. Repeat while withholding the acknowledgment or returning Error.
+5. After the QC fault is reported, send PC Clear Faults and observe the QC response and
+   main-to-head desired state.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is started
-2. Verify a treatment plan is loaded successfully
-3. Verify the system switches to Launching status and that the emission has not started yet
+1. The ordinary emission enters Launching and starts only after the HVPS setpoint is reached.
+2. The QC emission remains in Launching with emission disabled until Active is acknowledged.
+3. Exactly one acknowledged Active edge permits QC radiation.
+4. A one-second acknowledgment timeout or Error keeps radiation disabled, commands Stopped, and
+   reports a QC fault.
+5. Clear Faults resets the PC QC response to Idle with zero accumulations and sample counts,
+   clears the per-session QC fault latch, and retransmits Stopped until the head reports Stopped,
+   Complete, or its retained Error state. It does not allow a stale Active report to start emission.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -977,25 +988,34 @@ RELATIONS:
 UID: TC-H1FWMC-120
 TITLE: Report Telemetry to UCSI
 STATEMENT: >>>
-Verify that the firmware decodes the supported head-interface packet into system status and publishes complete, consistently mapped system telemetry to UCSI both periodically and on request.
+Verify that the firmware decodes the supported head-interface packet into system status and
+publishes complete, consistently mapped system telemetry to UCSI, including the two live QC
+accumulation fields.
 <<<
 PREREQUISITES: >>>
 1. UCSI is connected to the system and displaying live telemetry.
-2. The head-interface board is configured to provide known, distinct button, coolant, 64-bit collimator-ID, and two three-axis magnetometer values in a valid packet.
-3. The remaining monitored inputs can be held at known safe values, and one scalar emission is ready to run.
+2. The head-interface board provides known, distinct cooling, button, collimator-ID, magnetometer,
+   QC channel 0 accumulation, and QC channel 1 accumulation values in a valid packet.
+3. The remaining monitored inputs can be held at known safe values, and one scalar emission is
+   ready to run.
 <<<
 STEPS: >>>
 1. Start the system and observe live telemetry in UCSI for at least one second.
-2. Provide one valid head-interface packet containing known button state, water pressure, water flow, water temperature, collimator ID, and distinct X, Y, and Z values for each of the two magnetometers.
-3. Compare the next UCSI telemetry update with every value supplied by the head-interface packet.
-4. Request a telemetry refresh through UCSI without changing the head-interface inputs.
-5. Load and start the scalar emission, then observe UCSI telemetry while the system progresses through the operating states.
+2. Provide one valid normal head-interface packet containing all established values and distinct
+   unsigned QC accumulation values for lower-detector channel 0 and upper-detector channel 1.
+3. Compare the next UCSI telemetry update with every supplied value.
+4. Request a telemetry refresh without changing the head-interface inputs.
+5. Load and start the scalar emission, then observe UCSI telemetry through the operating states.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. UCSI receives periodic telemetry at the required rate, and the requested update presents the same parameter set.
-2. Periodic and requested updates report the supplied button and coolant values, collimator ID, and both three-axis magnetometer vectors.
-3. UCSI reports the control-board state and runtime; fault, physical-interlock, and required-interlock status; indicator state; internal and backup timer values; HVPS status, setpoints, feedback, and limits; and the remaining monitored coil, ion-pump, and temperature values.
-4. The reported operating state follows the scalar emission, and no current-point or total-point fields are present.
+1. Normal telemetry contains 49 fields. Existing fields 0 through 46 retain their meanings, and
+   QC channel 0 and channel 1 accumulations appear at fields 47 and 48.
+2. Periodic and requested updates report the supplied head, QC, control-state, runtime, fault,
+   interlock, HVPS, coil, ion-pump, and temperature values with identical mapping.
+3. The two QC accumulation words remain unsigned and are not substituted with instantaneous
+   readings or recomputed by main control.
+4. The reported operating state follows the scalar emission, and no current-point or total-point
+   fields are present.
 <<<
 RELATIONS:
 - TYPE: Parent

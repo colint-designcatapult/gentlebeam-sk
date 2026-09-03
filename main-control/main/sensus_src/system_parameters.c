@@ -50,9 +50,6 @@ VariableValue qc_reported[QC_DATA_RES_COUNT];
 
 VariableValue qc_ping_buf[QC_DATA_RES_COUNT];
 #endif
-VariableValue qc_reading_buf[QC_DATA_RES_COUNT];
-
-uint32_t qc_samples = 0;
 
 FATFS fs;
 bool sd_mounted = false;
@@ -83,7 +80,6 @@ void init_system_parameters()
 		
 #if !defined(CALIBRATION_MODE)
 	init_qc_ping_buf();
-	reset_qc_reading_buf();
 #endif
 		
 	hvps_config[HVPS_CONF_WARMUP_I] = DEFAULT_WARMUP_I;
@@ -518,49 +514,14 @@ void init_qc_ping_buf()
 {
 	for(int i = 0; i < QC_DATA_RES_COUNT; i++)
 	{
-		if(i == 0)
-		{
-			qc_ping_buf[i].f = 1;
-		}
-		else
-		{
-			qc_ping_buf[i].f = 0;
-		}
-	}	
-}
-
-void reset_qc_reading_buf()
-{
-	//Clear QC reading buffer table with NaN values
-	memset(qc_reading_buf, 0xFF, sizeof(VariableValue) * QC_DATA_RES_COUNT);
-	
-	//Initialize values
-	for(int i = 0; i < QC_DATA_RES_COUNT; i++)
-	{
-		qc_reading_buf[i].f = 0;
+		qc_ping_buf[i].f = i == 0 ? 1.0f : 0.0f;
+		qc_reported[i].u = 0u;
 	}
+	qc_reported[QC_RES_SESSION_STATUS].u = QC_SESSION_IDLE;
 	system_status[SS_QC_CHANNEL_0].f = 0;
 	system_status[SS_QC_CHANNEL_1].f = 0;
-	qc_samples = 0;
-}
-
-void reset_qc_reading()
-{
-	//Clear QC reading buffer table with NaN values
-	memset(qc_reported, 0xFF, sizeof(VariableValue) * QC_DATA_RES_COUNT);
-	
-	//Initialize values
-	for(int i = 0; i < QC_DATA_RES_COUNT; i++)
-	{
-		qc_reported[i].f = 0;
-	}
-}
-
-void report_qc_reading()
-{
-	//Return the accumulated diode values and the number of head-board samples.
-	memcpy(qc_reported, qc_reading_buf, sizeof(qc_reported));
-	qc_reported[2].u = qc_samples;
+	system_status[SS_QC_ACCUMULATION_0].u = 0;
+	system_status[SS_QC_ACCUMULATION_1].u = 0;
 }
 #endif
 
