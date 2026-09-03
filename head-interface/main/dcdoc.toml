@@ -1,4 +1,4 @@
 [component]
 name = "head-interface/main"
 include_docs = [ "docs/*.sdoc" ]
-version = "3.0.0-{HASH}.{BUILD}" # x-release-please-version
+version = "4.0.0-{HASH}.{BUILD}" # x-release-please-version
