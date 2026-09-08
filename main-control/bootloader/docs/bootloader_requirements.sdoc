@@ -97,8 +97,8 @@ TYPE: Functional
 TITLE: Functional
 STATEMENT: >>>
 The main control bootloader firmware shall jump to execution of the main application if and only
-if the existing main application code at startup is valid. The main application code is valid if the
-programmed CRC value matches the application firmware loaded in flash memory.
+if the primary-slot MCUboot image has a valid header, SHA-256 image hash, and ECDSA P-256
+signature that matches the public key embedded in the bootloader.
 <<<
 
 [REQUIREMENT]
@@ -106,8 +106,8 @@ UID: RQ-H1FWMCBOOT-3
 TYPE: Functional
 TITLE: Functional
 STATEMENT: >>>
-The main control bootloader firmware shall be able to write a specified flash memory page with
-provided data from the PC
+The main control bootloader firmware shall accept an MCUboot-formatted firmware image from a PC
+using the mcumgr serial-recovery image-upload service and write it only to the secondary image slot.
 <<<
 
 [REQUIREMENT]
@@ -115,8 +115,8 @@ UID: RQ-H1FWMCBOOT-4
 TYPE: Functional
 TITLE: Functional
 STATEMENT: >>>
-The main control bootloader firmware shall be able to erase a predetermined area of flash
-memory, corresponding to the application firmware programming area.
+The main control bootloader firmware shall erase only the secondary image slot sectors required to
+receive an uploaded image and shall not erase the bootloader or primary image slot during upload.
 <<<
 
 [REQUIREMENT]
@@ -124,8 +124,36 @@ UID: RQ-H1FWMCBOOT-5
 TYPE: Functional
 TITLE: PC communication
 STATEMENT: >>>
-The main control bootloader firmware shall be able to respond to a ping command from the PC,
-indicating that the system is in bootloader mode.
+The main control bootloader firmware shall respond to an mcumgr echo command while serial recovery
+is active.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWMCBOOT-6
+TYPE: Functional
+TITLE: Recovery entry
+STATEMENT: >>>
+The main control bootloader firmware shall enter serial recovery when it observes and clears the
+one-shot bootloader request written by the main application before processor reset.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWMCBOOT-7
+TYPE: Functional
+TITLE: Image validation
+STATEMENT: >>>
+The main control bootloader firmware shall reject an uploaded image that does not contain a valid
+SHA-256 hash and ECDSA P-256 signature matching its embedded public key.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWMCBOOT-8
+TYPE: Functional
+TITLE: Image upgrade
+STATEMENT: >>>
+The main control bootloader firmware shall permanently upgrade to a validated secondary-slot image
+after the image is confirmed and the processor is reset, using the scratch flash area to swap the
+primary and secondary slots.
 <<<
 
 [[/SECTION]]

@@ -14,7 +14,9 @@
 #include <hpl_usart_base.h>
 
 /*! The buffer size for USART */
-#define FTDI_UART_BUFFER_SIZE 16
+/* mcumgr frames (base64 + framing) can burst well past a few bytes; 16 was
+ * fine for the old line-at-a-time protocol but drops bytes under mcumgr load. */
+#define FTDI_UART_BUFFER_SIZE 256
 
 struct usart_async_descriptor FTDI_UART;
 
@@ -159,6 +161,62 @@ void system_init(void)
 	gpio_set_pin_direction(IO_PUMP_EN, GPIO_DIRECTION_OUT);
 
 	gpio_set_pin_function(IO_PUMP_EN, GPIO_PIN_FUNCTION_OFF);
+
+	/* GPIO on LED1 */
+
+	gpio_set_pin_level(LED1,
+	                   // <y> Initial level
+	                   // <id> pad_initial_level
+	                   // <false"> Low
+	                   // <true"> High
+	                   false);
+
+	// Set pin direction to output
+	gpio_set_pin_direction(LED1, GPIO_DIRECTION_OUT);
+
+	gpio_set_pin_function(LED1, GPIO_PIN_FUNCTION_OFF);
+
+	/* GPIO on LED3 */
+
+	gpio_set_pin_level(LED3,
+	                   // <y> Initial level
+	                   // <id> pad_initial_level
+	                   // <false"> Low
+	                   // <true"> High
+	                   true);
+
+	// Set pin direction to output
+	gpio_set_pin_direction(LED3, GPIO_DIRECTION_OUT);
+
+	gpio_set_pin_function(LED3, GPIO_PIN_FUNCTION_OFF);
+
+	/* GPIO on LED4 */
+
+	gpio_set_pin_level(LED4,
+	                   // <y> Initial level
+	                   // <id> pad_initial_level
+	                   // <false"> Low
+	                   // <true"> High
+	                   true);
+
+	// Set pin direction to output
+	gpio_set_pin_direction(LED4, GPIO_DIRECTION_OUT);
+
+	gpio_set_pin_function(LED4, GPIO_PIN_FUNCTION_OFF);
+
+	/* GPIO on LED5 */
+
+	gpio_set_pin_level(LED5,
+	                   // <y> Initial level
+	                   // <id> pad_initial_level
+	                   // <false"> Low
+	                   // <true"> High
+	                   true);
+
+	// Set pin direction to output
+	gpio_set_pin_direction(LED5, GPIO_DIRECTION_OUT);
+
+	gpio_set_pin_function(LED5, GPIO_PIN_FUNCTION_OFF);
 
 	FLASH_0_init();
 

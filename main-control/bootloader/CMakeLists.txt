@@ -2,7 +2,6 @@ file(GLOB bootloader_startup_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_D
 
 set(bootloader_sources
   atmel_start.c
-  crc32.c
   driver_init.c
   examples/driver_examples.c
   hal/src/hal_atomic.c
@@ -26,6 +25,16 @@ set(bootloader_sources
   hpl/usart/hpl_usart.c
   hpl/xdmac/hpl_xdmac.c
   main.c
+  mcuboot_port/base64/base64.c
+  mcuboot_port/boot_uart.c
+  mcuboot_port/crc/crc16.c
+  mcuboot_port/flash_map_backend.c
+  mcuboot_port/hal/hal_system.c
+  mcuboot_port/newlib_syscalls.c
+  mcuboot_port/os/os_cputime.c
+  mcuboot_port/os/os_malloc.c
+  mcuboot_port/signing_keys.c
+  keys/gryphon-dev-ec256-pub.c
 )
 
 add_executable(gryphon_system_bootloader_fw
@@ -36,6 +45,7 @@ add_executable(gryphon_system_bootloader_fw
 set_target_properties(gryphon_system_bootloader_fw PROPERTIES
   OUTPUT_NAME "Gryphon System Bootloader FW"
   SUFFIX ".elf"
+  LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Device_Startup/same70q21b_flash.ld"
 )
 
 target_include_directories(gryphon_system_bootloader_fw PRIVATE
@@ -53,6 +63,7 @@ target_include_directories(gryphon_system_bootloader_fw PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/hpl/usart"
   "${CMAKE_CURRENT_SOURCE_DIR}/hpl/xdmac"
   "${CMAKE_CURRENT_SOURCE_DIR}/hri"
+  "${CMAKE_CURRENT_SOURCE_DIR}/mcuboot_port"
 )
 
 target_compile_definitions(gryphon_system_bootloader_fw PRIVATE
@@ -85,12 +96,26 @@ target_link_options(gryphon_system_bootloader_fw PRIVATE
   "$<$<CONFIG:Debug,CalibrationDebug>:-u>"
   "$<$<CONFIG:Debug,CalibrationDebug>:_printf_float>"
 )
-target_link_libraries(gryphon_system_bootloader_fw PRIVATE c m)
+target_link_libraries(gryphon_system_bootloader_fw PRIVATE
+  gentlebeam::mcuboot
+  c
+  m
+)
 
 add_custom_command(TARGET gryphon_system_bootloader_fw POST_BUILD
   COMMAND "${CMAKE_OBJCOPY}" -O ihex -R .eeprom -R .fuse -R .lock -R .signature
           "$<TARGET_FILE:gryphon_system_bootloader_fw>"
           "$<TARGET_FILE_DIR:gryphon_system_bootloader_fw>/Gryphon System Bootloader FW.hex"
   BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/Gryphon System Bootloader FW.hex"
+  VERBATIM
+)
+
+add_custom_command(TARGET gryphon_system_bootloader_fw POST_BUILD
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/../tools/print_size.py"
+          --size-tool "${CMAKE_SIZE}"
+          --elf "$<TARGET_FILE:gryphon_system_bootloader_fw>"
+          --flash-size 204800
+          --ram-size 393216
+          --name gryphon_system_bootloader_fw
   VERBATIM
 )

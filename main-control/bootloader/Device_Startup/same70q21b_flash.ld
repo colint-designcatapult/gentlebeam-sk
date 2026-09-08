@@ -38,17 +38,30 @@ SEARCH_DIR(.)
 ENTRY(Reset_Handler)
 
 /* Memory Spaces Definitions */
+/* Flash layout (2 MiB total):
+ *   0x00400000 - 0x00432000 : bootloader        (200 KiB)
+ *   0x00432000 - 0x004FA000 : primary image slot (800 KiB)
+ *   0x004FA000 - 0x005C2000 : secondary image slot (800 KiB)
+ *   0x005C2000 - 0x005D2000 : scratch area         (64 KiB)
+ *   0x005D2000 - 0x00600000 : reserved            (184 KiB)
+ */
 MEMORY
 {
-    rom (rx)    : ORIGIN = 0x00400000, LENGTH = 0x00200000 /* rom, 2097152K */
+    rom (rx)    : ORIGIN = 0x00400000, LENGTH = 0x00032000 /* bootloader, 200K */
     ram (rwx)   : ORIGIN = 0x20400000, LENGTH = 0x00060000 /* ram, 393216K */
 }
 
 /* The stack size used by the application. NOTE: you need to adjust according to your application. */
-STACK_SIZE = DEFINED(STACK_SIZE) ? STACK_SIZE : DEFINED(__stack_size__) ? __stack_size__ : 0x0400;
+/* mcuboot's loader.c stack-allocates struct boot_sector_buffer (3 sector
+ * arrays sized MCUBOOT_MAX_IMG_SECTORS), plus image-validate/sha256 locals;
+ * 1 KiB is nowhere near enough and silently corrupts memory. */
+STACK_SIZE = DEFINED(STACK_SIZE) ? STACK_SIZE : DEFINED(__stack_size__) ? __stack_size__ : 0x4000;
 
 /* The heapsize used by the application. NOTE: you need to adjust according to your application. */
-HEAP_SIZE = DEFINED(HEAP_SIZE) ? HEAP_SIZE : DEFINED(__heap_size__) ? __heap_size__ : 0x0200;
+/* loader.c mallocs sizeof(struct boot_sector_buffer) (3 arrays sized
+ * MCUBOOT_MAX_IMG_SECTORS, ~2.4 KiB here) - _sbrk() has no bounds checking,
+ * so an undersized heap silently corrupts whatever memory follows it. */
+HEAP_SIZE = DEFINED(HEAP_SIZE) ? HEAP_SIZE : DEFINED(__heap_size__) ? __heap_size__ : 0x2000;
 
 /* Entry Point */
 ENTRY(Reset_Handler)

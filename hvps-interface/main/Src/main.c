@@ -109,18 +109,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	__disable_irq();
-
-		__DSB();
-		__ISB();
-
-		//Update vector table offset register
-		SCB->VTOR = (uint32_t)(0x8008000);//+ SCB_VTOR_TBLOFF_Msk;
-
-		__DSB();
-		__ISB();
-
-		__enable_irq();
+  /* SystemInit configures SCB->VTOR for the MCUboot application address. */
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

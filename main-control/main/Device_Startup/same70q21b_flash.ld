@@ -39,9 +39,12 @@ SEARCH_DIR(.)
 ENTRY(Reset_Handler)
 
 /* Memory Spaces Definitions */
+/* Primary image slot is 0x00432000-0x004FA000 (800 KiB). The first
+ * IMAGE_HEADER_SIZE bytes are reserved for the mcuboot image header, and the
+ * last IMAGE_TRAILER_SIZE bytes are reserved for the mcuboot image trailer. */
 MEMORY
 {
-	rom (rx)    : ORIGIN = 0x00420000, LENGTH = 0x000E0000 /* rom, 2097152K */
+	rom (rx)    : ORIGIN = 0x00432200, LENGTH = 0x000C7C00 /* primary image slot minus mcuboot header/trailer */
     //rom (rx)    : ORIGIN = 0x00400000, LENGTH = 0x00100000 /* rom, 2097152K */
     ram (rwx)   : ORIGIN = 0x20400000, LENGTH = 0x00060000 /* ram, 393216K */
 }

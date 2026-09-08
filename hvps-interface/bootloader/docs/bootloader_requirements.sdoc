@@ -37,6 +37,15 @@ TITLE: Abbreviations and Definitions
 
 [TEXT]
 STATEMENT: >>>
+CRC
+  Cyclic Redundancy Check
+
+EC256
+  Elliptic Curve Digital Signature Algorithm with 256-bit keys
+
+FIH
+  Fault Injection Hardening
+
 FW
   Firmware
 
@@ -54,6 +63,9 @@ PID
 
 PRS
   Product Requirements Specification
+
+RAM
+  Random Access Memory
 
 SDP
   Software Development Plan
@@ -134,6 +146,46 @@ TITLE: PC Communication
 STATEMENT: >>>
 The HVPS interface bootloader firmware shall be able to respond to a ping command from the PC,
 indicating that the system is in bootloader mode
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-5
+TYPE: Functional
+TITLE: MCUboot Image Validation
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall validate application images using the MCUboot bootutil
+library, including cryptographic signature verification using EC256 algorithms and verification of
+image metadata headers.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-6
+TYPE: Functional
+TITLE: Stack Pointer Validation
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall validate that the stack pointer value read from the
+application image vector table resides within the valid RAM address range (0x20000000 to 0x20008000)
+before jumping to the application.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-7
+TYPE: Functional
+TITLE: Reset Handler Validation
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall validate that the reset handler address read from the
+application image vector table resides within the valid application code range before jumping to the
+application.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-8
+TYPE: Functional
+TITLE: Image Address Validation
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall validate that the application image start address falls
+within the valid application slot range (0x0800C200 to 0x08024000) before attempting to execute the
+application.
 <<<
 
 [[/SECTION]]

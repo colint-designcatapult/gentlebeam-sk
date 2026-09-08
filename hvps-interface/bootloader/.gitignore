@@ -4,3 +4,4 @@
 .settings/
 .clangd
 .vscode/
+/tools/mcuboot-build/

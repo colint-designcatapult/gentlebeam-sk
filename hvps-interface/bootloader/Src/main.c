@@ -22,7 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "../Sensus Src/bootloader.h"
+#include "bootutil/bootutil.h"
+#include "bootutil/fault_injection_hardening.h"
+#include "boot_serial/boot_serial.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -77,12 +79,83 @@ static void MX_USART3_UART_Init(void);
 static void MX_TIM7_Init(void);
 /* USER CODE BEGIN PFP */
 
+/* MCUboot UART functions */
+extern int mcuboot_uart_read(char *buffer, int count, int *newline);
+extern void mcuboot_uart_write(const char *buffer, int count);
+extern void mcuboot_bootloader_blink(void);
+extern void mcuboot_uart_start(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+typedef void (*fpJumpHandler)(void);
 
+__attribute__((naked, noreturn)) static void jump_to_reset(uint32_t stack_ptr,
+                                                            uint32_t reset_handler)
+{
+  __asm volatile (
+    "msr msp, r0\n"
+    "bx r1\n"
+  );
+}
 /* USER CODE END 0 */
+
+static void jump_to_image(const struct boot_rsp *response)
+{
+  uint32_t flash_base = 0x08000000u;
+  uint32_t image_start = flash_base + response->br_image_off +
+                         response->br_hdr->ih_hdr_size;
+  uint32_t stack_ptr_val;
+  fpJumpHandler image_reset_handler;
+
+  /* Validate the application vector table address within the primary slot. */
+  if (image_start < 0x0800C200u || image_start >= 0x08024000u) {
+    mcuboot_uart_write("ERR_ADDR\n", 9);  /* Image address validation failed */
+    return;
+  }
+
+  /* Read stack pointer and reset handler from the image's vector table.
+   * This must happen BEFORE touching VTOR/MSP so that, if validation fails,
+   * we can bail out with the bootloader's own vector table/state intact. */
+  stack_ptr_val = *(uint32_t *)image_start;
+  image_reset_handler = (fpJumpHandler)(*(uint32_t *)(image_start + 4u));
+
+  /* Validate stack pointer is in RAM range */
+  if (stack_ptr_val < 0x20000000u || stack_ptr_val > 0x20008000u) {
+    mcuboot_uart_write("ERR_SP\n", 7);
+    return;
+  }
+
+  /* Validate reset handler is in application space */
+  if ((uint32_t)image_reset_handler < image_start ||
+      (uint32_t)image_reset_handler >= 0x08024000u) {
+    mcuboot_uart_write("ERR_RH\n", 7);
+    return;
+  }
+
+  /* --- Point of no return: everything below is validated, so we commit. */
+  __disable_irq();
+
+  SysTick->CTRL = 0;
+  SysTick->LOAD = 0;
+  SysTick->VAL = 0;
+  for (uint32_t index = 0; index < 8; index++) {
+    NVIC->ICER[index] = 0xFFFFFFFFu;
+    NVIC->ICPR[index] = 0xFFFFFFFFu;
+  }
+
+  /* Set Vector Table Offset Register to the start of the application image */
+  SCB->VTOR = image_start;
+  __DSB();
+  __ISB();
+
+  /* A reset starts with interrupts enabled; restore that state for the app. */
+  __enable_irq();
+
+  /* Set MSP and branch without a C call frame after changing the stack. */
+  jump_to_reset(stack_ptr_val, (uint32_t)image_reset_handler);
+}
 
 /**
   * @brief  The application entry point.
@@ -91,10 +164,7 @@ static void MX_TIM7_Init(void);
 int main(void)
 {
 
-  /* USER CODE BEGIN 1 */
-	check_app_jump();
-
-  /* USER CODE END 1 */
+  struct boot_rsp response = {0};
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -113,31 +183,35 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_ADC1_Init();
-  MX_DAC1_Init();
-  MX_DAC2_Init();
-  MX_SPI1_Init();
-  MX_SPI2_Init();
-  MX_SPI3_Init();
-  MX_USART1_UART_Init();
+  // MX_DMA_Init();
+  // MX_ADC1_Init();
+  // MX_DAC1_Init();
+  // MX_DAC2_Init();
+  // MX_SPI1_Init();
+  // MX_SPI2_Init();
+  // MX_SPI3_Init();
+  // MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
-  MX_TIM7_Init();
-  /* USER CODE BEGIN 2 */
-  setup_bootloader();
-  /* USER CODE END 2 */
+  // MX_TIM7_Init();
+  mcuboot_uart_start();
+  const struct boot_uart_funcs uart_funcs = {
+    .read = mcuboot_uart_read,
+    .write = mcuboot_uart_write,
+  };
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-	  process_bootloader();
-    /* USER CODE END WHILE */
+  bool boot_go_fail_reported = false;
+  for (;;) {
+    boot_serial_check_start(&uart_funcs, 3000);
 
-    /* USER CODE BEGIN 3 */
+    if (boot_go(&response) == FIH_SUCCESS) {
+      mcuboot_uart_write("BOOT_GO_OK\n", 11);
+      jump_to_image(&response);
+    } else if (!boot_go_fail_reported) {
+      mcuboot_uart_write("BOOT_GO_FAIL\n", 13);
+      boot_go_fail_reported = true;
+    }
   }
-  /* USER CODE END 3 */
 }
 
 /**

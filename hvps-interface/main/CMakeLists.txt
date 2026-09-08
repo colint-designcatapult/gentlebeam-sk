@@ -28,7 +28,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
+get_filename_component(ARM_TOOLCHAIN_BIN "${CMAKE_C_COMPILER}" DIRECTORY)
+set(FW_OBJCOPY "${ARM_TOOLCHAIN_BIN}/arm-none-eabi-objcopy${CMAKE_EXECUTABLE_SUFFIX}")
+
 find_package(Python3 QUIET COMPONENTS Interpreter)
+
+add_subdirectory(
+    "${CMAKE_CURRENT_LIST_DIR}/../../mcuboot"
+    "${CMAKE_BINARY_DIR}/gentlebeam-mcuboot"
+)
 
 if(NOT DEFINED FW_VERSION)
     if(Python3_Interpreter_FOUND)
@@ -92,7 +100,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 )
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY}
+    COMMAND "${FW_OBJCOPY}"
         -O ihex
         $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
         $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.hex
@@ -101,26 +109,18 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
 )
 
 if(Python3_Interpreter_FOUND)
-    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/../../tools/firmware_hex.py inject-crc
-            --input $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.hex
-            --output $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.with-crc.hex
-            --crc-output $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.hex.crc
-            --application-start 0x08008000
-            --application-length 0x0002D000
-            --crc-address 0x08007C00
-        BYPRODUCTS
-            ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.with-crc.hex
-            ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.hex.crc
-        VERBATIM
-    )
-
 set(_hvps_bootloader_build_type ${CMAKE_BUILD_TYPE})
 if(CMAKE_BUILD_TYPE STREQUAL "CalibrationDebug")
     set(_hvps_bootloader_build_type Debug)
 endif()
 set(_hvps_bootloader_binary_dir
     ${CMAKE_CURRENT_LIST_DIR}/../bootloader/build/${_hvps_bootloader_build_type})
+set(_hvps_mcuboot_imgtool ${GENTLEBEAM_MCUBOOT_IMGTOOL})
+set(_hvps_mcuboot_signing_key ${CMAKE_CURRENT_LIST_DIR}/../bootloader/keys/signing-key.pem)
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" _hvps_mcuboot_version "${FW_VERSION}")
+if(NOT _hvps_mcuboot_version)
+    set(_hvps_mcuboot_version "0.0.0")
+endif()
 
 add_custom_target(hvps_interface_combined_hex ALL
     COMMAND ${CMAKE_COMMAND}
@@ -131,12 +131,55 @@ add_custom_target(hvps_interface_combined_hex ALL
         -DCMAKE_BUILD_TYPE=${_hvps_bootloader_build_type}
         -DCMAKE_TOOLCHAIN_FILE=${CMAKE_CURRENT_LIST_DIR}/../bootloader/cmake/gcc-arm-none-eabi.cmake
     COMMAND ${CMAKE_COMMAND} --build ${_hvps_bootloader_binary_dir}
+    COMMAND ${Python3_EXECUTABLE} ${_hvps_mcuboot_imgtool} sign
+        -S 0x2D000
+        -H 0x200
+        --pad-header
+        --align 4
+        -v ${_hvps_mcuboot_version}
+        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.hex
+        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.unsigned.bin
+    COMMAND ${Python3_EXECUTABLE} ${_hvps_mcuboot_imgtool} sign
+        -S 0x2D000
+        -H 0x200
+        --pad-header
+        --align 4
+        -v ${_hvps_mcuboot_version}
+        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.hex
+        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.unsigned.hex
+    COMMAND ${Python3_EXECUTABLE} ${_hvps_mcuboot_imgtool} sign
+        -k ${_hvps_mcuboot_signing_key}
+        -S 0x2D000
+        -H 0x200
+        --pad-header
+        --align 4
+        -v ${_hvps_mcuboot_version}
+        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.hex
+        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.signed.bin
+    COMMAND ${Python3_EXECUTABLE} ${_hvps_mcuboot_imgtool} sign
+        -k ${_hvps_mcuboot_signing_key}
+        -S 0x2D000
+        -H 0x200
+        --pad-header
+        --align 4
+        -v ${_hvps_mcuboot_version}
+        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.hex
+        $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.signed.hex
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/../../tools/firmware_hex.py combine
         --input ${_hvps_bootloader_binary_dir}/hvps-interface-bootloader.hex
-        --input $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.with-crc.hex
+        --input $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.signed.hex
         --output $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/${CMAKE_PROJECT_NAME}.combined.hex
-    DEPENDS ${CMAKE_PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/../../tools/firmware_hex.py
-    BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.combined.hex
+    DEPENDS
+        ${CMAKE_PROJECT_NAME}
+        ${CMAKE_CURRENT_LIST_DIR}/../../tools/firmware_hex.py
+        ${_hvps_mcuboot_imgtool}
+        ${_hvps_mcuboot_signing_key}
+    BYPRODUCTS
+        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.unsigned.bin
+        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.unsigned.hex
+        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.signed.bin
+        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.signed.hex
+        ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.combined.hex
     VERBATIM
 )
 endif()

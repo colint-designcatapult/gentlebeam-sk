@@ -38,26 +38,26 @@ _Min_Heap_Size = 0x200;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
 
 /* Specify the memory areas */
+/* MCUboot Layout: Bootloader 48K, Primary Image 180K (single-slot, no secondary) */
 MEMORY
 {
-RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 32K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 256K
+RAM (xrw)           : ORIGIN = 0x20000000, LENGTH = 32K
+FLASH_BOOTLOADER (rx) : ORIGIN = 0x8000000, LENGTH = 48K
+FLASH_PRIMARY (rx)  : ORIGIN = 0x800C000, LENGTH = 180K
 }
-
-/*FLASH (rx)      : ORIGIN = 0x8008000, LENGTH = 200K*/
 
 /* Define output sections */
 SECTIONS
 {
-  /* The startup code goes first into FLASH */
+  /* The startup code goes first into FLASH_BOOTLOADER */
   .isr_vector :
   {
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
+  } >FLASH_BOOTLOADER
 
-  /* The program code and other data goes into FLASH */
+  /* The program code and other data goes into FLASH_BOOTLOADER */
   .text :
   {
     . = ALIGN(4);
@@ -72,44 +72,44 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >FLASH
+  } >FLASH_BOOTLOADER
 
-  /* Constant data goes into FLASH */
+  /* Constant data goes into FLASH_BOOTLOADER */
   .rodata :
   {
     . = ALIGN(4);
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
-  } >FLASH
+  } >FLASH_BOOTLOADER
 
-  .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH
+  .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH_BOOTLOADER
   .ARM : {
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
-  } >FLASH
+  } >FLASH_BOOTLOADER
 
   .preinit_array     :
   {
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
-  } >FLASH
+  } >FLASH_BOOTLOADER
   .init_array :
   {
     PROVIDE_HIDDEN (__init_array_start = .);
     KEEP (*(SORT(.init_array.*)))
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
-  } >FLASH
+  } >FLASH_BOOTLOADER
   .fini_array :
   {
     PROVIDE_HIDDEN (__fini_array_start = .);
     KEEP (*(SORT(.fini_array.*)))
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
-  } >FLASH
+  } >FLASH_BOOTLOADER
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -124,7 +124,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT> FLASH
+  } >RAM AT> FLASH_BOOTLOADER_BOOTLOADER
 
   
   /* Uninitialized data section */

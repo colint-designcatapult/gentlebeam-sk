@@ -1325,7 +1325,7 @@ void system_init(void)
 
 	gpio_set_pin_function(PHY_RESET_PIN, GPIO_PIN_FUNCTION_OFF);
 
-	/* GPIO on PD12 */
+	/* GPIO on LED1 */
 
 	gpio_set_pin_level(IO_LED1,
 	                   // <y> Initial level

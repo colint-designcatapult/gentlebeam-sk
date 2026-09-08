@@ -78,6 +78,7 @@ jobs:
               - '.github/workflows/ci.yml'
             shared_firmware:
               - 'tools/firmware_hex.py'
+              - 'mcuboot/**'
 
   head:
     name: Head interface

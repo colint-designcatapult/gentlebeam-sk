@@ -34,11 +34,20 @@ TITLE: Abbreviations and Definitions
 
 [TEXT]
 STATEMENT: >>>
+EC256
+  Elliptic Curve Digital Signature Algorithm with 256-bit keys
+
+FIH
+  Fault Injection Hardening
+
 FW
   Firmware
 
 HVPS
   High Voltage Power Supply
+
+RAM
+  Random Access Memory
 
 SDP
   Software Development Plan
@@ -48,6 +57,9 @@ SVP
 
 SW
   Software
+
+UART
+  Universal Asynchronous Receiver Transmitter
 <<<
 
 [[/SECTION]]
@@ -225,6 +237,142 @@ EXPECTED_BEHAVIOR: >>>
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-4
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPSIB-9
+TITLE: MCUboot Image Validation - Test Case
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall validate application images using the MCUboot bootutil
+library with EC256 signature verification.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* A valid application image with correct EC256 signature is available.
+* An invalid application image with incorrect signature is available.
+* An application image with corrupted header is available.
+<<<
+STEPS: >>>
+1. Power cycle the system with valid application image in flash.
+2. Verify bootloader validates and jumps to application.
+3. Power cycle the system with invalid signature image.
+4. Verify bootloader rejects the image and enters bootloader mode.
+5. Power cycle the system with corrupted header image.
+6. Verify bootloader rejects the image and enters bootloader mode.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Bootloader validates image successfully.
+2. Application jumps and runs normally.
+3. Bootloader validates signature and rejects invalid image.
+4. Bootloader displays appropriate error and waits for commands.
+5. Bootloader validates header and rejects corrupted image.
+6. Bootloader displays appropriate error and enters bootloader mode.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-5
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPSIB-10
+TITLE: Stack Pointer Validation - Test Case
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall validate that the stack pointer from the application
+vector table is within the valid RAM range.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* A valid application image with correct stack pointer is available.
+* A modified application image with stack pointer below valid range (0x20000000) is available.
+* A modified application image with stack pointer above valid range (0x20008000) is available.
+<<<
+STEPS: >>>
+1. Power cycle with valid stack pointer application.
+2. Verify application jumps and runs normally.
+3. Power cycle with stack pointer below range (e.g., 0x1FFFFFFF).
+4. Verify bootloader rejects the image and displays ERR_SP error.
+5. Power cycle with stack pointer above range (e.g., 0x20009000).
+6. Verify bootloader rejects the image and displays ERR_SP error.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Bootloader reads valid stack pointer from vector table.
+2. Bootloader validates it is within 0x20000000 to 0x20008000 and jumps to application.
+3. Bootloader reads invalid stack pointer.
+4. Bootloader validates and rejects due to out-of-range value, outputs "ERR_SP\n".
+5. Bootloader reads invalid stack pointer.
+6. Bootloader validates and rejects due to out-of-range value, outputs "ERR_SP\n".
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-6
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPSIB-11
+TITLE: Reset Handler Validation - Test Case
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall validate that the reset handler address from the
+application vector table is within the valid application code range.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* A valid application image with correct reset handler is available.
+* A modified application image with reset handler pointing to bootloader space is available.
+* A modified application image with reset handler above application slot limit is available.
+<<<
+STEPS: >>>
+1. Power cycle with valid reset handler application.
+2. Verify application jumps and runs normally.
+3. Power cycle with reset handler in bootloader region (e.g., 0x08000000).
+4. Verify bootloader rejects the image and displays ERR_RH error.
+5. Power cycle with reset handler beyond application limit (e.g., 0x08025000).
+6. Verify bootloader rejects the image and displays ERR_RH error.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Bootloader reads valid reset handler from vector table.
+2. Bootloader validates it is within application range and jumps to application.
+3. Bootloader reads invalid reset handler in bootloader space.
+4. Bootloader validates and rejects due to out-of-range value, outputs "ERR_RH\n".
+5. Bootloader reads invalid reset handler beyond slot.
+6. Bootloader validates and rejects due to out-of-range value, outputs "ERR_RH\n".
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-7
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPSIB-12
+TITLE: Image Address Validation - Test Case
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall validate that the application image start address is
+within the valid application slot range.
+<<<
+PREREQUISITES: >>>
+* The system is ready to start.
+* A valid application image is located at the correct start address.
+* An application image with start address below valid range is available.
+* An application image with start address above valid range is available.
+<<<
+STEPS: >>>
+1. Power cycle with application at valid start address (0x0800C200).
+2. Verify bootloader validates and jumps to application.
+3. Power cycle with application start address at 0x0800B000 (below valid range).
+4. Verify bootloader rejects the image and displays ERR_ADDR error.
+5. Power cycle with application start address at 0x08025000 (above valid range).
+6. Verify bootloader rejects the image and displays ERR_ADDR error.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Bootloader calculates image start from MCUboot header.
+2. Bootloader validates address is between 0x0800C200 and 0x08024000 and jumps to application.
+3. Bootloader detects invalid start address below range.
+4. Bootloader outputs "ERR_ADDR\n" and remains in bootloader mode.
+5. Bootloader detects invalid start address above range.
+6. Bootloader outputs "ERR_ADDR\n" and remains in bootloader mode.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-8
   ROLE: Verifies
 
 [[/SECTION]]

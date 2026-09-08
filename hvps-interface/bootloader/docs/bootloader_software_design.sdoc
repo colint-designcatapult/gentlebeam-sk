@@ -38,6 +38,12 @@ TITLE: Abbreviations and Definitions
 
 [TEXT]
 STATEMENT: >>>
+EC256
+  Elliptic Curve Digital Signature Algorithm with 256-bit keys
+
+FIH
+  Fault Injection Hardening
+
 FW
   Firmware
 
@@ -47,6 +53,9 @@ MCU
 PRS
   Product Requirements Specification
 
+RAM
+  Random Access Memory
+
 SDP
   Software Development Plan
 
@@ -55,6 +64,12 @@ SRS
 
 SW
   Software
+
+UART
+  Universal Asynchronous Receiver Transmitter
+
+VTOR
+  Vector Table Offset Register
 <<<
 
 [[/SECTION]]
@@ -250,6 +265,85 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-1
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-4
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-14
+TITLE: MCUboot Bootutil Integration
+STATEMENT: >>>
+The firmware integrates the MCUboot bootutil library to provide industry-standard secure boot
+capabilities. The bootutil module provides functions to validate application images stored in flash
+memory, including verification of image headers, cryptographic signature validation, and integrity
+checks. The bootutil library uses a single application slot architecture with primary slot validation
+enabled. The firmware configures MCUboot with the following parameters:
+
+- MCUBOOT_IMAGE_NUMBER = 1: Single application image
+- MCUBOOT_SINGLE_APPLICATION_SLOT = 1: Single slot architecture
+- MCUBOOT_SIGN_EC256 = 1: EC256 signature algorithm
+- MCUBOOT_VALIDATE_PRIMARY_SLOT = 1: Validate primary slot on every boot
+- MCUBOOT_SERIAL = 1: Serial bootloader interface enabled
+- MCUBOOT_OVERWRITE_ONLY = 1: Overwrite-only image update mode
+
+The bootutil library processes the application image header and footer to verify the image
+integrity and authenticity before allowing the bootloader to jump to the application code.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-5
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-15
+TITLE: Image Address and Vector Table Validation
+STATEMENT: >>>
+Before jumping to the application, the firmware performs comprehensive validation of the
+application image to ensure it is located in valid address ranges and has valid vector table entries.
+
+The firmware reads the stack pointer and reset handler addresses from the application image vector
+table, which is located at the start of the application code region. The firmware then validates:
+
+1. Image Start Address: Ensures the image start address falls within the valid range 0x0800C200
+   to 0x08024000, which represents the designated application slot.
+2. Stack Pointer: Validates that the stack pointer is within the valid RAM range 0x20000000
+   to 0x20008000.
+3. Reset Handler: Ensures the reset handler address is within the valid application code range,
+   which must be greater than or equal to the image start address and less than the end of the
+   application slot (0x08024000).
+
+If any validation fails, the firmware outputs an appropriate error message (ERR_ADDR, ERR_SP,
+or ERR_RH) and returns control to the bootloader instead of jumping to the application.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-6
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-7
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-8
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-17
+TITLE: Serial Bootloader Interface
+STATEMENT: >>>
+The firmware implements a serial bootloader interface using the UART3 peripheral to allow
+firmware updates via a serial protocol. The serial interface supports the MCUboot management
+group commands for updating application images over a serial link.
+
+The serial bootloader supports the following operations:
+- Image upload and verification
+- Image validation status reporting
+- Erase of application flash memory
+- Programming of application flash memory
+
+The serial interface operates in interrupt-driven mode for both transmission and reception to
+provide non-blocking operation with the application validation and jump procedures.
+<<<
+RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-4
   ROLE: Refines

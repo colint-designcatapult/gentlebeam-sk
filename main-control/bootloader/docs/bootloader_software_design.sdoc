@@ -122,14 +122,13 @@ TITLE: Main Modules
 [TEXT]
 STATEMENT: >>>
 **Main Control Bootloader Firmware** – The firmware is stored at the base memory address on the
-microcontroller and facilitates the loading of new Main Control firmware (.hex) files in the remaining flash
-memory
+microcontroller and uses MCUboot to validate, select, and swap signed application images.
 
-**Main Control Bootloader PC Application** – This app offers a desktop GUI that loads the Main Control
-firmware at the location in memory specified and managed by the bootloader. The GUI allows the
-selection of a COM port that corresponds to the USB port established by the bootloader.
+**Main Control Bootloader PC Application** – This app uses mcumgr serial recovery to upload a signed
+MCUboot image to the secondary slot, verify its presence, confirm it, and reset the controller.
 
-**Flash Memory** – Where the bootloader firmware is stored, and new Main Control firmware is flashed.
+**Flash Memory** – Contains a 200 KiB bootloader region, 800 KiB primary and secondary image slots,
+and a 64 KiB scratch area used by the swap algorithm.
 <<<
 
 [[/SECTION]]
@@ -169,25 +168,15 @@ RELATIONS:
 UID: SW-H1FWMCBOOT-12
 TITLE: PC Communication Processing
 STATEMENT: >>>
-The communication protocol the firmware employs for communicating with the PC utilizes ASCII
-character bytes. The firmware both sends and receives data packets. Each received data packet
-from the PC begins with a asterisk character ('*') and terminates with a newline character ('\n'). The
-value of the bytes in between these are comprised of a fixed length command, and a variable
-length data payload. Both command and data payload are also represented by ASCII character
-bytes.
+The bootloader exposes the MCUboot mcumgr serial-recovery service over the FTDI UART at 115200
+baud, 8-N-1, with an MTU of 124 bytes. mcumgr packets are framed and base64-encoded by the
+serial-recovery implementation. The enabled commands are echo, image list, image upload, image
+confirm, and reset.
 
-There are four different valid commands that the PC can send: ping, erase, write, and verify. Each
-command is represented in the transmitted packet by preset 5-character values. The firmware
-compares the received command to these preset values. There is no associated data payload for
-the ping and erase command. The ‘write’ command has a data payload containing the flash page
-index and the values to be written to said flash page. The verify command has a CRC value as its
-data payload. The data payload for both commands are sent as ASCII characters which are
-formatted as human readable hexadecimal values.
-
-Each transmitted data packet from the firmware to the PC begins with a period character ('.') and
-terminates with a newline character ('\n'). The value of the bytes in between are a fixed length
-response. The fixed length response are 13 ASCII characters which correspond to the specific
-incoming command that is being responded to (e.g. ping, erase, write, and verify).
+The host directs an update to mcumgr image target 2, which is mapped by the platform flash map to
+the secondary slot. The host obtains the secondary image hash from image list before requesting
+image confirm. The bootloader responds using mcumgr protocol frames and does not emit diagnostic
+text on this UART while serial recovery is active.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -201,16 +190,15 @@ RELATIONS:
 UID: SW-H1FWMCBOOT-13
 TITLE: Application Program Handling
 STATEMENT: >>>
-At the beginning of bootloader firmware execution, the program parses the predetermined application
-region in flash memory and calculates a CRC over the complete region. The application firmware build
-calculates and stores the programmed CRC over that same region, treating unprogrammed bytes as erased
-flash. The bootloader compares its calculated CRC to the programmed CRC in the designated storage
-location. If the values match, the bootloader considers the application valid and jumps to the
-application firmware for execution.
+At startup, the bootloader checks the general-purpose backup register for the one-shot bootloader
+request written by the main application in response to `*BOOTL\n`. When present, the bootloader
+clears the request and enters serial recovery. Otherwise it calls MCUboot boot_go() to validate the
+primary image and process a confirmed secondary-image upgrade.
 
-If the calculated value does not match the stored value, then the firmware will not jump to the
-application for execution but will instead wait for PC communication for commands to update the
-application memory.
+The application image contains a 512-byte MCUboot header and SHA-256, key-hash, and ECDSA P-256
+signature TLVs. MCUboot validates these values against the public key compiled into the bootloader.
+If no valid primary image is available, serial recovery remains active instead of jumping to the
+application.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -249,15 +237,14 @@ RELATIONS:
 UID: SW-H1FWMCBOOT-15
 TITLE: Flash Memory Processing
 STATEMENT: >>>
-The firmware can both erase and write to the flash memory of the microcontroller. The flash
-memory of the microcontroller is organized into sectors and pages. Each sector is comprised of a
-given number of pages, and each page is 512 bytes in size. When the firmware receives an ‘erase’
-command from the PC, it erases 2520 pages beginning at flash page 240.
+The platform flash map exposes an 800 KiB primary image slot at `0x00432000`, an 800 KiB secondary
+image slot at `0x004FA000`, and a 64 KiB scratch area at `0x005C2000`. The flash backend reports
+8 KiB erase sectors to MCUboot and performs page-aligned 512-byte read-modify-write operations for
+arbitrary flash-area writes.
 
-Application firmware begins at flash page 256. The PC write command supplies a four-character
-hexadecimal application-relative page index and 512 bytes of data. The firmware accepts page
-indices from 0 through 2519, adds the application start page offset, and writes the data to the
-resulting flash page.
+During upload, MCUboot progressively erases only secondary-slot sectors required by incoming data.
+During a confirmed upgrade, MCUboot exchanges the primary and secondary images using the scratch
+area. The bootloader flash region is not exposed through the mcumgr image-upload mapping.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -265,6 +252,37 @@ RELATIONS:
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWMCBOOT-4
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWMCBOOT-16
+TITLE: Image Authentication and Upgrade
+STATEMENT: >>>
+The bootloader embeds an ECDSA P-256 public key and uses TinyCrypt to verify image signatures.
+The build process signs application images with the matching private key. The image list service
+reports only images that pass MCUboot validation; therefore a completed upload is not accepted as
+a successful update until the secondary image appears with a hash and is confirmed.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-7
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-8
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWMCBOOT-17
+TITLE: Recovery Request
+STATEMENT: >>>
+The main application writes a magic value to general-purpose backup register zero before a software
+reset in response to `*BOOTL\n`. The bootloader compares this value during startup, clears it before
+entering serial recovery, and otherwise proceeds with normal image validation. This prevents stray
+UART data from entering serial recovery indefinitely.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-6
   ROLE: Refines
 
 [[/SECTION]]

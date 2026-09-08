@@ -27,7 +27,7 @@ ELEMENTS:
     TYPE: String
     REQUIRED: True
   - TITLE: TYPE
-    TYPE: MultipleChoice(Functional, Safety, Interface, Performance, Usability, Cybersecurity, Regulatory, Data, Environment)
+    TYPE: MultipleChoice(Functional, Non-Functional, Safety, Interface, Performance, Usability, Cybersecurity, Regulatory, Data, Environment)
     REQUIRED: True
   - TITLE: TITLE
     TYPE: String

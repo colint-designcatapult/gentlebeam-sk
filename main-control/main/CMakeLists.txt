@@ -114,6 +114,7 @@ add_executable(gryphon_control_fw
 set_target_properties(gryphon_control_fw PROPERTIES
   OUTPUT_NAME "Gryphon Control FW"
   SUFFIX ".elf"
+  LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Device_Startup/same70q21b_flash.ld"
 )
 
 target_include_directories(gryphon_control_fw PRIVATE
@@ -181,20 +182,52 @@ target_link_options(gryphon_control_fw PRIVATE
 )
 target_link_libraries(gryphon_control_fw PRIVATE c m)
 
+# Primary image slot: 0x00432000, 800 KiB (0xC8000), mcuboot header 512 B.
+set(GENTLEBEAM_MCUBOOT_HEADER_SIZE 512)
+set(GENTLEBEAM_MCUBOOT_SLOT_SIZE 819200)
+set(GENTLEBEAM_MCUBOOT_PRIMARY_ADDR 0x00432000)
+set(GENTLEBEAM_SIGNING_KEY "${CMAKE_SOURCE_DIR}/bootloader/keys/gryphon-dev-ec256.pem")
+
+if(NOT EXISTS "${GENTLEBEAM_SIGNING_KEY}")
+  message(FATAL_ERROR "Missing MCUboot signing key: ${GENTLEBEAM_SIGNING_KEY}")
+endif()
+
 add_custom_command(TARGET gryphon_control_fw POST_BUILD
   COMMAND "${CMAKE_OBJCOPY}" -O ihex -R .eeprom -R .fuse -R .lock -R .signature
           "$<TARGET_FILE:gryphon_control_fw>"
           "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.hex"
-  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/../tools/firmware_hex.py" inject-crc
-          --input "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.hex"
-          --output "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.with-crc.hex"
-          --crc-output "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.hex.crc"
-          --application-start 0x00420000
-          --application-length 0x0013B000
-          --crc-address 0x0041E000
+  COMMAND "${CMAKE_OBJCOPY}" -O binary -R .eeprom -R .fuse -R .lock -R .signature
+          "$<TARGET_FILE:gryphon_control_fw>"
+          "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.bin"
+    COMMAND "${CMAKE_COMMAND}" -E rm -f
+      "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.mcumgr.bin"
+  COMMAND "${Python3_EXECUTABLE}" "${GENTLEBEAM_MCUBOOT_IMGTOOL}" sign
+          --header-size ${GENTLEBEAM_MCUBOOT_HEADER_SIZE}
+          --slot-size ${GENTLEBEAM_MCUBOOT_SLOT_SIZE}
+      -k "${GENTLEBEAM_SIGNING_KEY}"
+          --pad-header
+          --align 1
+          --version "1.0.0"
+          "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.bin"
+            "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.mcumgr.bin"
+  COMMAND "${CMAKE_OBJCOPY}" -I binary -O ihex
+          "--change-addresses=${GENTLEBEAM_MCUBOOT_PRIMARY_ADDR}"
+            "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.mcumgr.bin"
+            "$<TARGET_FILE_DIR:gryphon_control_fw>/Gryphon Control FW.mcumgr.hex"
   BYPRODUCTS
     "${CMAKE_CURRENT_BINARY_DIR}/Gryphon Control FW.hex"
-    "${CMAKE_CURRENT_BINARY_DIR}/Gryphon Control FW.with-crc.hex"
-    "${CMAKE_CURRENT_BINARY_DIR}/Gryphon Control FW.hex.crc"
+    "${CMAKE_CURRENT_BINARY_DIR}/Gryphon Control FW.bin"
+            "${CMAKE_CURRENT_BINARY_DIR}/Gryphon Control FW.mcumgr.bin"
+            "${CMAKE_CURRENT_BINARY_DIR}/Gryphon Control FW.mcumgr.hex"
+  VERBATIM
+)
+
+add_custom_command(TARGET gryphon_control_fw POST_BUILD
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/../tools/print_size.py"
+          --size-tool "${CMAKE_SIZE}"
+          --elf "$<TARGET_FILE:gryphon_control_fw>"
+          --flash-size 817152
+          --ram-size 393216
+          --name gryphon_control_fw
   VERBATIM
 )

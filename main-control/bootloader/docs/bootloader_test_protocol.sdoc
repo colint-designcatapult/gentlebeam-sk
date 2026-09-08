@@ -103,32 +103,22 @@ TITLE: Test Protocol
 UID: TC-H1FWMCBOOT-6
 TITLE: Functional1
 STATEMENT: >>>
-The main control Bootloader firmware shall jump to execution of the main application if and only if the existing main application code at startup
-is valid. The main application code is valid if the programmed CRC value matches the application firmware loaded in flash memory.
+The main control bootloader firmware shall execute the primary application only when its MCUboot
+header, SHA-256 hash, and ECDSA P-256 signature are valid.
 <<<
 PREREQUISITES: >>>
 1. The system is ready to start.
-2. Flash memory is present which contains firmware application.
+2. A valid signed primary image is present.
 <<<
 STEPS: >>>
-1. Start the system from power
-2. Don’t load any treatment plan.
-3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory but terminate the PC utility partway through.
-4. Power cycle the system
-5. Load a treatment plan
-6. Run the loaded treatment.
-7. While keeping power on, load the application firmware once more to completion from the flash memory.
-8. Power cycle the system
+1. Enter serial recovery and upload an intentionally invalid or unsigned image to secondary slot 1.
+2. Verify image list does not report the uploaded image as a valid slot-1 image.
+3. Reset the system.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system is started up successfully
-2. The system doesn’t have any treatment plan loaded on it.
-3. The system is off
-4. The system is started up successfully
-5. The plan is loaded successfully
-6. The application is loaded successfully
-7. Verify the treatment plan cannot be executed.
-8. The system is powered up successfully and the loaded treatment can now be performed.
+1. The invalid image is not accepted for upgrade.
+2. The valid primary image remains selected.
+3. The system boots the valid primary application.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -139,26 +129,21 @@ RELATIONS:
 UID: TC-H1FWMCBOOT-8
 TITLE: Functional 2
 STATEMENT: >>>
-The main control bootloader firmware shall write 512 bytes of PC-provided data to application-relative
-flash page indices from 0 through 2519.
+The main control bootloader firmware shall upload a signed MCUboot image to the secondary image slot.
 <<<
 PREREQUISITES: >>>
 1. The system is ready to start.
-2. A bootloader-compatible application image contains programmed data in application-relative
-   flash pages 0 and 2519.
+2. A valid signed `.mcumgr.bin` image is available.
 <<<
 STEPS: >>>
-1. Start the system from power.
-2. Use the Bootloader utility to request bootloader mode.
-3. Use the Bootloader utility to load the application image through application-relative page 2519.
-4. Record the Bootloader utility log for the write operations.
-5. Power cycle the system after the utility reports that loading is complete.
+1. Enter serial recovery.
+2. Upload the signed image using mcumgr direct image target 2.
+3. Request image list.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system starts successfully and enters bootloader mode.
-2. The utility reports successful writes for application-relative pages 0 and 2519.
-3. The utility completes the application load without rejecting page 2519.
-4. After the power cycle, the loaded application starts successfully.
+1. The mcumgr upload completes successfully.
+2. Image list reports the signed image in slot 1 with `bootable: true` and a hash.
+3. The primary slot is not overwritten by the upload.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -169,25 +154,21 @@ RELATIONS:
 UID: TC-H1FWMCBOOT-9
 TITLE: Functional 3
 STATEMENT: >>>
-Upon an erase command, the main control bootloader firmware shall erase 2520 flash pages beginning
-at flash page 240.
+The main control bootloader firmware shall progressively erase only secondary-slot sectors needed for an image upload.
 <<<
 PREREQUISITES: >>>
 1. The system is ready to start.
-2. Using the MCU programming or debug interface, program a non-erased test pattern throughout
-   flash pages 240 through 2759.
+2. A valid signed `.mcumgr.bin` image is available.
 <<<
 STEPS: >>>
-1. Start the system from power.
-2. Use the Bootloader utility to request bootloader mode.
-3. Use the Bootloader utility to issue the erase command.
-4. Record the Bootloader utility log.
-5. Using the MCU programming or debug interface, blank-check flash pages 240 through 2759.
+1. Enter serial recovery.
+2. Start a secondary-slot image upload and interrupt it before completion.
+3. Reset the system.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The system starts successfully and enters bootloader mode.
-2. The utility reports that the erase operation completed.
-3. Every byte in flash pages 240 through 2759 is in the erased state.
+1. The incomplete secondary image is not selected.
+2. The primary application remains bootable.
+3. The system starts the primary application after reset.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -198,23 +179,23 @@ RELATIONS:
 UID: TC-H1FWMCBOOT-10
 TITLE: PC Communication
 STATEMENT: >>>
-The main control Bootloader firmware shall be able to respond to a ping command from the PC, indicating that the system is in Bootloader mode.
+The main control bootloader firmware shall respond to an mcumgr echo command while serial recovery is active.
 <<<
 PREREQUISITES: >>>
 1. The system is ready to start.
-2. Flash memory is present which contains firmware application.
+2. A valid signed primary image is present.
 <<<
 STEPS: >>>
-1. Start the system from power
-2. Don’t load any treatment plan.
-3. Utilize the Bootloader utility to load a new set of application firmware from the flash memory.
-4. Record the utility log to ensure application enters Bootloader mode
+1. Send `*BOOTL\n` to the running application at 115200 baud.
+2. Connect mcumgr at 115200 baud.
+3. Send `mcumgr echo ping`.
+4. Reset without sending another bootloader request.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify System is start up successfully
-2. Verify System doesn’t have any treatment plan loaded on it.
-3. Verify the new firmware application is loaded successfully
-4. Verify application enters Bootloader mode
+1. The application requests serial recovery and resets.
+2. mcumgr communication is established.
+3. The bootloader replies with `ping`.
+4. The next reset boots the primary application normally.
 <<<
 RELATIONS:
 - TYPE: Parent

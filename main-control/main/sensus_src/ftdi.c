@@ -33,6 +33,8 @@ char ftdi_debug_str_array[7];
 uint8_t ftdi_rx_buf[FTDI_RX_MAX_BYTES];
 uint32_t page_size = 0;
 
+#define BOOTLOADER_REQUEST_MAGIC 0x424F4F54u
+
 static uint8_t get_ftdi_rx_cmd();
 static void process_ftdi_cmd(uint8_t cmd);
 
@@ -109,7 +111,8 @@ static void process_ftdi_cmd(uint8_t cmd)
 	{
 		//On bootloader command, the FW will erase the memory location of the application CRC and call an MCU reset
 		case FTDI_CMD_BOOTLOADER:
-			flash_erase(&FLASH_0, (CRC_FLASH_PAGE*page_size), 1);
+				GPBR->SYS_GPBR[0] = BOOTLOADER_REQUEST_MAGIC;
+				__DSB();
 			RSTC->RSTC_CR = RSTC_CR_KEY_PASSWD | RSTC_CR_PROCRST;
 			while(1)
 			{

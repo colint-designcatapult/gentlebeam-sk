@@ -8,6 +8,11 @@ project(gentlebeam_same70_firmware C)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
+add_subdirectory(
+  "${CMAKE_CURRENT_SOURCE_DIR}/../mcuboot"
+  "${CMAKE_BINARY_DIR}/gentlebeam-mcuboot"
+)
+
 execute_process(
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/../tools/resolve_dcdoc_version.py"
           --component main-control/main
@@ -28,7 +33,7 @@ add_custom_command(
   OUTPUT "${CMAKE_BINARY_DIR}/main/Gryphon Control FW.combined.hex"
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/../tools/firmware_hex.py" combine
           --input "${CMAKE_BINARY_DIR}/bootloader/Gryphon System Bootloader FW.hex"
-          --input "${CMAKE_BINARY_DIR}/main/Gryphon Control FW.with-crc.hex"
+      --input "${CMAKE_BINARY_DIR}/main/Gryphon Control FW.mcumgr.hex"
           --output "${CMAKE_BINARY_DIR}/main/Gryphon Control FW.combined.hex"
   DEPENDS gryphon_system_bootloader_fw gryphon_control_fw
           "${CMAKE_SOURCE_DIR}/../tools/firmware_hex.py"
