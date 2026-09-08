@@ -33,6 +33,7 @@ volatile uint32_t hvps_tx_idx = 0;
 volatile uint32_t hvps_rx_idx = 0;
 volatile bool hvps_rx_ready = false;
 volatile uint32_t hvps_rx_expected_bytes = HVPS_RX_BYTE_COUNT;
+volatile uint32_t hvps_rx_last_byte_ms = 0;
 volatile bool hvps_tx_ready = false;
 volatile bool hvps_read_req = false;
 volatile int hvps_read_incomplete = 0;
@@ -45,7 +46,9 @@ volatile bool hvps_int_test_flag = false;
 volatile int hvps_int_test_count = 0;
 static struct timer_task VTIMER_hvps_check_timer;
 
-static bool check_hvps_status_checksum();
+static bool check_hvps_status_checksum(const uint8_t *frame);
+static bool check_hvps_version_checksum(const uint8_t *frame);
+static void reset_hvps_rx_frame(void);
 
 static void hvps_check_timer(const struct timer_task *const timer_task);
 static void hvps_uart_rx_cb(const struct usart_async_descriptor *const io_descr);
@@ -165,6 +168,13 @@ bool update_hvps_check()
 
 void process_hvps()
 {
+	//Discard a partial frame after a gap so a resumed connection starts at sync.
+	if((hvps_rx_idx > 0) &&
+		((uint32_t)(sys_now() - hvps_rx_last_byte_ms) > HVPS_RX_FRAME_TIMEOUT_MS))
+	{
+		reset_hvps_rx_frame();
+	}
+
 	//Flag should be periodic
 	if(hvps_read_req)
 	{
@@ -194,50 +204,70 @@ void process_hvps()
 	{
 		hvps_rx_ready = false;
 		
-		//If checksums match, copy rx buffer into status
-		if(check_hvps_status_checksum())
+		uint32_t marker;
+		memcpy(&marker, &hvps_rx_buf[HVPS_RX_SYNC_COUNT], sizeof(marker));
+
+		if(marker == HVPS_VERSION_FRAME_MAGIC)
 		{
-			gpio_toggle_pin_level(IO_LED4);
-			
-			if (*(uint32_t *)&hvps_rx_buf[HVPS_RX_SYNC_COUNT] == HVPS_VERSION_FRAME_MAGIC)
+			if(check_hvps_version_checksum(hvps_rx_buf))
 			{
 				uint32_t *version_frame = (uint32_t *)hvps_rx_buf;
-				uint32_t checksum = 0;
-				for (int i = 2; i < 12; i++)
-				{
-					checksum += version_frame[i];
-				}
-				if (checksum == version_frame[12])
-				{
-					device_information.hvps_mode = version_frame[3];
-					memcpy(device_information.hvps_version_str, &version_frame[4],
-						sizeof(device_information.hvps_version_str));
-					device_information.hvps_version_str[sizeof(device_information.hvps_version_str) - 1] = '\0';
-				}
-			}
-			else
-			{
-				memcpy(hvps_status, hvps_rx_buf, HVPS_RX_BYTE_COUNT);
+				device_information.hvps_mode = version_frame[3];
+				memcpy(device_information.hvps_version_str, &version_frame[4],
+					sizeof(device_information.hvps_version_str));
+				device_information.hvps_version_str[sizeof(device_information.hvps_version_str) - 1] = '\0';
 				hvps_read_incomplete = 0;
-				report_hvps_data(hvps_status);
 			}
+		}
+		//Validate the newly received frame, not the previously published status.
+		else if(check_hvps_status_checksum(hvps_rx_buf))
+		{
+			gpio_toggle_pin_level(IO_LED4);
+			memcpy(hvps_status, hvps_rx_buf, HVPS_RX_BYTE_COUNT);
+			hvps_read_incomplete = 0;
+			report_hvps_data(hvps_status);
 		}
 	}
 }
 
-static bool check_hvps_status_checksum()
+static bool check_hvps_status_checksum(const uint8_t *frame)
 {
 	//TBD TODO CRC instead of checksum if desired
 	uint32_t check_val = 0;
 	for (int i = HVPS_STATUS_FLAG_BITS; i < HVPS_STATUS_CRC; i++)
 	{
-		check_val += hvps_status[i].u;
+		uint32_t field;
+		memcpy(&field, &frame[i * sizeof(uint32_t)], sizeof(field));
+		check_val += field;
 	}
-	if (check_val == hvps_status[HVPS_STATUS_CRC].u)
+
+	uint32_t received_checksum;
+	memcpy(&received_checksum, &frame[HVPS_STATUS_CRC * sizeof(uint32_t)],
+		sizeof(received_checksum));
+	return check_val == received_checksum;
+}
+
+static bool check_hvps_version_checksum(const uint8_t *frame)
+{
+	uint32_t check_val = 0;
+	for(int i = 2; i < (HVPS_VERSION_FRAME_WORD_COUNT - 1); i++)
 	{
-		return true;	
+		uint32_t field;
+		memcpy(&field, &frame[i * sizeof(uint32_t)], sizeof(field));
+		check_val += field;
 	}
-	return false;
+
+	uint32_t received_checksum;
+	memcpy(&received_checksum,
+		&frame[(HVPS_VERSION_FRAME_WORD_COUNT - 1) * sizeof(uint32_t)],
+		sizeof(received_checksum));
+	return check_val == received_checksum;
+}
+
+static void reset_hvps_rx_frame(void)
+{
+	hvps_rx_idx = 0;
+	hvps_rx_expected_bytes = HVPS_RX_BYTE_COUNT;
 }
 
 void queue_hvps_cmd(HvpsCmd cmd, float param_f, uint32_t param_i)
@@ -391,6 +421,7 @@ static void hvps_uart_rx_cb(const struct usart_async_descriptor *const io_descr)
 {
 	uint8_t read_byte = 0;
 	io_read(hvps_io, &read_byte, 1);
+	hvps_rx_last_byte_ms = sys_now();
 	
 	if(hvps_rx_idx < HVPS_RX_SYNC_COUNT && read_byte != 0xFF)
 	{
@@ -411,8 +442,7 @@ static void hvps_uart_rx_cb(const struct usart_async_descriptor *const io_descr)
 	}
 	if(hvps_rx_idx >= hvps_rx_expected_bytes)
 	{
-		hvps_rx_idx = 0;
-		hvps_rx_expected_bytes = HVPS_RX_BYTE_COUNT;
+		reset_hvps_rx_frame();
 		hvps_rx_ready = true;
 	}
 }

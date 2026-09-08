@@ -51,6 +51,7 @@
 #endif
 
 #define HVPS_MAX_NO_COMM	10
+#define HVPS_RX_FRAME_TIMEOUT_MS	25u
 
 typedef enum hvpsCheckMode
 {
