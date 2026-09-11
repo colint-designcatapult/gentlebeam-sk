@@ -202,4 +202,108 @@ RELATIONS:
   VALUE: RQ-H1FWMCBOOT-5
   ROLE: Verifies
 
+[TEST_CASE]
+UID: TC-H1FWMCBOOT-11
+TITLE: Recovery Entry
+STATEMENT: >>>
+The main control bootloader firmware shall consume a one-shot request from the main application,
+enter serial recovery for that boot only, and clear the request before the next processor reset.
+<<<
+PREREQUISITES: >>>
+1. The system is running a valid primary application that responds to `*BOOTL\n`.
+2. A PC is connected to the application and bootloader FTDI UART at 115200 baud.
+<<<
+STEPS: >>>
+1. Send `*BOOTL\n` to the running application and observe the processor reset.
+2. Connect mcumgr at 115200 baud and send `mcumgr echo recovery`.
+3. Send `mcumgr reset` without issuing another `*BOOTL\n` request.
+4. Verify the primary application starts, then reset the processor once more without issuing a
+   bootloader request.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The application writes the one-shot request and resets the processor.
+2. The bootloader consumes the request, enters serial recovery, and replies with `recovery`.
+3. The next reset does not re-enter serial recovery; the valid primary application starts.
+4. The additional reset also starts the primary application, confirming that the request was
+   cleared and does not persist across resets.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-6
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMCBOOT-12
+TITLE: Image Validation
+STATEMENT: >>>
+The main control bootloader firmware shall reject uploaded images with either a corrupted SHA-256
+hash or an ECDSA P-256 signature that does not match the public key embedded in the bootloader.
+<<<
+PREREQUISITES: >>>
+1. The system is ready to start with a valid signed primary image.
+2. A copy of a signed `.mcumgr.bin` image has been modified after signing so that its SHA-256
+   validation fails.
+3. A second `.mcumgr.bin` image has a valid SHA-256 hash but is signed with a different ECDSA P-256
+   private key from the one corresponding to the bootloader's embedded public key.
+<<<
+STEPS: >>>
+1. Enter serial recovery and upload the post-signing-modified image using mcumgr direct image target
+   2, then request image list.
+2. Reset the processor and verify that the valid primary application starts.
+3. Re-enter serial recovery and upload the image signed with the non-matching key using direct image
+   target 2, then request image list.
+4. Attempt to confirm the uploaded image by its hash if mcumgr reports a hash, then reset the
+   processor.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. The post-signing-modified image is not reported as a bootable slot-1 image and cannot be selected
+   for upgrade.
+2. The valid primary application remains selected and starts after reset.
+3. The image signed with the non-matching key is not reported as a bootable slot-1 image and cannot
+   be confirmed for upgrade.
+4. The valid primary application remains selected and starts after the final reset.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-7
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWMCBOOT-13
+TITLE: Image Upgrade
+STATEMENT: >>>
+The main control bootloader firmware shall permanently upgrade to a confirmed, validated secondary
+image by swapping the primary and secondary slots through the scratch flash area.
+<<<
+PREREQUISITES: >>>
+1. The system is running a valid signed primary image with an identifiable version and hash.
+2. A valid signed `.mcumgr.bin` image with a different identifiable version and hash is available.
+3. A debugger capable of observing writes to the scratch flash area at `0x005C2000` is connected
+   without modifying flash contents.
+<<<
+STEPS: >>>
+1. Enter serial recovery, record the slot-0 image hash, and upload the new image using mcumgr direct
+   image target 2.
+2. Request image list and record the new slot-1 image hash.
+3. Confirm the new image using its recorded hash.
+4. Configure the debugger to halt on a write to `0x005C2000`, send `mcumgr reset`, and resume the
+   processor until the write is observed.
+5. Remove the breakpoint, resume execution, and verify that the new application version starts.
+6. Enter serial recovery again and request image list.
+7. Reset the processor without confirming another image and verify that the new application version
+   starts again.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Image list reports the new image in slot 1 as bootable with its expected hash.
+2. The image-confirm command succeeds for the new slot-1 hash.
+3. The debugger observes a write in the scratch flash area while MCUboot performs the swap.
+4. After the swap, the new image hash is in slot 0 and the original primary image hash is in slot 1.
+5. The new application starts after the upgrade and again after the subsequent reset, demonstrating
+   that the upgrade is permanent.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMCBOOT-8
+  ROLE: Verifies
+
 [[/SECTION]]
