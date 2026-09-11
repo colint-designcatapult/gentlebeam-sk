@@ -24,12 +24,15 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
     private readonly bool _hasParentId;
     private readonly string? _parentIdJsonField;
 
+    public string DbPath { get; }
+
     public SqliteProtoRepository(
         string dbPath,
         string tableName,
         bool hasParentId = false,
         string? parentIdJsonField = null)
     {
+        DbPath = dbPath;
         _connectionString = $"Data Source={dbPath}";
         _tableName = tableName;
         _hasParentId = hasParentId;

@@ -696,16 +696,19 @@ STATEMENT: >>>
     <pre class="mermaid">
     sequenceDiagram
         participant Control as :VideoLiveFeedControl
-        participant Player as FFMEVideoPlayer
+        participant WebView2
+        participant go2rtc
 
-        [?] ->> Control: Load
+        Application ->> Control: Load
         activate Control
-        Control->>Control: StartLiveFeed
+        Control->>Control: InitializeAllCameras
         activate Control
         deactivate Control
-        Control-->>Player: open(URISource)
-        activate Player
-        deactivate Player
+        Control->>WebView2: Navigate to go2rtc
+        activate WebView2
+        WebView2->>go2rtc: WebRTC Connect
+        go2rtc-->>WebView2: Video + Audio
+        deactivate WebView2
         deactivate Control
     </pre>
 <<<

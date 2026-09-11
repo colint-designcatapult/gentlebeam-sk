@@ -235,7 +235,7 @@ namespace Heracles.Indoor.ViewModels
 
         public bool IsNavigationTarget(NavigationContext navigationContext) => true;
 
-        public void OnNavigatedFrom(NavigationContext navigationContext) { }
+        public virtual void OnNavigatedFrom(NavigationContext navigationContext) { }
         #endregion INavigationAware
 
 

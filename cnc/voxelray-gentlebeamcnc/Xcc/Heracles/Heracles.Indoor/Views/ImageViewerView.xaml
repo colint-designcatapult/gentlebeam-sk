@@ -1,0 +1,95 @@
+<ContentControl
+    x:Class="Heracles.Indoor.Views.ImageViewerView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+
+    xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels"
+    xmlns:prism="http://prismlibrary.com/"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+
+    xmlns:appx="clr-namespace:Xcc.Application.UI;assembly=Xcc.Application"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
+    xmlns:indoorconvx="clr-namespace:Heracles.Indoor.Converters"
+
+    mc:Ignorable="d" 
+    d:DesignWidth="1000" d:DesignHeight="600"
+    d:DataContext="{d:DesignInstance {x:Type viewModels:ImageViewerViewModel}, IsDesignTimeCreatable=True}">
+
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Icons/CommonIcons.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <indoorconvx:FilePathToImageSourceConverter x:Key="FilePathToImageSourceConverter"/>
+        </ResourceDictionary>
+    </ContentControl.Resources>
+
+    <Grid ClipToBounds="True" Margin="{StaticResource BlockContentMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="{StaticResource FieldSmallMarginGridLength}"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="{StaticResource BlockMarginGridLength}"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title/Info Bar -->
+        <Border Grid.Row="0" CornerRadius="8" Background="{StaticResource BlockBackgroundColor}" Padding="{StaticResource BlockContentMargin}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="{StaticResource FieldMarginGridLength}"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Date:" Style="{StaticResource TextBlockLegendStyle}" Foreground="{StaticResource ForegroundPaleBrush}"/>
+                <TextBlock Grid.Column="2" Text="{Binding FormattedDate}" Style="{StaticResource TextBlockLegendStyle}" Foreground="{StaticResource ForegroundBrush}"/>
+                
+                <TextBlock Grid.Column="4" Text="Location:" Style="{StaticResource TextBlockLegendStyle}" Foreground="{StaticResource ForegroundPaleBrush}"/>
+                <TextBlock Grid.Column="5" Text="{Binding LocationDisplay}" Margin="8,0,0,0" Style="{StaticResource TextBlockLegendStyle}" Foreground="{StaticResource ForegroundBrush}" HorizontalAlignment="Left"/>
+            </Grid>
+        </Border>
+
+        <!-- Image Viewer -->
+        <Border Grid.Row="2" CornerRadius="8" Background="{StaticResource BlockBackgroundColor}" Padding="{StaticResource BlockContentMargin}">
+            <Grid>
+                <Image Source="{Binding CurrentPhoto.Path, Converter={StaticResource FilePathToImageSourceConverter}}" 
+                       RenderOptions.BitmapScalingMode="HighQuality" 
+                       SnapsToDevicePixels="True"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Back Button -->
+        <Border Grid.Row="4" CornerRadius="8,8,8,8" Background="{StaticResource BlockBackgroundColor}">
+            <DockPanel LastChildFill="False" Margin="12">
+                <Button 
+                    Grid.Column="1"
+                    Width="{StaticResource ButtonWidth}" 
+                    Height="{StaticResource ButtonHeight}"
+                    DockPanel.Dock="Left"
+                    Command="{Binding ExitCommand}">
+
+                    <Grid Margin="12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="{StaticResource FieldSmallMarginGridLength}"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Image Source="{StaticResource GoBackIcon}" Stretch="None"/>
+                        <TextBlock Text="Back" Grid.Column="2" Style="{StaticResource ButtonTextBlockStyle}"/>
+                    </Grid>
+                </Button>
+            </DockPanel>
+        </Border>
+    </Grid>
+</ContentControl>

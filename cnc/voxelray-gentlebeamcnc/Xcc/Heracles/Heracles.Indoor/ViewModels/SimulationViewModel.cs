@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Heracles.Application.AppLayer.Patient;
 using Heracles.Application.Common;
 using Heracles.Application.Events;
 using Heracles.Application.Models;
@@ -60,7 +61,8 @@ namespace Heracles.Indoor.ViewModels
             IDisruptiveActionWatchdogFactory disruptiveActionWatchdogFactory,
             IAcquisitionResultStore acquisitionResultStore,
             IAuthorizedUserStore authorizedUserStore,
-            IPlanModel planModel)
+            IPlanModel planModel,
+            IPhotoService photoService)
         {
             RegionManager = regionManager;
             LogWriter = logWriter;
@@ -71,6 +73,7 @@ namespace Heracles.Indoor.ViewModels
             AcquisitionResultStore = acquisitionResultStore;
             AuthorizedUserStore = authorizedUserStore;
             PlanModel = planModel;
+            PhotoService = photoService;
             eventAggregator.GetEvent<AcquisitionCompletedEvent>().Subscribe(SetSimulationFormLesionDepth);
             eventAggregator.GetEvent<PlanStatusChangedEvent>().Subscribe((_) => FetchSimulation());
 
@@ -105,6 +108,7 @@ namespace Heracles.Indoor.ViewModels
         public IAcquisitionResultStore AcquisitionResultStore { get; }
         public IAuthorizedUserStore AuthorizedUserStore { get; }
         public IPlanModel PlanModel { get; }
+        public IPhotoService PhotoService { get; }
         private IDisruptiveActionWatchdog<ISimulationState> QuitTreatmentActionWatchdog { get; }
         #endregion Read-only properties
 
@@ -288,6 +292,10 @@ namespace Heracles.Indoor.ViewModels
                     }
 
                     TreatmentInfoStore.SetSimulation(simulation, treatmentDevices, patientPositions);
+                    
+                    // Load photos for this diagnosis
+                    var photoResult = await PhotoService.GetPhotosAsync(TreatmentInfoStore.Diagnosis.Id);
+                    TreatmentInfoStore.Photos = photoResult.photos;
                 }
             }
             catch (Exception ex)
@@ -412,8 +420,32 @@ namespace Heracles.Indoor.ViewModels
             {
                 FetchSimulation();
             }
+            
+            // Always reload photos when diagnosis changes, even if simulation was cached
+            if (d is not null)
+            {
+                ReloadPhotosForDiagnosis(d.Id);
+            }
+            else
+            {
+                // Clear photos when diagnosis becomes null
+                TreatmentInfoStore.Photos = new ObservableCollection<IPhoto>();
+            }
 
             CommandsCanExecuteChanged();
+        }
+        
+        private async void ReloadPhotosForDiagnosis(long diagnosisId)
+        {
+            try
+            {
+                var photoResult = await PhotoService.GetPhotosAsync(diagnosisId);
+                TreatmentInfoStore.Photos = photoResult.photos;
+            }
+            catch (Exception ex)
+            {
+                // Log but don't crash - photos are optional
+            }
         }
 
         private void UpdateSimulationFormFromDictionary(long diagnosisId)

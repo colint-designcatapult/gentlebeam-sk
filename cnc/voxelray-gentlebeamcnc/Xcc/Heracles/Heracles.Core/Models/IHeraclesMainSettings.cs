@@ -11,6 +11,9 @@ namespace Heracles.Core.Models
         string StorageRoot { get; }
         string StartupLoginUsername { get; }
         string? CameraUriSource { get; set; }
+        string? CameraUrlRoom { get; }
+        string? CameraUrlTreatmentHead { get; }
+        string? ImageUrlTreatmentHead { get; }
     }
 
     public interface IHeraclesMainSettings : IHeraclesCoreSettings, ITextLogSettings, IXRaySettings, IDebugSettings

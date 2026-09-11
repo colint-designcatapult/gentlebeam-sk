@@ -26,13 +26,6 @@ namespace Heracles
     {
         protected override Window CreateShell()
         {
-            // location of the ffmpeg binaries
-            //Unosquare.FFME.Library.FFmpegDirectory = @"C:\ffmpeg";
-            Unosquare.FFME.Library.FFmpegDirectory = @"C:\Users\david\source\repos\ffmpeg-n4.4-latest-win64-gpl-shared-4.4\bin";
-
-            //Unosquare.FFME.Library.FFmpegLoadModeFlags = FFmpegLoadMode.MinimumFeatures;
-            Unosquare.FFME.Library.FFmpegLoadModeFlags = FFmpegLoadMode.VideoOnly;
-
             return Container.Resolve<MainWindow>();
         }
 

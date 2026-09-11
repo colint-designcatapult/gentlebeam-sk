@@ -28,4 +28,10 @@ message Photo {
 
   // Photo type of the photo
   optional com.empyreanmed.heracles.enums.v1.PHOTOTYPE photo_type = 7;
+
+  // Path to the photo file (e.g., C:\HERACLES\DATA\Simulations\2\image_2026-09-03_11_01_29.474.jpeg)
+  optional string path = 8;
+
+  // Anatomical location of the photo (e.g., Breast, specific site)
+  optional com.empyreanmed.heracles.enums.v1.SITELOCATION location = 9;
 }

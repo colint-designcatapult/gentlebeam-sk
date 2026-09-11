@@ -30,7 +30,7 @@ namespace Heracles.External.AppServices.Plan
         public IEmrPrescriptionCommands PrescriptionCommands { get; }
         public IPlanRepository PlanRepository { get; }
 
-        public async Task<ITreatmentInfoStore> FetchPlanDataAsync(IPlan? plan, bool forceReload = false)
+        public async Task<ITreatmentInfoStore> FetchPlanDataAsync(IPlan plan, bool forceReload = false)
         {
             // This will save us some time: don't reload the same plan if not asked to
             if (plan?.Id == TreatmentInfoStore.Plan?.Id && TreatmentInfoStore.IsComplete() && !forceReload)

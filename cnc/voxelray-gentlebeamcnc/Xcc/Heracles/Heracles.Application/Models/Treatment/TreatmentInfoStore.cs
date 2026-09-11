@@ -33,6 +33,9 @@ namespace Heracles.Application.Models.Treatment
         IPlan Plan { get; set; }
         public event EventHandler<IPlan> PlanChanged;
 
+        ICollection<IPhoto> Photos { get; set; }
+        public event EventHandler<ICollection<IPhoto>> PhotosChanged;
+
         /// <summary>
         /// Checks info store state for completeness:
         /// if there's a complete hierarchy from a Patient down to a Plan
@@ -54,6 +57,7 @@ namespace Heracles.Application.Models.Treatment
         private ISimulation _simulation;
         private IPrescription _prescription;
         private IPlan _plan;
+        private ICollection<IPhoto> _photos = new List<IPhoto>();
 
         public IPatient Patient
         {
@@ -130,6 +134,17 @@ namespace Heracles.Application.Models.Treatment
             }
         }
         public event EventHandler<IPlan> PlanChanged;
+
+        public ICollection<IPhoto> Photos
+        {
+            get => _photos;
+            set
+            {
+                if (SetProperty(ref _photos, value) || value == null)
+                    PhotosChanged?.Invoke(this, Photos);
+            }
+        }
+        public event EventHandler<ICollection<IPhoto>> PhotosChanged;
         
         private ICollection<ITreatmentDevice> _treatmentDevices = [];
         public ICollection<ITreatmentDevice> TreatmentDevices
@@ -173,6 +188,7 @@ namespace Heracles.Application.Models.Treatment
             Simulation = null;
             Diagnosis = null;
             Patient = null;
+            Photos = new List<IPhoto>();
         }
 
         public void OnPrescriptionSaved(IPrescription? prescription)

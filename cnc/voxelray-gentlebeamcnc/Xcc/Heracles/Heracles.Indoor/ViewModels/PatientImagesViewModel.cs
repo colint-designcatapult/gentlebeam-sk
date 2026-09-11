@@ -48,11 +48,19 @@ namespace Heracles.Indoor.ViewModels
             // PhotoAcoustic imaging removed as part of patient imaging removal
             Switch2D3D = false;
 
+            // Forward the selected photo into the nested viewer region so ImageViewerView actually receives it
+            if (navigationContext.Parameters.TryGetValue("photo", out object? photo))
+            {
+                RegionManager.RequestNavigate(
+                    Regions.Main.ClinicalData.Images.ViewerRegion,
+                    "ImageViewerView",
+                    new NavigationParameters { { "photo", photo } });
+            }
         }
 
         protected override void OnExit()
         {
-            RegionManager.RequestNavigate(Regions.Main.ClinicalData.ImagesRegion, "ImagesView");
+            RegionManager.RequestNavigate(Regions.Main.ClinicalDataRegion, "PlanView");
         }
         #endregion Private methods
 

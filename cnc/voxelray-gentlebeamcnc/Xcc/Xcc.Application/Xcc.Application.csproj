@@ -97,7 +97,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FFME.Windows" Version="4.4.350" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4191.47" />
     <PackageReference Include="Prism.Wpf" Version="8.1.97" />
   </ItemGroup>
 

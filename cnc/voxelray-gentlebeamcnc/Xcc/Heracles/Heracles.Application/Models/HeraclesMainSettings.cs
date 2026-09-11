@@ -43,6 +43,18 @@ namespace Heracles.Application.Models
         public string? CameraUriSource { get; set; } = reader.GetOptionalString(
             "AppSettings:CameraUriString",
             defaultValue: "rtsp://Empyrean:Empyrean!2025@172.31.1.40:554/axis-media/media.amp");
+        
+        public string? CameraUrlRoom { get; } = reader.GetOptionalString(
+            "AppSettings:CameraUrlRoom",
+            defaultValue: "http://172.31.1.222:1984/webrtc.html?src=room&media=video+audio+microphone");
+        
+        public string? CameraUrlTreatmentHead { get; } = reader.GetOptionalString(
+            "AppSettings:CameraUrlTreatmentHead",
+            defaultValue: "http://172.31.1.222:1984/webrtc.html?src=head&media=video+audio");
+        
+        public string? ImageUrlTreatmentHead { get; } = reader.GetOptionalString(
+            "AppSettings:ImageUrlTreatmentHead",
+            defaultValue: "http://172.31.1.222:1984/api/frame.jpeg?src=head");
         #endregion ICoreSettings
         #endregion IHeraclesCoreSettings
 

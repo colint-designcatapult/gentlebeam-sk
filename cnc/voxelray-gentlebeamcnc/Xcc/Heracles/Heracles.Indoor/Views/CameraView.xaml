@@ -13,6 +13,7 @@
     prism:ViewModelLocator.AutoWireViewModel="True"
              
     xmlns:conv2="clr-namespace:Heracles.Application.UI.Converters;assembly=Heracles.Application"
+    xmlns:convx="clr-namespace:Xcc.Application.UI.Converters;assembly=Xcc.Application"
     xmlns:uc="clr-namespace:Xcc.Application.UI.UserControls;assembly=Xcc.Application"
                 
     mc:Ignorable="d" 
@@ -37,13 +38,18 @@
         
         <Border>
             <uc:VideoLiveFeedControl 
-                UriSource="{Binding CameraUriSource}"
+                InitialCamera="Head"
+                LoadBothCameras="False"
+                CameraUrlRoom="{Binding Settings.CameraUrlRoom}"
+                CameraUrlTreatmentHead="{Binding Settings.CameraUrlTreatmentHead}"
+                RoomCameraButtonVisibility="Collapsed"
+                HeadCameraButtonVisibility="Collapsed"
                 ControlPanelVisibility="Collapsed"
                 ScreenshotCommand="{Binding ScreenshotCommand}"
                 PathToDatabase="{Binding PathToDatabase}"/>
         </Border>
         
-        <Border Grid.Column="0" Grid.ColumnSpan="5" Grid.Row="8" Style="{StaticResource BorderBlockStyle}">
+        <Border Grid.Row="2" Style="{StaticResource BorderBlockStyle}">
             <DockPanel LastChildFill="False" Margin="12">
                 <!--Back button-->
                 <Button 
@@ -59,6 +65,20 @@
                             Margin="0,0,10,0"/>
 
                         <Label Content="Back" Style="{StaticResource ButtonLabelStyle}" Padding="0" />
+                    </StackPanel>
+                </Button>
+
+                <!--Save Image button-->
+                <Button 
+                    DockPanel.Dock="Right"
+                    Width="{StaticResource ButtonWidth}" 
+                    Height="{StaticResource ButtonHeight}"
+                    Command="{Binding SaveImageCommand}"
+                    IsEnabled="{Binding IsSavingImage, Converter={convx:BooleanNegationConverter}}"
+                    Margin="8,0,0,0">
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Label Content="Save Image" Style="{StaticResource ButtonLabelStyle}" Padding="0" />
                     </StackPanel>
                 </Button>
             </DockPanel>

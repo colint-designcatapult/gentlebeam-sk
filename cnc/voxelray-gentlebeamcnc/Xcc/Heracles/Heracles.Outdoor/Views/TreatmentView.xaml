@@ -360,7 +360,8 @@
 
                     <ucx:VideoLiveFeedControl 
                         Grid.Row="2"
-                        UriSource="{Binding HeraclesExternalSettings.CameraUriSource}"
+                        CameraUrlRoom="{Binding HeraclesExternalSettings.CameraUrlRoom}"
+                        CameraUrlTreatmentHead="{Binding HeraclesExternalSettings.CameraUrlTreatmentHead}"
                         ControlPanelVisibility="Collapsed"/>
                 </Grid>
 

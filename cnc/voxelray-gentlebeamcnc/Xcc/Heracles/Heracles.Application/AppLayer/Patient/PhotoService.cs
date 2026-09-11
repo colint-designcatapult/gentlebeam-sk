@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
@@ -41,13 +42,15 @@ namespace Heracles.Application.AppLayer.Patient
         public async Task<(ObservableCollection<IPhoto> photos, CancellationTokenSource token)> GetPhotosAsync(long diagnosisId)
         {
             var photoDescriptions = await PhotoCommands.ReadListAsync(diagnosisId);
+            // Sort by creation date descending (most recent first)
+            var sortedPhotoDescriptions = photoDescriptions.OrderByDescending(p => p.CreationDate).ToList();
             var photos = new ObservableCollection<IPhoto>();
             var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(AppGlobals.AppCancellationTokenSource.Token);
 
-            foreach (var photoDescription in photoDescriptions)
+            foreach (var photoDescription in sortedPhotoDescriptions)
             {
                 var photo = new Photo(photoDescription);
-                    photos.Add(photo);
+                photos.Add(photo);
             }
 
             _ = Task.Run(async () =>

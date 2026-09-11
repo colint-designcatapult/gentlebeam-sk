@@ -73,8 +73,6 @@ namespace Heracles.External
     {
         protected override Window CreateShell()
         {
-            Unosquare.FFME.Library.FFmpegDirectory = @"C:\ffmpeg\";
-
             Container.Resolve<ITelemetrySessionCoordinator>().Start();
 
             return Container.Resolve<MainWindow>();

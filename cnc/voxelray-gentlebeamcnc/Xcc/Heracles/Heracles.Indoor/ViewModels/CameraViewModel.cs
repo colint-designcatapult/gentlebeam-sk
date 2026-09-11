@@ -1,4 +1,5 @@
 ﻿using Heracles.Application.Common;
+using Heracles.Application.Models;
 using Heracles.Application.Models.EMR;
 using Heracles.Application.Models.RDBMS.EMR;
 using Heracles.Application.Models.Treatment;
@@ -7,8 +8,12 @@ using Heracles.Core.Enums;
 using Heracles.Core.Models;
 using Heracles.Core.Models.EMR;
 using Prism.Commands;
+using Prism.Events;
 using Prism.Regions;
 using System;
+using System.IO;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Prism.Services.Dialogs;
 using Xcc.Application.Common;
@@ -29,6 +34,7 @@ namespace Heracles.Indoor.ViewModels
         public IEmrPhotoCommands PhotoCommands { get; }
         public IPatientListModel PatientListModel { get; }
         public ITreatmentInfoStore TreatmentInfoStore { get; }
+        public IEventAggregator EventAggregator { get; }
 
         private string _cameraUriSource;
         public string CameraUriSource
@@ -42,6 +48,13 @@ namespace Heracles.Indoor.ViewModels
         {
             get => _pathToDatabase;
             set => SetProperty(ref _pathToDatabase, value);
+        }
+
+        private bool _isSavingImage;
+        public bool IsSavingImage
+        {
+            get => _isSavingImage;
+            set => SetProperty(ref _isSavingImage, value);
         }
         #endregion Properties
 
@@ -72,7 +85,21 @@ namespace Heracles.Indoor.ViewModels
                 });
                 
                 ExitCommand.Execute();
-            }); 
+            });
+
+        private DelegateCommand _saveImageCommand;
+        public DelegateCommand SaveImageCommand => _saveImageCommand ??= new DelegateCommand(async () =>
+        {
+            IsSavingImage = true;
+            try
+            {
+                await SaveImageAsync();
+            }
+            finally
+            {
+                IsSavingImage = false;
+            }
+        });
 
         #endregion Commands
 
@@ -85,7 +112,8 @@ namespace Heracles.Indoor.ViewModels
             ILogRepository logWriter, 
             IEmrPhotoCommands photoCommands,
             IPatientListModel patientListModel,
-            ITreatmentInfoStore treatmentInfoStore)
+            ITreatmentInfoStore treatmentInfoStore,
+            IEventAggregator eventAggregator)
             :base(regionManager)
         {
             DialogService = dialogService;
@@ -94,6 +122,7 @@ namespace Heracles.Indoor.ViewModels
             PhotoCommands = photoCommands;
             PatientListModel = patientListModel;
             TreatmentInfoStore = treatmentInfoStore;
+            EventAggregator = eventAggregator;
 
             CameraUriSource = settings.CameraUriSource;
 
@@ -105,6 +134,79 @@ namespace Heracles.Indoor.ViewModels
 
 
         #region Private methods
+
+        private async Task SaveImageAsync()
+        {
+            try
+            {
+                // Capture image from go2rtc API
+                byte[] imageBytes = await CaptureFromGoRtcAsync(Settings.ImageUrlTreatmentHead);
+                
+                // Generate filename with timestamp (matching old pattern: 2026-09-02_14_30_45.123)
+                string timestamp = DateTime.Now.ToString("yyyy'-'MM'-'dd'_'HH'_'mm'_'ss'.'fff");
+                string filename = $"image_{timestamp}.jpeg";
+                
+                // Create directory path: {StorageRoot}/Simulations/{DiagnosisId}/
+                string diagnosisPath = Path.Combine(
+                    PathToDatabase, 
+                    "Simulations", 
+                    TreatmentInfoStore.Diagnosis.Id.ToString());
+                
+                // Ensure we have a valid directory path
+                diagnosisPath = Path.GetFullPath(diagnosisPath);
+                
+                // Create directory if it doesn't exist
+                if (!Directory.Exists(diagnosisPath))
+                {
+                    Directory.CreateDirectory(diagnosisPath);
+                }
+                
+                // Save bytes to disk
+                string filePath = Path.Combine(diagnosisPath, filename);
+                filePath = Path.GetFullPath(filePath);
+                
+                await File.WriteAllBytesAsync(filePath, imageBytes);
+                
+                // Verify file was created
+                if (!File.Exists(filePath))
+                {
+                    throw new Exception("Failed to save image file to disk - file does not exist after write");
+                }
+                
+                // Save to database using existing method
+                await SaveNewImage(
+                    (int)TreatmentInfoStore.Diagnosis.Id, 
+                    filePath, 
+                    PhotoType.Identification);
+
+                // Show success feedback using Report with Info type
+                DialogService.Report("Success", "Image saved successfully", Xcc.Core.Enums.ReportType.Info);
+            }
+            catch (Exception ex)
+            {
+                // Show error feedback
+                DialogService.Report("Error", "Unable to save image", Xcc.Core.Enums.ReportType.Error);
+                LogWriter.Log($"Failed to save image: {ex.Message}", LogRecordSeverity.Error, LogRecordType.System);
+            }
+        }
+        
+        private async Task<byte[]> CaptureFromGoRtcAsync(string imageUrl)
+        {
+            if (string.IsNullOrEmpty(imageUrl))
+                throw new ArgumentException("Image URL is not configured");
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.Timeout = TimeSpan.FromSeconds(10);
+                var response = await httpClient.GetAsync(imageUrl);
+                
+                if (!response.IsSuccessStatusCode)
+                    throw new Exception($"Failed to capture image: {response.StatusCode}");
+
+                byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();
+                return imageBytes;
+            }
+        }
 
         #endregion Private methods
 
@@ -166,32 +268,60 @@ namespace Heracles.Indoor.ViewModels
 
         protected async Task SaveNewImage(int diagnosisId, string location, PhotoType photoType)
         {
-            // Create a new visit or get a recent one (on the same day)
-            var lastVisit = await PatientListModel.GetSameDayVisitAsync(TreatmentInfoStore.Patient, VisitType.Simulation);
-            TreatmentInfoStore.Patient.Visit = lastVisit;
-
-            // todo: initialize Image parameters with correct data
-            IPhotoDescription image = new PhotoDescription
-            {
-                DiagnosisId = diagnosisId,
-                Type = photoType,
-                Description = "image description",
-                Location = location, 
-                VisitId = lastVisit.Id                
-            };
-
+            const string debugLogFile = "cameradebug.log";
+            const int ChunkSize = 256 * 1024; // 256KB chunks for streaming
+            
             try
             {
-                var result = await PhotoCommands.CreateAsync(image);
-                if (result != null)
+                // Create a new visit or get a recent one (on the same day)
+                var lastVisit = await PatientListModel.GetSameDayVisitAsync(TreatmentInfoStore.Patient, VisitType.Simulation);
+                
+                TreatmentInfoStore.Patient.Visit = lastVisit;
+
+                // todo: initialize Image parameters with correct data
+                // Use SiteLocation enum from diagnosis for the Location
+                string locationString = TreatmentInfoStore.Diagnosis?.SiteLocation?.ToString() ?? string.Empty;
+                
+                IPhotoDescription image = new PhotoDescription
                 {
-                    LogWriter.Log($"New Image: [{result.Location}]", LogRecordSeverity.Info, LogRecordType.System);
+                    CreationDate = DateTime.Now,
+                    DiagnosisId = diagnosisId,
+                    Type = photoType,
+                    Description = "image description",
+                    Path = location,           // File system path where image is stored
+                    Location = locationString, // Anatomical location (enum name as string, e.g., "Breast")
+                    TemplateType = TemplateType.Simulation,
+                    VisitId = lastVisit.Id                
+                };
+                
+                var result = await PhotoCommands.CreateAsync(image);
+                
+                if (result == null)
+                {
+                    throw new Exception("Failed to create photo in database - result is null");
                 }
+                    
+                LogWriter.Log($"New Image: [{result.Location}]", LogRecordSeverity.Info, LogRecordType.System);
+
+                // CRITICAL: Load image bytes from disk and send them to server
+                byte[] imageBytes = File.ReadAllBytes(location);
+
+                // Create Photo object with the image data
+                var photo = new Photo(result)
+                {
+                    Data = imageBytes
+                };
+
+                // Send the actual image data to server
+                await PhotoCommands.SendPhotoAsync(photo, ChunkSize, CancellationToken.None);
+
+                // Publish event to notify other ViewModels (like PlanViewModel) that a photo was saved
+                EventAggregator.GetEvent<PhotoSavedEvent>().Publish(result);
             }
             catch (Exception ex)
             {
                 LogWriter.Log($"{StringConstants.CameraView.NewImageSaveErrorMessage}: {ex.Message}. {ex.InnerException?.Message}", LogRecordSeverity.Error, LogRecordType.Error);
-                DialogService.ReportError(StringConstants.CameraView.NewImageSaveErrorTitle, $"{StringConstants.CameraView.NewImageSaveErrorMessage}.");
+                throw; // Rethrow so caller knows about the failure
             }
         }
     }

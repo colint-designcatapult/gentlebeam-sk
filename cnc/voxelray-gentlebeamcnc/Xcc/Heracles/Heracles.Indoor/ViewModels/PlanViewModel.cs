@@ -8,6 +8,7 @@ using Heracles.Application.Models.Treatment;
 using Heracles.Core.Constants;
 using Heracles.Core.Enums;
 using Heracles.Core.Models.EMR;
+using Heracles.Indoor.Views;
 
 using Prism.Commands;
 using Prism.Events;
@@ -69,7 +70,6 @@ public class PlanViewModel : TreatmentViewModelBase
         PhotoService = photoService;
 
         //Event subscriptions
-        TreatmentInfoStore.DiagnosisChanged += (_, e) => OnDiagnosisChanged(e);
         PlanModel.IsModifiedChanged += (s, e) => VerifyCommand.RaiseCanExecuteChanged();
         PlanModel.IsValidChanged += (s, e) => VerifyCommand.RaiseCanExecuteChanged();
         PlanModel.PropertyChanged += (s, e) =>
@@ -79,6 +79,10 @@ public class PlanViewModel : TreatmentViewModelBase
                 VerifyCommand.RaiseCanExecuteChanged();
             }
         };
+        eventAggregator.GetEvent<PhotoSavedEvent>().Subscribe(photoDescription => 
+        {
+            RefreshPhotosAsync();
+        });
         TreatmentHistoryModel.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(TreatmentHistoryModel.Treatments))
@@ -98,14 +102,12 @@ public class PlanViewModel : TreatmentViewModelBase
     #region Injected Dependencies
     public IPatientRepository PatientRepository { get; }
     public ITreatmentHistoryModel TreatmentHistoryModel { get; }
-    public IPhotoService PhotoService { get; }
     public ITreatmentDoseCalculation TreatmentDoseCalculation { get; }
     public IAuthorizedUserStore AuthorizedUserStore { get; }
     public IPopUpService PopUpService { get; }
+    public IPhotoService PhotoService { get; }
 
     #endregion Injected Dependencies
-
-
 
     #region Properties
     private Task CurrentTask { get; set; }
@@ -113,26 +115,51 @@ public class PlanViewModel : TreatmentViewModelBase
     //TODO:
     //public ObservableCollection<ISeries> SeriesList { get; set; }
     public ObservableCollection<string> SeriesList { get; set; }
-    
-    private ObservableCollection<IPhoto> _photos = new();
-    public ObservableCollection<IPhoto> Photos
-    {
-        get => _photos;
-        set => SetProperty(ref _photos, value);
-    }
-
-    private IPhoto? _selectedPhoto;
-    public IPhoto? SelectedPhoto
-    {
-        get => _selectedPhoto;
-        set => SetProperty(ref _selectedPhoto, value);
-    }
 
     #endregion Properties
 
 
 
     #region Commands
+    private DelegateCommand<IPhoto>? _selectPhotoCommand;
+    public DelegateCommand<IPhoto> SelectPhotoCommand => _selectPhotoCommand ??= new DelegateCommand<IPhoto>(
+        (photo) =>
+        {
+            if (photo is not null)
+            {
+                try
+                {
+                    var parameters = new DialogParameters { { "photo", photo } };
+                    DialogService.ShowDialog("PhotoViewerModalView", parameters, result =>
+                    {
+                    });
+                }
+                catch (Exception ex)
+                {
+                    throw;
+                }
+            }
+        });
+    
+    private async void RefreshPhotosAsync()
+    {
+        if (TreatmentInfoStore.Diagnosis is null)
+        {
+            TreatmentInfoStore.Photos = new ObservableCollection<IPhoto>();
+            return;
+        }
+        
+        try
+        {
+            var photoResult = await PhotoService.GetPhotosAsync(TreatmentInfoStore.Diagnosis.Id);
+            TreatmentInfoStore.Photos = photoResult.photos;
+        }
+        catch (Exception ex)
+        {
+            // Log but don't crash - photos are optional
+        }
+    }
+
     private DelegateCommand? _verifyCommand;
     public DelegateCommand VerifyCommand => _verifyCommand ??= new DelegateCommand(
         () =>
@@ -234,31 +261,6 @@ public class PlanViewModel : TreatmentViewModelBase
         TreatmentInfoStore.Patient.Visit = await PatientRepository.FetchLastVisitAsync(TreatmentInfoStore.Patient.Id);
     }
 
-    private async void OnDiagnosisChanged(IDiagnosis? diagnosis)
-    {
-        try
-        {
-            Photos.Clear();
-            _receivePhotosTokenSource?.Cancel();
-
-            VerifyCommand?.RaiseCanExecuteChanged();
-
-            if (diagnosis is not null)
-            {
-                (Photos, _receivePhotosTokenSource) = await PhotoService.GetPhotosAsync(diagnosis.Id);
-            }
-
-        }
-        catch (DataServiceException ex)
-        {
-            var msg = diagnosis is null ? "field not specified" : $"field id = {diagnosis.Id}";
-            _ = LogWriter.LogAsync($"Failed to fetch photos: {msg}. {ex.Message}", LogRecordSeverity.Error, LogRecordType.System);
-        }
-        catch(Exception ex)
-        {
-            _ = LogWriter.LogAsync($"PlanViewModel: Failed to react on field change. {ex.Message}", LogRecordSeverity.Error, LogRecordType.System);
-        }
-    }
     #endregion Private methods
 
 
@@ -269,7 +271,4 @@ public class PlanViewModel : TreatmentViewModelBase
         base.OnNavigatedTo(navigationContext);
     }
     #endregion TreatmentViewModelBase
-
-
-    private CancellationTokenSource? _receivePhotosTokenSource;
 }

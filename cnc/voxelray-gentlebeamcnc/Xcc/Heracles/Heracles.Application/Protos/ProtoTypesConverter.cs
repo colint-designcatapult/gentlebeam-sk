@@ -2337,7 +2337,13 @@ namespace Heracles.Application.Protos
                 Description = photoDescription.Description,
                 DiagnosisId = photoDescription.DiagnosisId,
                 VisitId = photoDescription.VisitId,
-                //Path = photo.Path,
+                Path = photoDescription.Path,
+                // Location as string needs to be converted to SITELOCATION enum for proto
+                // Try to parse as enum, fallback to 0 (SITELOCATION_UNSPECIFIED)
+                Location = string.IsNullOrEmpty(photoDescription.Location) ? 0 : 
+                    (Enum.TryParse<Heracles.Core.Enums.SiteLocation>(photoDescription.Location, out var siteLocation) 
+                        ? (Com.Empyreanmed.Heracles.Enums.V1.SITELOCATION)(int)siteLocation 
+                        : 0),
                 PhotoType = ToProto(photoDescription.Type),
                 TemplateType = ToProto(photoDescription.TemplateType)
             };
@@ -2361,7 +2367,9 @@ namespace Heracles.Application.Protos
                 DiagnosisId = photo.DiagnosisId,
                 CreationDate = FromTimestamp(photo.CreationDate),
                 Description = photo.Description,
-                //Path = photo.Path,
+                Path = photo.Path,
+                // Convert SITELOCATION enum back to string
+                Location = photo.Location > 0 ? ((Heracles.Core.Enums.SiteLocation)photo.Location).ToString() : string.Empty,
                 Type = FromProto(photo.PhotoType),
                 TemplateType = FromProto(photo.TemplateType),
                 VisitId = photo.VisitId

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Heracles.Application.AppLayer.Collimators;
+using Heracles.Application.AppLayer.Patient;
 using Heracles.Application.Domain.DataManagement.System.Collimators;
 using Heracles.Application.Infra.DataManagement.EMR;
 using Heracles.Application.Models.RDBMS.EMR;

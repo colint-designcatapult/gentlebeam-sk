@@ -7,6 +7,7 @@ using Heracles.Application.Models.Settings;
 using Heracles.Application.Models.Supervision;
 using Heracles.Application.UI.Views;
 using Heracles.Core.Models;
+using Heracles.Indoor.ViewModels;
 using Heracles.Indoor.Views;
 using Heracles.Indoor.Views.Dialogs;
 using Heracles.Indoor.Views.Patients.Patient.Treatments;
@@ -223,6 +224,7 @@ internal class MainModule(IRegionManager regionManager, IDialogService dialogSer
         containerRegistry.RegisterForNavigation<TreatmentsView>();
         containerRegistry.RegisterForNavigation<CameraView>();
         containerRegistry.RegisterForNavigation<PatientImagesView>();
+        containerRegistry.RegisterForNavigation<ImageViewerView>();
 
         containerRegistry.RegisterDialog<AcknowledgeSimulationView>();
         containerRegistry.RegisterDialog<AcknowledgePrescriptionView>();
@@ -233,5 +235,6 @@ internal class MainModule(IRegionManager regionManager, IDialogService dialogSer
         containerRegistry.RegisterDialog<DeviceSerialView>();
         containerRegistry.RegisterDialog<InterlocksDialogView>();
         containerRegistry.RegisterDialog<FaultsView>();
+        containerRegistry.RegisterDialog<PhotoViewerModalView>();
     }
 }

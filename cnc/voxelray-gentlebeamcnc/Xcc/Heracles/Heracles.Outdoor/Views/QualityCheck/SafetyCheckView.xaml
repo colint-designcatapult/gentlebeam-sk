@@ -434,7 +434,8 @@
         <!--Camera-->
         <ucx:VideoLiveFeedControl 
             Grid.Row="2" Grid.RowSpan="3" Grid.Column="4"
-            UriSource="{Binding HeraclesExternalSettings.CameraUriSource}"
+            CameraUrlRoom="{Binding HeraclesExternalSettings.CameraUrlRoom}"
+            CameraUrlTreatmentHead="{Binding HeraclesExternalSettings.CameraUrlTreatmentHead}"
             ControlPanelVisibility="Collapsed"/>
     </Grid>
 </UserControl>
