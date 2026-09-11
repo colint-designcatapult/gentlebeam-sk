@@ -32,6 +32,10 @@ jobs:
         with:
           python-version: "3.14"
 
+      - name: Install MCUboot image tool dependencies
+        shell: bash
+        run: python -m pip install --requirement mcuboot/mcuboot-2.4.0/scripts/requirements.txt
+
       - name: Resolve HVPS release versions
         id: versions
         shell: bash
@@ -53,33 +57,63 @@ jobs:
           build-target: all
           cmake-args: --preset ${{ matrix.preset }} -DFW_VERSION=${{ steps.versions.outputs.main }}
 
-      - name: Package firmware images
+      - name: Create signed MCUboot images
         shell: bash
+        env:
+          IMAGE_VERSION: ${{ steps.versions.outputs.main }}
         run: |
           main_output_directory="hvps-interface/main/build/${{ matrix.preset }}"
           bootloader_output_directory="hvps-interface/bootloader/build/${{ matrix.bootloader-preset }}"
           sudo chown -R "$USER:$USER" "$main_output_directory" "$bootloader_output_directory"
-          python tools/firmware_hex.py inject-crc \
-            --input "$main_output_directory/gryphon-hvps-interface-fw.hex" \
-            --output "$main_output_directory/gryphon-hvps-interface-fw.with-crc.hex" \
-            --crc-output "$main_output_directory/gryphon-hvps-interface-fw.hex.crc" \
-            --application-start 0x08008000 \
-            --application-length 0x0002D000 \
-            --crc-address 0x08007C00
+          image_version="${IMAGE_VERSION%%-*}"
+          python mcuboot/mcuboot-2.4.0/scripts/imgtool.py sign \
+            --slot-size 0x2D000 \
+            --header-size 0x200 \
+            --pad-header \
+            --align 4 \
+            --version "$image_version" \
+            "$main_output_directory/gryphon-hvps-interface-fw.hex" \
+            "$main_output_directory/gryphon-hvps-interface-fw.unsigned.bin"
+          python mcuboot/mcuboot-2.4.0/scripts/imgtool.py sign \
+            --slot-size 0x2D000 \
+            --header-size 0x200 \
+            --pad-header \
+            --align 4 \
+            --version "$image_version" \
+            "$main_output_directory/gryphon-hvps-interface-fw.hex" \
+            "$main_output_directory/gryphon-hvps-interface-fw.unsigned.hex"
+          python mcuboot/mcuboot-2.4.0/scripts/imgtool.py sign \
+            --key hvps-interface/bootloader/keys/signing-key.pem \
+            --slot-size 0x2D000 \
+            --header-size 0x200 \
+            --pad-header \
+            --align 4 \
+            --version "$image_version" \
+            "$main_output_directory/gryphon-hvps-interface-fw.hex" \
+            "$main_output_directory/gryphon-hvps-interface-fw.signed.bin"
+          python mcuboot/mcuboot-2.4.0/scripts/imgtool.py sign \
+            --key hvps-interface/bootloader/keys/signing-key.pem \
+            --slot-size 0x2D000 \
+            --header-size 0x200 \
+            --pad-header \
+            --align 4 \
+            --version "$image_version" \
+            "$main_output_directory/gryphon-hvps-interface-fw.hex" \
+            "$main_output_directory/gryphon-hvps-interface-fw.signed.hex"
           python tools/firmware_hex.py combine \
             --input "$bootloader_output_directory/hvps-interface-bootloader.hex" \
-            --input "$main_output_directory/gryphon-hvps-interface-fw.with-crc.hex" \
+            --input "$main_output_directory/gryphon-hvps-interface-fw.signed.hex" \
             --output "$main_output_directory/gryphon-hvps-interface-fw.combined.hex"
 
-      - name: Verify firmware package outputs
+      - name: Verify build outputs
         shell: bash
         run: |
           main_output_directory="hvps-interface/main/build/${{ matrix.preset }}"
           bootloader_output_directory="hvps-interface/bootloader/build/${{ matrix.bootloader-preset }}"
           test -f "$main_output_directory/gryphon-hvps-interface-fw.elf"
           test -f "$main_output_directory/gryphon-hvps-interface-fw.hex"
-          test -f "$main_output_directory/gryphon-hvps-interface-fw.hex.crc"
-          test -f "$main_output_directory/gryphon-hvps-interface-fw.with-crc.hex"
+          test -f "$main_output_directory/gryphon-hvps-interface-fw.signed.bin"
+          test -f "$main_output_directory/gryphon-hvps-interface-fw.signed.hex"
           test -f "$main_output_directory/gryphon-hvps-interface-fw.combined.hex"
           test -f "$bootloader_output_directory/hvps-interface-bootloader.elf"
           test -f "$bootloader_output_directory/hvps-interface-bootloader.hex"
@@ -94,14 +128,15 @@ jobs:
             --output "release/${package_basename}.zip" \
             --file "$main_output_directory/gryphon-hvps-interface-fw.elf=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.elf" \
             --file "$main_output_directory/gryphon-hvps-interface-fw.hex=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.hex" \
-            --file "$main_output_directory/gryphon-hvps-interface-fw.hex.crc=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.hex.crc" \
-            --file "$main_output_directory/gryphon-hvps-interface-fw.with-crc.hex=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.with-crc.hex" \
+            --file "$main_output_directory/gryphon-hvps-interface-fw.signed.bin=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.signed.bin" \
+            --file "$main_output_directory/gryphon-hvps-interface-fw.signed.hex=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.signed.hex" \
             --file "$main_output_directory/gryphon-hvps-interface-fw.combined.hex=gryphon-hvps-interface-fw.${{ matrix.configuration }}.${{ steps.versions.outputs.main }}.combined.hex" \
             --file "$bootloader_output_directory/hvps-interface-bootloader.elf=hvps-interface-bootloader.${{ matrix.bootloader-preset }}.${{ steps.versions.outputs.bootloader }}.elf" \
             --file "$bootloader_output_directory/hvps-interface-bootloader.hex=hvps-interface-bootloader.${{ matrix.bootloader-preset }}.${{ steps.versions.outputs.bootloader }}.hex"
           python -m zipfile -e \
             "release/${package_basename}.zip" \
             "cache-payload/hvps/${{ matrix.configuration }}/Firmware/hvps-interface"
+
 
 
       - name: Upload individual firmware package
