@@ -867,4 +867,17 @@ device-information request. The reported information shall identify the main-con
 HVPS-interface firmware releases and operating modes.
 <<<
 
+[REQUIREMENT]
+UID: RQ-H1FWMC-307
+TYPE: Safety
+TITLE: Emission magnetometer monitoring
+STATEMENT: >>>
+After setting the coils and before enabling emission, the firmware shall average three
+valid post-coil readings from each magnetometer axis. Emission shall not start if the
+readings are unavailable. During emission, the firmware shall report a magnetometer fault
+if any axis deviates from its baseline by more than 10%, with a minimum threshold of 1.0 uT,
+for three consecutive packets, or if any reading is non-finite. A magnetometer fault shall
+request a transition to the fault state.
+<<<
+
 [[/SECTION]]

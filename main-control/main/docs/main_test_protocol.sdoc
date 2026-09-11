@@ -2376,4 +2376,38 @@ RELATIONS:
   VALUE: RQ-H1FWMC-306
   ROLE: Verifies
 
+[TEST_CASE]
+UID: TC-H1FWMC-308
+TITLE: Emission Magnetometer Fault Monitoring
+STATEMENT: >>>
+Verify that magnetometer deviations during emission produce a fault.
+<<<
+PREREQUISITES: >>>
+1. System is ready to run an emission
+2. A head-interface simulator can control the magnetometer readings
+3. A debugger can observe the magnetometer baseline and deviation counters
+<<<
+STEPS: >>>
+1. Provide three stable magnetometer packets after the coils are set
+2. Start the emission
+3. Move one axis beyond the greater of 10% of its baseline or 1.0 uT for two packets, then restore it
+4. Move the same axis beyond the limit for three consecutive packets
+5. Clear the fault and repeat without providing three post-coil packets
+6. Clear the fault and repeat with a non-finite reading during emission
+7. Open the system logs
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. Verify the post-coil readings are used as the baseline
+2. Verify the emission starts without a magnetometer fault
+3. Verify no fault is reported and the deviation count is reset
+4. Verify the third consecutive deviation reports a magnetometer fault and transitions the system to the fault state
+5. Verify a magnetometer fault prevents emission and transitions the system to the fault state
+6. Verify a magnetometer fault is reported immediately and transitions the system to the fault state
+7. Verify the logs identify the missing sample count or the affected magnetometer, axis, reading, baseline, and limit
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-307
+  ROLE: Verifies
+
 [[/SECTION]]

@@ -1291,6 +1291,38 @@ RELATIONS:
   VALUE: RQ-H1FWMC-10
   ROLE: Refines
 
+[DESIGN_ITEM]
+UID: SW-H1FWMC-300
+TITLE: Emission Magnetometer Fault Monitoring
+STATEMENT: >>>
+Setting the coils resets a three-sample magnetometer collector. Valid head-interface
+packets fill the collector, and emission entry averages each of the six axes. If three
+post-coil samples are unavailable, ``FAULT_MAGNETOMETER`` is reported and emission remains
+disabled.
+
+During emission, every valid head-interface packet is evaluated against the stored
+baseline. Each axis of both magnetometers is monitored independently. The permitted
+deviation is ten percent of the baseline magnitude, but is never less than 1.0 uT to avoid
+false faults when a baseline is close to zero.
+
+The firmware tracks consecutive out-of-range readings separately for every axis. An
+in-range reading resets the count for that axis without affecting the other axes. A
+magnetometer fault is reported when the same axis remains outside its permitted range for
+three consecutive packets. A non-finite reading is considered invalid and reports a fault
+immediately without waiting for additional packets.
+
+The fault report identifies the affected magnetometer and axis and, when applicable,
+includes the measured value, baseline, and permitted deviation. Reporting the fault
+invalidates the stored baseline and requests a state-machine transition to the fault state.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-307
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWMC-77
+  ROLE: Refines
+
 [[/SECTION]]
 
 [[/SECTION]]

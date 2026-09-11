@@ -178,7 +178,8 @@ internal sealed class NormalTelemetryState
         | (1UL << (int)SystemFault.QcWellCommFault)
         | (1UL << (int)SystemFault.AdcBusCommFault)
         | (1UL << (int)SystemFault.MemoryFault)
-        | (1UL << (int)SystemFault.InvalidConfigFault);
+        | (1UL << (int)SystemFault.InvalidConfigFault)
+        | (1UL << (int)SystemFault.MagnetometerFault);
 
 
     private GcbStateNew _controlBoardState;
@@ -377,6 +378,7 @@ internal sealed class NormalTelemetryState
         MapFault(rawFlags, 21, SystemFault.AdcBusCommFault, ref active);
         MapFault(rawFlags, 22, SystemFault.MemoryFault, ref active);
         MapFault(rawFlags, 23, SystemFault.InvalidConfigFault, ref active);
+        MapFault(rawFlags, 24, SystemFault.MagnetometerFault, ref active);
         return active;
     }
 
@@ -414,7 +416,8 @@ internal sealed class CalibrationTelemetryState
         | (1UL << (int)SystemFault.QcWellCommFault)
         | (1UL << (int)SystemFault.AdcBusCommFault)
         | (1UL << (int)SystemFault.MemoryFault)
-        | (1UL << (int)SystemFault.InvalidConfigFault);
+        | (1UL << (int)SystemFault.InvalidConfigFault)
+        | (1UL << (int)SystemFault.MagnetometerFault);
 
 
     private GcbStateNew _controlBoardState;
@@ -601,6 +604,7 @@ internal sealed class CalibrationTelemetryState
         MapFault(rawFlags, 21, SystemFault.AdcBusCommFault, ref active);
         MapFault(rawFlags, 22, SystemFault.MemoryFault, ref active);
         MapFault(rawFlags, 23, SystemFault.InvalidConfigFault, ref active);
+        MapFault(rawFlags, 24, SystemFault.MagnetometerFault, ref active);
         return active;
     }
 

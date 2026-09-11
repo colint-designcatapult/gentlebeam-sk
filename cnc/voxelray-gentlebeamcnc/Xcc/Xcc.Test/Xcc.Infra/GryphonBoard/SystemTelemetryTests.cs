@@ -13,7 +13,8 @@ internal class SystemTelemetryTests
         var packet = NewTelemetryPacket((uint)NormalTelemetryField.PayloadFields);
         packet[(int)NormalTelemetryField.SystemState] = (int)GcbStateNew.Emission;
         packet[(int)NormalTelemetryField.SystemRuntime] = 101;
-        packet[(int)NormalTelemetryField.SystemFaultFlags] = (1u << 3) | (1u << 23);
+        packet[(int)NormalTelemetryField.SystemFaultFlags] =
+            (1u << 3) | (1u << 23) | (1u << 24);
         packet[(int)NormalTelemetryField.InterlockFlags] = 0xDFFFFu;
         packet[(int)NormalTelemetryField.RingLedState] = (int)RingLedState.TBD2;
         packet[(int)NormalTelemetryField.BaseLedState] = (int)BaseLedState.TBD2;
@@ -68,10 +69,12 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.FirmwareMode, Is.EqualTo(FirmwareMode.Normal));
             Assert.That(telemetry.ControlBoardState, Is.EqualTo(GcbStateNew.Emission));
             Assert.That(telemetry.SystemRuntime, Is.EqualTo(101));
-            Assert.That(telemetry.Faults.RawFlags, Is.EqualTo((1u << 3) | (1u << 23)));
+            Assert.That(telemetry.Faults.RawFlags,
+                Is.EqualTo((1u << 3) | (1u << 23) | (1u << 24)));
             Assert.That(telemetry.Faults.RawCommunicationFlags, Is.Null);
             Assert.That(telemetry.Faults.GetState(SystemFault.VoltageFault), Is.True);
             Assert.That(telemetry.Faults.GetState(SystemFault.InvalidConfigFault), Is.True);
+            Assert.That(telemetry.Faults.GetState(SystemFault.MagnetometerFault), Is.True);
             Assert.That(telemetry.Faults.GetState(SystemFault.CurrentFault), Is.False);
             Assert.That(telemetry.Interlocks.RawFlags, Is.EqualTo(0xDFFFFu));
             Assert.That(telemetry.Interlocks.RawRequiredFlags, Is.EqualTo((1u << 0) | (1u << 4)));
@@ -168,7 +171,7 @@ internal class SystemTelemetryTests
         packet[(int)CalibrationTelemetryField.HvpsRuntime] = 108;
         packet[(int)CalibrationTelemetryField.Buttons] = 111;
         packet[(int)CalibrationTelemetryField.SystemFaultFlags] =
-            (1u << 5) | (1u << 22);
+            (1u << 5) | (1u << 22) | (1u << 24);
         packet[(int)CalibrationTelemetryField.CommunicationFaultFlags] =
             0xA5A5A5A5u;
         packet[(int)CalibrationTelemetryField.InterlockFlags] = 0xDFFFFu;
@@ -216,10 +219,12 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.SystemRuntime, Is.EqualTo(107));
             Assert.That(telemetry.RuntimeCounterHVPS, Is.EqualTo(108));
             Assert.That(telemetry.ButtonsState, Is.EqualTo(111));
-            Assert.That(telemetry.Faults.RawFlags, Is.EqualTo((1u << 5) | (1u << 22)));
+            Assert.That(telemetry.Faults.RawFlags,
+                Is.EqualTo((1u << 5) | (1u << 22) | (1u << 24)));
             Assert.That(telemetry.Faults.RawCommunicationFlags, Is.EqualTo(0xA5A5A5A5u));
             Assert.That(telemetry.Faults.GetState(SystemFault.FilamentFault), Is.True);
             Assert.That(telemetry.Faults.GetState(SystemFault.MemoryFault), Is.True);
+            Assert.That(telemetry.Faults.GetState(SystemFault.MagnetometerFault), Is.True);
             Assert.That(telemetry.Interlocks.RawFlags, Is.EqualTo(0xDFFFFu));
             Assert.That(telemetry.Interlocks.RawRequiredFlags, Is.EqualTo(0xC3FFFu));
             Assert.That(telemetry.Interlocks.SpareInterlock2, Is.True);

@@ -83,6 +83,18 @@ public class FaultEntryParserTests
     }
 
     [Test]
+    public void Parse_DecodesMagnetometerFaultCategory()
+    {
+        var packet = BuildEntryPacket(
+            "Magnetometer deviation.",
+            faultType: (uint)SystemFault.MagnetometerFault);
+
+        var update = FaultEntryParser.Parse(packet);
+
+        Assert.That(update.Entry!.FaultType, Is.EqualTo(SystemFault.MagnetometerFault));
+    }
+
+    [Test]
     public void Parse_DecodesClearResponse()
     {
         var packet = BuildEmptyPacket(clearEpoch: 42, entryIndex: 0, activeCount: 0);
@@ -131,7 +143,7 @@ public class FaultEntryParserTests
         Assert.That(() => FaultEntryParser.Parse(packet), Throws.TypeOf<ArgumentException>());
     }
 
-    [TestCase(25u, 1u, 0u, 0u)]
+    [TestCase(26u, 1u, 0u, 0u)]
     [TestCase(1u, 5u, 0u, 0u)]
     [TestCase(1u, 1u, 0u, 6u)]
     [TestCase(1u, 1u, 1u, 0u)]

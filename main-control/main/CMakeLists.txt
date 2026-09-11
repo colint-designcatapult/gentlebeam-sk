@@ -156,6 +156,7 @@ target_compile_definitions(gryphon_control_fw PRIVATE
   "$<$<CONFIG:Debug,CalibrationDebug>:DEBUG>"
   "$<$<CONFIG:Debug,CalibrationDebug>:ARM_MATH_CM7>"
   "$<$<CONFIG:CalibrationDebug>:CALIBRATION_MODE>"
+  "$<$<BOOL:${BENCH_DEBUG}>:BENCH_DEBUG>"
 )
 
 target_compile_options(gryphon_control_fw PRIVATE

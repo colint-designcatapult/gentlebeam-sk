@@ -38,6 +38,7 @@
 #endif
 
 #define MAX_FAULT_REPORTS		4
+
 #define FAULT_FORMAT_BYTES		128
 #define MAX_FAULT_ARGS			5
 
@@ -66,8 +67,9 @@ typedef enum faultType
 	FAULT_ADC_BUS,
 	FAULT_MEMORY,
 	FAULT_INVALID_CONFIG,
+	FAULT_MAGNETOMETER,
 	FAULT_OTHER,
-	NUM_FAULTS
+	NUM_FAULTS,
 } FaultType;
 
 typedef union

@@ -298,7 +298,9 @@ static void check_ion_pump_values()
 		if(++system_monitoring[SMON_ION_P_HI_COUNTER] > 10)
 		{
 			system_monitoring[SMON_ION_P_HI_COUNTER] = 0;
+#if !defined (BENCH_DEBUG)
 			report_typed_fault2(FAULT_ION_PUMP_FB, "Ion-pump pressure %f exceeds the maximum %f.", MAKE_ARG(system_status[SS_IONPUMP_PRESSURE].f), MAKE_ARG((float)DEFAULT_ION_P_HI_TH));
+#endif
 #if defined(CALIBRATION_MODE)
 			// Stop emission
 			fault_detected(IPUM_FAULT, true);
@@ -320,7 +322,9 @@ static void check_ion_repeller_values()
 		if(++system_monitoring[SMON_ION_R_V_OOT_COUNTER] > 10)
 		{
 			system_monitoring[SMON_ION_R_V_OOT_COUNTER] = 0;
+#if !defined (BENCH_DEBUG)
 			report_typed_fault3(FAULT_ION_REPELLER, "Ion-repeller voltage %f missed target %f (tolerance: %f percent).", MAKE_ARG(internal_voltages[INTERNAL_V_ION_REP]), MAKE_ARG((float)REPELLER_TARGET), MAKE_ARG(10.0f));
+#endif
 #if defined(CALIBRATION_MODE)
 			// Stop emission
 			fault_detected(IREP_FAULT, true);
@@ -370,7 +374,9 @@ static void check_coolant_pressure()
 			if(++system_monitoring[SMON_CLNT_P_HI_COUNTER] > 200)
 			{
 				system_monitoring[SMON_CLNT_P_HI_COUNTER] = 0;
+#if !defined (BENCH_DEBUG)
 				report_typed_fault2(FAULT_COOLANT, "Coolant pressure %f exceeds the high limit %f.", MAKE_ARG(system_status[SS_WATER_PRESSURE].f), MAKE_ARG((float)DEFAULT_WTR_P_HI_ERR));
+#endif
 			}
 		}
 		else
@@ -383,8 +389,10 @@ static void check_coolant_pressure()
 			if(++system_monitoring[SMON_CLNT_P_LO_COUNTER] > 200)
 			{
 				system_monitoring[SMON_CLNT_P_LO_COUNTER] = 0;
+#if !defined (BENCH_DEBUG)
 				//TODO: add COOLANT_FAULT_UNDERPRESSURE to details
 				report_typed_fault2(FAULT_COOLANT, "Coolant pressure %f is below the low limit %f.", MAKE_ARG(system_status[SS_WATER_PRESSURE].f), MAKE_ARG((float)DEFAULT_WTR_P_LO_ERR));
+#endif
 			}	
 		}
 		else
@@ -409,7 +417,9 @@ static void check_coolant_flow()
 			if(++system_monitoring[SMON_CLNT_F_LO_COUNTER] > 200)
 			{
 				system_monitoring[SMON_CLNT_F_LO_COUNTER] = 0;
+#if !defined (BENCH_DEBUG)
 				report_typed_fault2(FAULT_COOLANT, "Coolant flow %f is below the low limit %f.", MAKE_ARG(system_status[SS_WATER_FLOW_RATE].f), MAKE_ARG((float)DEFAULT_WTR_F_LO_ERR));
+#endif
 			}
 		}
 		else
@@ -422,8 +432,10 @@ static void check_coolant_flow()
 			if(++system_monitoring[SMON_CLNT_F_HI_COUNTER] > 200)
 			{
 				system_monitoring[SMON_CLNT_F_HI_COUNTER] = 0;
+#if !defined (BENCH_DEBUG)
 				//TODO: add COOLANT_FAULT_HIGH_FLOW to details
 				report_typed_fault2(FAULT_COOLANT, "Coolant flow %f exceeds the high limit %f.", MAKE_ARG(system_status[SS_WATER_FLOW_RATE].f), MAKE_ARG((float)DEFAULT_WTR_F_HI_ERR));
+#endif
 			}
 		}
 		else
@@ -440,7 +452,9 @@ static void check_coolant_temp()
 	
 	if(coolant_temp > DEFAULT_WTR_TEMP_ERR)
 	{
+#if !defined (BENCH_DEBUG)
 		report_typed_fault2(FAULT_COOLANT, "Coolant temperature %f exceeds the high limit %f.", MAKE_ARG(coolant_temp), MAKE_ARG((float)DEFAULT_WTR_TEMP_ERR));
+#endif
 	}
 }
 
@@ -450,7 +464,9 @@ static void check_heatsink_temp()
 
 	if(heatsink_temp > DEFAULT_HS_TEMP_ERR)
 	{
+#if !defined (BENCH_DEBUG)
 		report_typed_fault2(FAULT_HEATSINK, "Heatsink temperature %f exceeds the high limit %f.", MAKE_ARG(heatsink_temp), MAKE_ARG((float)DEFAULT_HS_TEMP_ERR));
+#endif
 	}
 }
 
@@ -460,7 +476,9 @@ static void check_cabinet_temp()
 
 	if(cabinet_temp > DEFAULT_CAB_TEMP_ERR)
 	{
+#if !defined (BENCH_DEBUG)
 		report_typed_fault2(FAULT_HEATSINK, "Cabinet temperature %f exceeds the high limit %f.", MAKE_ARG(cabinet_temp), MAKE_ARG((float)DEFAULT_CAB_TEMP_ERR));
+#endif
 	}
 }
 
@@ -639,8 +657,10 @@ static void update_heatsink_fan()
 			set_fan_voltage(HS_FAN_DAC_CH, 2.5); //TBD TODO magic number
 		}
 		system_monitoring[SMON_LAST_HS_FAN_STATE] = 0;
+#if !defined (BENCH_DEBUG)
 		//TBD TODO throw fault
 		report_typed_fault2(FAULT_HEATSINK, "Heatsink temperature %f exceeds the high limit %f.", MAKE_ARG(system_status[SS_HEATSINK_TEMP].f), MAKE_ARG((float)HEATSINK_ERR_TH));
+#endif
 	}
 	else if(state_now >= STATE_READY)
 	{
@@ -748,7 +768,9 @@ static void check_x_coil()
 		coil_err_count[0] += 1;
 		if(coil_err_count[0] > 10)
 		{
+#if !defined (BENCH_DEBUG)
 			report_typed_fault3(FAULT_COIL_CURRENT, "X-coil current %f missed target %f (tolerance: %f).", MAKE_ARG(actual_value), MAKE_ARG(expected_coil_value[EV_COIL_X_A]), MAKE_ARG((float)DEFAULT_DEFL_I_TOL));
+#endif
 		}
 	}
 }
@@ -768,7 +790,9 @@ static void check_y_coil()
 		coil_err_count[1] += 1;
 		if(coil_err_count[1] > 10)
 		{
+#if !defined (BENCH_DEBUG)
 			report_typed_fault3(FAULT_COIL_CURRENT, "Y-coil current %f missed target %f (tolerance: %f).", MAKE_ARG(actual_value), MAKE_ARG(expected_coil_value[EV_COIL_Y_A]), MAKE_ARG((float)DEFAULT_DEFL_I_TOL));
+#endif
 		}
 	}
 }
@@ -788,7 +812,9 @@ static void check_f_coil()
 		coil_err_count[2] += 1;
 		if(coil_err_count[2] > 10)
 		{
+#if !defined (BENCH_DEBUG)
 			report_typed_fault3(FAULT_COIL_CURRENT, "Focus-coil current %f missed target %f (tolerance: %f).", MAKE_ARG(actual_value), MAKE_ARG(expected_coil_value[EV_COIL_F_A]), MAKE_ARG((float)DEFAULT_FOCUS_I_TOL));
+#endif
 		}
 	}
 	

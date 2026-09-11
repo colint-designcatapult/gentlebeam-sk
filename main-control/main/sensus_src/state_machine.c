@@ -13,6 +13,7 @@
 #include "ext_timers.h"
 #include "faults.h"
 #include "head_board.h"
+#include "magnetometer_monitoring.h"
 #include "hvps.h"
 #include "system_monitoring.h"
 #include "system_parameters.h"
@@ -921,6 +922,9 @@ static void goto_setup_state()
 	expected_coil_value[EV_COIL_Y_A] = operational_point[OP_Y_COIL].f;
 	expected_coil_value[EV_COIL_F_A] = operational_point[OP_F_COIL].f;
 
+	// Only readings received after the new coil settings are applied may form the baseline.
+	start_magnetometer_baseline_collection();
+
 	//Turn off indicators
 	enable_indicators(false);
 
@@ -1052,6 +1056,12 @@ static void run_launching_state(EventType ev)
 
 static void goto_emission_state()
 {
+	// Capture the field after coil setup and immediately before enabling the beam.
+	if(!capture_magnetometer_baseline())
+	{
+		return;
+	}
+
 	//Enable x-ray indicators
 	enable_indicators(true);
 	

@@ -6,6 +6,8 @@ endif()
 
 project(gentlebeam_same70_firmware C)
 
+option(BENCH_DEBUG "Enable bench-debug firmware behavior" OFF)
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 add_subdirectory(

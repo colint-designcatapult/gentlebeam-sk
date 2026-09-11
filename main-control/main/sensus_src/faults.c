@@ -87,7 +87,9 @@ void fault_latch(FaultType type)
 	CRITICAL_SECTION_ENTER()
 	if(!fault_latched)
 	{
+#if !defined(BENCH_DEBUG)
 		fault_transition_pending = true;
+#endif
 	}
 	fault_latched = true;
 	faults_present |= 1u << (uint32_t)type;

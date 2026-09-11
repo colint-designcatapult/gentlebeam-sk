@@ -16,6 +16,7 @@
 #include "system_parameters.h"
 #include "state_machine.h"
 #include "head_board.h"
+#include "magnetometer_monitoring.h"
 
 #define HB_QC_READING_MASK		0x0FFFu
 #define HB_QC_CONNECTED_FLAG	0x8000u
@@ -441,6 +442,9 @@ static void extract_hb_rx_data()
 			memcpy(&data_val,hb_rx_processing_buf+(i*HB_FIELD_SIZE), sizeof(float));
 			report_hb_data(i, data_val);
 		}
+
+		// Evaluate each coherent, CRC-valid set of magnetometer readings once.
+		monitor_magnetometer_readings();
 	}
 }
 

@@ -56,11 +56,11 @@ namespace Xcc.Core.Enums
         [Display(Name = "Invalid configuration Fault")]
         InvalidConfigFault,
 
-        [Display(Name = "Other Fault")]
-        OtherFault,
+        [Display(Name = "Magnetometer Fault")]
+        MagnetometerFault = 24,
 
-        [Display(Name = "Fault25")]
-        Reserved25,
+        [Display(Name = "Other Fault")]
+        OtherFault = 25,
 
         [Display(Name = "Fault26")]
         Reserved26,

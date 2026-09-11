@@ -11,6 +11,14 @@
       }
     },
     {
+      "name": "bench-debug",
+      "inherits": "debug",
+      "binaryDir": "${sourceDir}/out/cmake/bench-debug",
+      "cacheVariables": {
+        "BENCH_DEBUG": "ON"
+      }
+    },
+    {
       "name": "release",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/cmake/release",
@@ -33,6 +41,11 @@
     {
       "name": "debug",
       "configurePreset": "debug",
+      "targets": ["all"]
+    },
+    {
+      "name": "bench-debug",
+      "configurePreset": "bench-debug",
       "targets": ["all"]
     },
     {
