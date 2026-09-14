@@ -171,6 +171,7 @@ namespace Heracles.Indoor
             if (heraclesMainSettings.UseSqliteDatabase)
             {
                 // Start the embedded SQLite gRPC server and register a local channel manager
+                Directory.CreateDirectory(heraclesMainSettings.StorageRoot);
                 var dbPath = Path.Combine(
                     heraclesMainSettings.StorageRoot,
                     "heracles.db");

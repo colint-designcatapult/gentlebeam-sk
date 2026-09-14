@@ -374,6 +374,8 @@ namespace Xcc.Application.Helpers
 
         public bool HasErrors => _errors.Count > 0;
 
+        public bool this[string propertyName] => GetErrors(propertyName).GetEnumerator().MoveNext();
+
         public IEnumerable GetErrors(string? propertyName)
         {
             if (propertyName is null)
@@ -415,6 +417,7 @@ namespace Xcc.Application.Helpers
         {
             RaiseErrorsChanged(propertyName);
             RaisePropertyChanged(nameof(HasErrors)); // This is needed because there is a bug with 
+            RaisePropertyChanged("Item[]");
 
             var results = new List<ValidationResult>();
             IsValid = Validator.TryValidateObject(this, new ValidationContext(this), results, validateAllProperties: true);

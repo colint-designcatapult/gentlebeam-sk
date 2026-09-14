@@ -18,6 +18,8 @@ using Prism.Regions;
 using Prism.Services.Dialogs;
 using Prism.Unity;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity;
 using Xcc.Application.AppLayer.Model;
@@ -29,7 +31,10 @@ using Xcc.Application.UI;
 using Xcc.Application.ViewModels;
 using Xcc.Application.Views;
 using Xcc.Application.Views.Approval;
+using Xcc.Core.Domain.DataManagement.Common.Users;
+using Xcc.Core.Domain.DataManagement.Common.Users.DataAccess;
 using Xcc.Core.Enums;
+using Xcc.Core.Infra.DataManagement.Common.DataAccess;
 using Xcc.Core.Logging;
 using Xcc.Core.Services;
 using Xcc.Infra.UserSessions;
@@ -50,6 +55,16 @@ internal class MainModule(IRegionManager regionManager, IDialogService dialogSer
 
             // Setup user session events subscriptions before we start logging-in
             SetupSessionExpiration(containerProvider);
+
+            // Initialize core database (roles) before login
+            await InitializeCoreDatabase(containerProvider);
+
+            // Show first-run setup if no Administrator exists
+            if (!await ShowFirstRunSetupIfNeededAsync(containerProvider))
+            {
+                exitingModel.ExitApplication();
+                return;
+            }
 
             await LoginUserAsync(containerProvider);
 
@@ -151,6 +166,112 @@ internal class MainModule(IRegionManager regionManager, IDialogService dialogSer
         }
     }
 
+    /// <summary>
+    /// Initialize core database with roles and permissions.
+    /// This runs unconditionally before login. Roles are created only if they don't already exist.
+    /// </summary>
+    private static async Task InitializeCoreDatabase(IContainerProvider containerProvider)
+    {
+        try
+        {
+            var roleCommands = containerProvider.GetContainer().Resolve<IRoleCommands>();
+            var permissionCommands = containerProvider.GetContainer().Resolve<IPermissionCommands>();
+            var logWriter = containerProvider.GetContainer().Resolve<ILogWriter>();
+
+            // Get existing roles to avoid duplicates
+            var existingRoles = await roleCommands.ReadAllAsync();
+            var existingRoleNames = existingRoles?.Select(r => r.Name).ToHashSet() ?? new HashSet<string>();
+
+            // Define predefined roles with their permissions
+            ICollection<UserRole> predefinedRoles = [
+                new UserRole("Administrator") { Permissions = { ClinicalData = true, Treatment = true, SystemCalibration = true, QualityAssurance = true, SystemSettings = true, UserManagement = true, Services = true} },
+                new UserRole("RTT") { Permissions = {ClinicalData = true, Treatment = true, QualityAssurance = true} },
+                new UserRole("Physicist"){ Permissions = {ClinicalData = true, SystemCalibration = true, QualityAssurance = true} },
+                new UserRole("Service"){ Permissions = {QualityAssurance = true, Services = true} },
+                new UserRole("Guest") { Permissions = {} }
+            ];
+
+            // Create only roles that don't already exist
+            foreach (UserRole role in predefinedRoles)
+            {
+                if (existingRoleNames.Contains(role.Name))
+                    continue;
+
+                var storedRole = await roleCommands.CreateAsync(new RoleRecord { Name = role.Name, Description = role.Name });
+                
+                if (role.Permissions.ClinicalData)
+                    await permissionCommands.CreateAsync(new PermissionRecord { RoleId = storedRole.Id, Type = PermissionType.ClinicalData });
+                if (role.Permissions.Treatment)
+                    await permissionCommands.CreateAsync(new PermissionRecord { RoleId = storedRole.Id, Type = PermissionType.Treatment });
+                if (role.Permissions.SystemCalibration)
+                    await permissionCommands.CreateAsync(new PermissionRecord { RoleId = storedRole.Id, Type = PermissionType.SystemCalibration });
+                if (role.Permissions.QualityAssurance)
+                    await permissionCommands.CreateAsync(new PermissionRecord { RoleId = storedRole.Id, Type = PermissionType.QualityAssurance });
+                if (role.Permissions.SystemSettings)
+                    await permissionCommands.CreateAsync(new PermissionRecord { RoleId = storedRole.Id, Type = PermissionType.SystemSettings });
+                if (role.Permissions.UserManagement)
+                    await permissionCommands.CreateAsync(new PermissionRecord { RoleId = storedRole.Id, Type = PermissionType.UserManagement });
+                if (role.Permissions.Services)
+                    await permissionCommands.CreateAsync(new PermissionRecord { RoleId = storedRole.Id, Type = PermissionType.Services });
+            }
+
+            await logWriter.LogAsync(
+                "Core database initialization complete: roles created or verified",
+                LogRecordSeverity.Info,
+                LogRecordType.System);
+        }
+        catch (Exception ex)
+        {
+            var logWriter = containerProvider.GetContainer().Resolve<ILogWriter>();
+            await logWriter.LogAsync(
+                $"Core database initialization error: {ex.Message}",
+                LogRecordSeverity.Error,
+                LogRecordType.Error);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Check if an Administrator user account exists in the database.
+    /// </summary>
+    private static async Task<bool> AdminAccountExistsAsync(IContainerProvider containerProvider)
+    {
+        try
+        {
+            var userRepository = containerProvider.Resolve<IUserRepository>();
+            var existingUsers = await userRepository.FetchUsersAsync();
+
+            return existingUsers.Any(user => user.Role?.Name == "Administrator");
+        }
+        catch
+        {
+            // If we can't determine, assume it doesn't exist
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Show first-run administrator setup dialog if no Administrator account exists.
+    /// </summary>
+    private async Task<bool> ShowFirstRunSetupIfNeededAsync(IContainerProvider containerProvider)
+    {
+        var adminExists = await AdminAccountExistsAsync(containerProvider);
+        if (!adminExists)
+        {
+            var setupCompleted = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+            dialogService.ShowDialog("FirstRunAdminSetupView", r =>
+            {
+                setupCompleted.TrySetResult(r.Result == ButtonResult.OK);
+            });
+
+            return await setupCompleted.Task;
+        }
+
+        return true;
+    }
+
     private static void PopulateDatabaseWithDummyData(IContainerProvider containerProvider)
     {
         var dummySystemData = containerProvider.Resolve<DummySystemData>();
@@ -199,19 +320,13 @@ internal class MainModule(IRegionManager regionManager, IDialogService dialogSer
         }
         else
         {
-            bool loginCancelled = false;
             dialogService.ShowDialog("LoginView", r =>
             {
                 if (r.Result == ButtonResult.Cancel)
                 {
                     exitingModel.ExitApplication();
-                    loginCancelled = true;
                 }
             });
-            if (loginCancelled)
-            {
-                throw new Exception("Login cancelled");
-            }
         }
     }
 
@@ -230,6 +345,7 @@ internal class MainModule(IRegionManager regionManager, IDialogService dialogSer
         containerRegistry.RegisterDialog<AcknowledgePrescriptionView>();
 
         containerRegistry.RegisterDialog<LoginView, LoginViewModel>();
+        containerRegistry.RegisterDialog<FirstRunAdminSetupView, FirstRunAdminSetupViewModel>();
         containerRegistry.RegisterDialog<ApproveView>();
         containerRegistry.RegisterDialog<ApprovalView>();
         containerRegistry.RegisterDialog<DeviceSerialView>();
