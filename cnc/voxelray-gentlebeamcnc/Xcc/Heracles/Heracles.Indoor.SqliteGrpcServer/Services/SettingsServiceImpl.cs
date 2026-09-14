@@ -1,4 +1,5 @@
 using Com.Empyreanmed.Heracles.Settings.V1;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Heracles.Indoor.SqliteGrpcServer.Infrastructure;
 
@@ -15,7 +16,10 @@ public sealed class SettingsServiceImpl : SettingsService.SettingsServiceBase
         var settings = await _repo.ReadSingleAsync();
         if (settings is null)
         {
-            settings = new Settings();
+            settings = new Settings
+            {
+                CreateDate = Timestamp.FromDateTime(DateTime.UtcNow)
+            };
             settings = await _repo.CreateAsync(settings);
         }
         return new GetSettingsResponse { Settings = settings };

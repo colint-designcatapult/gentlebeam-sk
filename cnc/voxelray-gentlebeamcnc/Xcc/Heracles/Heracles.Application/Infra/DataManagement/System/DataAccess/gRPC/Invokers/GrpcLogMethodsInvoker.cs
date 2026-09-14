@@ -10,10 +10,12 @@ namespace Heracles.Application.Infra.DataManagement.System.DataAccess.gRPC.Invok
 {
     public class GrpcLogMethodsInvoker
     {
-        protected IGrpcChannelManager GrpcSettings { get; }
-
         protected CallInvoker Channel => GrpcSettings.Channel;
         protected uint Timeout => GrpcSettings.RpcTimeoutMs;
+        protected IGrpcChannelManager GrpcSettings { get; }
+
+        private int _nextSkip;
+        public void ResetPaging() => _nextSkip = 0;
 
         public GrpcLogMethodsInvoker(IGrpcChannelManager grpcSettings)
         {
@@ -40,6 +42,7 @@ namespace Heracles.Application.Infra.DataManagement.System.DataAccess.gRPC.Invok
             try
             {
                 var response = GetService().CreateLog(new CreateLogRequest { Log = record }, GetCallOptions());
+                ResetPaging();
                 return response.Log;
             }
             catch (Exception e)
@@ -54,12 +57,12 @@ namespace Heracles.Application.Infra.DataManagement.System.DataAccess.gRPC.Invok
             try
             {
                 var response = await GetService().CreateLogAsync(new CreateLogRequest { Log = record }, GetCallOptions());
+                ResetPaging();
                 return response.Log;
             }
             catch (Exception e)
             {
-                string msg = $"Failed to add a log record to the DB";
-                throw new DataServiceException(msg, e);
+                throw new DataServiceException("Failed to add a log record to the DB", e);
             }
         }
 
@@ -69,18 +72,18 @@ namespace Heracles.Application.Infra.DataManagement.System.DataAccess.gRPC.Invok
             {
                 var request = new ListLogsRequest
                 {
-                    Get = 1000,
+                    // The log view displays the complete history; zero requests one ordered server-side read.
+                    Get = 0,
                     Skip = 0
                 };
 
                 var response = GetService().ListLogs(request, GetCallOptions());
-
+                _nextSkip = ParseNextSkip(response.NextPageToken);
                 return new LogPage<Log> { records = response.Logs, nextPageToken = response.NextPageToken };
             }
             catch (Exception e)
             {
-                string msg = $"Failed to read a log page from the DB";
-                throw new DataServiceException(msg, e);
+                throw new DataServiceException("Failed to read a log page from the DB", e);
             }
         }
 
@@ -90,20 +93,23 @@ namespace Heracles.Application.Infra.DataManagement.System.DataAccess.gRPC.Invok
             {
                 var request = new ListLogsRequest
                 {
-                    Get = 1000,
+                    // The log view displays the complete history; zero requests one ordered server-side read.
+                    Get = 0,
                     Skip = 0
                 };
 
                 var response = await GetService().ListLogsAsync(request, GetCallOptions());
-
+                _nextSkip = ParseNextSkip(response.NextPageToken);
                 return new LogPage<Log> { records = response.Logs, nextPageToken = response.NextPageToken };
             }
             catch (Exception e)
             {
-                string msg = $"Failed to read a log page from the DB";
-                throw new DataServiceException(msg, e);
+                throw new DataServiceException("Failed to read a log page from the DB", e);
             }
         }
+
+        private static int ParseNextSkip(string token)
+            => int.TryParse(token, out var skip) ? skip : 0;
         #endregion IGrpcLogMethodsInvoker
     }
 }

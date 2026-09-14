@@ -1,4 +1,5 @@
 using Com.Empyreanmed.Heracles.PresetConfigurations.V1;
+using Com.Empyreanmed.Heracles.Users.V1;
 using Grpc.Core;
 using Heracles.Indoor.SqliteGrpcServer.Infrastructure;
 
@@ -7,7 +8,15 @@ namespace Heracles.Indoor.SqliteGrpcServer.Services;
 public sealed class PresetConfigurationServiceImpl : PresetConfigurationService.PresetConfigurationServiceBase
 {
     private readonly SqliteProtoRepository<PresetConfiguration> _repo;
-    public PresetConfigurationServiceImpl(SqliteProtoRepository<PresetConfiguration> repo) => _repo = repo;
+    private readonly AuthServiceImpl _auth;
+
+    public PresetConfigurationServiceImpl(
+        SqliteProtoRepository<PresetConfiguration> repo,
+        AuthServiceImpl auth)
+    {
+        _repo = repo;
+        _auth = auth;
+    }
 
     public override async Task<ListPresetConfigurationsResponse> ListPresetConfigurations(
         ListPresetConfigurationsRequest request, ServerCallContext context)
@@ -51,11 +60,13 @@ public sealed class PresetConfigurationServiceImpl : PresetConfigurationService.
     public override async Task<ApprovePresetConfigurationResponse> ApprovePresetConfiguration(
         ApprovePresetConfigurationRequest request, ServerCallContext context)
     {
+        var user = await _auth.AuthenticateAsync(request.Username, request.Password);
+
         var item = await _repo.ReadAsync(request.PresetConfigurationId)
             ?? throw new RpcException(new Status(StatusCode.NotFound,
                 $"PresetConfiguration {request.PresetConfigurationId} not found"));
-        // Mark as approved — set the approval fields if they exist on the message
-        var updated = await _repo.UpdateAsync(item.Id, item);
+        item.ApprovedBy = user.EmailAddress;
+        var updated = await _repo.UpdateAsync(item.Id, item, preserveOutputOnly: false);
         return new ApprovePresetConfigurationResponse { ApprovedPresetConfiguration = updated };
     }
 }

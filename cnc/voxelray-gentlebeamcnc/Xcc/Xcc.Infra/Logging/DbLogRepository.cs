@@ -24,6 +24,7 @@ namespace Xcc.Infra.Logging
         /// A page token, received from a previous ListLogs call. Provide this to retrieve the subsequent page.
         /// </summary>
         private string _nextPageToken = string.Empty;
+        private bool _hasFetchedPage;
 
         public ILogCommands LogCommands { get; }
 
@@ -48,25 +49,36 @@ namespace Xcc.Infra.Logging
 
         public bool CanFetch()
         {
-            return true;
+            return !_hasFetchedPage || !string.IsNullOrEmpty(_nextPageToken);
         }
 
         public IList<ILogRecord> Fetch()
         {
-            var response = LogCommands.ReadLogPage(_pageSize);
-            
-            _nextPageToken = response.nextPageToken;
+            var records = new List<ILogRecord>();
+            do
+            {
+                var response = LogCommands.ReadLogPage(_pageSize);
+                records.AddRange(response.records);
+                _nextPageToken = response.nextPageToken;
+                _hasFetchedPage = true;
+            }
+            while (!string.IsNullOrEmpty(_nextPageToken));
 
-            return response.records.Reverse().ToList();
+            return records;
         }
-
         public async Task<IList<ILogRecord>> FetchAsync()
         {
-            var response = await LogCommands.ReadLogPageAsync(_pageSize);
-            
-            _nextPageToken = response.nextPageToken;
+            var records = new List<ILogRecord>();
+            do
+            {
+                var response = await LogCommands.ReadLogPageAsync(_pageSize);
+                records.AddRange(response.records);
+                _nextPageToken = response.nextPageToken;
+                _hasFetchedPage = true;
+            }
+            while (!string.IsNullOrEmpty(_nextPageToken));
 
-            return response.records.Reverse().ToList();
+            return records;
         }
 
         private void LogInternal(string message, LogRecordSeverity messageType, LogRecordType type)
@@ -76,8 +88,8 @@ namespace Xcc.Infra.Logging
                 lock (_lock)
                 {
                     var response = LogCommands.CreateRecord(new LogRecord { Message = message, Type = type, Severity = messageType });
-                    // Reset flag, as we created the record successfully, so the connection was re-established:
-                    _writeOnceServiceError = true; 
+                    _hasFetchedPage = false;
+                    _nextPageToken = string.Empty;
                     EventAggregator.GetEvent<LogRecordAddedEvent>().Publish(new LogRecord()
                     {
                         Message = message,
@@ -87,23 +99,29 @@ namespace Xcc.Infra.Logging
                     });
                 }
             }
-            catch (DataServiceException ex)
+            catch (Exception ex)
             {
-                // todo: what should we do if a log record can't be saved?
-
-                // todo: handle this exception in case when gRPC doesn't work
-                //throw new DataServiceException($"Failed to save log record to database.", ex);
-                //LogService.Log($"{msg}. {ex.Message}", Xcc.Core.Enums.LogRecordSeverity.Error, Xcc.Core.Enums.LogRecordType.Database);
-                //
-                if (BackUpLogWriter != null)
+                if (_writeOnceServiceError)
                 {
-                    if (_writeOnceServiceError)
-                    {
-                        BackUpLogWriter.Log($"Failed to save log record to database. {ex.Message}", messageType, type);
-                        _writeOnceServiceError = false;
-                    }
+                    _writeOnceServiceError = false;
+                    EventAggregator.GetEvent<LogPersistenceFailedEvent>().Publish(
+                        $"Failed to save log records to the database. {ex.Message}");
+                }
 
-                    BackUpLogWriter.Log(message, messageType, type);
+                try
+                {
+                    if (BackUpLogWriter != null)
+                    {
+                        BackUpLogWriter.Log(
+                            $"Failed to save log record to database. {ex.Message}",
+                            messageType,
+                            type);
+                        BackUpLogWriter.Log(message, messageType, type);
+                    }
+                }
+                catch
+                {
+                    // Logging failure handling must not recursively fail logging.
                 }
             }
         }
@@ -120,7 +138,8 @@ namespace Xcc.Infra.Logging
 
         private Task LogAsyncQueue(string message, LogRecordSeverity messageType, LogRecordType type)
         {
-            return Task.Run(() => LogInternal(message, messageType, type));
+            LogInternal(message, messageType, type);
+            return Task.CompletedTask;
         }
     }
 

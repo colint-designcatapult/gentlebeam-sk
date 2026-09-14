@@ -8,14 +8,14 @@ namespace Heracles.Indoor.SqliteGrpcServer.Services;
 public sealed class QCSampleServiceImpl : QCSampleService.QCSampleServiceBase
 {
     private readonly SqliteProtoRepository<QCSample> _repo;
-    private readonly SqliteProtoRepository<User> _users;
+    private readonly AuthServiceImpl _auth;
 
     public QCSampleServiceImpl(
         SqliteProtoRepository<QCSample> repo,
-        SqliteProtoRepository<User> users)
+        AuthServiceImpl auth)
     {
         _repo = repo;
-        _users = users;
+        _auth = auth;
     }
 
     public override async Task<ListQCSamplesResponse> ListQCSamples(
@@ -61,21 +61,13 @@ public sealed class QCSampleServiceImpl : QCSampleService.QCSampleServiceBase
     public override async Task<ApproveQCSampleResponse> ApproveQCSample(
         ApproveQCSampleRequest request, ServerCallContext context)
     {
-        var users = await _users.ReadAllAsync();
-        var user = users.FirstOrDefault(value =>
-            value.Username.Equals(request.Username, StringComparison.OrdinalIgnoreCase));
-        if (user is null || user.Password != request.Password)
-        {
-            throw new RpcException(new Status(
-                StatusCode.Unauthenticated,
-                "Invalid username or password"));
-        }
+        var user = await _auth.AuthenticateAsync(request.Username, request.Password);
 
         var item = await _repo.ReadAsync(request.QcsampleId)
             ?? throw new RpcException(new Status(StatusCode.NotFound,
                 $"QCSample {request.QcsampleId} not found"));
         item.ApprovedBy = user.EmailAddress;
-        var updated = await _repo.UpdateAsync(item.Id, item);
+        var updated = await _repo.UpdateAsync(item.Id, item, preserveOutputOnly: false);
         return new ApproveQCSampleResponse { ApprovedQcsample = updated };
     }
 }

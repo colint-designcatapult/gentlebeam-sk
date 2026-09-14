@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿﻿using Moq;
+using Prism.Events;
 using Prism.Services.Dialogs;
 using Xcc.Application.Models;
 using Xcc.Core.Enums;
@@ -9,29 +10,38 @@ using Xcc.Shared.ViewModels;
 
 namespace Xcc.Test.Xcc.Shared.Services
 {
+    [Apartment(ApartmentState.STA)]
     public class PopUpServiceTests
     {
         private Mock<IDialogService> _dialogServiceMock = null!;
         private Mock<ILogWriter> _logWriterMock = null!;
+        private Mock<IEventAggregator> _eventAggregatorMock = null!;
+        private LogPersistenceFailedEvent _logPersistenceFailedEvent = null!;
         private PopUpService _sut = null!;
 
         [SetUp]
         public void SetUp()
         {
-            if (System.Windows.Application.Current == null)
-                new System.Windows.Application { ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown };
-            
             _dialogServiceMock = new Mock<IDialogService>();
             _logWriterMock = new Mock<ILogWriter>();
+            _eventAggregatorMock = new Mock<IEventAggregator>();
+            // UIThread subscriptions require a context; run posted callbacks inline in these unit tests.
+            var synchronizationContext = new Mock<SynchronizationContext>();
+            synchronizationContext
+                .Setup(context => context.Post(It.IsAny<SendOrPostCallback>(), It.IsAny<object?>()))
+                .Callback<SendOrPostCallback, object?>((callback, state) => callback(state));
+            _logPersistenceFailedEvent = new LogPersistenceFailedEvent
+            {
+                SynchronizationContext = synchronizationContext.Object
+            };
+            _eventAggregatorMock
+                .Setup(aggregator => aggregator.GetEvent<LogPersistenceFailedEvent>())
+                .Returns(_logPersistenceFailedEvent);
 
-            _sut = new PopUpService(_dialogServiceMock.Object, _logWriterMock.Object);
-        }
-
-        [TearDown]
-        public void Teardown()
-        {
-            if (System.Windows.Application.Current != null) 
-                System.Windows.Application.Current.Shutdown();
+            _sut = new PopUpService(
+                _dialogServiceMock.Object,
+                _logWriterMock.Object,
+                _eventAggregatorMock.Object);
         }
         
         [Test]
@@ -42,6 +52,19 @@ namespace Xcc.Test.Xcc.Shared.Services
             _dialogServiceMock.Verify(d =>
                 d.ShowDialog("Test Title", 
                     It.IsAny<DialogParameters>(),
+                    It.IsAny<Action<IDialogResult>>()), Times.Once);
+        }
+
+        [Test]
+        public void LogPersistenceFailedEvent_ShowsErrorDialog()
+        {
+            _logPersistenceFailedEvent.Publish("test message");
+
+            _dialogServiceMock.Verify(d =>
+                d.ShowDialog("ReportView",
+                    It.Is<DialogParameters>(p =>
+                        p.GetValue<Report>("Report").Message == "test message" &&
+                        p.GetValue<Report>("Report").Type == ReportType.Error),
                     It.IsAny<Action<IDialogResult>>()), Times.Once);
         }
         

@@ -185,7 +185,6 @@ namespace Xcc.Shared.ViewModels
             LogReader = logReader;
             RemoveSearchPhraseCommand = new DelegateCommand(RemoveSearchPhrase, () => true);
             eventAggregator.GetEvent<LogRecordAddedEvent>().Subscribe(OnLogRecordAdded);
-
             LogRecordsViewSource.Filter += (s, e) =>
             {
                 if (e.Item is ILogRecord logRecord)
@@ -264,12 +263,10 @@ namespace Xcc.Shared.ViewModels
         {
             LogRecordsViewSource.Dispatcher.BeginInvoke(() =>
             {
-                //using (LogRecordsViewSource.DeferRefresh()) // no need to use it for just one Add call
-                //{
-                    Records?.Add(logRecord);
-                //}
+                Records?.Add(logRecord);
             });
         }
+
         #endregion
     }
 }

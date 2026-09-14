@@ -1,3 +1,4 @@
+using System.Globalization;
 using Com.Empyreanmed.Heracles.Logs.V1;
 using Grpc.Core;
 using Heracles.Indoor.SqliteGrpcServer.Infrastructure;
@@ -12,9 +13,20 @@ public sealed class LogServiceImpl : LogService.LogServiceBase
     public override async Task<ListLogsResponse> ListLogs(
         ListLogsRequest request, ServerCallContext context)
     {
-        var items = await _repo.ReadAllAsync();
+        var skip = Math.Max(0, request.Skip);
         var r = new ListLogsResponse();
+
+        if (request.Get <= 0)
+        {
+            r.Logs.AddRange(await _repo.ReadAllOrderedAsync());
+            return r;
+        }
+
+        var items = await _repo.ReadPageAsync(skip, request.Get);
+        var total = await _repo.CountAsync();
         r.Logs.AddRange(items);
+        if (skip + items.Count < total)
+            r.NextPageToken = (skip + items.Count).ToString(CultureInfo.InvariantCulture);
         return r;
     }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using Prism.Events;
 using Prism.Services.Dialogs;
 using Xcc.Core.Enums;
 using Xcc.Core.Logging;
@@ -7,10 +8,31 @@ using Xcc.Shared.ViewModels;
 
 namespace Xcc.Shared.Services
 {
-    public class PopUpService(IDialogService dialogService, ILogWriter logWriter): IPopUpService
+    public class PopUpService : IPopUpService
     {
-        public IDialogService DialogService { get; } = dialogService;
-        public ILogWriter LogWriter { get; } = logWriter;
+        public IDialogService DialogService { get; }
+        public ILogWriter LogWriter { get; }
+
+        public PopUpService(
+            IDialogService dialogService,
+            ILogWriter logWriter,
+            IEventAggregator eventAggregator)
+        {
+            DialogService = dialogService;
+            LogWriter = logWriter;
+            eventAggregator.GetEvent<LogPersistenceFailedEvent>().Subscribe(
+                ShowLogPersistenceFailure, ThreadOption.UIThread);
+        }
+
+        private void ShowLogPersistenceFailure(string message)
+        {
+            var report = new Xcc.Application.Models.Report(
+                ReportType.Error,
+                "Failed to save log",
+                message);
+            DialogParameters parameters = new() { { "Report", report } };
+            DialogService.ShowDialog("ReportView", parameters, result => { });
+        }
 
         public void LogAndShowError(string title, string message, Exception? exception = null)
         {

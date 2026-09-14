@@ -8,12 +8,6 @@ namespace Xcc.Test.Xcc.Shared.Views
         [OneTimeSetUp]
         public void SetUpResourceDictionaries()
         {
-            // Ensure an Application instance exists for WPF resource resolution
-            if (System.Windows.Application.Current == null)
-            {
-                new System.Windows.Application();
-            }
-
             // Load the required resource dictionaries
             var colorResourcesUri = new Uri("pack://application:,,,/Xcc.Application;component/UI/Resources/ColorResources.xaml");
             var defaultStylesUri = new Uri("pack://application:,,,/Xcc.Styles;component/Styles/DefaultStylesDictionary.xaml");

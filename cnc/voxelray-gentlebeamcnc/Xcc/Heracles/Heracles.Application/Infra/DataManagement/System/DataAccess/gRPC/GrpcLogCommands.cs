@@ -52,9 +52,7 @@ namespace Heracles.Application.Infra.DataManagement.System.DataAccess.gRPC
             if (pageResponse.records != null)
             {
                 foreach (var record in pageResponse.records)
-                {
                     page.records.Add(ProtoTypesConverter.FromProto(record));
-                }
             }
             return page;
         }

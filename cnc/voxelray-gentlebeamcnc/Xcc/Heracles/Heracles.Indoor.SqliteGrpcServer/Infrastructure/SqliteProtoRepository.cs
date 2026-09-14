@@ -1,7 +1,8 @@
 using System;
-using System.Collections.Generic;
+using Google.Api;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using Microsoft.Data.Sqlite;
 
 namespace Heracles.Indoor.SqliteGrpcServer.Infrastructure;
@@ -113,6 +114,7 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<T> CreateAsync(T message, long parentId = 0)
     {
+        var prepared = PrepareForCreate(message);
         await using var conn = await OpenAsync();
 
         using var insert = conn.CreateCommand();
@@ -129,12 +131,11 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
                 $"INSERT INTO {_tableName} (data) VALUES (@d); " +
                 "SELECT last_insert_rowid();";
         }
-        insert.Parameters.AddWithValue("@d", Formatter.Format(message));
+        insert.Parameters.AddWithValue("@d", Formatter.Format(prepared));
 
         var newId = (long)(await insert.ExecuteScalarAsync())!;
 
-        // Persist the canonical JSON that includes the correct id
-        var updated = SetId(message.Clone(), newId);
+        var updated = SetId(prepared, newId);
         var json = Formatter.Format(updated);
 
         using var upd = conn.CreateCommand();
@@ -155,6 +156,45 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
         var json = (string?)await cmd.ExecuteScalarAsync();
         return json is null ? null : Parser.Parse<T>(json);
+    }
+
+    public async Task<IList<T>> ReadPageAsync(int skip, int get)
+    {
+        skip = Math.Max(0, skip);
+        get = Math.Max(1, get);
+
+        await using var conn = await OpenAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"SELECT data FROM {_tableName} ORDER BY id DESC LIMIT @get OFFSET @skip";
+        cmd.Parameters.AddWithValue("@get", get);
+        cmd.Parameters.AddWithValue("@skip", skip);
+
+        var result = new List<T>();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            result.Add(Parser.Parse<T>(reader.GetString(0)));
+        return result;
+    }
+
+    public async Task<long> CountAsync()
+    {
+        await using var conn = await OpenAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"SELECT COUNT(*) FROM {_tableName}";
+        return (long)(await cmd.ExecuteScalarAsync())!;
+    }
+
+    public async Task<IList<T>> ReadAllOrderedAsync()
+    {
+        await using var conn = await OpenAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"SELECT data FROM {_tableName} ORDER BY id DESC";
+
+        var result = new List<T>();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            result.Add(Parser.Parse<T>(reader.GetString(0)));
+        return result;
     }
 
     public async Task<IList<T>> ReadAllAsync()
@@ -184,10 +224,14 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
         return result;
     }
 
-    public async Task<T> UpdateAsync(long id, T message)
+    public async Task<T> UpdateAsync(long id, T message, bool preserveOutputOnly = true)
     {
+        var existing = await ReadAsync(id);
+        var prepared = existing is null || !preserveOutputOnly
+            ? message.Clone()
+            : PreserveOutputOnlyFields(existing, message);
         await using var conn = await OpenAsync();
-        var updated = SetId(message, id);
+        var updated = SetId(prepared, id);
         var json = Formatter.Format(updated);
 
         using var cmd = conn.CreateCommand();
@@ -229,6 +273,36 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
         cmd.Parameters.AddWithValue("@d", Formatter.Format(message));
         var rowId = (long)(await cmd.ExecuteScalarAsync())!;
         return SetId(message, rowId);
+    }
+    private static T PrepareForCreate(T message)
+    {
+        var prepared = message.Clone();
+        foreach (var field in prepared.Descriptor.Fields.InDeclarationOrder().Where(IsOutputOnly))
+        {
+            if (field.Name is "create_date" or "creation_date")
+                field.Accessor.SetValue(prepared, Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.UtcNow));
+            else
+                field.Accessor.Clear(prepared);
+        }
+        return prepared;
+    }
+
+    private static T PreserveOutputOnlyFields(T existing, T incoming)
+    {
+        var prepared = incoming.Clone();
+        foreach (var field in existing.Descriptor.Fields.InDeclarationOrder().Where(IsOutputOnly))
+        {
+            field.Accessor.Clear(prepared);
+            if (field.Accessor.HasValue(existing))
+                field.Accessor.SetValue(prepared, field.Accessor.GetValue(existing));
+        }
+        return prepared;
+    }
+    private static bool IsOutputOnly(FieldDescriptor field)
+    {
+        var options = field.GetOptions();
+        return options is not null &&
+            options.GetExtension(FieldBehaviorExtensions.FieldBehavior).Contains(FieldBehavior.OutputOnly);
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────

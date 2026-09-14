@@ -8,6 +8,7 @@ using ApproveQCSampleRequest = SqliteServer::Com.Empyreanmed.Heracles.Qcsamples.
 using User = SqliteServer::Com.Empyreanmed.Heracles.Users.V1.User;
 using ListQCSamplesRequest = SqliteServer::Com.Empyreanmed.Heracles.Qcsamples.V1.ListQCSamplesRequest;
 using QCSampleServiceImpl = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Services.QCSampleServiceImpl;
+using AuthService = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Services.AuthServiceImpl;
 using SqliteProtoRepository = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqliteProtoRepository<SqliteServer::Com.Empyreanmed.Heracles.Qcsamples.V1.QCSample>;
 using UserRepository = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqliteProtoRepository<SqliteServer::Com.Empyreanmed.Heracles.Users.V1.User>;
 
@@ -40,7 +41,7 @@ public sealed class SqliteQcPersistenceTests
         var created = await repository.CreateAsync(CreateSample(42, timestamp), 42);
         await repository.CreateAsync(CreateSample(43, timestamp), 43);
 
-        var service = new QCSampleServiceImpl(repository, CreateUserRepository());
+        var service = new QCSampleServiceImpl(repository, new AuthService(CreateUserRepository()));
         var response = await service.ListQCSamples(
             new ListQCSamplesRequest { CollimatorConfigurationId = 42 },
             null!);
@@ -86,7 +87,7 @@ public sealed class SqliteQcPersistenceTests
             Password = "correct-password",
             EmailAddress = "physicist@example.test"
         });
-        var service = new QCSampleServiceImpl(repository, users);
+        var service = new QCSampleServiceImpl(repository, new AuthService(users));
 
         var response = await service.ApproveQCSample(
             new ApproveQCSampleRequest
@@ -122,7 +123,7 @@ public sealed class SqliteQcPersistenceTests
             Password = "correct-password",
             EmailAddress = "physicist@example.test"
         });
-        var service = new QCSampleServiceImpl(repository, users);
+        var service = new QCSampleServiceImpl(repository, new AuthService(users));
 
         var exception = Assert.ThrowsAsync<RpcException>(() => service.ApproveQCSample(
             new ApproveQCSampleRequest
@@ -152,7 +153,7 @@ public sealed class SqliteQcPersistenceTests
             Password = "correct-password",
             EmailAddress = "physicist@example.test"
         });
-        var service = new QCSampleServiceImpl(repository, users);
+        var service = new QCSampleServiceImpl(repository, new AuthService(users));
 
         var exception = Assert.ThrowsAsync<RpcException>(() => service.ApproveQCSample(
             new ApproveQCSampleRequest
