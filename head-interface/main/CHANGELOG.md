@@ -1,5 +1,21 @@
 # Changelog
 
+## [5.0.0](https://github.com/DesignCatapult/gentlebeam-sk/compare/head-interface-4.0.0...head-interface-5.0.0) (2026-09-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **bootloader:** Existing raw firmware images and the legacy CRC-based bootloader flow are no longer compatible. Applications must be linked for the new MCUboot slot addresses and packaged as MCUboot images before update or boot.
+
+### Features
+
+* **bootloader:** implement secure bootloader [GBSK-64] ([#81](https://github.com/DesignCatapult/gentlebeam-sk/issues/81)) ([971684e](https://github.com/DesignCatapult/gentlebeam-sk/commit/971684ec8d57041843442b07b47e1f28a69b9ade))
+
+
+### Bug Fixes
+
+* **head-interface:** sync IOC with continuous DMA ADC configuration [GBSK-83] ([#82](https://github.com/DesignCatapult/gentlebeam-sk/issues/82)) ([54c840d](https://github.com/DesignCatapult/gentlebeam-sk/commit/54c840dfecfdb03500430a9e605d55b3e396a1dd))
+
 ## [4.0.0](https://github.com/DesignCatapult/gentlebeam-sk/compare/head-interface-3.0.0...head-interface-4.0.0) (2026-09-03)
 
 

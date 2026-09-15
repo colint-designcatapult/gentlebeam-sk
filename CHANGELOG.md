@@ -1,5 +1,32 @@
 # Changelog
 
+## [5.0.0](https://github.com/DesignCatapult/gentlebeam-sk/compare/4.0.0...5.0.0) (2026-09-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sqlite:** `SqliteGrpcServerHost` and `SqliteProtoRepository` constructors now require a `SqlCipherConnectionFactory` instead of a database path, so existing integrations must update their construction and encrypted database initialization.
+* **sqlite:** `PresetConfigurationServiceImpl` and `QCSampleServiceImpl` constructors now require an `AuthServiceImpl` dependency, so direct consumers constructing these public service classes must provide the authentication service.
+* **main-control:** The public fault enum assigns the new MagnetometerFault value 24 and moves OtherFault to value 25, changing the numeric fault-category mapping for consumers that persisted or exchanged the previous OtherFault value.
+* **bootloader:** Existing raw firmware images and the legacy CRC-based bootloader flow are no longer compatible. Applications must be linked for the new MCUboot slot addresses and packaged as MCUboot images before update or boot.
+
+### Features
+
+* **bootloader:** implement secure bootloader [GBSK-64] ([#81](https://github.com/DesignCatapult/gentlebeam-sk/issues/81)) ([971684e](https://github.com/DesignCatapult/gentlebeam-sk/commit/971684ec8d57041843442b07b47e1f28a69b9ade))
+* **cnc:** migrate treatment camera monitoring to WebView and go2rtc [GBSK-79] ([#86](https://github.com/DesignCatapult/gentlebeam-sk/issues/86)) ([e87c932](https://github.com/DesignCatapult/gentlebeam-sk/commit/e87c932b1ffb8e4d01a5ec199ea3e0e3c23aec46))
+* **main-control:** add emission magnetometer fault monitoring [GBSK-62] ([#87](https://github.com/DesignCatapult/gentlebeam-sk/issues/87)) ([df685bc](https://github.com/DesignCatapult/gentlebeam-sk/commit/df685bc0b432537cf1fac69aa4b538ab6a7a8542))
+* **sqlite:** add encrypted database management and security automation [GBSK-91] ([#92](https://github.com/DesignCatapult/gentlebeam-sk/issues/92)) ([29cb845](https://github.com/DesignCatapult/gentlebeam-sk/commit/29cb84500fe760f3050056b7806217848c68739e))
+
+
+### Bug Fixes
+
+* **ci:** update HVPS MCUboot firmware packaging [GBSK-88] ([#85](https://github.com/DesignCatapult/gentlebeam-sk/issues/85)) ([af6a1f3](https://github.com/DesignCatapult/gentlebeam-sk/commit/af6a1f3674c33871207d5b7041418eb6229b67a7))
+* **cnc:** initialize database and first-run administrator setup [GBSK-90] ([#91](https://github.com/DesignCatapult/gentlebeam-sk/issues/91)) ([28944c0](https://github.com/DesignCatapult/gentlebeam-sk/commit/28944c0333287c3a84b1bec0e219a5675d64e9a9))
+* **head-interface:** sync IOC with continuous DMA ADC configuration [GBSK-83] ([#82](https://github.com/DesignCatapult/gentlebeam-sk/issues/82)) ([54c840d](https://github.com/DesignCatapult/gentlebeam-sk/commit/54c840dfecfdb03500430a9e605d55b3e396a1dd))
+* **hvps:** prevent hanging communication with HVPS [GBSK-84] ([#84](https://github.com/DesignCatapult/gentlebeam-sk/issues/84)) ([1428efe](https://github.com/DesignCatapult/gentlebeam-sk/commit/1428efe1c293db1cf02c37e7bce25d8dbf07392c))
+* **main-control:** convert ion pump feedback from voltage to Torr [GBSK-81] ([#90](https://github.com/DesignCatapult/gentlebeam-sk/issues/90)) ([3f1dd9d](https://github.com/DesignCatapult/gentlebeam-sk/commit/3f1dd9df2fb231732a0d4789f433a6ae07675cf5))
+* **sqlite:** improve database service consistency [GBSK-85] ([#89](https://github.com/DesignCatapult/gentlebeam-sk/issues/89)) ([2d67bbe](https://github.com/DesignCatapult/gentlebeam-sk/commit/2d67bbebaf4f75337fff73f0f6e7c0bb51f08903))
+
 ## [4.0.0](https://github.com/DesignCatapult/gentlebeam-sk/compare/3.0.0...4.0.0) (2026-09-03)
 
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.0.0](https://github.com/DesignCatapult/gentlebeam-sk/compare/backup-timers-4.0.0...backup-timers-5.0.0) (2026-09-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sqlite:** `SqliteGrpcServerHost` and `SqliteProtoRepository` constructors now require a `SqlCipherConnectionFactory` instead of a database path, so existing integrations must update their construction and encrypted database initialization.
+
+### Features
+
+* **sqlite:** add encrypted database management and security automation [GBSK-91] ([#92](https://github.com/DesignCatapult/gentlebeam-sk/issues/92)) ([29cb845](https://github.com/DesignCatapult/gentlebeam-sk/commit/29cb84500fe760f3050056b7806217848c68739e))
+
 ## [4.0.0](https://github.com/DesignCatapult/gentlebeam-sk/compare/backup-timers-3.0.0...backup-timers-4.0.0) (2026-09-03)
 
 

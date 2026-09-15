@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.0.0](https://github.com/DesignCatapult/gentlebeam-sk/compare/main-control-bootloader-4.0.0...main-control-bootloader-5.0.0) (2026-09-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sqlite:** `SqliteGrpcServerHost` and `SqliteProtoRepository` constructors now require a `SqlCipherConnectionFactory` instead of a database path, so existing integrations must update their construction and encrypted database initialization.
+* **bootloader:** Existing raw firmware images and the legacy CRC-based bootloader flow are no longer compatible. Applications must be linked for the new MCUboot slot addresses and packaged as MCUboot images before update or boot.
+
+### Features
+
+* **bootloader:** implement secure bootloader [GBSK-64] ([#81](https://github.com/DesignCatapult/gentlebeam-sk/issues/81)) ([971684e](https://github.com/DesignCatapult/gentlebeam-sk/commit/971684ec8d57041843442b07b47e1f28a69b9ade))
+* **sqlite:** add encrypted database management and security automation [GBSK-91] ([#92](https://github.com/DesignCatapult/gentlebeam-sk/issues/92)) ([29cb845](https://github.com/DesignCatapult/gentlebeam-sk/commit/29cb84500fe760f3050056b7806217848c68739e))
+
 ## [4.0.0](https://github.com/DesignCatapult/gentlebeam-sk/compare/main-control-bootloader-3.0.0...main-control-bootloader-4.0.0) (2026-09-03)
 
 
