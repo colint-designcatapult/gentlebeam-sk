@@ -34,7 +34,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           EVENT_REF: ${{ github.ref }}
         run: |
-          if [[ "$EVENT_NAME" != "push" || "$EVENT_REF" == "refs/heads/main" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" || "$EVENT_REF" == "refs/heads/main" ]]; then
             echo "all=true" >> "$GITHUB_OUTPUT"
           else
             echo "all=false" >> "$GITHUB_OUTPUT"

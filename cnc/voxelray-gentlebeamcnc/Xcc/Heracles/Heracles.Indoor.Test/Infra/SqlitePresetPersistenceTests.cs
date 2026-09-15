@@ -2,7 +2,6 @@ extern alias SqliteServer;
 
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using SqlCipherDatabase = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqlCipherDatabase;
 using PresetConfiguration = SqliteServer::Com.Empyreanmed.Heracles.PresetConfigurations.V1.PresetConfiguration;
 using ApprovePresetConfigurationRequest = SqliteServer::Com.Empyreanmed.Heracles.PresetConfigurations.V1.ApprovePresetConfigurationRequest;
 using AuthService = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Services.AuthServiceImpl;
@@ -19,14 +18,13 @@ namespace Heracles.Indoor.Test.Infra;
 public sealed class SqlitePresetPersistenceTests
 {
     private string _directory = null!;
-    private SqlCipherDatabase _database = null!;
+    private TestSqliteDatabase _database = null!;
 
     [SetUp]
     public void SetUp()
     {
         _directory = Path.Combine(Path.GetTempPath(), $"preset-history-{Guid.NewGuid():N}");
-        _database = new SqlCipherDatabase(_directory);
-        _database.Initialize(_ => true, _ => null);
+        _database = new TestSqliteDatabase(_directory);
     }
 
     [TearDown]

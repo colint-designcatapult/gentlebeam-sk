@@ -2,7 +2,6 @@ extern alias SqliteServer;
 
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using SqlCipherDatabase = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqlCipherDatabase;
 using QCSample = SqliteServer::Com.Empyreanmed.Heracles.Qcsamples.V1.QCSample;
 using ApproveQCSampleRequest = SqliteServer::Com.Empyreanmed.Heracles.Qcsamples.V1.ApproveQCSampleRequest;
 using User = SqliteServer::Com.Empyreanmed.Heracles.Users.V1.User;
@@ -20,14 +19,13 @@ namespace Heracles.Indoor.Test.Infra;
 public sealed class SqliteQcPersistenceTests
 {
     private string _directory = null!;
-    private SqlCipherDatabase _database = null!;
+    private TestSqliteDatabase _database = null!;
 
     [SetUp]
     public void SetUp()
     {
         _directory = Path.Combine(Path.GetTempPath(), $"qc-history-{Guid.NewGuid():N}");
-        _database = new SqlCipherDatabase(_directory);
-        _database.Initialize(_ => true, _ => null);
+        _database = new TestSqliteDatabase(_directory);
     }
 
     [TearDown]

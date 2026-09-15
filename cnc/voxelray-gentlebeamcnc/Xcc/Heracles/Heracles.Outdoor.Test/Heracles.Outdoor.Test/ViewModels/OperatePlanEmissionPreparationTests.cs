@@ -10,6 +10,7 @@ using Prism.Regions;
 using Prism.Services.Dialogs;
 using Xcc.Application.AppLayer.Warmup;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
+using Xcc.Application.Models;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Logging;
 using Xcc.Core.Models;
@@ -48,8 +49,10 @@ internal sealed class SingleEmissionWorkflowHarness : Heracles.External.ViewMode
 
     private static IEventAggregator CreateEventAggregator()
     {
-        SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-        return new EventAggregator();
+        var events = new EventAggregator();
+        events.GetEvent<SystemTelemetryChangedEvent>().SynchronizationContext =
+            SynchronizationContext.Current ?? new SynchronizationContext();
+        return events;
     }
 
     public Task<bool> PrepareNext(int startIndex) =>

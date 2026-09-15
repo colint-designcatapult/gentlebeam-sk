@@ -32,8 +32,6 @@ using OutdoorPlanModel = Heracles.External.Models.IPlanModel;
 
 namespace Heracles.Outdoor.Test.ViewModels;
 
-[Apartment(ApartmentState.STA)]
-[NonParallelizable]
 internal sealed class TreatmentDeliveryAuditTests
 {
     [Test]
@@ -179,15 +177,16 @@ internal sealed class TreatmentDeliveryAuditTests
     public async Task ActorAndPatientChangedDuringPersistence_RetainsInitiatingIdentity()
     {
         using var context = new DeliveryContext();
-        context.TreatmentModel.Setup(value => value.SaveTreatmentData()).Returns(() =>
+        context.TreatmentModel.Setup(value => value.SaveTreatmentData()).Returns(async () =>
         {
+            await Task.Yield();
             context.User.SetupGet(value => value.Id).Returns(99);
             context.User.SetupGet(value => value.Username).Returns("replacement");
             context.UserStore.SetupGet(value => value.AuthorizedUser).Returns((IUser?)null);
             context.Diagnosis.PatientId = 222;
             context.Plan.Id = 333;
             context.Field.Id = 555;
-            return Task.FromResult<ITreatment>(context.Treatment);
+            return context.Treatment;
         });
         context.Deliver = () =>
         {
@@ -314,13 +313,9 @@ internal sealed class TreatmentDeliveryAuditTests
     private sealed class DeliveryContext : IDisposable
     {
         private readonly CancellationTokenSource _lifetime = new();
-        private readonly SynchronizationContext? _previousContext = SynchronizationContext.Current;
 
         public DeliveryContext()
         {
-            var application = System.Windows.Application.Current ?? new System.Windows.Application();
-            SynchronizationContext.SetSynchronizationContext(
-                new System.Windows.Threading.DispatcherSynchronizationContext(application.Dispatcher));
             Events = new EventAggregator();
             var dataStore = new Mock<IGCBDataStore>();
             dataStore.SetupGet(value => value.SystemTelemetry).Returns(Mock.Of<ISystemTelemetry>());
@@ -427,7 +422,6 @@ internal sealed class TreatmentDeliveryAuditTests
         {
             _lifetime.Cancel();
             _lifetime.Dispose();
-            SynchronizationContext.SetSynchronizationContext(_previousContext);
         }
     }
 

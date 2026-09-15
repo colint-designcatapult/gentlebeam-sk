@@ -68,7 +68,7 @@ public sealed class DataManagementTests
     [TestCase(UserRole.BuiltInNames.Administrator, false, true)]
     public async Task Management_RejectsNonAdministratorOrInactiveSession(string role, bool locked, bool expired)
     {
-        await using var fixture = new ManagementFixture();
+        await using var fixture = new ManagementFixture(authorizationOnly: true);
         fixture.Users.AuthorizedUser!.Role = new UserRole(role);
         fixture.Session = new BearerTokenUserSession("operator", locked ? "" : "token",
             expired ? DateTime.Now.AddMinutes(-1) : DateTime.Now.AddHours(1), null);
@@ -160,6 +160,7 @@ public sealed class DataManagementTests
 
     private sealed class ManagementFixture : IAsyncDisposable
     {
+        private readonly TestSqliteDatabase? _plaintextDatabase;
         public string DirectoryPath { get; } = Path.Combine(Path.GetTempPath(), $"heracles-management-{Guid.NewGuid():N}");
         public SqlCipherDatabase Database { get; }
         public SqliteGrpcServerHost Host { get; }
@@ -173,11 +174,21 @@ public sealed class DataManagementTests
         public bool ExitRequested { get; private set; }
         public bool ExitIsError { get; private set; }
 
-        public ManagementFixture()
+        public ManagementFixture(bool authorizationOnly = false)
         {
             Database = new SqlCipherDatabase(DirectoryPath);
-            Database.Initialize(_ => true, _ => null);
-            Host = new SqliteGrpcServerHost(Database.Connections, port: 0);
+            if (authorizationOnly)
+            {
+                // Authorization must reject these calls before touching the uninitialized
+                // encryption lifecycle. The host only needs ordinary SQLite repositories.
+                _plaintextDatabase = new TestSqliteDatabase(DirectoryPath);
+                Host = new SqliteGrpcServerHost(_plaintextDatabase.Connections, port: 0);
+            }
+            else
+            {
+                Database.Initialize(_ => true, _ => null);
+                Host = new SqliteGrpcServerHost(Database.Connections, port: 0);
+            }
             var sessions = new Mock<IBearerTokenUserSessionManager>();
             sessions.SetupGet(manager => manager.UserSession).Returns(() => Session);
             Service = new DataManagementService(Users, sessions.Object, Database, Host,
@@ -193,6 +204,7 @@ public sealed class DataManagementTests
             Service.Dispose();
             await Host.DisposeAsync();
             Database.Dispose();
+            _plaintextDatabase?.Dispose();
             Directory.Delete(DirectoryPath, recursive: true);
         }
     }

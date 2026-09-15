@@ -22,8 +22,6 @@ using Xcc.Core.Domain.DataManagement.Common.Users;
 
 namespace Heracles.Outdoor.Test.ViewModels;
 
-[Apartment(ApartmentState.STA)]
-[NonParallelizable]
 internal class TreatmentSingleEmissionTests
 {
     [TestCaseSource(nameof(InvalidFieldCollections))]
@@ -113,8 +111,6 @@ internal class TreatmentSingleEmissionTests
     public async Task PrepareTreatment_UsesRepositoryHydratedPlusCInsteadOfIncomingMetadata(
         bool hasPreviousTreatment)
     {
-        _ = System.Windows.Application.Current ?? new System.Windows.Application();
-
         const long planId = 4;
         const long prescriptionId = 5;
         const long simulationId = 6;

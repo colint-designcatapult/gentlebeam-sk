@@ -21,6 +21,7 @@ using Xcc.Application.AppLayer.Model;
 using Xcc.Application.AppLayer.Warmup;
 using Xcc.Application.Common;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
+using Xcc.Application.Models;
 using Xcc.Core.Domain.DataManagement.Common.Users;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Domain.QualityCheck;
@@ -101,7 +102,9 @@ internal sealed class BeamQaTestContext
 
     public BeamQaTestContext()
     {
-        SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+        var events = new EventAggregator();
+        events.GetEvent<SystemTelemetryChangedEvent>().SynchronizationContext =
+            SynchronizationContext.Current ?? new SynchronizationContext();
 
         Settings.SetupGet(value => value.QcFieldDuration).Returns(1);
         Telemetry.SetupGet(value => value.ControlBoardState).Returns(() => telemetryState);
@@ -179,7 +182,7 @@ internal sealed class BeamQaTestContext
             UserStore.Object,
             Mock.Of<ILogWriter>());
         ViewModel = new BeamQaViewModelHarness(
-            new EventAggregator(),
+            events,
             Settings.Object,
             GcbDataStore.Object,
             UiStateMachine.Object,

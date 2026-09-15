@@ -10,6 +10,7 @@ jobs:
   test:
     name: CNC tests
     runs-on: windows-2025
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v7
@@ -24,10 +25,23 @@ jobs:
         working-directory: cnc/voxelray-gentlebeamcnc
 
       - name: Run CNC tests
-        run: dotnet test Xcc.sln --configuration Release --no-restore --logger "console;verbosity=normal"
+        run: >-
+          dotnet test Xcc.sln --configuration Release --no-restore
+          --logger "console;verbosity=normal" --logger trx
+          --results-directory "${{ runner.temp }}/cnc-test-results"
+          --blame-hang-timeout 2m --blame-hang-dump-type mini
         working-directory: cnc/voxelray-gentlebeamcnc
         env:
           CI_ENVIRONMENT: "true"
+
+      - name: Upload CNC test diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: cnc-test-results
+          path: ${{ runner.temp }}/cnc-test-results/
+          if-no-files-found: ignore
+          retention-days: 7
 
   prepare-publish:
     name: Select CNC products

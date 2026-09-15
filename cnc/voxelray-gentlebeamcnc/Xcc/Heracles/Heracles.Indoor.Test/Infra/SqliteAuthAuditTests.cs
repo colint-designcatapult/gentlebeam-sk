@@ -14,7 +14,6 @@ using AuditSessionRegistry = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infr
 using AuthService = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Services.AuthServiceImpl;
 using LoginRequest = SqliteServer::Com.Empyreanmed.Heracles.Auth.V1.LoginRequest;
 using LogRepository = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqliteProtoRepository<SqliteServer::Com.Empyreanmed.Heracles.Logs.V1.Log>;
-using SqlCipherDatabase = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqlCipherDatabase;
 using User = SqliteServer::Com.Empyreanmed.Heracles.Users.V1.User;
 using UserRepository = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqliteProtoRepository<SqliteServer::Com.Empyreanmed.Heracles.Users.V1.User>;
 using Log = SqliteServer::Com.Empyreanmed.Heracles.Logs.V1.Log;
@@ -28,7 +27,7 @@ public sealed class SqliteAuthAuditTests
 {
     private const string Password = "credential-must-not-appear-in-audit";
     private string _directory = null!;
-    private SqlCipherDatabase _database = null!;
+    private TestSqliteDatabase _database = null!;
     private UserRepository _users = null!;
     private LogRepository _logs = null!;
     private AuditSessionRegistry _sessions = null!;
@@ -38,8 +37,7 @@ public sealed class SqliteAuthAuditTests
     public void SetUp()
     {
         _directory = Path.Combine(Path.GetTempPath(), $"heracles-auth-audit-{Guid.NewGuid():N}");
-        _database = new SqlCipherDatabase(_directory);
-        _database.Initialize(_ => true, _ => null);
+        _database = new TestSqliteDatabase(_directory);
         _users = new UserRepository(_database.Connections, "users");
         _logs = new LogRepository(_database.Connections, "logs");
         _sessions = new AuditSessionRegistry();
@@ -293,8 +291,7 @@ public sealed class SqliteAuthAuditTests
         var user = await CreateUserAsync();
         await FailLoginsAsync(user.Username, 10);
         _database.Dispose();
-        _database = new SqlCipherDatabase(_directory);
-        _database.Initialize(_ => true, _ => null);
+        _database = new TestSqliteDatabase(_directory);
         _users = new UserRepository(_database.Connections, "users");
         _logs = new LogRepository(_database.Connections, "logs");
         _sessions = new AuditSessionRegistry();
@@ -334,8 +331,7 @@ public sealed class SqliteAuthAuditTests
         var committedLogs = await _logs.ReadAllAsync();
 
         _database.Dispose();
-        _database = new SqlCipherDatabase(_directory);
-        _database.Initialize(_ => true, _ => null);
+        _database = new TestSqliteDatabase(_directory);
         _users = new UserRepository(_database.Connections, "users");
         _logs = new LogRepository(_database.Connections, "logs");
         _sessions = new AuditSessionRegistry();

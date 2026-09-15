@@ -22,6 +22,22 @@ public sealed class SqlCipherConnectionFactory
         }.ToString();
     }
 
+    // Friend-assembly tests can exercise real SQLite transactions without provisioning keys.
+    // The public constructor remains encryption-required for every production caller.
+    internal static SqlCipherConnectionFactory CreatePlaintextForTests(string databasePath) =>
+        new(new SqliteConnectionStringBuilder
+        {
+            DataSource = Path.GetFullPath(databasePath),
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            Pooling = true
+        });
+
+    private SqlCipherConnectionFactory(SqliteConnectionStringBuilder options)
+    {
+        EnsureProvider();
+        _connectionString = options.ToString();
+    }
+
     public SqliteConnection Open()
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _closed) != 0, this);

@@ -1,7 +1,6 @@
 extern alias SqliteServer;
 
 using Google.Protobuf.WellKnownTypes;
-using SqlCipherDatabase = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqlCipherDatabase;
 using Log = SqliteServer::Com.Empyreanmed.Heracles.Logs.V1.Log;
 using ListLogsRequest = SqliteServer::Com.Empyreanmed.Heracles.Logs.V1.ListLogsRequest;
 using LogService = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Services.LogServiceImpl;
@@ -13,14 +12,13 @@ namespace Heracles.Indoor.Test.Infra;
 public sealed class SqliteLogPersistenceTests
 {
     private string _directory = null!;
-    private SqlCipherDatabase _database = null!;
+    private TestSqliteDatabase _database = null!;
 
     [SetUp]
     public void SetUp()
     {
         _directory = Path.Combine(Path.GetTempPath(), $"heracles-logs-{Guid.NewGuid():N}");
-        _database = new SqlCipherDatabase(_directory);
-        _database.Initialize(_ => true, _ => null);
+        _database = new TestSqliteDatabase(_directory);
     }
 
     [TearDown]

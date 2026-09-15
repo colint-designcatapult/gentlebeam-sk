@@ -19,7 +19,7 @@ namespace Heracles.Indoor.Test.Infra;
 public sealed class SqliteServiceAuditTests
 {
     private string _directory = null!;
-    private Infra::SqlCipherDatabase _database = null!;
+    private TestSqliteDatabase _database = null!;
     private Infra::SqliteProtoRepository<ServerProto.Logs.V1.Log> _logs = null!;
     private SqliteGrpcServerHost _host = null!;
     private GrpcChannel _channel = null!;
@@ -31,8 +31,7 @@ public sealed class SqliteServiceAuditTests
     public async Task SetUp()
     {
         _directory = Path.Combine(Path.GetTempPath(), $"heracles-service-audit-{Guid.NewGuid():N}");
-        _database = new Infra::SqlCipherDatabase(_directory);
-        _database.Initialize(_ => true, _ => null);
+        _database = new TestSqliteDatabase(_directory);
         _logs = new(_database.Connections, "logs");
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
