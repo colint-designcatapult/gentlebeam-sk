@@ -31,7 +31,7 @@
 #define DEFAULT_WTR_F_LO_TH		3
 #define DEFAULT_WTR_F_LO_ERR	1
 
-#define DEFAULT_ION_P_HI_TH		6
+#define DEFAULT_ION_P_HI_TH		5e-6f   /* unit: Torr */
 
 #define DEFAULT_DEFL_I_TOL		50
 
@@ -82,7 +82,7 @@
 #define DEFAULT_WTR_P_LO_TH		3
 #define DEFAULT_WTR_P_LO_ERR	2
 
-#define DEFAULT_ION_P_HI_TH		6
+#define DEFAULT_ION_P_HI_TH		5e-6f   /* unit: Torr */
 
 #define DEFAULT_WTR_TEMP_ERR	35
 #define DEFAULT_HS_TEMP_ERR		50

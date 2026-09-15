@@ -53,6 +53,7 @@ internal sealed class UcsiTelemetrySessionTests
         TelemetryParameterDescriptor qcAccum1 = catalog.GetRequired("system.QcChannel1Accumulation");
         TelemetryParameterDescriptor qcAdc1 = catalog.GetRequired("system.QcAdc1Connected");
         TelemetryParameterDescriptor qcAdc2 = catalog.GetRequired("system.QcAdc2Connected");
+        TelemetryParameterDescriptor ionPumpFeedback = catalog.GetRequired("system.IonPumpFeedback");
         Assert.Multiple(() =>
         {
             Assert.That(qc0.DisplayName, Is.EqualTo("QC Channel 0 Reading"));
@@ -71,11 +72,30 @@ internal sealed class UcsiTelemetrySessionTests
             Assert.That(qc1.Unit, Is.EqualTo("counts"));
             Assert.That(qcAccum0.Unit, Is.EqualTo("counts"));
             Assert.That(qcAccum1.Unit, Is.EqualTo("counts"));
+            Assert.That(ionPumpFeedback.Unit, Is.EqualTo("Torr"));
         });
 
         Assert.That(catalog.All, Has.Some.Matches<TelemetryParameterDescriptor>(parameter => parameter.IsMock));
         Assert.That(catalog.All.Select(parameter => parameter.Id), Is.Unique);
         Assert.That(catalog.All.Select(parameter => parameter.ParquetColumnName), Is.Unique);
+    }
+
+    [Test]
+    public void Catalog_FormatsIonPumpFeedbackInScientificNotation()
+    {
+        var catalog = new TelemetryParameterCatalog();
+        var telemetry = new Mock<ISystemTelemetry>();
+        telemetry.SetupGet(value => value.IonPumpFeedback).Returns(1e-11f);
+        var sample = new UcsiTelemetrySample(
+            0,
+            DateTimeOffset.UtcNow,
+            0,
+            telemetry.Object,
+            Array.Empty<FaultEntry>());
+
+        string formatted = catalog.GetRequired("system.IonPumpFeedback").Format(sample);
+
+        Assert.That(formatted, Is.EqualTo("1e-11 Torr"));
     }
 
     [Test]

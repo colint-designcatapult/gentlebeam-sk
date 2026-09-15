@@ -543,6 +543,7 @@ public sealed class TelemetryParameterCatalog
             TelemetryValueKind.Boolean => (bool)boxed ? "True" : "False",
             TelemetryValueKind.Enum => boxed is Enum enumValue ? GetEnumDisplayName(enumValue) : boxed.ToString()!,
             TelemetryValueKind.Identifier => FormatIdentifier(boxed),
+            TelemetryValueKind.Numeric when boxed is float single && unit == "Torr" => single.ToString("0.###e+0", CultureInfo.InvariantCulture),
             TelemetryValueKind.Numeric when boxed is float single => single.ToString("0.###", CultureInfo.InvariantCulture),
             TelemetryValueKind.Numeric when boxed is double number => number.ToString("0.###", CultureInfo.InvariantCulture),
             TelemetryValueKind.Numeric when boxed is decimal number => number.ToString("0.###", CultureInfo.InvariantCulture),
@@ -575,6 +576,7 @@ public sealed class TelemetryParameterCatalog
     private static string UnitFor(string propertyName)
     {
         if (propertyName.Contains("QcChannel", StringComparison.OrdinalIgnoreCase)) return "counts";
+        if (propertyName == nameof(ISystemTelemetry.IonPumpFeedback)) return "Torr";
         if (propertyName.Contains("Kv", StringComparison.OrdinalIgnoreCase)) return "kV";
         if (propertyName.Contains("Emission", StringComparison.OrdinalIgnoreCase)) return "mA";
         if (propertyName.Contains("HeaterCurrent", StringComparison.OrdinalIgnoreCase)) return "mA";

@@ -229,10 +229,14 @@ void report_ext_adc_y_coil_cur(float voltage)
 
 void report_ext_adc_ion_pump(float voltage)
 {
-	float offset_factor = 0;
-	float scaling_factor = 2;
-	
-	system_status[SS_IONPUMP_PRESSURE].f = (voltage * scaling_factor) - offset_factor;
+	const float offset_factor = 0.0f;
+	const float scaling_factor = 2.0f;
+	const float gauge_voltage = (voltage * scaling_factor) - offset_factor;
+
+	// Gauge range: 0 V = 1e-12 Torr and 10 V = 1e-2 Torr.
+	// P = 10^[log10(Pmin) + ((V - Vmin) / (Vmax - Vmin)) * log10(Pmax / Pmin)]
+	// where V is gauge_voltage in volts and P is pressure in Torr.
+	system_status[SS_IONPUMP_PRESSURE].f = powf(10.0f, -12.0f + gauge_voltage);
 }
 
 void report_ext_adc_ion_rep_cur(float voltage)
