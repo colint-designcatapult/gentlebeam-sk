@@ -2,7 +2,7 @@ extern alias SqliteServer;
 
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Microsoft.Data.Sqlite;
+using SqlCipherDatabase = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqlCipherDatabase;
 using PresetConfiguration = SqliteServer::Com.Empyreanmed.Heracles.PresetConfigurations.V1.PresetConfiguration;
 using ApprovePresetConfigurationRequest = SqliteServer::Com.Empyreanmed.Heracles.PresetConfigurations.V1.ApprovePresetConfigurationRequest;
 using AuthService = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Services.AuthServiceImpl;
@@ -10,31 +10,36 @@ using User = SqliteServer::Com.Empyreanmed.Heracles.Users.V1.User;
 using PresetService = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Services.PresetConfigurationServiceImpl;
 using PresetRepository = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqliteProtoRepository<SqliteServer::Com.Empyreanmed.Heracles.PresetConfigurations.V1.PresetConfiguration>;
 using UserRepository = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqliteProtoRepository<SqliteServer::Com.Empyreanmed.Heracles.Users.V1.User>;
+using AuditSessionRegistry = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.AuditSessionRegistry;
+using LogRepository = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqliteProtoRepository<SqliteServer::Com.Empyreanmed.Heracles.Logs.V1.Log>;
 
 namespace Heracles.Indoor.Test.Infra;
 
 [TestFixture]
 public sealed class SqlitePresetPersistenceTests
 {
-    private string _dbPath = null!;
+    private string _directory = null!;
+    private SqlCipherDatabase _database = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), $"preset-history-{Guid.NewGuid():N}.sqlite");
+        _directory = Path.Combine(Path.GetTempPath(), $"preset-history-{Guid.NewGuid():N}");
+        _database = new SqlCipherDatabase(_directory);
+        _database.Initialize(_ => true, _ => null);
     }
 
     [TearDown]
     public void TearDown()
     {
-        SqliteConnection.ClearAllPools();
-        File.Delete(_dbPath);
+        _database.Dispose();
+        Directory.Delete(_directory, recursive: true);
     }
     [Test]
     public async Task ApprovePresetConfiguration_ValidCredentials_PersistsApproverEmail()
     {
-        var repository = new PresetRepository(_dbPath, "preset_configurations");
-        var users = new UserRepository(_dbPath, "users");
+        var repository = new PresetRepository(_database.Connections, "preset_configurations");
+        var users = new UserRepository(_database.Connections, "users");
         var callerTimestamp = Timestamp.FromDateTime(DateTime.UnixEpoch);
         var preset = await repository.CreateAsync(new PresetConfiguration
         {
@@ -51,7 +56,7 @@ public sealed class SqlitePresetPersistenceTests
             Password = "correct-password",
             EmailAddress = "physicist@example.test"
         });
-        var service = new PresetService(repository, new AuthService(users));
+        var service = new PresetService(repository, CreateAuthService(users));
 
         var response = await service.ApprovePresetConfiguration(
             new ApprovePresetConfigurationRequest
@@ -76,8 +81,8 @@ public sealed class SqlitePresetPersistenceTests
     public async Task ApprovePresetConfiguration_InvalidCredentials_RejectsWithoutPersisting(
         string username, string password)
     {
-        var repository = new PresetRepository(_dbPath, "preset_configurations");
-        var users = new UserRepository(_dbPath, "users");
+        var repository = new PresetRepository(_database.Connections, "preset_configurations");
+        var users = new UserRepository(_database.Connections, "users");
         var preset = await repository.CreateAsync(new PresetConfiguration
         {
             CollimatorConfigurationId = 42,
@@ -91,7 +96,7 @@ public sealed class SqlitePresetPersistenceTests
             Password = "correct-password",
             EmailAddress = "physicist@example.test"
         });
-        var service = new PresetService(repository, new AuthService(users));
+        var service = new PresetService(repository, CreateAuthService(users));
 
         var exception = Assert.ThrowsAsync<RpcException>(() => service.ApprovePresetConfiguration(
             new ApprovePresetConfigurationRequest
@@ -112,15 +117,15 @@ public sealed class SqlitePresetPersistenceTests
     [Test]
     public async Task ApprovePresetConfiguration_MissingPreset_ReturnsNotFound()
     {
-        var repository = new PresetRepository(_dbPath, "preset_configurations");
-        var users = new UserRepository(_dbPath, "users");
+        var repository = new PresetRepository(_database.Connections, "preset_configurations");
+        var users = new UserRepository(_database.Connections, "users");
         await users.CreateAsync(new User
         {
             Username = "physicist",
             Password = "correct-password",
             EmailAddress = "physicist@example.test"
         });
-        var service = new PresetService(repository, new AuthService(users));
+        var service = new PresetService(repository, CreateAuthService(users));
 
         var exception = Assert.ThrowsAsync<RpcException>(() => service.ApprovePresetConfiguration(
             new ApprovePresetConfigurationRequest
@@ -132,4 +137,7 @@ public sealed class SqlitePresetPersistenceTests
 
         Assert.That(exception!.StatusCode, Is.EqualTo(StatusCode.NotFound));
     }
+
+    private AuthService CreateAuthService(UserRepository users)
+        => new(users, new AuditSessionRegistry(), new LogRepository(_database.Connections, "logs"));
 }

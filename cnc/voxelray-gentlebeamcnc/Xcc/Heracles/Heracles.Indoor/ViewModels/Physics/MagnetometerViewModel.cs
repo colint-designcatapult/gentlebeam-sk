@@ -4,6 +4,7 @@ using Heracles.Application.Models.CollimatorConfiguration;
 using Prism.Commands;
 using Prism.Mvvm;
 using Xcc.Application.Helpers;
+using Xcc.Application.AppLayer.Service;
 using Xcc.Core.Constants;
 using Xcc.Core.Enums;
 using Xcc.Core.Logging;
@@ -25,11 +26,13 @@ namespace Heracles.Indoor.ViewModels.Physics
         public MagnetometerViewModel(
             IMagnetometerCorrectionsStore magnetometerCorrectionsStore,
             IPopUpService popUpService,
-            ILogWriter logWriter)
+            ILogWriter logWriter,
+            IActionAuditService actionAuditService)
         {
             Store = magnetometerCorrectionsStore;
             PopUpService = popUpService;
             LogWriter = logWriter;
+            ActionAuditService = actionAuditService;
 
             Store.IsValidChanged += (s, e) => SaveCommand.RaiseCanExecuteChanged();
             Store.IsModifiedChanged += (s, e) => SaveCommand.RaiseCanExecuteChanged();
@@ -41,6 +44,7 @@ namespace Heracles.Indoor.ViewModels.Physics
         public IMagnetometerCorrectionsStore Store { get; }
         public IPopUpService PopUpService { get; }
         public ILogWriter LogWriter { get; }
+        private IActionAuditService ActionAuditService { get; }
         #endregion Properties
 
 
@@ -90,7 +94,7 @@ namespace Heracles.Indoor.ViewModels.Physics
         {
             try
             {
-                await Store.SubmitMagnetometerParametersAsync();
+                await Store.SubmitMagnetometerParametersAsync(ActionAuditService);
                 PopUpService.ShowMessage(
                     StringConstants.Common.SettingsDialogTitle,
                     StringConstants.Common.RestartExternalOnSaveNotification,

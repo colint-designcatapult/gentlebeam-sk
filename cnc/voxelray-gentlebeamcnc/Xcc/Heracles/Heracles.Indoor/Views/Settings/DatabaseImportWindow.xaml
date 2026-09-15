@@ -1,0 +1,22 @@
+<Window x:Class="Heracles.Indoor.Views.Settings.DatabaseImportWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Style="{StaticResource WindowDefaultStyle}"
+        Title="Import database" Width="580" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{StaticResource ApplicationBackgroundColor}">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/ProgressBar/ProgressBarDefaultStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <StackPanel Margin="28">
+        <TextBlock Text="Finishing database import" Style="{StaticResource TextBlockLegendStyle}" FontSize="{StaticResource HugeFontSize}" Margin="0,0,0,16" />
+        <TextBlock Text="Please wait while the database is closed and replaced. The application will close when this operation finishes."
+                   Style="{StaticResource TextBlockLegendStyle}" FontWeight="Normal" TextWrapping="Wrap" Margin="0,0,0,20" />
+        <ProgressBar Style="{StaticResource ProgressBarDefaultStyle}" Height="12" IsIndeterminate="True" />
+    </StackPanel>
+</Window>

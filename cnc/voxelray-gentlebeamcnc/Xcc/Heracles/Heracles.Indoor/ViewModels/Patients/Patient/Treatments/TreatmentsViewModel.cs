@@ -45,7 +45,8 @@ namespace Heracles.Indoor.ViewModels.Patients.Patient.Treatments
             IPlanModel planModel,
             ITreatmentHistoryModel treatmentHistoryModel,
             ITreatmentInfoStore treatmentInfoStore,
-            IPlanRepository planRepository): 
+            IPlanRepository planRepository,
+            PatientRecordReadAudit readAudit):
             base(
                 regionManager, 
                 logWriter, 
@@ -62,6 +63,8 @@ namespace Heracles.Indoor.ViewModels.Patients.Patient.Treatments
             PlanLoading = planLoading;
             TreatmentHistoryModel = treatmentHistoryModel;
             PlanRepository = planRepository;
+            ReadAudit = readAudit;
+            eventAggregator.GetEvent<ViewTreatmentHistoryEvent>().Subscribe(request => _ = ViewHistoryAsync(request));
 
             // Event subscriptions
             AuthorizedUserStore.AuthorizedUserChanged += (_, _) => RaisePropertyChanged(nameof(CanLoadForTreatment));
@@ -105,6 +108,7 @@ namespace Heracles.Indoor.ViewModels.Patients.Patient.Treatments
         public IPlanLoading PlanLoading { get; }
         public ITreatmentHistoryModel TreatmentHistoryModel { get; }
         public IPlanRepository PlanRepository { get; }
+        public PatientRecordReadAudit ReadAudit { get; }
 
         #endregion Injected Dependencies
 
@@ -112,6 +116,37 @@ namespace Heracles.Indoor.ViewModels.Patients.Patient.Treatments
 
         #region Properties
         private Task? CurrentTask { get; set; }
+        private bool _historyReadSucceeded;
+        private PatientRecordReadAudit.Request? _pendingHistoryView;
+
+        private async Task ViewHistoryAsync(PatientRecordReadAudit.Request? request)
+        {
+            _pendingHistoryView = request;
+            if (CurrentTask is not null)
+                await CurrentTask;
+            if (!_historyReadSucceeded && TreatmentInfoStore.Plan is not null)
+                _pendingHistoryView = null;
+            AuditPendingHistoryView();
+        }
+
+        private void AuditPendingHistoryView()
+        {
+            if (ReadAudit.PlanningVisible)
+            {
+                _pendingHistoryView = null;
+                return;
+            }
+            if (!_historyReadSucceeded || TreatmentHistoryModel.Plan?.Id != TreatmentInfoStore.Plan?.Id)
+                return;
+            var request = _pendingHistoryView;
+            _pendingHistoryView = null;
+            if (request is null)
+                return;
+            foreach (var treatment in TreatmentHistoryModel.Treatments)
+                ReadAudit.Record(request, "treatment history", treatment.Id);
+            if (TreatmentHistoryModel.SelectedTreatment is { } selected)
+                ReadAudit.Record(request, "treatment details", selected.Id);
+        }
         #endregion Properties
 
 
@@ -130,6 +165,8 @@ namespace Heracles.Indoor.ViewModels.Patients.Patient.Treatments
            item =>
            {
                TreatmentHistoryModel.SelectedTreatment = item as ITreatmentBindable;
+               if (TreatmentHistoryModel.SelectedTreatment is { } treatment)
+                   ReadAudit.Record(ReadAudit.CreateRequest(TreatmentInfoStore.Diagnosis?.Id), "treatment details", treatment.Id);
            });
         #endregion Commands
 
@@ -178,6 +215,7 @@ namespace Heracles.Indoor.ViewModels.Patients.Patient.Treatments
 
         private async Task FetchTreatmentsDataAsync(bool isSamePlan)
         {
+            _historyReadSucceeded = false;
             try
             {
                 if (isSamePlan)
@@ -189,9 +227,12 @@ namespace Heracles.Indoor.ViewModels.Patients.Patient.Treatments
                     TreatmentHistoryModel.SetContext(TreatmentInfoStore.Diagnosis, PlanModel.Prescription, PlanModel.Plan);
                     await TreatmentHistoryModel.FetchTreatmentsAsync();
                 }
+                _historyReadSucceeded = true;
+                AuditPendingHistoryView();
             }
             catch (Exception ex)
             {
+                _pendingHistoryView = null;
                 LogWriter.Log($"{nameof(TreatmentsViewModel)}.{nameof(FetchTreatmentsDataAsync)}: Exception {ex.Message}", LogRecordSeverity.Error, LogRecordType.Error);
             }
         }

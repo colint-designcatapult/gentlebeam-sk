@@ -64,6 +64,7 @@ public sealed class PlanModelTests
             Assert.That(submittedField!.PlanId, Is.EqualTo(91));
             Assert.That(submittedField.Name, Is.EqualTo(TreatmentFieldName.PlusC));
         });
+        Assert.That(fixture.AuditRecords, Has.Count.EqualTo(2));
         fixture.PlanRepository.Verify(
             repository => repository.CreateTreatmentFieldAsync(It.IsAny<ITreatmentField>()),
             Times.Once);
@@ -160,6 +161,88 @@ public sealed class PlanModelTests
         });
     }
 
+    [Test]
+    public async Task ChangeStatus_RecordsReturnedStatusOnlyAfterSuccessfulChange()
+    {
+        var plan = CreatePlan(50, TargetType.TargetType_30mm_SSD_7_Fields);
+        var fixture = CreateFixture(plan.CollimatorType, plan, [CreateField(TreatmentFieldName.PlusC, 60)]);
+        await fixture.Model.OnUpdatePrescriptionAsync(fixture.Prescription);
+        fixture.PlanRepository
+            .Setup(repository => repository.UpdateStatusAsync("approver", "password", 50, PlanStatus.APPROVED))
+            .ReturnsAsync(new Plan(plan) { Status = PlanStatus.APPROVED });
+
+        var result = await fixture.Model.ChangeStatusAsync("approver", "password", PlanStatus.APPROVED);
+        await fixture.Model.ChangeStatusAsync("approver", "password", PlanStatus.APPROVED);
+
+        Assert.That(result.Status, Is.EqualTo(PlanStatus.APPROVED));
+        Assert.That(fixture.AuditRecords, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task ChangeStatus_UnappliedOrFailedChange_DoesNotAudit()
+    {
+        var plan = CreatePlan(50, TargetType.TargetType_30mm_SSD_7_Fields);
+        var fixture = CreateFixture(plan.CollimatorType, plan, [CreateField(TreatmentFieldName.PlusC, 60)]);
+        await fixture.Model.OnUpdatePrescriptionAsync(fixture.Prescription);
+        fixture.PlanRepository
+            .SetupSequence(repository => repository.UpdateStatusAsync("approver", "password", 50, PlanStatus.APPROVED))
+            .ReturnsAsync(new Plan(plan))
+            .ThrowsAsync(new InvalidOperationException());
+
+        await fixture.Model.ChangeStatusAsync("approver", "password", PlanStatus.APPROVED);
+        Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.Model.ChangeStatusAsync("approver", "password", PlanStatus.APPROVED));
+
+        Assert.That(fixture.AuditRecords, Is.Empty);
+    }
+
+    [Test]
+    public async Task Submit_UnchangedOrRevertedField_DoesNotAudit()
+    {
+        var plan = CreatePlan(50, TargetType.TargetType_30mm_SSD_7_Fields);
+        var field = CreateField(TreatmentFieldName.PlusC, 60);
+        field.PlanId = plan.Id;
+        var fixture = CreateFixture(plan.CollimatorType, plan, [field]);
+        await fixture.Model.OnUpdatePrescriptionAsync(fixture.Prescription);
+        fixture.PlanRepository
+            .Setup(repository => repository.UpdateTreatmentFieldAsync(null, It.IsAny<ITreatmentField>()))
+            .ReturnsAsync((ITreatmentField? _, ITreatmentField value) => new TreatmentField(value));
+
+        fixture.Model.UpdateTreatmentField(new TreatmentField(field));
+        await fixture.Model.SubmitAsync();
+        fixture.Model.UpdateTreatmentField(new TreatmentField(field) { DwellTime = field.DwellTime + 1 });
+        fixture.Model.UpdateTreatmentField(new TreatmentField(field));
+        await fixture.Model.SubmitAsync();
+
+        Assert.That(fixture.AuditRecords, Is.Empty);
+    }
+
+    [Test]
+    public async Task Submit_RecordsChangedFieldOnce_AndNotFailedUpdate()
+    {
+        var plan = CreatePlan(50, TargetType.TargetType_30mm_SSD_7_Fields);
+        var field = CreateField(TreatmentFieldName.PlusC, 60);
+        field.PlanId = plan.Id;
+        var fixture = CreateFixture(plan.CollimatorType, plan, [field]);
+        await fixture.Model.OnUpdatePrescriptionAsync(fixture.Prescription);
+        var change = new TreatmentField(field) { DwellTime = field.DwellTime + 1 };
+        fixture.Model.UpdateTreatmentField(change);
+        fixture.PlanRepository
+            .Setup(repository => repository.UpdateTreatmentFieldAsync(null, It.IsAny<ITreatmentField>()))
+            .ThrowsAsync(new InvalidOperationException());
+
+        Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Model.SubmitAsync());
+        Assert.That(fixture.AuditRecords, Is.Empty);
+        fixture.PlanRepository
+            .Setup(repository => repository.UpdateTreatmentFieldAsync(null, It.IsAny<ITreatmentField>()))
+            .ReturnsAsync((ITreatmentField? _, ITreatmentField value) => new TreatmentField(value));
+        await fixture.Model.SubmitAsync();
+        fixture.Model.UpdateTreatmentField(new TreatmentField(change));
+        await fixture.Model.SubmitAsync();
+
+        Assert.That(fixture.AuditRecords, Has.Count.EqualTo(1));
+    }
+
     private static IEnumerable<TargetType> SupportedClinicalTargets()
     {
         yield return TargetType.TargetType_30mm_SSD_7_Fields;
@@ -219,6 +302,10 @@ public sealed class PlanModelTests
         user.SetupGet(value => value.EmailAddress).Returns("approver@example.com");
         var authorizedUserStore = new Mock<IAuthorizedUserStore>();
         authorizedUserStore.SetupGet(value => value.AuthorizedUser).Returns(user.Object);
+        var auditRecords = new List<string>();
+        var audit = new Mock<IActionAuditService>();
+        audit.Setup(service => service.RegisterAction(It.IsAny<string>()))
+            .Callback<string>(auditRecords.Add);
 
         var model = new PlanModel(
             store,
@@ -226,7 +313,7 @@ public sealed class PlanModelTests
             Mock.Of<IAppGlobals>(),
             Mock.Of<ILogWriter>(),
             Mock.Of<IDialogService>(),
-            Mock.Of<IActionAuditService>(),
+            audit.Object,
             authorizedUserStore.Object,
             Mock.Of<ISimulationRepository>(),
             doseCalculation.Object,
@@ -234,7 +321,7 @@ public sealed class PlanModelTests
             planRepository.Object,
             Mock.Of<IEventAggregator>());
 
-        return new Fixture(model, prescription, planRepository);
+        return new Fixture(model, prescription, planRepository, auditRecords);
     }
 
     private static IPlan CreatePlan(long id, TargetType targetType)
@@ -319,5 +406,6 @@ public sealed class PlanModelTests
     private sealed record Fixture(
         PlanModel Model,
         Prescription Prescription,
-        Mock<IPlanRepository> PlanRepository);
+        Mock<IPlanRepository> PlanRepository,
+        List<string> AuditRecords);
 }

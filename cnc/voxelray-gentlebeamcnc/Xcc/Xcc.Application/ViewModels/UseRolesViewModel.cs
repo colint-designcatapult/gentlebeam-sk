@@ -10,6 +10,7 @@ using Prism.Regions;
 using Prism.Services.Dialogs;
 using Xcc.Application.AppLayer.Model;
 using Xcc.Application.AppLayer.Users;
+using Xcc.Application.AppLayer.Service;
 using Xcc.Application.Common;
 using Xcc.Application.Helpers;
 using Xcc.Core.Constants;
@@ -28,6 +29,7 @@ public class UserRolesViewModel(
     IUserRepository userRepository,
     ILogRepository logWriter,
     IDialogService dialogService,
+    IActionAuditService actionAuditService,
     IEventAggregator eventAggregator) : DirtyFlaggedBindableBase, INavigationAware
 {
     private IAuthorizedUserStore AuthorizedUserStore { get; } = authorizedUserStore;
@@ -210,6 +212,13 @@ public class UserRolesViewModel(
         }
     }
 
+    private async Task CreatePermissionAsync(long roleId, PermissionType type)
+    {
+        var stored = await permissionCommands.CreateAsync(new PermissionRecord { RoleId = roleId, Type = type });
+        if (stored.Id > 0)
+            actionAuditService.RegisterAction($"Grant permission roleId={roleId} permissionId={stored.Id} type={type}");
+    }
+
     private async Task SaveUserRoleAsync()
     {
         try
@@ -217,7 +226,11 @@ public class UserRolesViewModel(
             if (SelectedUserRole is null || UserRoleToEdit is null)
                 throw new Exception(StringConstants.SystemSettings.UserRoles.UserRoleIsNotSelectedErrorMessage);
             
+            var previousName = SelectedUserRole.Name;
+            var requestedName = UserRoleToEdit.Name;
             var storedRole = await roleCommands.UpdateAsync(SelectedUserRole, UserRoleToEdit);
+            if (requestedName != previousName && storedRole.Name != previousName)
+                actionAuditService.RegisterAction($"Rename role configuration id={storedRole.Id}");
 
             foreach (var permission in UserRoleToEdit.Permissions)
             {
@@ -225,15 +238,15 @@ public class UserRolesViewModel(
                 {
                     if (BaseEntry.IsBlankEntry(permission))
                     {
-                        await permissionCommands.CreateAsync(new PermissionRecord
-                            { RoleId = storedRole.Id, Type = permission.Type });
+                        await CreatePermissionAsync(storedRole.Id, permission.Type);
                     }
                 }
                 else
                 {
                     if (BaseEntry.IsBlankEntry(permission) == false)
                     {
-                        await permissionCommands.DeleteAsync(permission.Id);
+                        if (await permissionCommands.DeleteAsync(permission.Id))
+                            actionAuditService.RegisterAction($"Revoke permission roleId={storedRole.Id} permissionId={permission.Id}");
                     }
                 }
             }
@@ -260,13 +273,15 @@ public class UserRolesViewModel(
                 throw new Exception(StringConstants.SystemSettings.UserRoles.UserRoleIsNotSelectedErrorMessage);
             
             var storedRole = await roleCommands.CreateAsync(UserRoleToEdit);
+            if (storedRole.Id > 0)
+                actionAuditService.RegisterAction($"Create role configuration id={storedRole.Id}");
 
             var creationTasks = new List<Task>();
             foreach (var permission in UserRoleToEdit.Permissions)
             {
                 if (permission.Value)
                 {
-                    creationTasks.Add(permissionCommands.CreateAsync(new PermissionRecord { RoleId = storedRole.Id, Type = permission.Type }));
+                    creationTasks.Add(CreatePermissionAsync(storedRole.Id, permission.Type));
                 }
             }
 
@@ -306,11 +321,13 @@ public class UserRolesViewModel(
             {
                 if (BaseEntry.IsBlankEntry(permission) == false)
                 {
-                    await permissionCommands.DeleteAsync(permission.Id);
+                    if (await permissionCommands.DeleteAsync(permission.Id))
+                        actionAuditService.RegisterAction($"Revoke permission roleId={SelectedUserRole.Id} permissionId={permission.Id}");
                 }
             }
 
-            await roleCommands.DeleteAsync(SelectedUserRole.Id);
+            if (await roleCommands.DeleteAsync(SelectedUserRole.Id))
+                actionAuditService.RegisterAction($"Delete role configuration id={SelectedUserRole.Id}");
             eventAggregator.GetEvent<RoleChangedEvent>().Publish(SelectedUserRole);
 
             await FetchUserRolesAsync();

@@ -32,6 +32,10 @@ namespace Xcc.Core.Domain.DataManagement.Common.Users
 
         public DateTime LastAccessed { get; set; }
 
+        public uint FailedLoginAttempts { get; set; }
+
+        public bool IsLocked => FailedLoginAttempts >= 10;
+
         public string Picture { get; set; } = string.Empty;
 
         public string Password { get; set; } = string.Empty;

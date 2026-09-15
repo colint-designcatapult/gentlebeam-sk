@@ -22,6 +22,10 @@ service UsersService {
 
   // Deletes a user.
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+
+  // Resets a locked account using a server-known session for a current, unlocked
+  // Administrator. Counters below 10 are unchanged; successful resets are audited.
+  rpc ResetUserLockout(ResetUserLockoutRequest) returns (ResetUserLockoutResponse);
 }
 
 // Request message for listing users.
@@ -80,3 +84,15 @@ message DeleteUserRequest {
 
 // An empty response message for `DeleteUser`.
 message DeleteUserResponse {}
+
+// Request message for administratively resetting a locked user account.
+message ResetUserLockoutRequest {
+  // The ID of the account whose lockout is to be reset.
+  int64 user_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message with the account after the reset (or unchanged if not locked).
+message ResetUserLockoutResponse {
+  // Only failed_login_attempts is reset; credentials and other fields are unchanged.
+  User user = 1;
+}

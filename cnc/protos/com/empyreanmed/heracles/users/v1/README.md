@@ -15,6 +15,8 @@
     - [GetUserResponse](#com-empyreanmed-heracles-users-v1-GetUserResponse)
     - [ListUsersRequest](#com-empyreanmed-heracles-users-v1-ListUsersRequest)
     - [ListUsersResponse](#com-empyreanmed-heracles-users-v1-ListUsersResponse)
+    - [ResetUserLockoutRequest](#com-empyreanmed-heracles-users-v1-ResetUserLockoutRequest)
+    - [ResetUserLockoutResponse](#com-empyreanmed-heracles-users-v1-ResetUserLockoutResponse)
     - [UpdateUserRequest](#com-empyreanmed-heracles-users-v1-UpdateUserRequest)
     - [UpdateUserResponse](#com-empyreanmed-heracles-users-v1-UpdateUserResponse)
   
@@ -50,6 +52,7 @@ Represents a user of the system.
 | role | [string](#string) | optional | Role of the user within the system |
 | email_address | [string](#string) | optional | Email address of the user |
 | last_accessed | [google.protobuf.Timestamp](#google-protobuf-Timestamp) | optional | Last accessed timestamp |
+| failed_login_attempts | [uint32](#uint32) | optional | Output-only consecutive failed login count. The embedded SQLite server locks the account at 10; ordinary client writes cannot reset it. |
 
 
 
@@ -219,6 +222,24 @@ Response message with the updated user.
  
 
 
+<a name="com-empyreanmed-heracles-users-v1-ResetUserLockoutRequest"></a>
+
+### ResetUserLockoutRequest
+Requests an Administrator-authorized reset of a locked account.
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| user_id | [int64](#int64) | | Target user ID. |
+
+<a name="com-empyreanmed-heracles-users-v1-ResetUserLockoutResponse"></a>
+
+### ResetUserLockoutResponse
+Returns the user after the reset, or unchanged if below the lockout threshold.
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| user | [User](#com-empyreanmed-heracles-users-v1-User) | | Persisted target user. |
+
 <a name="com-empyreanmed-heracles-users-v1-UsersService"></a>
 
 ### UsersService
@@ -231,6 +252,7 @@ Performs operations on users.
 | CreateUser | [CreateUserRequest](#com-empyreanmed-heracles-users-v1-CreateUserRequest) | [CreateUserResponse](#com-empyreanmed-heracles-users-v1-CreateUserResponse) | Creates a new user. |
 | UpdateUser | [UpdateUserRequest](#com-empyreanmed-heracles-users-v1-UpdateUserRequest) | [UpdateUserResponse](#com-empyreanmed-heracles-users-v1-UpdateUserResponse) | Updates an existing user. |
 | DeleteUser | [DeleteUserRequest](#com-empyreanmed-heracles-users-v1-DeleteUserRequest) | [DeleteUserResponse](#com-empyreanmed-heracles-users-v1-DeleteUserResponse) | Deletes a user. |
+| ResetUserLockout | [ResetUserLockoutRequest](#com-empyreanmed-heracles-users-v1-ResetUserLockoutRequest) | [ResetUserLockoutResponse](#com-empyreanmed-heracles-users-v1-ResetUserLockoutResponse) | Clears a locked account's failure count after server-side Administrator authorization; reset and security audit commit atomically. Credentials are unchanged. |
 
  
 

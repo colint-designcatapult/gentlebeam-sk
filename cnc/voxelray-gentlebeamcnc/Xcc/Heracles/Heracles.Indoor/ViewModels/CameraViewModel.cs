@@ -7,6 +7,7 @@ using Heracles.Core.Commands;
 using Heracles.Core.Enums;
 using Heracles.Core.Models;
 using Heracles.Core.Models.EMR;
+using Heracles.Indoor.Models.UseCases;
 using Prism.Commands;
 using Prism.Events;
 using Prism.Regions;
@@ -35,6 +36,7 @@ namespace Heracles.Indoor.ViewModels
         public IPatientListModel PatientListModel { get; }
         public ITreatmentInfoStore TreatmentInfoStore { get; }
         public IEventAggregator EventAggregator { get; }
+        private readonly PatientRecordReadAudit _readAudit;
 
         private string _cameraUriSource;
         public string CameraUriSource
@@ -103,6 +105,12 @@ namespace Heracles.Indoor.ViewModels
 
         #endregion Commands
 
+        protected override void OnExit()
+        {
+            // The journal synchronously restores the clinical view through this explicit user request.
+            _readAudit.InRequest(_readAudit.CreateRequest(TreatmentInfoStore.Diagnosis?.Id), base.OnExit);
+        }
+
 
         #region Constructors
         public CameraViewModel(
@@ -113,7 +121,8 @@ namespace Heracles.Indoor.ViewModels
             IEmrPhotoCommands photoCommands,
             IPatientListModel patientListModel,
             ITreatmentInfoStore treatmentInfoStore,
-            IEventAggregator eventAggregator)
+            IEventAggregator eventAggregator,
+            PatientRecordReadAudit readAudit)
             :base(regionManager)
         {
             DialogService = dialogService;
@@ -123,6 +132,7 @@ namespace Heracles.Indoor.ViewModels
             PatientListModel = patientListModel;
             TreatmentInfoStore = treatmentInfoStore;
             EventAggregator = eventAggregator;
+            _readAudit = readAudit;
 
             CameraUriSource = settings.CameraUriSource;
 

@@ -1,7 +1,7 @@
 extern alias SqliteServer;
 
 using Google.Protobuf.WellKnownTypes;
-using Microsoft.Data.Sqlite;
+using SqlCipherDatabase = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqlCipherDatabase;
 using Log = SqliteServer::Com.Empyreanmed.Heracles.Logs.V1.Log;
 using ListLogsRequest = SqliteServer::Com.Empyreanmed.Heracles.Logs.V1.ListLogsRequest;
 using LogService = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Services.LogServiceImpl;
@@ -12,25 +12,28 @@ namespace Heracles.Indoor.Test.Infra;
 [TestFixture]
 public sealed class SqliteLogPersistenceTests
 {
-    private string _dbPath = null!;
+    private string _directory = null!;
+    private SqlCipherDatabase _database = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), $"heracles-logs-{Guid.NewGuid():N}.db");
+        _directory = Path.Combine(Path.GetTempPath(), $"heracles-logs-{Guid.NewGuid():N}");
+        _database = new SqlCipherDatabase(_directory);
+        _database.Initialize(_ => true, _ => null);
     }
 
     [TearDown]
     public void TearDown()
     {
-        SqliteConnection.ClearAllPools();
-        File.Delete(_dbPath);
+        _database.Dispose();
+        Directory.Delete(_directory, recursive: true);
     }
 
     [Test]
     public async Task ListLogs_UsesStableNewestFirstPaging()
     {
-        var repository = new LogRepository(_dbPath, "logs");
+        var repository = new LogRepository(_database.Connections, "logs");
         for (var i = 1; i <= 3; i++)
         {
             await repository.CreateAsync(new Log

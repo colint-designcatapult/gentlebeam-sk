@@ -15,6 +15,7 @@ using Heracles.Core.Enums;
 using Heracles.Core.Models;
 using Heracles.Core.Models.EMR;
 using Prism.Commands;
+using Heracles.Indoor.Models.UseCases;
 using Prism.Events;
 using Prism.Mvvm;
 using Prism.Regions;
@@ -62,7 +63,8 @@ namespace Heracles.Indoor.ViewModels
             IAcquisitionResultStore acquisitionResultStore,
             IAuthorizedUserStore authorizedUserStore,
             IPlanModel planModel,
-            IPhotoService photoService)
+            IPhotoService photoService,
+            PatientRecordReadAudit readAudit)
         {
             RegionManager = regionManager;
             LogWriter = logWriter;
@@ -74,8 +76,10 @@ namespace Heracles.Indoor.ViewModels
             AuthorizedUserStore = authorizedUserStore;
             PlanModel = planModel;
             PhotoService = photoService;
+            ReadAudit = readAudit;
             eventAggregator.GetEvent<AcquisitionCompletedEvent>().Subscribe(SetSimulationFormLesionDepth);
             eventAggregator.GetEvent<PlanStatusChangedEvent>().Subscribe((_) => FetchSimulation());
+            eventAggregator.GetEvent<ViewPlanningRecordsEvent>().Subscribe(request => _ = ViewSimulationAsync(request));
 
             // Set watchdog on the SimulationForm.IsModified flag
             QuitTreatmentActionWatchdog = disruptiveActionWatchdogFactory.MakeWatchdog<QuitTreatmentAction, ISimulationState>(
@@ -111,6 +115,7 @@ namespace Heracles.Indoor.ViewModels
         public IPhotoService PhotoService { get; }
         private IDisruptiveActionWatchdog<ISimulationState> QuitTreatmentActionWatchdog { get; }
         #endregion Read-only properties
+        public PatientRecordReadAudit ReadAudit { get; }
 
 
         #region Properties
@@ -198,7 +203,7 @@ namespace Heracles.Indoor.ViewModels
             SimulationForm = null;
 
             RemoveFormFromDictionary(TreatmentInfoStore.Diagnosis.Id);
-            FetchSimulation();
+            FetchSimulation(ReadAudit.CreateRequest(TreatmentInfoStore.Diagnosis?.Id));
         });
 
         private DelegateCommand? _retrySimulationTaskCommand;
@@ -250,16 +255,17 @@ namespace Heracles.Indoor.ViewModels
             }
         }
         
-        private void FetchSimulation()
+        private void FetchSimulation(PatientRecordReadAudit.Request? request = null)
         {
+            // The retry command represents another explicit read; background invocations pass no request.
             RetrySimulationCommand = new DelegateCommand(() =>
             {
-                CurrentSimulationTask = new ObservableTask(FetchSimulationAsync(), StringConstants.EMR.FetchSimulationMessage);
+                CurrentSimulationTask = new ObservableTask(FetchSimulationAsync(request), StringConstants.EMR.FetchSimulationMessage);
             });
             RetrySimulationCommand.Execute();
         }
 
-        private async Task FetchSimulationAsync()
+        private async Task FetchSimulationAsync(PatientRecordReadAudit.Request? request)
         {
             try
             {
@@ -291,11 +297,15 @@ namespace Heracles.Indoor.ViewModels
                         }
                     }
 
-                    TreatmentInfoStore.SetSimulation(simulation, treatmentDevices, patientPositions);
+                    ReadAudit.InRequest(request, () => TreatmentInfoStore.SetSimulation(simulation, treatmentDevices, patientPositions));
+                    ReadAudit.Record(request, "simulation", simulation?.Id ?? 0, planningOnly: true);
                     
                     // Load photos for this diagnosis
                     var photoResult = await PhotoService.GetPhotosAsync(TreatmentInfoStore.Diagnosis.Id);
                     TreatmentInfoStore.Photos = photoResult.photos;
+                    foreach (var photo in photoResult.photos)
+                        if (photo.DiagnosisId == request?.DiagnosisId)
+                            ReadAudit.Record(request, "photo gallery", photo.Id, planningOnly: true);
                 }
             }
             catch (Exception ex)
@@ -304,6 +314,25 @@ namespace Heracles.Indoor.ViewModels
                     $"{StringConstants.EMR.FetchSimulationMessage}. {ex.Message}", 
                     LogRecordSeverity.Error, LogRecordType.System);
                 throw;
+            }
+        }
+
+        private async Task ViewSimulationAsync(PatientRecordReadAudit.Request? request)
+        {
+            try
+            {
+                if (CurrentSimulationTask is not null)
+                    await CurrentSimulationTask.Task;
+                if (TreatmentInfoStore.Simulation?.DiagnosisId != request?.DiagnosisId)
+                    return;
+                ReadAudit.Record(request, "simulation", TreatmentInfoStore.Simulation?.Id ?? 0, planningOnly: true);
+                foreach (var photo in TreatmentInfoStore.Photos)
+                    if (photo.DiagnosisId == request?.DiagnosisId)
+                        ReadAudit.Record(request, "photo gallery", photo.Id, planningOnly: true);
+            }
+            catch
+            {
+                // Failed reads remain on the existing task overlay.
             }
         }
 
@@ -409,22 +438,24 @@ namespace Heracles.Indoor.ViewModels
 
         private void OnDiagnosisChanged(object sender, IDiagnosis d)
         {
-            if (d is not null &&
-                _simulationForms.ContainsKey(d.Id))
+            var request = ReadAudit.CurrentRequest;
+            var isCached = d is not null && _simulationForms.ContainsKey(d.Id);
+            if (isCached)
             {
                 UpdateSimulationFormFromDictionary(d.Id);
 
-                TreatmentInfoStore.Simulation = new Simulation(SimulationForm);
+                ReadAudit.InRequest(request, () => TreatmentInfoStore.Simulation = new Simulation(SimulationForm));
+                ReadAudit.Record(request, "simulation", SimulationForm.Id, planningOnly: true);
             }
             else
             {
-                FetchSimulation();
+                FetchSimulation(request);
             }
             
             // Always reload photos when diagnosis changes, even if simulation was cached
             if (d is not null)
             {
-                ReloadPhotosForDiagnosis(d.Id);
+                ReloadPhotosForDiagnosis(d.Id, isCached ? request : null);
             }
             else
             {
@@ -435,12 +466,15 @@ namespace Heracles.Indoor.ViewModels
             CommandsCanExecuteChanged();
         }
         
-        private async void ReloadPhotosForDiagnosis(long diagnosisId)
+        private async void ReloadPhotosForDiagnosis(long diagnosisId, PatientRecordReadAudit.Request? request)
         {
             try
             {
                 var photoResult = await PhotoService.GetPhotosAsync(diagnosisId);
                 TreatmentInfoStore.Photos = photoResult.photos;
+                foreach (var photo in photoResult.photos)
+                    if (photo.DiagnosisId == request?.DiagnosisId)
+                        ReadAudit.Record(request, "photo gallery", photo.Id, planningOnly: true);
             }
             catch (Exception ex)
             {

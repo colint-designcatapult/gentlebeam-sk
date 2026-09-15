@@ -16,10 +16,8 @@ namespace Empyrean.Common.Infra.Networking.Udp
         private bool _disposed;
 
         public UdpClientConnection(string hostAddress, int hostPort)
+            : this(hostAddress, hostPort, clientPort: 0)
         {
-            _hostAddress = hostAddress;
-            _port = hostPort;
-            _udpClient = new();
         }
 
         public UdpClientConnection(string hostAddress, int hostPort, int clientPort, bool reusePort = false)

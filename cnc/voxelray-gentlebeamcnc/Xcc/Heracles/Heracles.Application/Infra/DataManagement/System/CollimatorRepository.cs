@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Xcc.Core.Domain.DataManagement.System;
 using Xcc.Core.Enums;
 using Xcc.Core.Logging;
+using Xcc.Application.AppLayer.Service;
 
 namespace Heracles.Application.Infra.DataManagement.System
 {
@@ -17,7 +18,7 @@ namespace Heracles.Application.Infra.DataManagement.System
         Task<IHead> EnsureActiveHeadExistsAsync();
     
         Task<ICollection<ICollimatorConfiguration>> FetchCollimatorConfigurationsAsync();
-        Task<ICollimatorConfiguration> CreateCollimatorConfigurationAsync(TargetType targetType, Energy energy);
+        Task<ICollimatorConfiguration> CreateCollimatorConfigurationAsync(TargetType targetType, Energy energy, IActionAuditService? audit = null);
         Task<ICollimatorConfiguration> UpdateCollimatorConfigurationAsync(ICollimatorConfiguration oldValue, ICollimatorConfiguration newValue);
 
         Task<ICollection<ICollimator>> FetchCollimatorsAsync(long configurationId);
@@ -122,7 +123,7 @@ namespace Heracles.Application.Infra.DataManagement.System
             return collimatorCommands.ReadListAsync(configurationId);
         }
 
-        public async Task<ICollimatorConfiguration> CreateCollimatorConfigurationAsync(TargetType targetType, Energy energy)
+        public async Task<ICollimatorConfiguration> CreateCollimatorConfigurationAsync(TargetType targetType, Energy energy, IActionAuditService? audit = null)
         {
             var configurationToCreate = new CollimatorConfiguration()
             {
@@ -134,7 +135,9 @@ namespace Heracles.Application.Infra.DataManagement.System
 
 
             var storedConfiguration = await collimatorConfigurationCommands.CreateAsync(configurationToCreate);
-            await AddDefaultPresetAsync(storedConfiguration);
+            audit?.RegisterAction("Configuration created",
+                $"Entity=CollimatorConfiguration; Id={storedConfiguration.Id}; Fields=Type,Energy,SsdType,ReferencedDoseRate");
+            await AddDefaultPresetAsync(storedConfiguration, audit);
             return storedConfiguration;
         }
 
@@ -184,7 +187,7 @@ namespace Heracles.Application.Infra.DataManagement.System
 
 
         #region private methods
-        private async Task<IPresetConfiguration> AddPresetAsync(ICollimatorConfiguration collimatorConfiguration, string presetName, bool isActive, bool isDefault)
+        private async Task<IPresetConfiguration> AddPresetAsync(ICollimatorConfiguration collimatorConfiguration, string presetName, bool isActive, bool isDefault, IActionAuditService? audit)
         {
             var preset = new PresetConfiguration
             {
@@ -195,13 +198,15 @@ namespace Heracles.Application.Infra.DataManagement.System
                 CreationDate = DateTime.Now,
             };
             var storedPreset = await presetConfigurationCommands.CreateAsync(preset);
+            audit?.RegisterAction("Configuration created",
+                $"Entity=PresetConfiguration; Id={storedPreset.Id}; ConfigurationId={collimatorConfiguration.Id}; Fields=PresetName,IsActive,IsDefault");
             collimatorConfiguration.AddPreset(storedPreset);
             return storedPreset;
         }
 
-        private Task<IPresetConfiguration> AddDefaultPresetAsync(ICollimatorConfiguration collimatorConfiguration, bool isActive = true)
+        private Task<IPresetConfiguration> AddDefaultPresetAsync(ICollimatorConfiguration collimatorConfiguration, IActionAuditService? audit, bool isActive = true)
         {
-            return AddPresetAsync(collimatorConfiguration, presetName: "Default", isActive, isDefault: true);
+            return AddPresetAsync(collimatorConfiguration, presetName: "Default", isActive, isDefault: true, audit);
         }
         #endregion private methods
     }

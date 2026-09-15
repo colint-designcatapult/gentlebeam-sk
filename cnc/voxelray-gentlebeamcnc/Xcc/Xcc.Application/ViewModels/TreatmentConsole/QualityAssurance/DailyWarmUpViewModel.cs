@@ -5,7 +5,6 @@ using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
 using Prism.Services.Dialogs;
-using Xcc.Application.AppLayer.Service;
 using Xcc.Application.AppLayer.Service.TreatmentConsole;
 using Xcc.Application.AppLayer.Warmup;
 using Xcc.Application.Common;
@@ -133,7 +132,6 @@ namespace Xcc.Application.ViewModels.TreatmentConsole.QualityAssurance
             IDialogService dialogService,
             IActiveHeadProvider activeHeadProvider,
             ILogWriter logWriter,
-            IActionAuditService actionAuditService,
             IPopUpService popUpService)
         {
             WarmupSettings = warmupSettings;
@@ -144,7 +142,6 @@ namespace Xcc.Application.ViewModels.TreatmentConsole.QualityAssurance
             DialogService = dialogService;
             ActiveHeadProvider = activeHeadProvider;
             LogWriter = logWriter;
-            ActionAuditService = actionAuditService;
             PopUpService = popUpService;
 
             WarmUpViewSource = new CollectionViewSource { Source = WarmupHistory.ObservableWarmupRecords };
@@ -177,7 +174,6 @@ namespace Xcc.Application.ViewModels.TreatmentConsole.QualityAssurance
         public IDialogService DialogService { get; }
         public IActiveHeadProvider ActiveHeadProvider { get; }
         public ILogWriter LogWriter { get; }
-        public IActionAuditService ActionAuditService { get; }
         public IPopUpService PopUpService { get; }
         public CollectionViewSource WarmUpViewSource { get; }
         public IDailyWarmUpUiStateMachine UIStateMachine { get; }
@@ -365,9 +361,9 @@ namespace Xcc.Application.ViewModels.TreatmentConsole.QualityAssurance
                 IsWarmingUp = false;
                 UIStateMachine.OnWarmupAction(DailyWarmUpUiStateMachine.Action.None);
 
-                ActionAuditService.RegisterAction(
-                    actionDescription: (warmupType == WarmupType.Fast) ? "Warmup" : "Conditioning",
-                    actionDetails: warmupResult.ToString());
+                _ = LogWriter.LogAsync(
+                    $"{((warmupType == WarmupType.Fast) ? "Warmup" : "Conditioning")}: {warmupResult}",
+                    LogRecordSeverity.Info, LogRecordType.System);
 
                 ValidateCanExecuteCommands();
             }

@@ -1,5 +1,6 @@
 ﻿using Heracles.Application.Events;
 using Heracles.External.Models;
+using Heracles.Application.Models.Treatment;
 
 using Prism.Commands;
 using Prism.Events;
@@ -31,7 +32,9 @@ namespace Heracles.External.ViewModels
             IAuthorizedUserStore authorizedUserStore,
             IMainBoardAPI mainBoardAPI,
             SystemService systemService,
-            IPopUpService popUpService) : base(regionManager, eventAggregator, dialogService)
+            IPopUpService popUpService,
+            ITreatmentInfoStore treatmentInfo,
+            IActionAuditService actionAuditService) : base(regionManager, eventAggregator, dialogService)
         {
             GcbDataStore = gcbDataStore;
             ExitingModel = exitingModel;
@@ -40,6 +43,8 @@ namespace Heracles.External.ViewModels
             MainBoardApi = mainBoardAPI;
             SystemService = systemService;
             PopUpService = popUpService;
+            TreatmentInfo = treatmentInfo;
+            ActionAuditService = actionAuditService;
 
             eventAggregator.GetEvent<RequestExternalTabChangeEvent>()
                 .Subscribe(externalTabName => SelectedTabIndex = (int)externalTabName);
@@ -60,6 +65,8 @@ namespace Heracles.External.ViewModels
         public SystemService SystemService { get; }
         public IPopUpService PopUpService { get; }
         public IGCBDataStore GcbDataStore { get; }  
+        private ITreatmentInfoStore TreatmentInfo { get; }
+        private IActionAuditService ActionAuditService { get; }
         #endregion Injected Dependencies
 
 
@@ -78,6 +85,24 @@ namespace Heracles.External.ViewModels
             set => SetProperty(ref _selectedTab, value);
         }
         #endregion Properties
+
+        private DelegateCommand<object>? _viewSelectedTabCommand;
+        public DelegateCommand<object> ViewSelectedTabCommand => _viewSelectedTabCommand ??= new DelegateCommand<object>(
+            index =>
+            {
+                SelectedTabIndex = (int)index;
+                if (SelectedTabIndex != 0 || TreatmentInfo.Patient is not { Id: > 0 } patient)
+                    return;
+                ActionAuditService.RegisterAction($"Viewed patient treatment console patient id={patient.Id}");
+                if (TreatmentInfo.Diagnosis is { Id: > 0 } diagnosis)
+                    ActionAuditService.RegisterAction($"Viewed patient diagnosis patient id={patient.Id} record id={diagnosis.Id}");
+                if (TreatmentInfo.Simulation is { Id: > 0 } simulation)
+                    ActionAuditService.RegisterAction($"Viewed patient simulation patient id={patient.Id} record id={simulation.Id}");
+                if (TreatmentInfo.Prescription is { Id: > 0 } prescription)
+                    ActionAuditService.RegisterAction($"Viewed patient prescription patient id={patient.Id} record id={prescription.Id}");
+                if (TreatmentInfo.Plan is { Id: > 0 } plan)
+                    ActionAuditService.RegisterAction($"Viewed patient plan patient id={patient.Id} record id={plan.Id}");
+            });
 
 
         private DelegateCommand? _exitApplicationCommand;

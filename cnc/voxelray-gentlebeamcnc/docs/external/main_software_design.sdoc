@@ -721,6 +721,8 @@ RELATIONS:
 UID: SW-H10TG-272
 TITLE: LogService module
 STATEMENT: >>>
+The action audit service records explicit preparation, Beam On, and Stop commands with the acting user and treatment identifiers. Delivery outcome records use measured emission results and distinguish completed, cancelled, and failed delivery from the requested emission. Background telemetry, automatic refreshes, and low-level RPC activity do not create user-action records.
+
 .. image:: _images/SW-H10TG-272.png
 <<<
 RELATIONS:
@@ -1081,8 +1083,9 @@ against zero, a null value, a missing field, or a mismatched value count cannot 
 
 ``QCSampleService`` authenticates an approval request against the persisted users before
 loading or updating the sample. Username matching is case-insensitive and the supplied password
-must match. Authentication failure returns ``Unauthenticated`` without modifying the sample;
-success stores the authenticated user's email address in ``ApprovedBy``.
+must match and the persisted failed-login count must be below 10. Authentication failure returns
+``Unauthenticated`` without modifying the sample; success stores the authenticated user's email
+address in ``ApprovedBy``. These approval checks neither increment nor reset the failed-login count.
 <<<
 RELATIONS:
 - TYPE: Parent

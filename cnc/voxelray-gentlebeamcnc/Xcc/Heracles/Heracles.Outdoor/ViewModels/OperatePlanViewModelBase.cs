@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Heracles.Application.Enums;
 using Heracles.Application.Events;
 using Heracles.Application.Models.CollimatorConfiguration;
@@ -21,7 +21,6 @@ using Xcc.Core.Services;
 using Xcc.Infra.GryphonBoard;
 using StringConstants = Xcc.Core.Constants.StringConstants;
 using Xcc.Application.AppLayer.Warmup;
-using Xcc.Application.AppLayer.Service;
 using Xcc.Application.Domain.GryphonBoard.Model.OperationGuards;
 using Xcc.Core.Logging;
 using Heracles.Application.Domain.DataManagement.System.Collimators;
@@ -51,7 +50,6 @@ namespace Heracles.External.ViewModels
             IGcbIndicators gcbIndicators,
             ICollimatorModel collimatorModel,
             ICollimatorConfigurationStore collimatorConfigurationStore,
-            IActionAuditService actionAuditService,
             ISafetyCheckModel safetyCheckModel,
             IBearerTokenUserSessionManager userSessionManager)
             : base(regionManager, eventAggregator, dialogService)
@@ -66,7 +64,6 @@ namespace Heracles.External.ViewModels
             GcbIndicators = gcbIndicators;
             CollimatorModel = collimatorModel;
             CollimatorConfigurationStore = collimatorConfigurationStore;
-            ActionAuditService = actionAuditService;
             SafetyCheckModel = safetyCheckModel;
             UserSessionManager = userSessionManager;
             ClearFaultsGuard = new();
@@ -128,7 +125,6 @@ namespace Heracles.External.ViewModels
         public IGcbIndicators GcbIndicators { get; }
         public ICollimatorModel CollimatorModel { get; }
         public ICollimatorConfigurationStore CollimatorConfigurationStore { get; }
-        public IActionAuditService ActionAuditService { get; }
         public ISafetyCheckModel SafetyCheckModel { get; }
         public IBearerTokenUserSessionManager UserSessionManager { get; }
 
@@ -347,7 +343,7 @@ namespace Heracles.External.ViewModels
         public DelegateCommand BeamOnCommand => _beamOnCommand ??= new DelegateCommand(
             async () =>
             {
-                UserActionAudit("User triggered Emission delivery");
+                LogUserRequest("User triggered Emission delivery");
 
                 await OnBeamOnClicked();
 
@@ -365,7 +361,7 @@ namespace Heracles.External.ViewModels
                 {
                     if (UIStateMachine.State == UIMacroState.Emission)
                     {
-                        UserActionAudit("User triggered emission stop");
+                        LogUserRequest("User triggered emission stop");
                     }
 
                     IsCurrentViewModelRunning = false;
@@ -400,7 +396,7 @@ namespace Heracles.External.ViewModels
                 {
                     UIStateMachine.RequestStateSwitch(UIMacroState.Preparation);
 
-                    UserActionAudit("User triggered Resume");
+                    LogUserRequest("User triggered Resume");
 
                     await MainBoardModel.ResetTimers();
                     await WarmUpAsync();
@@ -527,7 +523,7 @@ namespace Heracles.External.ViewModels
                 PopUpService.LogAndShowMessage(
                     Application.Common.StringConstants.TreatmentConsole.PlanPreparationEventDialogTitle,
                     Application.Common.StringConstants.TreatmentConsole.PlanPreparationSafetyCheckRequest,
-                    ReportType.Info, LogRecordSeverity.Warn, LogRecordType.User);
+                    ReportType.Info, LogRecordSeverity.Warn, LogRecordType.System);
                 return Task.FromResult(true);
             }
 
@@ -535,9 +531,9 @@ namespace Heracles.External.ViewModels
         }
 
 
-        protected virtual void UserActionAudit(string actionMessage)
+        protected virtual void LogUserRequest(string actionMessage)
         {
-            ActionAuditService.RegisterAction(actionMessage);
+            _ = LogWriter.LogAsync(actionMessage, LogRecordSeverity.Info, LogRecordType.System);
         }
         
         protected virtual async Task OnClearPlanClicked()

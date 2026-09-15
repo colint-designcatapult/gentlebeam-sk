@@ -18,7 +18,6 @@ using Prism.Events;
 using Prism.Regions;
 using Prism.Services.Dialogs;
 using Xcc.Application.AppLayer.Model;
-using Xcc.Application.AppLayer.Service;
 using Xcc.Application.AppLayer.Warmup;
 using Xcc.Application.Common;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
@@ -68,7 +67,6 @@ internal sealed class BeamQaViewModelHarness : BeamQaViewModel
             Mock.Of<ICollimatorCalibrationModel>(),
             Mock.Of<ICollimatorConfigurationStore>(),
             new ApplicatorCompatibilityService(collimatorModel),
-            Mock.Of<IActionAuditService>(),
             Mock.Of<ISafetyCheckModel>(),
             Mock.Of<IBearerTokenUserSessionManager>())
     {

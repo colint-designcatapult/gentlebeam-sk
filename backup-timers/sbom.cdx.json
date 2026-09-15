@@ -1,0 +1,188 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "firmware",
+      "bom-ref": "urn:gentlebeam:component:backup-timers",
+      "name": "backup-timers",
+      "version": "4.0.0",
+      "description": "GentleBeam backup timer firmware for ATSAMD10C14A. Inventory follows the production Microchip Studio project, not the separate GryphonTimers_UnitTests project.",
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "backup-timers/version.txt; backup-timers/Gryphon Timers.cproj; backup-timers/Gryphon Timers.componentinfo.xml"
+        },
+        {
+          "name": "gentlebeam:version-basis",
+          "value": "Static release baseline from backup-timers/version.txt; does not identify a particular signed image or CI build."
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "gentlebeam:inventory-basis",
+        "value": "Manually maintained inventory of selected compiled sources, included SDK headers and linked target runtime libraries. Not a symbol-level inventory of a post-link image; unused sections may be discarded. Build-only compilers, generators, signing tools and unselected vendor libraries are excluded."
+      },
+      {
+        "name": "gentlebeam:maintenance",
+        "value": "Dependencies are maintained statically; update this file when source selections, SDK packs or firmware release versions change."
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:backup-timers:atmel-start",
+      "name": "Atmel START Framework",
+      "description": "Compiled Microchip HAL, HPL, HRI and utility support plus generated initialization. Version 1.0.0 is the Framework component Cversion in AtmelStart.gpdsc, not an inferred ASF release. Middleware with separate provenance is inventoried separately.",
+      "scope": "required",
+      "version": "1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Microchip software license (use exclusively with Microchip products)"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "backup-timers/Gryphon Timers.cproj; backup-timers/.atmelstart/AtmelStart.gpdsc; backup-timers/.atmelstart/atmel_start_config.atstart; backup-timers/hal/src/hal_init.c"
+        },
+        {
+          "name": "gentlebeam:atmel-start-content-version",
+          "value": "1.0.1105"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:backup-timers:cmsis",
+      "name": "CMSIS (Core headers)",
+      "description": "External Arm CMSIS package; only core device-access headers/intrinsics are selected, not CMSIS DSP, RTOS or other pack libraries. Version denotes the pack release. Fixed pack selections from the Microchip Studio project and component metadata.",
+      "scope": "required",
+      "version": "5.0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "backup-timers/Gryphon Timers.cproj; backup-timers/Gryphon Timers.componentinfo.xml"
+        },
+        {
+          "name": "gentlebeam:external-license-evidence",
+          "value": "C:/Program Files (x86)/Atmel/Studio/7.0/packs/arm/CMSIS/5.0.1/CMSIS/Include/core_cm0plus.h"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:backup-timers:device-pack",
+      "name": "SAMD10_DFP (device headers and startup)",
+      "description": "Microchip device family pack: external device/register headers and repository Device_Startup sources. Version denotes the pack release, not its Device Startup component Cversion. Fixed pack selections from the Microchip Studio project and component metadata.",
+      "scope": "required",
+      "version": "1.1.77",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "backup-timers/Gryphon Timers.cproj; backup-timers/Gryphon Timers.componentinfo.xml; backup-timers/Device_Startup/startup_samd10.c; backup-timers/Device_Startup/system_samd10.c"
+        },
+        {
+          "name": "gentlebeam:external-license-evidence",
+          "value": "C:/Program Files (x86)/Atmel/Studio/7.0/packs/atmel/SAMD10_DFP/1.1.77/include/samd10c14a.h"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:backup-timers:newlib",
+      "name": "Newlib (nano C library and math runtime)",
+      "description": "Target runtime selected by nano.specs / UseNewlibNano and the C/math link configuration, not a build-only tool. Includes libc_nano and libm as selected by the linker. Version and a blanket license are omitted because the actual toolchain distribution is externally selected and Newlib contains per-file licenses.",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "backup-timers/Gryphon Timers.cproj"
+        },
+        {
+          "name": "gentlebeam:inventory-limitation",
+          "value": "Toolchain-dependent runtime versions, archive members and their individual license combinations are not pinned by this static source inventory."
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:backup-timers:libgcc",
+      "name": "GNU libgcc target runtime",
+      "description": "Compiler-generated ARM arithmetic/ABI support linked into firmware by the GCC driver. The host compiler itself is excluded. Version and license declaration are omitted because the target runtime comes from the externally selected toolchain, not a vendored archive.",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "backup-timers/Gryphon Timers.cproj"
+        },
+        {
+          "name": "gentlebeam:inventory-limitation",
+          "value": "Actual libgcc version and archive-member licenses depend on the toolchain used to build the image."
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "urn:gentlebeam:component:backup-timers",
+      "dependsOn": [
+        "urn:gentlebeam:component:backup-timers:atmel-start",
+        "urn:gentlebeam:component:backup-timers:cmsis",
+        "urn:gentlebeam:component:backup-timers:device-pack",
+        "urn:gentlebeam:component:backup-timers:newlib",
+        "urn:gentlebeam:component:backup-timers:libgcc"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:backup-timers:atmel-start",
+      "dependsOn": [
+        "urn:gentlebeam:component:backup-timers:cmsis",
+        "urn:gentlebeam:component:backup-timers:device-pack",
+        "urn:gentlebeam:component:backup-timers:newlib",
+        "urn:gentlebeam:component:backup-timers:libgcc"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:backup-timers:cmsis",
+      "dependsOn": []
+    },
+    {
+      "ref": "urn:gentlebeam:component:backup-timers:device-pack",
+      "dependsOn": [
+        "urn:gentlebeam:component:backup-timers:cmsis",
+        "urn:gentlebeam:component:backup-timers:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:backup-timers:newlib",
+      "dependsOn": [
+        "urn:gentlebeam:component:backup-timers:libgcc"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:backup-timers:libgcc",
+      "dependsOn": []
+    }
+  ]
+}

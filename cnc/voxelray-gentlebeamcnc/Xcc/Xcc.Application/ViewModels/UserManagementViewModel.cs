@@ -6,11 +6,13 @@ using Prism.Services.Dialogs;
 
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
 using Xcc.Application.AppLayer.Model;
 using Xcc.Application.AppLayer.Users;
+using Xcc.Application.AppLayer.Service;
 using Xcc.Application.Common;
 using Xcc.Application.Helpers;
 using Xcc.Core.Constants;
@@ -18,6 +20,8 @@ using Xcc.Core.Domain.DataManagement.Common.Users;
 using Xcc.Core.Domain.DataManagement.Common.Users.DataAccess;
 using Xcc.Core.Enums;
 using Xcc.Core.Logging;
+using Xcc.Infra.UserSessions;
+using Xcc.Infra.UserSessions.BearerToken;
 
 namespace Xcc.Application.ViewModels;
 
@@ -26,6 +30,8 @@ public class UserManagementViewModel(
     IUserRepository userRepository,
     ILogRepository logWriter,
     IDialogService dialogService,
+    IActionAuditService actionAuditService,
+    IBearerTokenUserSessionManager userSessionManager,
     IEventAggregator eventAggregator) 
     : BindableBase, INavigationAware
 {
@@ -34,6 +40,8 @@ public class UserManagementViewModel(
 
     #region Properties
     public ObservableCollection<IUser> Users { get; set; } = [];
+
+    public bool IsAdministrator => AuthorizedUserStore.AuthorizedUser?.Role.Name == UserRole.BuiltInNames.Administrator;
 
     private IUser? _selectedUser;
     public IUser? SelectedUser
@@ -153,6 +161,13 @@ public class UserManagementViewModel(
         .ObservesProperty(() => SelectedUser)
         .ObservesProperty(() => AuthorizedUserStore.AuthorizedUser);
 
+
+    private DelegateCommand? _resetLockoutCommand;
+    public DelegateCommand ResetLockoutCommand => _resetLockoutCommand ??= new DelegateCommand(
+        ResetSelectedUserLockout, CanResetLockout)
+        .ObservesProperty(() => SelectedUser)
+        .ObservesProperty(() => AuthorizedUserStore.AuthorizedUser)
+        .ObservesProperty(() => UserTask);
     private DelegateCommand? _cancelEditCommand;
     public DelegateCommand CancelEditCommand => _cancelEditCommand ??= new DelegateCommand(
         () =>
@@ -191,7 +206,15 @@ public class UserManagementViewModel(
     public ObservableTask? UserTask
     {
         get => _userTask;
-        private set => SetProperty(ref _userTask, value);
+        private set
+        {
+            if (_userTask is not null)
+                _userTask.PropertyChanged -= OnUserTaskChanged;
+            if (SetProperty(ref _userTask, value))
+                _resetLockoutCommand?.RaiseCanExecuteChanged();
+            if (_userTask is not null)
+                _userTask.PropertyChanged += OnUserTaskChanged;
+        }
     }
 
     private DelegateCommand? _cancelUserTaskCommand;
@@ -211,13 +234,18 @@ public class UserManagementViewModel(
 
 
     #region Private methods
-    private async Task FetchUsersAsync()
+    private async Task FetchUsersAsync(bool preserveDraft = false)
     {
         try
         {
             var users = await userRepository.FetchUsersAsync();
+            var selectedId = SelectedUser?.Id;
+            var draft = preserveDraft && UserToEdit?.IsModified == true ? UserToEdit : null;
             Users.Clear();
             Users.AddRange(users);
+            SelectedUser = Users.FirstOrDefault(user => user.Id == selectedId);
+            if (draft is not null && selectedId == SelectedUser?.Id)
+                UserToEdit = draft;
         }
         catch(Exception ex)
         {
@@ -248,7 +276,7 @@ public class UserManagementViewModel(
             if (UserToEdit is null)
                 throw new Exception(StringConstants.SystemSettings.UserManagement.UserIsNotSelectedErrorMessage);
 
-            await userRepository.SaveUserAsync(UserToEdit.ToUser());
+            await userRepository.SaveUserAsync(UserToEdit.ToUser(), actionAuditService.RegisterAction);
             await FetchUsersAsync();
 
             SelectedUser = null;
@@ -283,7 +311,7 @@ public class UserManagementViewModel(
             if (UserToEdit is null)
                 throw new Exception(StringConstants.SystemSettings.UserManagement.UserIsNotSelectedErrorMessage);
 
-            await userRepository.CreateUserAsync(UserToEdit.ToUser());
+            await userRepository.CreateUserAsync(UserToEdit.ToUser(), actionAuditService.RegisterAction);
             await FetchUsersAsync();
 
             UserToEdit = null;
@@ -313,7 +341,7 @@ public class UserManagementViewModel(
                 return;
             }
 
-            await userRepository.DeleteUserAsync(SelectedUser.Id);
+            await userRepository.DeleteUserAsync(SelectedUser.Id, actionAuditService.RegisterAction);
             await FetchUsersAsync();
         }
         catch (Exception ex)
@@ -324,6 +352,97 @@ public class UserManagementViewModel(
             throw;
         }
     }
+
+    private bool _confirmingResetLockout;
+
+    private bool HasResetLockoutAuthorization()
+    {
+        var actor = AuthorizedUserStore.AuthorizedUser;
+        var session = userSessionManager.UserSession;
+        return IsAdministrator && actor is { Id: > 0, IsLocked: false } &&
+            !session.IsLocked && !session.IsExpired && !session.CancellationToken.IsCancellationRequested &&
+            session.Username == actor.Username;
+    }
+
+    private bool CanResetLockout() =>
+        !_confirmingResetLockout && UserTask?.IsNotCompleted != true &&
+        SelectedUser is { Id: > 0, IsLocked: true } && HasResetLockoutAuthorization();
+
+    private void ResetSelectedUserLockout()
+    {
+        if (!CanResetLockout())
+            return;
+
+        var targetId = SelectedUser!.Id;
+        var targetUsername = SelectedUser.Username;
+        var actorId = AuthorizedUserStore.AuthorizedUser!.Id;
+        var session = userSessionManager.UserSession;
+        _confirmingResetLockout = true;
+        _resetLockoutCommand?.RaiseCanExecuteChanged();
+        try
+        {
+            if (!dialogService.Confirmation(StringConstants.Common.ConfirmationDialogTitle,
+                string.Format(StringConstants.SystemSettings.UserManagement.ResetLockoutConfirmationUiMessage, targetUsername, targetId)))
+                return;
+
+            var resetCompleted = false;
+            async Task ResetAndRefreshAsync()
+            {
+                try
+                {
+                    if (!HasResetLockoutAuthorization() || AuthorizedUserStore.AuthorizedUser?.Id != actorId ||
+                        !ReferenceEquals(userSessionManager.UserSession, session))
+                        throw new UnauthorizedAccessException(StringConstants.SystemSettings.UserManagement.ResetLockoutAuthorizationErrorMessage);
+
+                    if (!resetCompleted)
+                    {
+                        await userRepository.ResetUserLockoutAsync(targetId);
+                        resetCompleted = true;
+                    }
+                    await FetchUsersAsync(preserveDraft: true);
+                }
+                catch (Exception ex)
+                {
+                    _ = logWriter.LogAsync(
+                        $"{StringConstants.SystemSettings.UserManagement.ResetLockoutErrorMessage}. {ex.Message}",
+                        LogRecordSeverity.Error, LogRecordType.System);
+                    throw;
+                }
+            }
+
+            RetryUserTaskCommand = new DelegateCommand(() =>
+            {
+                if (UserTask?.IsNotCompleted != true)
+                    UserTask = new ObservableTask(ResetAndRefreshAsync(), StringConstants.SystemSettings.UserManagement.ResetLockoutUiErrorMessage);
+            });
+            CancelUserTaskCommand = new DelegateCommand(() =>
+            {
+                if (UserTask?.IsNotCompleted != true)
+                    UserTask = null;
+            });
+            UserTask = new ObservableTask(ResetAndRefreshAsync(), StringConstants.SystemSettings.UserManagement.ResetLockoutUiErrorMessage);
+        }
+        finally
+        {
+            _confirmingResetLockout = false;
+            _resetLockoutCommand?.RaiseCanExecuteChanged();
+        }
+    }
+
+    private void OnUserTaskChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(ObservableTask.IsCompleted))
+            _resetLockoutCommand?.RaiseCanExecuteChanged();
+    }
+
+    private void OnAuthorizedUserChanged(object? sender, IUser? user)
+    {
+        RaisePropertyChanged(nameof(IsAdministrator));
+        _resetLockoutCommand?.RaiseCanExecuteChanged();
+    }
+
+    private void OnUserSessionChanged(object? sender, UserSessionEventArgs args) =>
+        _resetLockoutCommand?.RaiseCanExecuteChanged();
     
     private async Task FetchUserRolesAsync()
     {
@@ -378,6 +497,13 @@ public class UserManagementViewModel(
     #region INavigationAware
     public void OnNavigatedTo(NavigationContext navigationContext)
     {
+        AuthorizedUserStore.AuthorizedUserChanged -= OnAuthorizedUserChanged;
+        AuthorizedUserStore.AuthorizedUserChanged += OnAuthorizedUserChanged;
+        userSessionManager.UserSessionChanged -= OnUserSessionChanged;
+        userSessionManager.UserSessionChanged += OnUserSessionChanged;
+        RaisePropertyChanged(nameof(IsAdministrator));
+        _resetLockoutCommand?.RaiseCanExecuteChanged();
+
         UserTask = new(FetchUsersAndRolesAsync(), StringConstants.SystemSettings.UserManagement.FetchUsersUiErrorMessage);
 
         RetryUserTaskCommand = new DelegateCommand(() =>
@@ -394,7 +520,11 @@ public class UserManagementViewModel(
         });
     }
 
-    public void OnNavigatedFrom(NavigationContext navigationContext) { }
+    public void OnNavigatedFrom(NavigationContext navigationContext)
+    {
+        AuthorizedUserStore.AuthorizedUserChanged -= OnAuthorizedUserChanged;
+        userSessionManager.UserSessionChanged -= OnUserSessionChanged;
+    }
 
     public bool IsNavigationTarget(NavigationContext navigationContext) => true;
     #endregion INavigationAware

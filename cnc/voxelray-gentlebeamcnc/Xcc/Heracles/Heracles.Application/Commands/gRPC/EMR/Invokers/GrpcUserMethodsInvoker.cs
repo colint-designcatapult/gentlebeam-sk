@@ -33,6 +33,11 @@ namespace Heracles.Application.Commands.gRPC.EMR.Invokers
             return response.User;
         }
 
+        public async Task ResetUserLockoutAsync(long userId)
+        {
+            await CallWithOptions(Client.ResetUserLockoutAsync, new ResetUserLockoutRequest { UserId = userId });
+        }
+
         public override async Task<bool> DeleteAsync(long entryId)
         {
             var response = await CallWithOptions(

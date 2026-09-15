@@ -3,6 +3,8 @@ using Heracles.Application.Domain.DataManagement.System.Collimators;
 using Heracles.Application.Infra.DataManagement.System.DataAccess;
 using Heracles.Core.Enums;
 using Heracles.Core.Models.RDBMS;
+using System.Collections.Generic;
+using Xcc.Application.AppLayer.Service;
 using System.Linq;
 using System.Threading.Tasks;
 using Xcc.Application.Helpers;
@@ -18,7 +20,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
         CoilConfigurationBase Configuration { get; }
 
         Task FetchCollimatorConfigurationAsync();
-        Task SubmitCollimatorConfigurationAsync();
+        Task SubmitCollimatorConfigurationAsync(IActionAuditService? audit = null);
     }
 
     /// <summary>
@@ -40,6 +42,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
 
         private CoilConfigurationBase _configuration;
         private ICollimatorConfiguration _collimatorConfiguration;
+        private readonly Dictionary<TreatmentFieldName, (double? X, double? Y, double? Focus)> _savedValues = new();
 
         public CoilConfigurationBase Configuration { 
             get => _configuration;
@@ -62,6 +65,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
             {
                 if (SetProperty(ref _collimatorConfiguration, value))
                 {
+                    _savedValues.Clear();
                     Configuration = CoilConfigurationBase.CreateCoilConfiguration(
                         targetType: CollimatorConfiguration?.Type ?? TargetType.TargetType_None);
                 }
@@ -81,6 +85,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
 
             var currentConfiguration = Configuration.GetConfiguration();
             var coilConfigurationsToSetup = currentConfiguration.ToDictionary(x => x.FieldName, x => x);
+            _savedValues.Clear();
 
             foreach(var coilConfiguration in coilConfigurationsFromDB)
             {
@@ -89,13 +94,15 @@ namespace Heracles.Application.Models.CollimatorConfiguration
                 if (configurationToSetup != null)
                 {
                     configurationToSetup.SetupFormValue(coilConfiguration);
+                    _savedValues[coilConfiguration.FieldName] =
+                        (coilConfiguration.XDeflectionCurrent, coilConfiguration.YDeflectionCurrent, coilConfiguration.FocusCurrent);
                 }
             }
             // Re-evaluate entire configuration dirty flag
             Configuration.IsModified = currentConfiguration.Any(p => p.IsModified);
         }
 
-        public async Task SubmitCollimatorConfigurationAsync()
+        public async Task SubmitCollimatorConfigurationAsync(IActionAuditService? audit = null)
         {
             foreach (var coilConfiguration in Configuration.GetConfiguration())
             {
@@ -103,15 +110,33 @@ namespace Heracles.Application.Models.CollimatorConfiguration
 
                 // Ensure proper preset id in the data:
                 entry.PresetConfigurationId = CollimatorConfiguration.DefaultPreset.Id;
+                var hasSavedValue = _savedValues.TryGetValue(entry.FieldName, out var saved);
+                var fields = new List<string>();
+                if (!hasSavedValue || entry.XDeflectionCurrent != saved.X) fields.Add(nameof(entry.XDeflectionCurrent));
+                if (!hasSavedValue || entry.YDeflectionCurrent != saved.Y) fields.Add(nameof(entry.YDeflectionCurrent));
+                if (!hasSavedValue || entry.FocusCurrent != saved.Focus) fields.Add(nameof(entry.FocusCurrent));
 
                 var storedData = entry;
-                if (BaseEntry.IsBlankEntry(entry))
+                bool isNew = BaseEntry.IsBlankEntry(entry);
+                if (isNew)
                 {
                     storedData = await CoilConfigurationCommands.CreateAsync(entry);                    
                 }
-                else if (coilConfiguration.IsModified)
+                else if (fields.Count > 0)
                 {
                     storedData = await CoilConfigurationCommands.UpdateAsync(null, entry);
+                }
+                if (isNew || fields.Count > 0)
+                {
+                    _savedValues[entry.FieldName] =
+                        (storedData.XDeflectionCurrent, storedData.YDeflectionCurrent, storedData.FocusCurrent);
+                    fields.Clear();
+                    if (!hasSavedValue || storedData.XDeflectionCurrent != saved.X) fields.Add(nameof(entry.XDeflectionCurrent));
+                    if (!hasSavedValue || storedData.YDeflectionCurrent != saved.Y) fields.Add(nameof(entry.YDeflectionCurrent));
+                    if (!hasSavedValue || storedData.FocusCurrent != saved.Focus) fields.Add(nameof(entry.FocusCurrent));
+                    if (isNew || fields.Count > 0)
+                        audit?.RegisterAction("Configuration saved",
+                            $"Entity=CoilConfiguration; Id={storedData.Id}; PresetId={storedData.PresetConfigurationId}; Fields={string.Join(",", fields)}");
                 }
                 // Copy stored state and reset dirty flag
                 coilConfiguration.SetupFormValue(storedData);

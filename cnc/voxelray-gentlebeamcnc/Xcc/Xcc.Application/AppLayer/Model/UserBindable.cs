@@ -25,6 +25,7 @@ public sealed class UserBindable : DirtyFlaggedBindableBase
         Password = user.Password;
         EmailAddress = user.EmailAddress;
         Role = user.Role;
+        FailedLoginAttempts = user.FailedLoginAttempts;
 
         PasswordConfirm = user.Password;
 
@@ -34,6 +35,8 @@ public sealed class UserBindable : DirtyFlaggedBindableBase
 
     #region IUser
     public long Id { get; set; } = BaseEntry.NEW_ENTRY_ID;
+    public uint FailedLoginAttempts { get; }
+    public bool IsLocked => FailedLoginAttempts >= 10;
 
     private string _picture = string.Empty;
     public string Picture

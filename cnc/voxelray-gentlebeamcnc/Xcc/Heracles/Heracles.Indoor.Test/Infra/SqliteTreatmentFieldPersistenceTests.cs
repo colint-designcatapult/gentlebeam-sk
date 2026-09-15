@@ -1,7 +1,7 @@
 extern alias SqliteServer;
 
 using Grpc.Core;
-using Microsoft.Data.Sqlite;
+using SqlCipherDatabase = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqlCipherDatabase;
 using Moq;
 using CreateBatchTreatmentFieldsRequest = SqliteServer::Com.Empyreanmed.Heracles.TreatmentFields.V1.CreateBatchTreatmentFieldsRequest;
 using CreateTreatmentFieldRequest = SqliteServer::Com.Empyreanmed.Heracles.TreatmentFields.V1.CreateTreatmentFieldRequest;
@@ -16,21 +16,24 @@ namespace Heracles.Indoor.Test.Infra;
 [TestFixture]
 public sealed class SqliteTreatmentFieldPersistenceTests
 {
-    private string _dbPath = null!;
+    private string _directory = null!;
+    private SqlCipherDatabase _database = null!;
     private ServerCallContext _context = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), $"treatment-fields-{Guid.NewGuid():N}.sqlite");
+        _directory = Path.Combine(Path.GetTempPath(), $"treatment-fields-{Guid.NewGuid():N}");
+        _database = new SqlCipherDatabase(_directory);
+        _database.Initialize(_ => true, _ => null);
         _context = new Mock<ServerCallContext>().Object;
     }
 
     [TearDown]
     public void TearDown()
     {
-        SqliteConnection.ClearAllPools();
-        File.Delete(_dbPath);
+        _database.Dispose();
+        Directory.Delete(_directory, recursive: true);
     }
 
     [Test]
@@ -153,7 +156,7 @@ public sealed class SqliteTreatmentFieldPersistenceTests
     private SqliteProtoRepository CreateRepository()
     {
         return new SqliteProtoRepository(
-            _dbPath,
+            _database.Connections,
             "treatment_fields",
             hasParentId: true,
             parentIdJsonField: "planId");

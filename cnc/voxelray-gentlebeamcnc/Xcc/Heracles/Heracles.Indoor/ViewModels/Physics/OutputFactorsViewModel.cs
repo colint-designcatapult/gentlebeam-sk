@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 using Xcc.Application.Common;
 using Xcc.Application.Helpers;
+using Xcc.Application.AppLayer.Service;
 using Xcc.Core.Constants;
 using Xcc.Core.Logging;
 
@@ -30,7 +31,8 @@ namespace Heracles.Indoor.ViewModels.Physics
         public OutputFactorsViewModel(
             IOutputFactorConfigurationStore outputFactorConfigurationStore,
             ILogRepository logWriter,
-            IDialogService dialogService)
+            IDialogService dialogService,
+            IActionAuditService actionAuditService)
         {
             Store = outputFactorConfigurationStore;
             Store.PropertyChanged += (s, e) =>
@@ -52,11 +54,13 @@ namespace Heracles.Indoor.ViewModels.Physics
 
             LogWriter = logWriter;
             DialogService = dialogService;
+            ActionAuditService = actionAuditService;
         }
         #endregion Constructors
 
 
         #region Properties
+        private IActionAuditService ActionAuditService { get; }
         public IOutputFactorConfigurationStore Store { get; }
         public ILogRepository LogWriter { get; }
         public IDialogService DialogService { get; }
@@ -288,7 +292,7 @@ namespace Heracles.Indoor.ViewModels.Physics
                 }
                 else
                 {
-                    await Store.SubmitOutputFactorsAsync();
+                    await Store.SubmitOutputFactorsAsync(ActionAuditService);
                     DialogService.Report(
                         StringConstants.Common.SettingsDialogTitle,
                         StringConstants.Common.RestartExternalOnSaveNotification,

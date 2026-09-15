@@ -5,6 +5,7 @@ using Moq;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
 using Xcc.Infra.GryphonBoard;
+using Xcc.Application.AppLayer.Service;
 
 namespace Heracles.Application.Test.ViewModels;
 
@@ -269,9 +270,135 @@ internal sealed class UnifiedCalibrationServiceViewModelTests
         });
     }
 
+    [Test]
+    [Apartment(ApartmentState.STA)]
+    public async Task ConfigurationSet_RequiresLoadedFirmwareValuesAndAuditsMatchingChangedReadbackOnly()
+    {
+        var records = new List<string>();
+        var audit = new Mock<IActionAuditService>();
+        audit.Setup(x => x.RegisterAction(It.IsAny<string>(), It.IsAny<string>()))
+            .Callback<string, string>((action, details) => records.Add($"{action}: {details}"));
+        var uart = new Mock<IUcsiHvpsUartCommandInterface>();
+        uart.SetupGet(x => x.IsConnected).Returns(true);
+        float firmwareValue = 100;
+        uart.Setup(x => x.RequestSystemConfig()).ReturnsAsync(() => new SystemConfigResponse(Enumerable.Repeat(firmwareValue, 32).ToArray()));
+        uart.Setup(x => x.SetSystemConfigValue(0, 200)).Returns(Task.CompletedTask);
+        var sut = CreateSut(new Mock<IGcbCommandInterface>(), () => null, uart.Object, audit.Object);
+        var item = sut.ConfigItems[0];
+        item.InputValue = "200";
+        Assert.That(item.SetCommand.CanExecute(), Is.False);
+        item.SetCommand.Execute();
+        uart.Verify(x => x.SetSystemConfigValue(It.IsAny<int>(), It.IsAny<float>()), Times.Never);
+
+        sut.RefreshSystemConfigCommand.Execute();
+        await sut.TickAsync();
+        await sut.TickAsync();
+        Assert.That(item.SetCommand.CanExecute(), Is.True);
+        Assert.That(records, Is.Empty);
+
+        item.SetCommand.Execute();
+        Assert.That(records, Is.Empty);
+        firmwareValue = 200;
+        await sut.TickAsync();
+        await sut.TickAsync();
+        Assert.That(records, Has.Count.EqualTo(1));
+        Assert.That(records[0], Does.Contain("Entity=HVPSConfiguration; Id=0").And.Contain("Fields=Value").And.Not.Contain("200"));
+
+        item.SetCommand.Execute();
+        await sut.TickAsync();
+        await sut.TickAsync();
+        sut.RefreshSystemConfigCommand.Execute();
+        await sut.TickAsync();
+        await sut.TickAsync();
+        Assert.That(records, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    [Apartment(ApartmentState.STA)]
+    public async Task ConfigurationSet_MismatchedReadbackCannotBeAuditedByALaterRefresh()
+    {
+        var audit = new Mock<IActionAuditService>();
+        var uart = new Mock<IUcsiHvpsUartCommandInterface>();
+        uart.SetupGet(x => x.IsConnected).Returns(true);
+        float firmwareValue = 100;
+        uart.Setup(x => x.RequestSystemConfig()).ReturnsAsync(() => new SystemConfigResponse(Enumerable.Repeat(firmwareValue, 32).ToArray()));
+        uart.Setup(x => x.SetSystemConfigValue(0, 200)).Returns(Task.CompletedTask);
+        var sut = CreateSut(new Mock<IGcbCommandInterface>(), () => null, uart.Object, audit.Object);
+        sut.RefreshSystemConfigCommand.Execute();
+        await sut.TickAsync();
+        await sut.TickAsync();
+        sut.ConfigItems[0].InputValue = "200";
+        sut.ConfigItems[0].SetCommand.Execute();
+        firmwareValue = 150;
+        await sut.TickAsync();
+        await sut.TickAsync();
+        firmwareValue = 200;
+        sut.RefreshSystemConfigCommand.Execute();
+        await sut.TickAsync();
+        await sut.TickAsync();
+        audit.Verify(x => x.RegisterAction(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
+    [Apartment(ApartmentState.STA)]
+    public async Task ConfigurationSet_FailedCommandAndFailedInitialReadStaySilent()
+    {
+        var audit = new Mock<IActionAuditService>();
+        var uart = new Mock<IUcsiHvpsUartCommandInterface>();
+        uart.SetupGet(x => x.IsConnected).Returns(true);
+        uart.Setup(x => x.RequestSystemConfig()).ThrowsAsync(new InvalidOperationException("Read failed"));
+        var sut = CreateSut(new Mock<IGcbCommandInterface>(), () => null, uart.Object, audit.Object);
+        sut.RefreshSystemConfigCommand.Execute();
+        await sut.TickAsync();
+        Assert.That(sut.ConfigItems[0].SetCommand.CanExecute(), Is.False);
+
+        uart.Setup(x => x.RequestSystemConfig()).ReturnsAsync(new SystemConfigResponse(Enumerable.Repeat(100f, 32).ToArray()));
+        sut.RefreshSystemConfigCommand.Execute();
+        await sut.TickAsync();
+        await sut.TickAsync();
+        uart.Setup(x => x.SetSystemConfigValue(0, 200)).ThrowsAsync(new InvalidOperationException("Write failed"));
+        sut.ConfigItems[0].InputValue = "200";
+        sut.ConfigItems[0].SetCommand.Execute();
+        Assert.That(sut.ConfigItems[0].SetCommand.CanExecute(), Is.True);
+        audit.Verify(x => x.RegisterAction(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Test]
+    [Apartment(ApartmentState.STA)]
+    public async Task ConfigurationSet_ReadbackAndWriteCompletionMustBothSucceed()
+    {
+        var confirmed = new TaskCompletionSource<string>();
+        var audit = new Mock<IActionAuditService>();
+        audit.Setup(x => x.RegisterAction(It.IsAny<string>(), It.IsAny<string>()))
+            .Callback<string, string>((_, details) => confirmed.TrySetResult(details));
+        var uart = new Mock<IUcsiHvpsUartCommandInterface>();
+        uart.SetupGet(x => x.IsConnected).Returns(true);
+        float firmwareValue = 100;
+        uart.Setup(x => x.RequestSystemConfig()).ReturnsAsync(() => new SystemConfigResponse(Enumerable.Repeat(firmwareValue, 32).ToArray()));
+        var write = new TaskCompletionSource();
+        uart.Setup(x => x.SetSystemConfigValue(0, 200)).Returns(write.Task);
+        var sut = CreateSut(new Mock<IGcbCommandInterface>(), () => null, uart.Object, audit.Object);
+        sut.RefreshSystemConfigCommand.Execute();
+        await sut.TickAsync();
+        await sut.TickAsync();
+        sut.ConfigItems[0].InputValue = "200";
+        sut.ConfigItems[0].SetCommand.Execute();
+        firmwareValue = 200;
+        await sut.TickAsync();
+        await sut.TickAsync();
+        Assert.That(confirmed.Task.IsCompleted, Is.False);
+
+        write.SetResult();
+        var details = await confirmed.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        Assert.That(details, Does.Contain("Entity=HVPSConfiguration; Id=0"));
+        audit.Verify(x => x.RegisterAction(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
     private static UnifiedCalibrationServiceViewModel CreateSut(
         Mock<IGcbCommandInterface> commands,
-        Func<UcsiTelemetrySample?> currentSample)
+        Func<UcsiTelemetrySample?> currentSample,
+        IUcsiHvpsUartCommandInterface? hvpsUart = null,
+        IActionAuditService? audit = null)
     {
         var coordinator = new Mock<ITelemetrySessionCoordinator>();
         coordinator.SetupGet(value => value.Mode).Returns(UcsiMode.Live);
@@ -281,7 +408,6 @@ internal sealed class UnifiedCalibrationServiceViewModelTests
         var catalog = new TelemetryParameterCatalog();
         var hostCommands = new Mock<IUcsiHostCommands>();
         hostCommands.SetupGet(value => value.ClearFaultsUnavailableReason).Returns("Unavailable");
-        var hvpsUart = new Mock<IUcsiHvpsUartCommandInterface>();
 
         return new UnifiedCalibrationServiceViewModel(
             coordinator.Object,
@@ -290,9 +416,10 @@ internal sealed class UnifiedCalibrationServiceViewModelTests
             new UcsiLogBuffer(),
             commands.Object,
             Mock.Of<ISystemTelemetryProcessor>(),
-            hvpsUart.Object,
+            hvpsUart ?? Mock.Of<IUcsiHvpsUartCommandInterface>(),
             new SessionDataExportService(catalog),
-            Mock.Of<IUcsiKeepaliveService>());
+            Mock.Of<IUcsiKeepaliveService>(),
+            audit ?? Mock.Of<IActionAuditService>());
     }
 
     private static UcsiTelemetrySample CreateSample(GcbStateNew state)

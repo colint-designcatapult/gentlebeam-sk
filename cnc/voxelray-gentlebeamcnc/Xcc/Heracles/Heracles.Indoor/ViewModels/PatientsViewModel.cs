@@ -4,6 +4,7 @@ using Heracles.Application.Common;
 using Heracles.Application.Models;
 using Heracles.Application.Models.EMR;
 using Heracles.Application.Models.Treatment;
+using Heracles.Application.Protos;
 using Heracles.Core.Commands;
 using Heracles.Core.Models.EMR;
 using Heracles.Indoor.Models.UseCases;
@@ -125,8 +126,12 @@ namespace Heracles.Indoor.ViewModels
             get => _searchPhrase;
             set
             {
-                if(SetProperty(ref _searchPhrase, value))
+                if (SetProperty(ref _searchPhrase, value))
+                {
                     PatientsViewSource.View?.Refresh();
+                    if (_isPatientListVisible)
+                        AuditPatientList("Searched patient records");
+                }
             }
         }
 
@@ -245,6 +250,8 @@ namespace Heracles.Indoor.ViewModels
             {
                 PatientEditing = new PatientEditing(PatientProfileForm, this, PatientModel, patientToEdit: SelectedPatient);
                 ValidateCanExecCommands();
+                if (SelectedPatient is { Id: > 0 } patient && PatientProfileForm?.FormData is not null)
+                    ActionAuditService.RegisterAction($"Viewed patient profile for editing patient id={patient.Id}");
             },
             () => PatientEditing is null && SelectedPatient is not null);
 
@@ -269,7 +276,7 @@ namespace Heracles.Indoor.ViewModels
             patient =>
             {
                 TreatmentInfoStore.Patient = patient;
-                GoToTreatment();
+                GoToTreatment(true);
             },
             patient => true);
 
@@ -338,6 +345,7 @@ namespace Heracles.Indoor.ViewModels
             SortDescription = new SortDescription(nameof(IPatient.LastName), ListSortDirection.Ascending);
 
             PatientProfileForm = new PatientProfileForm(authorizedUserStore);
+            PatientsViewSource.Source = PatientModel.Patients;
         }
 
         public PatientsViewModel() : base(null) 
@@ -348,6 +356,53 @@ namespace Heracles.Indoor.ViewModels
             };
         }
         #endregion Constructors
+
+        private bool _isPatientListVisible;
+        private bool _pendingListView;
+        private int _listVisit;
+
+        public void SetPatientListVisible(bool visible)
+        {
+            if (_isPatientListVisible == visible)
+                return;
+            _isPatientListVisible = visible;
+            _listVisit++;
+            _pendingListView = visible;
+            if (visible)
+                _ = AuditPatientListWhenReadyAsync();
+        }
+
+        private async Task AuditPatientListWhenReadyAsync()
+        {
+            var visit = _listVisit;
+            var userId = AuthorizedUserStore.AuthorizedUser?.Id;
+            try
+            {
+                if (FetchPatientListTask is not null)
+                    await FetchPatientListTask.Task;
+                if (_isPatientListVisible && visit == _listVisit && _pendingListView &&
+                    userId is > 0 && AuthorizedUserStore.AuthorizedUser?.Id == userId)
+                {
+                    _pendingListView = false;
+                    AuditPatientList("Viewed patient list");
+                }
+            }
+            catch
+            {
+                // The existing task presents the read failure; a failed read is not a view.
+            }
+        }
+
+        private void AuditPatientList(string action)
+        {
+            if (PatientsViewSource.View is null)
+                return;
+            foreach (var entry in PatientsViewSource.View)
+            {
+                if (entry is IPatient { Id: > 0 } patient)
+                    ActionAuditService.RegisterAction($"{action} patient id={patient.Id}");
+            }
+        }
 
         #region Private methods
         private async Task FetchPatientListAsync()
@@ -398,6 +453,11 @@ namespace Heracles.Indoor.ViewModels
                 FetchPatientListTask = new ObservableTask(
                     TaskToFetchPatientsAndTryLockAsync(),
                     StringConstants.EMR.PatientListFetchError);
+                if (_isPatientListVisible)
+                {
+                    _pendingListView = true;
+                    _ = AuditPatientListWhenReadyAsync();
+                }
             });
             RetryFetchPatientListCommand.Execute();
         }
@@ -407,7 +467,7 @@ namespace Heracles.Indoor.ViewModels
             var existingPlan = await TreatmentInfoStoreController.TryPrepareLoadedPlanAsync();
             if (existingPlan != null)
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(GoToTreatment);
+                System.Windows.Application.Current.Dispatcher.Invoke(() => GoToTreatment());
             }
         }
 
@@ -453,15 +513,24 @@ namespace Heracles.Indoor.ViewModels
         {
             try
             {
-                AuditReportOnStartSavingPatientAsync(PatientProfileForm.FormData);
+                var patientToSave = PatientProfileForm.FormData;
+                var previousPatient = BaseEntry.IsBlankEntry(patientToSave)
+                    ? null
+                    : ProtoTypesConverter.ToProto(PatientModel.GetPatientById(patientToSave.Id));
+                var hasRequestedChanges = previousPatient is null ||
+                    !previousPatient.Equals(ProtoTypesConverter.ToProto(patientToSave));
 
                 IPatient savedPatient = await PatientEditing.SavePatientAsync();
                 if (savedPatient != null)
                 {
+                    if (hasRequestedChanges && !BaseEntry.IsBlankEntry(savedPatient) &&
+                        (previousPatient is null || !previousPatient.Equals(ProtoTypesConverter.ToProto(savedPatient))))
+                    {
+                        ActionAuditService.RegisterAction(
+                            $"{StringConstants.EMR.SavePatientIsDoneAuditLogMessage} id={savedPatient.Id}");
+                    }
                     PatientEditing = null;
                     ValidateCanExecCommands();
-
-                    AuditReportOnSavePatientCompleteAsync(savedPatient);
                 }
             }
             catch (DataServiceException dEx)
@@ -499,31 +568,18 @@ namespace Heracles.Indoor.ViewModels
             }
         }
 
-        private void AuditReportOnStartSavingPatientAsync(IPatient patientProfile)
-        {
-            var user = AuthorizedUserStore.AuthorizedUser;
 
-            string action = 
-                (BaseEntry.IsBlankEntry(patientProfile)) 
-                ? StringConstants.EMR.SaveNewPatientAuditLogMessage
-                : $"{StringConstants.EMR.SaveExistingPatientAuditLogMessage} id={patientProfile.Id}";
-            
-            ActionAuditService.RegisterAction(action);
-        }
-
-        private void AuditReportOnSavePatientCompleteAsync(IPatient patientProfile)
-        {
-            var user = AuthorizedUserStore.AuthorizedUser;
-
-            string action = $"{StringConstants.EMR.SavePatientIsDoneAuditLogMessage} id={patientProfile.Id}";
-
-            ActionAuditService.RegisterAction(action);
-        }
-
-        private void GoToTreatment()
+        private void GoToTreatment(bool userInitiated = false)
         {
             SelectedPatient = TreatmentInfoStore.Patient;
-            RegionManager?.RequestNavigate(Regions.MainRegion, "ClinicalDataView");
+            var patient = SelectedPatient;
+            var userId = AuthorizedUserStore.AuthorizedUser?.Id;
+            RegionManager?.RequestNavigate(Regions.MainRegion, "ClinicalDataView", result =>
+            {
+                if (userInitiated && result.Result == true && patient is { Id: > 0 } &&
+                    userId is > 0 && AuthorizedUserStore.AuthorizedUser?.Id == userId)
+                    ActionAuditService.RegisterAction($"Viewed patient clinical record patient id={patient.Id}");
+            }, new NavigationParameters { { "UserPatientView", userInitiated } });
         }
 
 

@@ -68,7 +68,7 @@ namespace Heracles.Indoor.ViewModels.Dialogs
         public DelegateCommand AcceptCommand => _acceptCommand ??= new DelegateCommand(
             () =>
             {
-                logger.LogAsync($"{StringConstants.EMR.AcknowledgeSimulationMessage}: {GetAcknowledgeString()}", LogRecordSeverity.Info, LogRecordType.User);
+                logger.LogAsync($"{StringConstants.EMR.AcknowledgeSimulationMessage}: {GetAcknowledgeString()}", LogRecordSeverity.Info, LogRecordType.Security);
 
                 RequestClose?.Invoke(new DialogResult(ButtonResult.OK));
             }).ObservesCanExecute(() => CanAccept);

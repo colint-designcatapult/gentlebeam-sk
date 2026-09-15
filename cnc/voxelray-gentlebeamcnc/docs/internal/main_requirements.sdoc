@@ -158,6 +158,8 @@ TYPE: Data
 TITLE: Patients - Data Manipulation Audit Trails
 STATEMENT: >>>
 The application shall maintain logs of all changes made to patient data, including who made the change and when.
+
+Explicit user views of patient records, including cached revisits, shall be audited with the user and record identifiers. Background loads, refreshes, and RPC traffic alone shall not produce user-action audit records.
 <<<
 
 [REQUIREMENT]
@@ -559,7 +561,7 @@ UID: RQ-H10SG-16
 TYPE: Functional
 TITLE: Patients - Plan View - Patient's Treatment Plan Audit Trial
 STATEMENT: >>>
-The application shall log all actions done on the treatment plan, including creating, updating the simulation or prescription, and approving the plan. The audit should include who perform the action and when.
+The application shall log explicit user actions on the treatment plan, including viewing records, creating or updating the simulation or prescription, and approving the plan. The audit shall identify who performed the action and when, distinguish requested actions from successful changes, and exclude automatic refreshes and background RPC activity.
 <<<
 
 [REQUIREMENT]
@@ -947,7 +949,23 @@ UID: RQ-H10SG-55
 TYPE: Cybersecurity
 TITLE: Security - Data Encryption
 STATEMENT: >>>
-The application will store the patient demographic data in encrypted format.
+The software shall encrypt all data in its operational database at rest with an encryption strength of at least 128 bits.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10SG-789
+TYPE: Cybersecurity
+TITLE: Security - Database Integrity
+STATEMENT: >>>
+The software shall protect the integrity of its operational database through cryptographic means.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H10SG-790
+TYPE: Functional
+TITLE: Data Recovery and Backup
+STATEMENT: >>>
+The software shall allow administrators to recover access to stored data and to export and restore the database using password-protected backups, and to explicitly choose an unencrypted database export.
 <<<
 
 [REQUIREMENT]
@@ -1177,6 +1195,8 @@ TITLE: System Setting View - Endpoint configuration
 STATEMENT: >>>
 The application shall have a user interface that allows users (role-based) to configure the system endpoints to enable communication between system components.
 
+Committed user changes to endpoint configuration shall be audited with the acting user and affected configuration identifiers. Editing, cancelling, failed saves, and background reads shall not be recorded as successful configuration changes.
+
 .. image:: _images/RQ-H10SG-124.png
 <<<
 
@@ -1188,6 +1208,10 @@ STATEMENT: >>>
 The application shall have a user interface that allows admin users to manage the system users.
 
 The admin should be able to add, edit, or delete users.
+
+Settings > User Management shall display account lock status and offer Reset lockout for a selected account with at least 10 failed login attempts. Only an authenticated Administrator with an active, unlocked, unexpired session may enable the confirmed action.
+
+The server shall independently authorize the bearer session against its current persisted user and exact built-in Administrator role. Missing or forged sessions and non-administrator, deleted, demoted, or locked actors shall be rejected. A successful reset shall persist only the target's failed-login count as zero, preserving credentials, last access, and other account data, and shall atomically record the actor and target identifiers in the security audit. Audit persistence failure shall roll back the reset. A target below the lockout threshold shall remain unchanged without a reset-success audit. Ordinary user editing shall not change the output-only failed-login count.
 
 .. image:: _images/RQ-H10SG-125.png
 <<<
@@ -1216,6 +1240,10 @@ STATEMENT: >>>
 The application shall have a user interface allowing users to input credentials and be authenticated by the system.
 
 Once the user is logged in, the application should hold the authentication token and use it for all the API requests.
+
+Login outcomes shall be persisted in the security log without credentials or bearer tokens; failure to persist the outcome shall fail closed and shall not create an authenticated session. Failed passwords for an existing unlocked account shall increment its persisted failed-login count; at 10 failures the account shall remain locked across application or server restart, including when the correct password is supplied. Successful login below 10 failures shall reset the count to zero.
+
+Approval credential checks shall reject locked accounts without changing their failed-login count on either valid or invalid credentials. An Administrator may reset a locked account through the dedicated User Management action; reset does not authenticate the target user.
 <<<
 
 [REQUIREMENT]

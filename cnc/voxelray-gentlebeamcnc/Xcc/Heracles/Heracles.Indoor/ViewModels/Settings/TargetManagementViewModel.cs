@@ -9,6 +9,7 @@ using Heracles.Core.Enums;
 using Prism.Commands;
 using Prism.Mvvm;
 using Xcc.Application.Helpers;
+using Xcc.Application.AppLayer.Service;
 using Xcc.Core.Common;
 using Xcc.Core.Constants;
 using Xcc.Core.Domain.DataManagement.Common;
@@ -140,12 +141,14 @@ namespace Heracles.Indoor.ViewModels.Settings
             ICollimatorModel collimatorModel,
             CollimatorService collimatorService,
             IPopUpService popUpService,
-            ILogRepository logWriter)
+            ILogRepository logWriter,
+            IActionAuditService actionAuditService)
         {
             CollimatorModel = collimatorModel;
             CollimatorService = collimatorService;
             PopUpService = popUpService;
             LogWriter = logWriter;
+            ActionAuditService = actionAuditService;
 
             CollimatorModel.PropertyChanged += (s, e) =>
             {
@@ -206,6 +209,7 @@ namespace Heracles.Indoor.ViewModels.Settings
         public CollimatorService CollimatorService { get; }
         public IPopUpService PopUpService { get; }
         public ILogRepository LogWriter { get; }
+        private IActionAuditService ActionAuditService { get; }
         Task CurrentTask { get; set; }
         #endregion Properties
 
@@ -231,7 +235,7 @@ namespace Heracles.Indoor.ViewModels.Settings
                             collimatorToEdit.Serial,
                             collimatorToEdit.Configuration.Type,
                             collimatorToEdit.Configuration.Energy,
-                            collimatorToEdit.IsActive);
+                            collimatorToEdit.IsActive, ActionAuditService);
                     }
                     else
                     {
@@ -239,7 +243,7 @@ namespace Heracles.Indoor.ViewModels.Settings
                             collimatorToEdit.Serial,
                             collimatorToEdit.Configuration.Type,
                             collimatorToEdit.Configuration.Energy,
-                            collimatorToEdit.IsActive);
+                            collimatorToEdit.IsActive, ActionAuditService);
                     }
                     PopUpService.ShowMessage(
                             StringConstants.Common.SettingsDialogTitle,

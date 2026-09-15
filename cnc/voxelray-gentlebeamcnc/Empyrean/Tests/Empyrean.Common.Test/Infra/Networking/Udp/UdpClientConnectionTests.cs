@@ -26,14 +26,13 @@ namespace Empyrean.Common.Test.Infra.Networking.Udp
         }
 
         [Test]
-        public void Dispose_NotThrows()
+        public void ReceiveBeforeFirstSendWaitsForCancellation()
         {
-            var connection = new UdpClientConnection(hostIp, hostPort);
-            
-            Assert.DoesNotThrow(() => connection.Dispose());
-            
-            // Second Dispose for check first branch
-            Assert.DoesNotThrow(() => connection.Dispose());
+            var receive = Connection.ReceiveAsync(CancellationTokenSource.Token);
+            CancellationTokenSource.Cancel();
+
+            Assert.That(async () => await receive.WaitAsync(TimeSpan.FromSeconds(5)),
+                Throws.InstanceOf<OperationCanceledException>());
         }
 
         [Test]

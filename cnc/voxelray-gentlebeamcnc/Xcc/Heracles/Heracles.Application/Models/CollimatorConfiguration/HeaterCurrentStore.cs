@@ -5,6 +5,7 @@ using Heracles.Application.Domain.DataManagement.System.Collimators;
 using Heracles.Application.Infra.DataManagement.System.DataAccess;
 using Xcc.Application.Domain.System;
 using Xcc.Application.Helpers;
+using Xcc.Application.AppLayer.Service;
 using Xcc.Core.Domain.DataManagement.Common;
 using Xcc.Core.Models;
 
@@ -17,7 +18,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
         HeaterCurrentBindable HeaterCurrent { get; }
 
         Task FetchHeaterCurrentAsync();
-        Task SubmitHeaterCurrentAsync();
+        Task SubmitHeaterCurrentAsync(IActionAuditService? audit = null);
     }
 
     /// <summary>
@@ -27,6 +28,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
     {
         private HeaterCurrentBindable _heaterCurrent;
         private ICollimatorConfiguration _collimatorConfiguration;
+        private double? _savedHeaterCurrent;
 
         #region Properties
         public HeaterCurrentBindable HeaterCurrent {
@@ -51,6 +53,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
                 if (SetProperty(ref _collimatorConfiguration, value))
                 {
                     HeaterCurrent = (CollimatorConfiguration == null) ? null : new HeaterCurrentBindable();
+                    _savedHeaterCurrent = null;
                 }
             }
         }
@@ -79,20 +82,31 @@ namespace Heracles.Application.Models.CollimatorConfiguration
             var configForPreset = allConfigs.LastOrDefault();
 
             HeaterCurrent = new HeaterCurrentBindable(configForPreset);
+            _savedHeaterCurrent = HeaterCurrent.HeaterCurrent;
         }
 
-        public async Task SubmitHeaterCurrentAsync()
+        public async Task SubmitHeaterCurrentAsync(IActionAuditService? audit = null)
         {
-            if (!IsModified && !BaseEntry.IsBlankId(HeaterCurrent.Id))
+            if (!BaseEntry.IsBlankId(HeaterCurrent.Id) && HeaterCurrent.HeaterCurrent == _savedHeaterCurrent)
+            {
+                HeaterCurrent.AcceptChanges();
+                AcceptChanges();
                 return;
+            }
 
             // Ensure proper preset id:
+            var isNew = BaseEntry.IsBlankEntry(HeaterCurrent);
+            var previousValue = _savedHeaterCurrent;
             HeaterCurrent.PresetConfigurationId = CollimatorConfiguration.DefaultPreset.Id;
 
-            var storedData = (BaseEntry.IsBlankEntry(HeaterCurrent))
+            var storedData = isNew
                 ? await HeaterCurrentCommands.CreateAsync(HeaterCurrent)
                 : await HeaterCurrentCommands.UpdateAsync(null, HeaterCurrent);
 
+            _savedHeaterCurrent = storedData.HeaterCurrent;
+            if (isNew || storedData.HeaterCurrent != previousValue)
+                audit?.RegisterAction("Configuration saved",
+                    $"Entity=HeaterCurrent; Id={storedData.Id}; PresetId={storedData.PresetConfigurationId}; Fields=HeaterCurrent");
             HeaterCurrent = new HeaterCurrentBindable(storedData);
             AcceptChanges();
         }

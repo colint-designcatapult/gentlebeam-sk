@@ -20,7 +20,7 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
     private static readonly JsonParser Parser =
         new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
 
-    private readonly string _connectionString;
+    private readonly SqlCipherConnectionFactory _connections;
     private readonly string _tableName;
     private readonly bool _hasParentId;
     private readonly string? _parentIdJsonField;
@@ -28,13 +28,12 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
     public string DbPath { get; }
 
     public SqliteProtoRepository(
-        string dbPath,
+        SqlCipherConnectionFactory connections,
         string tableName,
         bool hasParentId = false,
         string? parentIdJsonField = null)
     {
-        DbPath = dbPath;
-        _connectionString = $"Data Source={dbPath}";
+        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
         _tableName = tableName;
         _hasParentId = hasParentId;
         _parentIdJsonField = parentIdJsonField;
@@ -114,10 +113,20 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<T> CreateAsync(T message, long parentId = 0)
     {
-        var prepared = PrepareForCreate(message);
         await using var conn = await OpenAsync();
+        using var transaction = conn.BeginTransaction(deferred: false);
+        var created = await CreateAsync(message, transaction, parentId);
+        transaction.Commit();
+        return created;
+    }
+
+    internal async Task<T> CreateAsync(T message, SqliteTransaction transaction, long parentId = 0)
+    {
+        var prepared = PrepareForCreate(message);
+        var conn = transaction.Connection!;
 
         using var insert = conn.CreateCommand();
+        insert.Transaction = transaction;
         if (_hasParentId)
         {
             insert.CommandText =
@@ -139,6 +148,7 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
         var json = Formatter.Format(updated);
 
         using var upd = conn.CreateCommand();
+        upd.Transaction = transaction;
         upd.CommandText = $"UPDATE {_tableName} SET data = @d WHERE id = @id";
         upd.Parameters.AddWithValue("@d", json);
         upd.Parameters.AddWithValue("@id", newId);
@@ -150,12 +160,36 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
     public async Task<T?> ReadAsync(long id)
     {
         await using var conn = await OpenAsync();
+        return await ReadAsync(id, conn, null);
+    }
+
+    internal Task<T?> ReadAsync(long id, SqliteTransaction transaction) =>
+        ReadAsync(id, transaction.Connection!, transaction);
+
+    private async Task<T?> ReadAsync(long id, SqliteConnection conn, SqliteTransaction? transaction)
+    {
         using var cmd = conn.CreateCommand();
+        cmd.Transaction = transaction;
         cmd.CommandText = $"SELECT data FROM {_tableName} WHERE id = @id";
         cmd.Parameters.AddWithValue("@id", id);
 
         var json = (string?)await cmd.ExecuteScalarAsync();
         return json is null ? null : Parser.Parse<T>(json);
+    }
+
+    internal async Task<T?> ReadFirstAsync(Func<T, bool> matches, SqliteTransaction transaction)
+    {
+        using var cmd = transaction.Connection!.CreateCommand();
+        cmd.Transaction = transaction;
+        cmd.CommandText = $"SELECT id, data FROM {_tableName}";
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var candidate = Parser.Parse<T>(reader.GetString(1));
+            if (matches(candidate))
+                return SetId(candidate, reader.GetInt64(0));
+        }
+        return null;
     }
 
     public async Task<IList<T>> ReadPageAsync(int skip, int get)
@@ -226,20 +260,67 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<T> UpdateAsync(long id, T message, bool preserveOutputOnly = true)
     {
-        var existing = await ReadAsync(id);
-        var prepared = existing is null || !preserveOutputOnly
-            ? message.Clone()
-            : PreserveOutputOnlyFields(existing, message);
         await using var conn = await OpenAsync();
+        // Reserve the write lock before reading output-only fields. A concurrent
+        // authentication must not be overwritten by a stale normal user update.
+        using var transaction = conn.BeginTransaction(deferred: false);
+        var updated = await UpdateAsync(id, message, transaction, preserveOutputOnly);
+        transaction.Commit();
+        return updated;
+    }
+
+    internal async Task<T> UpdateAsync(
+        long id, T message, SqliteTransaction transaction, bool preserveOutputOnly = true)
+    {
+        var conn = transaction.Connection!;
+        var existing = preserveOutputOnly ? await ReadAsync(id, transaction) : null;
+        var prepared = existing is null ? message.Clone() : PreserveOutputOnlyFields(existing, message);
         var updated = SetId(prepared, id);
-        var json = Formatter.Format(updated);
 
         using var cmd = conn.CreateCommand();
+        cmd.Transaction = transaction;
         cmd.CommandText = $"UPDATE {_tableName} SET data = @d WHERE id = @id";
-        cmd.Parameters.AddWithValue("@d", json);
+        cmd.Parameters.AddWithValue("@d", Formatter.Format(updated));
         cmd.Parameters.AddWithValue("@id", id);
         await cmd.ExecuteNonQueryAsync();
         return updated;
+    }
+
+    // Internal read/check/write boundary for authentication. SQLite's immediate
+    // transaction serializes separate service instances and normal CRUD writers.
+    internal async Task<T?> UpdateFirstAsync(Func<T, bool> matches, Func<T, bool> update)
+    {
+        await using var conn = await OpenAsync();
+        using var transaction = conn.BeginTransaction(deferred: false);
+        T? selected = null;
+        long id = 0;
+        using (var read = conn.CreateCommand())
+        {
+            read.Transaction = transaction;
+            read.CommandText = $"SELECT id, data FROM {_tableName}";
+            await using var reader = await read.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var candidate = Parser.Parse<T>(reader.GetString(1));
+                if (!matches(candidate))
+                    continue;
+                id = reader.GetInt64(0);
+                selected = SetId(candidate, id);
+                break;
+            }
+        }
+
+        if (selected is not null && update(selected))
+        {
+            using var write = conn.CreateCommand();
+            write.Transaction = transaction;
+            write.CommandText = $"UPDATE {_tableName} SET data = @d WHERE id = @id";
+            write.Parameters.AddWithValue("@d", Formatter.Format(selected));
+            write.Parameters.AddWithValue("@id", id);
+            await write.ExecuteNonQueryAsync();
+        }
+        transaction.Commit();
+        return selected;
     }
 
     public async Task DeleteAsync(long id)
@@ -279,7 +360,7 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
         var prepared = message.Clone();
         foreach (var field in prepared.Descriptor.Fields.InDeclarationOrder().Where(IsOutputOnly))
         {
-            if (field.Name is "create_date" or "creation_date")
+            if (field.Name is "create_date" or "creation_date" or "timestamp")
                 field.Accessor.SetValue(prepared, Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.UtcNow));
             else
                 field.Accessor.Clear(prepared);
@@ -307,19 +388,9 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
-    private SqliteConnection Open()
-    {
-        var conn = new SqliteConnection(_connectionString);
-        conn.Open();
-        return conn;
-    }
+    private SqliteConnection Open() => _connections.Open();
 
-    private async Task<SqliteConnection> OpenAsync()
-    {
-        var conn = new SqliteConnection(_connectionString);
-        await conn.OpenAsync();
-        return conn;
-    }
+    private Task<SqliteConnection> OpenAsync() => _connections.OpenAsync();
 
     /// <summary>
     /// Reflectively sets the <c>Id</c> property on proto messages that expose it.

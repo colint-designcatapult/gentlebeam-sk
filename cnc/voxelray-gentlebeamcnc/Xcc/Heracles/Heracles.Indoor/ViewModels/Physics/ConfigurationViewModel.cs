@@ -20,6 +20,7 @@ using System.Windows.Controls;
 using Empyrean.Common.Core.Domain.DataManagement.Common;
 using Xcc.Application.Common;
 using Xcc.Application.Helpers;
+using Xcc.Application.AppLayer.Service;
 using Xcc.Application.UI.UserControls;
 using Xcc.Core.Common;
 using Xcc.Core.Constants;
@@ -42,7 +43,8 @@ namespace Heracles.Indoor.ViewModels.Physics
             ICollimatorModel collimatorModel,
             IDialogService dialogService,
             ILogWriter logWriter,
-            IPopUpService popUpService
+            IPopUpService popUpService,
+            IActionAuditService actionAuditService
             )
         {
             MagnetometerCorrectionsStore = magnetometerCorrectionsStore;
@@ -54,6 +56,7 @@ namespace Heracles.Indoor.ViewModels.Physics
             DialogService = dialogService;
             LogWriter = logWriter;
             PopUpService = popUpService;
+            ActionAuditService = actionAuditService;
 
             CollimatorModel.PropertyChanged += (s, e) =>
             {
@@ -86,6 +89,7 @@ namespace Heracles.Indoor.ViewModels.Physics
         IDialogService DialogService { get; }
         public ILogWriter LogWriter { get; }
         public IPopUpService PopUpService { get; }
+        private IActionAuditService ActionAuditService { get; }
         #endregion Injected Dependencies
 
 
@@ -199,7 +203,7 @@ namespace Heracles.Indoor.ViewModels.Physics
 
                 if (preset != null)
                 {
-                    DialogService.ApprovalDialog(new PresetConfigurationApprovalAction(PresetConfigurationCommands, preset));
+                    DialogService.ApprovalDialog(new PresetConfigurationApprovalAction(PresetConfigurationCommands, preset, ActionAuditService));
 
                     if (preset.IsApproved)
                     {
@@ -668,7 +672,9 @@ namespace Heracles.Indoor.ViewModels.Physics
                 {
                     if (coilConfigurationsToFill.TryGetValue(coilConfiguration.FieldName, out var config))
                     {
-                        config.SetupFormValue(coilConfiguration);
+                        config.XDeflectionCurrent = coilConfiguration.XDeflectionCurrent;
+                        config.YDeflectionCurrent = coilConfiguration.YDeflectionCurrent;
+                        config.FocusCurrent = coilConfiguration.FocusCurrent;
                     }
                 }
             }
@@ -711,7 +717,8 @@ namespace Heracles.Indoor.ViewModels.Physics
                 }
             }
 
-            csvConfiguration.HeaterCurrentConfig?.CopyProperties(HeaterCurrentStore.HeaterCurrent);
+            if (csvConfiguration.HeaterCurrentConfig is not null)
+                HeaterCurrentStore.HeaterCurrent.HeaterCurrent = csvConfiguration.HeaterCurrentConfig.HeaterCurrent;
 
             if (csvConfiguration.OutputFactorEntries is not null)
             {
@@ -720,7 +727,7 @@ namespace Heracles.Indoor.ViewModels.Physics
                 {
                     if (outputFactorsToFill.ContainsKey(outputFactor.FieldName))
                     {
-                        outputFactor.CopyProperties(outputFactorsToFill[outputFactor.FieldName]);
+                        outputFactorsToFill[outputFactor.FieldName].Factor = outputFactor.Factor;
                     }
                 }
             }
@@ -786,13 +793,15 @@ namespace Heracles.Indoor.ViewModels.Physics
                         }
 
                         var createdPreset = await PresetConfigurationCommands.CreateAsync(defaultPreset);
+                        ActionAuditService.RegisterAction("Configuration created",
+                            $"Entity=PresetConfiguration; Id={createdPreset.Id}; ConfigurationId={createdPreset.CollimatorConfigurationId}; Fields=PresetName,IsActive,IsDefault");
                         SelectedConfiguration.AddPreset(createdPreset);
                     }
 
-                    await HeaterCurrentStore.SubmitHeaterCurrentAsync();
-                    await OutputFactorConfigurationStore.SubmitOutputFactorsAsync();
-                    await CoilConfigurationStore.SubmitCollimatorConfigurationAsync();
-                    await MagnetometerCorrectionsStore.SubmitMagnetometerParametersAsync();
+                    await HeaterCurrentStore.SubmitHeaterCurrentAsync(ActionAuditService);
+                    await OutputFactorConfigurationStore.SubmitOutputFactorsAsync(ActionAuditService);
+                    await CoilConfigurationStore.SubmitCollimatorConfigurationAsync(ActionAuditService);
+                    await MagnetometerCorrectionsStore.SubmitMagnetometerParametersAsync(ActionAuditService);
 
                     var preset = SelectedConfiguration?.DefaultPreset;
                     if (preset != null)

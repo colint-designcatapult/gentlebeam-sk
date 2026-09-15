@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Windows.Data;
 using Heracles.Application.AppLayer.Collimators;
 using Heracles.Application.AppLayer.Patient.Planning;
@@ -19,7 +19,6 @@ using Prism.Events;
 using Prism.Regions;
 using Prism.Services.Dialogs;
 using Xcc.Application.AppLayer.Model;
-using Xcc.Application.AppLayer.Service;
 using Xcc.Application.AppLayer.Warmup;
 using Xcc.Application.Common;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
@@ -64,14 +63,13 @@ namespace Heracles.External.ViewModels.QualityCheck
             ICollimatorCalibrationModel collimatorCalibrationModel,
             ICollimatorConfigurationStore collimatorConfigurationStore,
             ApplicatorCompatibilityService applicatorCompatibilityService,
-            IActionAuditService actionAuditService,
             ISafetyCheckModel safetyCheckModel,
             IBearerTokenUserSessionManager userSessionManager)
             : base(regionManager, eventAggregator, heraclesExternalSettings,
                 gcbDataStore, uiStateMachine, logWriter, warmUpService, popUpService,
                 dialogService, mainBoardModel, gcbIndicators,
                 collimatorModel, collimatorConfigurationStore,
-                actionAuditService, safetyCheckModel, userSessionManager)
+                safetyCheckModel, userSessionManager)
         {
             UserStore = userStore;
             QcReportService = qcReportService;
@@ -313,11 +311,11 @@ namespace Heracles.External.ViewModels.QualityCheck
             _ = LogWriter.LogAsync(message, LogRecordSeverity.Info, LogRecordType.System);
         }
 
-        protected override void UserActionAudit(string actionMessage)
+        protected override void LogUserRequest(string actionMessage)
         {
             actionMessage = $"QualityCheck: {actionMessage}";
 
-            base.UserActionAudit(actionMessage);
+            base.LogUserRequest(actionMessage);
         }
         private bool CanAdd()
         {
@@ -542,7 +540,7 @@ namespace Heracles.External.ViewModels.QualityCheck
                 _ = LogWriter.LogAsync(
                     $"Run QC emission {ActiveEmissionIndex + 1} by {UserStore.AuthorizedUser.EmailAddress}",
                     LogRecordSeverity.Info,
-                    LogRecordType.User);
+                    LogRecordType.System);
 
                 updateAfterEmissionTask = Task.Run(
                     () => UpdateAfterEmission(tokenSource.Token),

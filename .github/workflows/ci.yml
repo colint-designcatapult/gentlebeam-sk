@@ -111,6 +111,75 @@ jobs:
     uses: ./.github/workflows/export-documentation.yml
     secrets: inherit
 
+  sbom:
+    name: SBOMs
+    runs-on: windows-2025
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install pinned SBOM tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global @cyclonedx/cdxgen@12.8.4
+          if ($LASTEXITCODE -ne 0) { throw 'cdxgen installation failed' }
+          $toolDirectory = Join-Path $env:RUNNER_TEMP 'cyclonedx'
+          New-Item -ItemType Directory -Force $toolDirectory | Out-Null
+          $cli = Join-Path $toolDirectory 'cyclonedx.exe'
+          Invoke-WebRequest 'https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.33.1/cyclonedx-win-x64.exe' -OutFile $cli
+          if ((Get-FileHash $cli -Algorithm SHA256).Hash -ne '9b360974c41a5d612eb026fb5e3bb1fa28e08865f7a4f915665b8bc94bd3bc31') {
+            throw 'CycloneDX CLI checksum mismatch'
+          }
+          $toolDirectory | Add-Content $env:GITHUB_PATH
+      - name: Install pinned OSV-Scanner
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $toolDirectory = Join-Path $env:RUNNER_TEMP 'osv-scanner'
+          New-Item -ItemType Directory -Force $toolDirectory | Out-Null
+          $scanner = Join-Path $toolDirectory 'osv-scanner.exe'
+          Invoke-WebRequest 'https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_windows_amd64.exe' -OutFile $scanner
+          if ((Get-FileHash $scanner -Algorithm SHA256).Hash -ne 'e0ed7644118b717b028c249ee9d3515024e55e8510747ca08906eb96765354d6') {
+            throw 'OSV-Scanner checksum mismatch'
+          }
+          $toolDirectory | Add-Content $env:GITHUB_PATH
+      - name: Install Semgrep Community Edition
+        run: python -m pip install semgrep
+      - name: Generate and validate all SBOMs
+        run: python tools/generate_sboms.py
+      - name: Scan combined SBOM and generate vulnerability reports
+        continue-on-error: true 
+        shell: pwsh
+        run: |
+          osv-scanner scan source `
+              --lockfile artifacts/sbom/gentlebeam-sk.cdx.json `
+              --format html `
+              --output-file "artifacts/sbom/osv.html"
+      - name: Generate Semgrep text report
+        if: ${{ !cancelled() && hashFiles('artifacts/sbom/gentlebeam-sk.cdx.json') != '' }}
+        shell: pwsh
+        run: |
+          $env:PYTHONUTF8=1
+          $env:PYTHONIOENCODING="utf-8"
+          semgrep scan --config=auto --exclude=mcuboot/mcuboot-2.4.0 --exclude=.github --sarif --sarif-output=artifacts/sbom/semgrep.sarif
+      - name: Upload component SBOMs and vulnerability reports
+        if: ${{ !cancelled() && hashFiles('artifacts/sbom/*.cdx.json') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: SBOMs
+          path: artifacts/sbom/
+          if-no-files-found: error
+
   aggregate:
     name: Assemble top-level artifacts
     needs:
@@ -119,6 +188,7 @@ jobs:
       - main_control
       - cnc
       - docs
+      - sbom
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-24.04
 
@@ -135,6 +205,12 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           pattern: docs.*
+          path: individual/docs
+
+      - name: Download SBOMs and vulnerability reports
+        uses: actions/download-artifact@v7
+        with:
+          pattern: SBOMs
           path: individual/docs
 
       - name: Download head Release artifact

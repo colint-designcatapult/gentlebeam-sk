@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Heracles.Indoor.Models.UseCases;
 using Heracles.Application.Models.Treatment;
 using Heracles.Core.Enums;
 using Heracles.Core.Models.EMR;
@@ -27,12 +28,14 @@ namespace Heracles.Indoor.ViewModels
             IDialogService dialogService,
             ILogRepository logWriter,
             IEventAggregator eventAggregator,
-            IPopUpService popUpService) : base(regionManager, eventAggregator, dialogService)
+            IPopUpService popUpService,
+            PatientRecordReadAudit readAudit) : base(regionManager, eventAggregator, dialogService)
         {
 
             FieldModel = fieldModel;
 
             TreatmentInfo = treatmentInfoStore;
+            ReadAudit = readAudit;
             TreatmentInfo.DiagnosisChanged += OnDiagnosisChanged;
         }
         #endregion Constructors
@@ -41,6 +44,7 @@ namespace Heracles.Indoor.ViewModels
         #region Read-only properties
         public ITreatmentInfoStore TreatmentInfo { get; }
         public FieldModel FieldModel { get; }
+        public PatientRecordReadAudit ReadAudit { get; }
         #endregion Read-only properties
 
 
@@ -98,6 +102,19 @@ namespace Heracles.Indoor.ViewModels
 
 
         #region Commands
+        private DelegateCommand<IDiagnosis>? _viewSiteCommand;
+        public DelegateCommand<IDiagnosis> ViewSiteCommand => _viewSiteCommand ??= new DelegateCommand<IDiagnosis>(
+            diagnosis =>
+            {
+                if (diagnosis is not { Id: > 0 })
+                    return;
+                var request = diagnosis.PatientId == TreatmentInfo.Patient?.Id
+                    ? ReadAudit.CreateRequest(diagnosis.Id)
+                    : null;
+                ReadAudit.InRequest(request, () => TreatmentInfo.Diagnosis = diagnosis);
+                ReadAudit.Record(request, "diagnosis", diagnosis.Id);
+            });
+
         private DelegateCommand? _deleteSiteCommand;
         public DelegateCommand DeleteSiteCommand => _deleteSiteCommand ??= new DelegateCommand(
         () =>
@@ -127,6 +144,8 @@ namespace Heracles.Indoor.ViewModels
             {
                 PreviousDiagnosis = TreatmentInfo.Diagnosis;
                 SiteToEdit = new DiagnosisForm(TreatmentInfo.Diagnosis);
+                ReadAudit.Record(ReadAudit.CreateRequest(TreatmentInfo.Diagnosis?.Id),
+                    "diagnosis for editing", TreatmentInfo.Diagnosis?.Id ?? 0);
             },
             canExecuteMethod: () => TreatmentInfo.Diagnosis != null &&
                                     !TreatmentInfo.Diagnosis.Archived);

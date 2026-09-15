@@ -71,34 +71,12 @@
                 <TabItem Header="Applicator Management">
                     <views:TargetManagementView/>
                 </TabItem>
+
+                <TabItem Header="Data Management">
+                    <views:DataManagementView/>
+                </TabItem>
             </ucx:XccTabControl>
 
-            
-            <!--Save button-->
-            <Border Visibility="Collapsed"
-                Grid.Row="8" Grid.ColumnSpan="2"
-                Style="{StaticResource BorderBlockStyle}">
-
-                <DockPanel Margin="{StaticResource BlockContentMargin}" LastChildFill="False">
-                    <Button 
-                        DockPanel.Dock="Left"
-                        Width="{StaticResource ButtonWidth}" 
-                        Height="{StaticResource ButtonHeight}">
-
-                        <StackPanel Orientation="Horizontal">
-                            <Path 
-                                Data="{StaticResource ImportIcon}" 
-                                Style="{StaticResource ButtonPathStyle}"
-                                Height="24" Width="24" 
-                                Margin="0,0,5,0"/>
-
-                            <Label 
-                                Content="Import"
-                                Style="{StaticResource ButtonLabelStyle}"/>
-                        </StackPanel>
-                    </Button>
-                </DockPanel>
-            </Border>   
         </Grid>
     </Border>
 </ContentControl>

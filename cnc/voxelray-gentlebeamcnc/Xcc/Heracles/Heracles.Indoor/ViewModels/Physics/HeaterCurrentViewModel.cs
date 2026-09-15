@@ -7,6 +7,7 @@ using Prism.Mvvm;
 using System;
 using System.Threading.Tasks;
 using Xcc.Application.Helpers;
+using Xcc.Application.AppLayer.Service;
 using Xcc.Core.Constants;
 using Xcc.Core.Enums;
 using Xcc.Core.Logging;
@@ -31,11 +32,13 @@ namespace Heracles.Indoor.ViewModels.Physics
         public HeaterCurrentViewModel(
             IHeaterCurrentStore heaterCurrentStore,
             IPopUpService popUpService,
-            ILogRepository logWriter)
+            ILogRepository logWriter,
+            IActionAuditService actionAuditService)
         {
             Store = heaterCurrentStore;
             PopUpService = popUpService;
             LogWriter = logWriter;
+            ActionAuditService = actionAuditService;
 
             Store.IsValidChanged += (s, e) => SaveCommand.RaiseCanExecuteChanged();
             Store.IsModifiedChanged += (s, e) => SaveCommand.RaiseCanExecuteChanged();
@@ -47,6 +50,7 @@ namespace Heracles.Indoor.ViewModels.Physics
         public IHeaterCurrentStore Store { get; }
         public IPopUpService PopUpService { get; }
         public ILogRepository LogWriter { get; }
+        private IActionAuditService ActionAuditService { get; }
         #endregion Properties
 
 
@@ -98,7 +102,7 @@ namespace Heracles.Indoor.ViewModels.Physics
         {
             try
             {
-                await Store.SubmitHeaterCurrentAsync();
+                await Store.SubmitHeaterCurrentAsync(ActionAuditService);
 
                 PopUpService.ShowMessage(
                     StringConstants.Common.SettingsDialogTitle, 

@@ -13,6 +13,8 @@ namespace Xcc.Core.Domain.DataManagement.Common.Users
         string Password { get; set; }
         string EmailAddress { get; set; }
         DateTime LastAccessed { get; set; }
+        uint FailedLoginAttempts { get; }
+        bool IsLocked { get; }
         
         UserRole Role { get; set; }
 

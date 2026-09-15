@@ -1742,6 +1742,7 @@ STEPS: >>>
 8. With the excessive magnetometer delta still stored, load the applicable treatment plan and
    press Prepare.
 9. Reduce the stored delta to the configured limit or below, reload the plan, and press Prepare.
+10. Using disposable accounts with persisted failed-login counts below 10 and at least 10, attempt QC approval with incorrect and correct passwords. Inspect both the approval state and failed-login counts after each attempt.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The unapproved failed result blocks Prepare and produces the QC failure indication.
@@ -1756,6 +1757,7 @@ EXPECTED_BEHAVIOR: >>>
 7. The excessive magnetometer delta blocks Prepare and identifies the correction-value
    constraint.
 8. At or below the configured limit, the magnetometer check no longer blocks Prepare.
+9. The locked account cannot approve even with its correct password. Below the threshold, valid credentials can approve and invalid credentials cannot. Neither successful nor rejected approval changes failed-login attempts.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2128,7 +2130,11 @@ STEPS: >>>
 
 4. Press the Beam-On button to trigger emission delivery. 
 
-3. Press the Stop button to trigger stop emission.
+5. Press the Stop button to trigger stop emission.
+
+6. Inspect the delivery outcome record, then repeat with a completed emission and a safely simulated delivery failure. Compare each record with measured delivery results, not just requested values.
+
+7. Observe background telemetry and refreshes without triggering a user action.
 <<<
 EXPECTED_BEHAVIOR: >>>
 3 - The action of preparation is shown in the log view. 
@@ -2136,6 +2142,10 @@ EXPECTED_BEHAVIOR: >>>
 4 - The action of beaming on is shown in the log view. 
 
 5 - The stop action is shown in the log view.
+
+6. Each delivery outcome identifies the acting user and treatment context and distinguishes completion, cancellation, and failure using the measured result; an emission request alone is not recorded as completed delivery.
+
+7. Background telemetry and RPC activity create no user-action records.
 <<<
 RELATIONS:
 - TYPE: Parent

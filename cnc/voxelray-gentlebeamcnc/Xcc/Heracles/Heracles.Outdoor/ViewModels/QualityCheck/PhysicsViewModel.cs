@@ -1,4 +1,4 @@
-﻿using Heracles.Application.AppLayer.Collimators;
+using Heracles.Application.AppLayer.Collimators;
 using Heracles.Application.AppLayer.Patient.Planning;
 using Heracles.Application.AppLayer.QualityAssurance.QualityCheck;
 using Heracles.Application.Domain.DataManagement.System.Collimators;
@@ -18,7 +18,6 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using Xcc.Application.AppLayer.Model;
-using Xcc.Application.AppLayer.Service;
 using Xcc.Application.AppLayer.Warmup;
 using Xcc.Application.Common;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
@@ -66,14 +65,13 @@ namespace Heracles.External.ViewModels.QualityCheck
             ICollimatorCalibrationModel collimatorCalibrationModel,
             ICollimatorConfigurationStore collimatorConfigurationStore,
             ApplicatorCompatibilityService applicatorCompatibilityService,
-            IActionAuditService actionAuditService,
             ISafetyCheckModel safetyCheckModel,
             IBearerTokenUserSessionManager userSessionManager)
             : base(regionManager, eventAggregator, heraclesExternalSettings,
                 gcbDataStore, uiStateMachine, logWriter, warmUpService, popUpService,
                 dialogService, mainBoardModel, gcbIndicators,
                 collimatorModel, collimatorConfigurationStore,
-                actionAuditService, safetyCheckModel, userSessionManager)
+                safetyCheckModel, userSessionManager)
         {
             CollimatorService = collimatorService;
             UserStore = userStore;
@@ -274,11 +272,11 @@ namespace Heracles.External.ViewModels.QualityCheck
             }
         }
 
-        protected override void UserActionAudit(string actionMessage)
+        protected override void LogUserRequest(string actionMessage)
         {
             actionMessage = $"QualityCheck: {actionMessage}";
 
-            base.UserActionAudit(actionMessage);
+            base.LogUserRequest(actionMessage);
         }
         
         protected override bool CanPrepare()
@@ -424,7 +422,7 @@ namespace Heracles.External.ViewModels.QualityCheck
                 _ = LogWriter.LogAsync(
                     $"Run Physics emission {ActiveEmissionIndex + 1} by {UserStore.AuthorizedUser!.EmailAddress}",
                     LogRecordSeverity.Info,
-                    LogRecordType.User);
+                    LogRecordType.System);
 
                 updateAfterEmissionTask = Task.Run(
                     () => UpdateAfterEmission(tokenSource.Token),

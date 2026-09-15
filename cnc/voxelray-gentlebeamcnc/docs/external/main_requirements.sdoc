@@ -301,6 +301,8 @@ The application shall audit in the system log when the user triggers an action s
 1. Triggering treatment preparation.
 2. Triggering emission delivery.
 3. Triggering stop emission
+
+The audit shall identify the acting user and treatment context and distinguish an emission request from its measured delivery outcome, including completion, cancellation, or failure. Background telemetry and RPC activity alone shall not create user-action records.
 <<<
 
 [REQUIREMENT]
@@ -687,7 +689,8 @@ QC results and shall prevent treatment preparation when the required QC evidence
 or unacceptable.
 
 An authorized user may approve a QC result after successful authentication. The application
-shall persist the approval decision and reject invalid credentials without changing it.
+shall persist the approval decision and reject invalid credentials or a locked account without
+changing it. Approval credential checks shall neither increment nor reset failed-login attempts.
 <<<
 
 [REQUIREMENT]

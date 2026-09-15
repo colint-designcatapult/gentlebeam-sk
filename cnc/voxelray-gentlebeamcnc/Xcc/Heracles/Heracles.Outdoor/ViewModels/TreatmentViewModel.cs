@@ -1,4 +1,4 @@
-﻿using Empyrean.Common.Infra.Threading;
+using Empyrean.Common.Infra.Threading;
 using Heracles.Application.AppLayer.Collimators;
 using Heracles.Application.AppLayer.Patient.Planning;
 using Heracles.Application.Domain.DataManagement.System.Collimators;
@@ -23,13 +23,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows.Data;
 using Xcc.Application.AppLayer.Model;
-using Xcc.Application.AppLayer.Service;
 using Xcc.Application.AppLayer.Warmup;
 using Xcc.Application.Common;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
 using Xcc.Application.Events;
 using Xcc.Application.Helpers;
 using Xcc.Application.Helpers.Threading;
+using Xcc.Application.Models;
 using Xcc.Core.Constants;
 using Xcc.Core.Domain.DataManagement.Common;
 using Xcc.Core.Domain.GryphonBoard;
@@ -99,14 +99,13 @@ namespace Heracles.External.ViewModels
             IUIStateMachine uiStateMachine,
             ICollimatorModel collimatorModel,
             IPopUpService popUpService,
-            IActionAuditService actionAuditService,
             ISafetyCheckModel safetyCheckModel,
             IBearerTokenUserSessionManager userSessionManager,
             IAuthorizedUserStore authorizedUserStore)
             : base(regionManager, eventAggregator, heraclesExternalSettings, gcbDataStore,
                   uiStateMachine, logWriter, warmupService, popUpService, dialogService,
                   mainBoardModel, gcbIndicators, collimatorModel,
-                  collimatorConfigurationStore, actionAuditService, 
+                  collimatorConfigurationStore,
                   safetyCheckModel, userSessionManager)
         {
             CameraUriSource = heraclesExternalSettings.CameraUriSource;
@@ -120,6 +119,8 @@ namespace Heracles.External.ViewModels
             AuthorizedUserStore = authorizedUserStore;
             TreatmentPreparationService = treatmentPreparationService;
             eventAggregator.GetEvent<ExitApplicationEvent>().Subscribe(OnExit);
+            eventAggregator.GetEvent<SystemTelemetryChangedEvent>()
+                .Subscribe(ObserveDeliveryTelemetry, ThreadOption.PublisherThread);
 
             //TreatmentFieldsViewSource.SortDescriptions.Add(new SortDescription("Data.Energy", ListSortDirection.Ascending));
             TreatmentFieldsViewSource.Filter += (s, e) =>
@@ -390,7 +391,7 @@ namespace Heracles.External.ViewModels
         {
             try
             {
-                UserActionAudit($"User triggered preparation Plan {PlanModel.Plan?.Id} for treatment");
+                LogUserRequest($"User triggered preparation Plan {PlanModel.Plan?.Id} for treatment");
 
                 await base.PrepareAsync(
                     tryKeepPrevPlan: true); // We need to keep prev plan for treatment if there's one in GCB
@@ -453,6 +454,15 @@ namespace Heracles.External.ViewModels
 
         protected override async Task OnBeamOnClicked()
         {
+            // Copy identity before any await: a login/logout during delivery must not change its actor.
+            var initiatingUser = AuthorizedUserStore.AuthorizedUser;
+            var userId = initiatingUser?.Id;
+            var username = initiatingUser?.Username;
+            var patientId = PlanModel.Diagnosis?.PatientId;
+            var planId = PlanModel.Plan?.Id;
+            var fieldId = PlanModel.TreatmentFields?.FirstOrDefault()?.Id;
+            DeliveryAuditSegment? delivery = null;
+            var deliveryOutcome = "failed";
             IsCurrentViewModelRunning = true;
 
             using var tokenSource = new CancellationTokenSource();
@@ -500,10 +510,22 @@ namespace Heracles.External.ViewModels
 
                 updateAfterEmissionTask = Task.Run(() => UpdateAfterEmission(tokenSource.Token), tokenSource.Token);
 
+                if (userId is > 0 && !string.IsNullOrWhiteSpace(username))
+                {
+                    delivery = new DeliveryAuditSegment(
+                        userId.Value, username, patientId, planId, fieldId,
+                        TreatmentModel.Treatment.Id,
+                        MainBoardModel.CurrentEmission?.ActualDuration ?? XrayPointStartTime);
+                    _deliveryAudit = delivery;
+                }
+
                 // Run emission and wait until it gets done or gets stopped:
                 await MainBoardModel.BeamOn();
 
                 await updateAfterEmissionTask;
+                deliveryOutcome = IsPlanCompleted() ? "completed" : "interrupted";
+                // Audit settled hardware evidence before a modal confirmation can delay it or reset timers.
+                CompleteDeliveryAudit(delivery, deliveryOutcome);
 
                 // Check if plan is actually complete:
                 if (IsPlanCompleted())
@@ -521,9 +543,11 @@ namespace Heracles.External.ViewModels
             }
             catch (TaskCanceledException ex)
             {
+                deliveryOutcome = "interrupted";
                 IsCurrentViewModelRunning = false;
 
                 await WaitAndIgnoreTaskExceptionsAsync(updateAfterEmissionTask);
+                CompleteDeliveryAudit(delivery, deliveryOutcome);
 
                 PopUpService.ShowMessage(
                     StringConstants.TreatmentConsole.EmissionTitle,
@@ -533,6 +557,7 @@ namespace Heracles.External.ViewModels
             }
             catch (InvalidOperationException ex) // probably we catch ClearPlan exception here
             {
+                CompleteDeliveryAudit(delivery, deliveryOutcome);
                 PopUpService.LogAndShowError(
                     Application.Common.StringConstants.TreatmentConsole.TreatmentTitle,
                     ex.Message);
@@ -540,6 +565,7 @@ namespace Heracles.External.ViewModels
             catch (Exception ex)
             {
                 IsCurrentViewModelRunning = false;
+                CompleteDeliveryAudit(delivery, deliveryOutcome);
                 PopUpService.LogAndShowError(
                     StringConstants.TreatmentConsole.EmissionTitle,
                     StringConstants.TreatmentConsole.EmissionInterruptedError,
@@ -550,6 +576,103 @@ namespace Heracles.External.ViewModels
                 await tokenSource.CancelAsync();
 
                 await WaitAndIgnoreTaskExceptionsAsync(updateAfterEmissionTask);
+                CompleteDeliveryAudit(delivery, deliveryOutcome);
+            }
+        }
+
+        private volatile DeliveryAuditSegment? _deliveryAudit;
+
+        private void ObserveDeliveryTelemetry(ISystemTelemetry? telemetry) =>
+            _deliveryAudit?.Observe(telemetry);
+
+        private void CompleteDeliveryAudit(DeliveryAuditSegment? delivery, string outcome)
+        {
+            if (delivery is null)
+                return;
+
+            _deliveryAudit = null;
+            var message = delivery.Complete(MainBoardModel.CurrentEmission, outcome);
+            if (message is not null)
+                _ = WriteDeliveryAuditAsync(message);
+        }
+
+        private async Task WriteDeliveryAuditAsync(string message)
+        {
+            try
+            {
+                await LogWriter.LogAsync(message, LogRecordSeverity.Info, LogRecordType.User);
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    await LogWriter.LogAsync(
+                        $"Failed to write treatment delivery audit ({ex.GetType().Name}).",
+                        LogRecordSeverity.Error, LogRecordType.System);
+                }
+                catch
+                {
+                    // A logging outage must never interfere with emission cleanup.
+                }
+            }
+        }
+
+        private sealed class DeliveryAuditSegment(
+            long userId, string username, long? patientId, long? planId, long? fieldId,
+            long treatmentId, double initialActualDuration)
+        {
+            private readonly object _sync = new();
+            private readonly Guid _segmentId = Guid.NewGuid();
+            private double _observedSeconds;
+            private bool _emissionObserved;
+            private bool _hardwareFailure;
+            private bool _finished;
+
+            public void Observe(ISystemTelemetry? telemetry)
+            {
+                lock (_sync)
+                {
+                    if (_finished)
+                        return;
+
+                    var state = telemetry?.ControlBoardState;
+                    if (state is GcbStateNew.Emission)
+                        _emissionObserved = true;
+
+                    if (_emissionObserved && state is GcbStateNew.Emission or GcbStateNew.Termination)
+                        ObserveDuration(telemetry!.PrimaryTimerValue);
+
+                    if (state is null or GcbStateNew.NoComm or GcbStateNew.FaultDischarge
+                        or GcbStateNew.Fault or GcbStateNew.ColdFault or GcbStateNew.WarmupFault)
+                        _hardwareFailure = true;
+                }
+            }
+
+            public string? Complete(GcbOperationalPoint? emission, string outcome)
+            {
+                lock (_sync)
+                {
+                    if (_finished)
+                        return null;
+                    _finished = true;
+
+                    if (emission is { } point)
+                        ObserveDuration(point.ActualDuration - initialActualDuration);
+                    if (_observedSeconds <= 0)
+                        return null; // A request, acknowledgement or a rejected start is not delivery.
+
+                    if (_hardwareFailure)
+                        outcome = "failed";
+
+                    return FormattableString.Invariant(
+                        $"User Action. Treatment delivery by {username} (user id={userId}): segment id={_segmentId}; patient id={patientId}; plan id={planId}; treatment id={treatmentId}; field id={fieldId}; outcome={outcome}; observed delivered duration seconds={_observedSeconds:R}");
+                }
+            }
+
+            private void ObserveDuration(double seconds)
+            {
+                if (double.IsFinite(seconds) && seconds > _observedSeconds)
+                    _observedSeconds = seconds;
             }
         }
 
@@ -639,11 +762,11 @@ namespace Heracles.External.ViewModels
             return false;
         }
 
-        protected override void UserActionAudit(string actionMessage)
+        protected override void LogUserRequest(string actionMessage)
         {
             actionMessage = $"Treatment: {actionMessage}";
 
-            base.UserActionAudit(actionMessage);
+            base.LogUserRequest(actionMessage);
         }
 
         private async Task FinalizePlanOnUserConfirmation()

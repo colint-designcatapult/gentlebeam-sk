@@ -1230,9 +1230,9 @@
                       </Rule>
                     </Rule>
                     <Rule Match="All">
-                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Heracles.Application.Test.Protos.EmrTypesProtoTypeConverterTests.ToProto_IUser_Test" />
+                      <Property Name="TestWithNormalizedFullyQualifiedName" Value="Heracles.Application.Test.Protos.EmrTypesProtoTypeConverterTests.ServerLockoutIsVisibleButExcludedFromUserWrites" />
                       <Rule Match="Any">
-                        <Property Name="DisplayName" Value="ToProto_IUser_Test" />
+                        <Property Name="DisplayName" Value="ServerLockoutIsVisibleButExcludedFromUserWrites" />
                       </Rule>
                     </Rule>
                     <Rule Match="All">

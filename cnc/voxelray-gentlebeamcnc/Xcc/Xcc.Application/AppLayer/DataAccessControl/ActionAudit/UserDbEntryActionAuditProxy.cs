@@ -1,6 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Xcc.Application.AppLayer.Service;
+using Xcc.Application.Common;
 using Xcc.Core.Domain.DataManagement.Common;
 using Xcc.Core.Infra.DataManagement.Common.DataAccess;
 
@@ -13,25 +13,19 @@ namespace Xcc.Application.AppLayer.DataAccessControl.ActionAudit
         where TData : class, IEntry
     {
         protected const string ActionDetailsDone = "done";
-        protected const string ActionDetailsFailed = "failed";
 
         public IActionAuditService ActionAuditService { get; } = actionAuditService;
 
         #region IAsyncСRUDCommands<TData>
         public async Task<TData> CreateAsync(TData entry)
         {
-            string actionMessage = $"Create a new {dataTypeNameAlias}";
-            try
+            var result = await actualCommands.CreateAsync(entry);
+            if (!BaseEntry.IsNullOrBlankEntry(result))
             {
-                var result = await actualCommands.CreateAsync(entry);
-                ActionAuditService.RegisterAction(actionMessage, $"record {GetRecordInfoString(result)}");
-                return result;
+                ActionAuditService.RegisterAction(
+                    $"Create a new {dataTypeNameAlias}", $"record {GetRecordInfoString(result)}");
             }
-            catch (Exception)
-            {
-                ActionAuditService.RegisterAction(actionMessage, ActionDetailsFailed);
-                throw;
-            }
+            return result;
         }
 
         public Task<TData> ReadAsync(long entryId)
@@ -41,34 +35,28 @@ namespace Xcc.Application.AppLayer.DataAccessControl.ActionAudit
 
         public async Task<TData> UpdateAsync(TData oldEntry, TData newEntry)
         {
-            string actionMessage = $"Update {dataTypeNameAlias} {GetRecordInfoString(newEntry)}";
-            try
-            {
-                var result = await actualCommands.UpdateAsync(oldEntry, newEntry);
-                ActionAuditService.RegisterAction(actionMessage, ActionDetailsDone);
-                return result;
-            }
-            catch (Exception)
-            {
-                ActionAuditService.RegisterAction(actionMessage, ActionDetailsFailed);
-                throw;
-            }
+            var previousEntry = oldEntry ?? await actualCommands.ReadAsync(newEntry.Id);
+            var hasRequestedChanges = GenericExtensions.CompareProperties(
+                previousEntry, newEntry, toSnakeCase: false)?.Count > 0;
 
+            var result = await actualCommands.UpdateAsync(oldEntry, newEntry);
+            if (hasRequestedChanges &&
+                GenericExtensions.CompareProperties(previousEntry, result, toSnakeCase: false)?.Count > 0)
+            {
+                ActionAuditService.RegisterAction(
+                    $"Update {dataTypeNameAlias} {GetRecordInfoString(result)}", ActionDetailsDone);
+            }
+            return result;
         }
         public async Task<bool> DeleteAsync(long entryId)
         {
-            string actionMessage = $"Delete {dataTypeNameAlias} {GetRecordInfoString(entryId)}";
-            try
+            var result = await actualCommands.DeleteAsync(entryId);
+            if (result)
             {
-                var result = await actualCommands.DeleteAsync(entryId);
-                ActionAuditService.RegisterAction(actionMessage, ActionDetailsDone);
-                return result;
+                ActionAuditService.RegisterAction(
+                    $"Delete {dataTypeNameAlias} {GetRecordInfoString(entryId)}", ActionDetailsDone);
             }
-            catch (Exception)
-            {
-                ActionAuditService.RegisterAction(actionMessage, ActionDetailsFailed);
-                throw;
-            }
+            return result;
         }
         #endregion IAsyncСRUDCommands<TData>
 

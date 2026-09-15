@@ -18,7 +18,13 @@ public sealed class PlanServiceImpl : PlanService.PlanServiceBase
 
     private readonly SqliteProtoRepository<Plan> _repo;
 
-    public PlanServiceImpl(SqliteProtoRepository<Plan> repo) => _repo = repo;
+    private readonly AuthServiceImpl _auth;
+
+    public PlanServiceImpl(SqliteProtoRepository<Plan> repo, AuthServiceImpl auth)
+    {
+        _repo = repo;
+        _auth = auth;
+    }
 
     // ── CRUD ─────────────────────────────────────────────────────────────────
             
@@ -123,6 +129,7 @@ public sealed class PlanServiceImpl : PlanService.PlanServiceBase
     public override async Task<UpdatePlanPrescriptionSimulationStatusResponse> UpdatePlanPrescriptionSimulationStatus(
         UpdatePlanPrescriptionSimulationStatusRequest request, ServerCallContext context)
     {
+        await _auth.AuthenticateAsync(request.Username, request.Password);
         var plan = await _repo.ReadAsync(request.PlanId)
             ?? throw new RpcException(new Status(StatusCode.NotFound, $"Plan {request.PlanId} not found"));
 

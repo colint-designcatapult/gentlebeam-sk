@@ -2,7 +2,7 @@ extern alias SqliteServer;
 
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Microsoft.Data.Sqlite;
+using SqlCipherDatabase = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqlCipherDatabase;
 using QCSample = SqliteServer::Com.Empyreanmed.Heracles.Qcsamples.V1.QCSample;
 using ApproveQCSampleRequest = SqliteServer::Com.Empyreanmed.Heracles.Qcsamples.V1.ApproveQCSampleRequest;
 using User = SqliteServer::Com.Empyreanmed.Heracles.Users.V1.User;
@@ -11,25 +11,30 @@ using QCSampleServiceImpl = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Servi
 using AuthService = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Services.AuthServiceImpl;
 using SqliteProtoRepository = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqliteProtoRepository<SqliteServer::Com.Empyreanmed.Heracles.Qcsamples.V1.QCSample>;
 using UserRepository = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqliteProtoRepository<SqliteServer::Com.Empyreanmed.Heracles.Users.V1.User>;
+using AuditSessionRegistry = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.AuditSessionRegistry;
+using LogRepository = SqliteServer::Heracles.Indoor.SqliteGrpcServer.Infrastructure.SqliteProtoRepository<SqliteServer::Com.Empyreanmed.Heracles.Logs.V1.Log>;
 
 namespace Heracles.Indoor.Test.Infra;
 
 [TestFixture]
 public sealed class SqliteQcPersistenceTests
 {
-    private string _dbPath = null!;
+    private string _directory = null!;
+    private SqlCipherDatabase _database = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), $"qc-history-{Guid.NewGuid():N}.sqlite");
+        _directory = Path.Combine(Path.GetTempPath(), $"qc-history-{Guid.NewGuid():N}");
+        _database = new SqlCipherDatabase(_directory);
+        _database.Initialize(_ => true, _ => null);
     }
 
     [TearDown]
     public void TearDown()
     {
-        SqliteConnection.ClearAllPools();
-        File.Delete(_dbPath);
+        _database.Dispose();
+        Directory.Delete(_directory, recursive: true);
     }
 
     [Test]
@@ -41,7 +46,7 @@ public sealed class SqliteQcPersistenceTests
         var created = await repository.CreateAsync(CreateSample(42, timestamp), 42);
         await repository.CreateAsync(CreateSample(43, timestamp), 43);
 
-        var service = new QCSampleServiceImpl(repository, new AuthService(CreateUserRepository()));
+        var service = new QCSampleServiceImpl(repository, CreateAuthService(CreateUserRepository()));
         var response = await service.ListQCSamples(
             new ListQCSamplesRequest { CollimatorConfigurationId = 42 },
             null!);
@@ -60,7 +65,7 @@ public sealed class SqliteQcPersistenceTests
     public async Task EnablingParentIndex_BackfillsExistingQcSampleRows()
     {
         var timestamp = Timestamp.FromDateTime(new DateTime(2026, 8, 28, 18, 30, 0, DateTimeKind.Utc));
-        var legacyRepository = new SqliteProtoRepository(_dbPath, "qcsamples");
+        var legacyRepository = new SqliteProtoRepository(_database.Connections, "qcsamples");
         var created = await legacyRepository.CreateAsync(CreateSample(42, timestamp));
 
         var migratedRepository = CreateParentedRepository();
@@ -87,7 +92,7 @@ public sealed class SqliteQcPersistenceTests
             Password = "correct-password",
             EmailAddress = "physicist@example.test"
         });
-        var service = new QCSampleServiceImpl(repository, new AuthService(users));
+        var service = new QCSampleServiceImpl(repository, CreateAuthService(users));
 
         var response = await service.ApproveQCSample(
             new ApproveQCSampleRequest
@@ -123,7 +128,7 @@ public sealed class SqliteQcPersistenceTests
             Password = "correct-password",
             EmailAddress = "physicist@example.test"
         });
-        var service = new QCSampleServiceImpl(repository, new AuthService(users));
+        var service = new QCSampleServiceImpl(repository, CreateAuthService(users));
 
         var exception = Assert.ThrowsAsync<RpcException>(() => service.ApproveQCSample(
             new ApproveQCSampleRequest
@@ -153,7 +158,7 @@ public sealed class SqliteQcPersistenceTests
             Password = "correct-password",
             EmailAddress = "physicist@example.test"
         });
-        var service = new QCSampleServiceImpl(repository, new AuthService(users));
+        var service = new QCSampleServiceImpl(repository, CreateAuthService(users));
 
         var exception = Assert.ThrowsAsync<RpcException>(() => service.ApproveQCSample(
             new ApproveQCSampleRequest
@@ -170,15 +175,18 @@ public sealed class SqliteQcPersistenceTests
     private SqliteProtoRepository CreateParentedRepository()
     {
         return new SqliteProtoRepository(
-            _dbPath,
+            _database.Connections,
             "qcsamples",
             hasParentId: true,
             parentIdJsonField: "collimatorConfigurationId");
     }
     private UserRepository CreateUserRepository()
     {
-        return new UserRepository(_dbPath, "users");
+        return new UserRepository(_database.Connections, "users");
     }
+
+    private AuthService CreateAuthService(UserRepository users)
+        => new(users, new AuditSessionRegistry(), new LogRepository(_database.Connections, "logs"));
 
     private static QCSample CreateSample(long configurationId, Timestamp timestamp)
     {

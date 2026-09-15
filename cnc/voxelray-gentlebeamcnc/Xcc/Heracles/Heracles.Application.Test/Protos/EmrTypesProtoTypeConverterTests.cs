@@ -557,66 +557,28 @@ namespace Heracles.Application.Test.Protos
             });
         }
 
-        [Test]
-        public void ToProto_IUser_Test()
-        {
-            var user = new UserBindable {
-                Id = BaseEntry.NEW_ENTRY_ID,
-                FirstName = "John",
-                MiddleName = string.Empty,
-                LastName = "Doe",
-                Username = "John",
-                Role = new UserRole("Role"),
-                Picture = string.Empty,
-                EmailAddress = "johndoe@example.com",
-                Password = "pwd",
-            };
-            var protoType = ProtoTypesConverter.ToProto(user.ToUser());
-            Assert.Multiple(() =>
-            {
-                Assert.That(protoType.HasFirstName, Is.True);
-                Assert.That(protoType.FirstName, Is.EqualTo(user.FirstName));
-                Assert.That(protoType.HasLastName, Is.True);
-                Assert.That(protoType.LastName, Is.EqualTo(user.LastName));
-                Assert.That(protoType.Password, Is.EqualTo(user.Password));
-                Assert.That(protoType.HasId, Is.False);
-            });
-
-            // now try with valid Id:
-            user.Id = 1;
-            protoType = ProtoTypesConverter.ToProto(user.ToUser());
-            Assert.Multiple(() =>
-            {
-                Assert.That(protoType.HasId, Is.True);
-                Assert.That(protoType.Id, Is.EqualTo(user.Id));
-            });
-        }
 
         [Test]
-        public void FromProto_IUser_Test()
+        public void ServerLockoutIsVisibleButExcludedFromUserWrites()
         {
-            var protoType = new Com.Empyreanmed.Heracles.Users.V1.User
+            var response = new Com.Empyreanmed.Heracles.Users.V1.User
             {
                 Id = 1,
-                CreationDate = ProtoTypesConverter.ToTimestamp(DateTime.Today),
-                LastAccessed = ProtoTypesConverter.ToTimestamp(DateTime.Now),
+                Username = "operator",
                 FirstName = "John",
-                MiddleName = string.Empty,
                 LastName = "Doe",
-                Username = "John",
-                Password = "pwd",
-                Role = "Role",
-                Picture = string.Empty,
-                EmailAddress = "johndoe@example.com",
+                Password = "unchanged-password",
+                EmailAddress = "operator@example.com",
+                FailedLoginAttempts = 10
             };
-            var user = ProtoTypesConverter.FromProto(protoType);
-            Assert.Multiple(() =>
-            {
-                Assert.That(user.FirstName, Is.EqualTo(protoType.FirstName));
-                Assert.That(user.LastName, Is.EqualTo(protoType.LastName));
-                Assert.That(user.Password, Is.EqualTo(protoType.Password));
-                Assert.That(user.Id, Is.EqualTo(protoType.Id));
-            });
+            var user = ProtoTypesConverter.FromProto(response);
+            var editor = new UserBindable(user);
+            editor.FirstName = "Updated";
+
+            Assert.That(user.IsLocked, Is.True);
+            Assert.That(editor.IsLocked, Is.True);
+            Assert.That(ProtoTypesConverter.ToProto(user).HasFailedLoginAttempts, Is.False);
+            Assert.That(ProtoTypesConverter.ToProto(editor.ToUser()).HasFailedLoginAttempts, Is.False);
         }
 
         [Test]

@@ -50,8 +50,13 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
     public const int DefaultPort = 5199;
 
     private readonly WebApplication _app;
+    private readonly DatabaseMaintenanceGate _maintenance = new();
+    private readonly CancellationTokenSource _stopping = new();
+    private readonly object _lifecycleLock = new();
+    private Task? _stopTask;
+    private Task? _disposeTask;
 
-    public SqliteGrpcServerHost(string dbPath, int port = DefaultPort)
+    public SqliteGrpcServerHost(SqlCipherConnectionFactory connections, int port = DefaultPort)
     {
         var builder = WebApplication.CreateBuilder();
 
@@ -62,46 +67,59 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
 
         var services = builder.Services;
 
-        // Repositories — one per entity type
-        services.AddSingleton(_ => new SqliteProtoRepository<Patient>(dbPath, "patients"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Diagnosis>(dbPath, "diagnoses", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<Simulation>(dbPath, "simulations", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<Prescription>(dbPath, "prescriptions", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<Visit>(dbPath, "visits", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<Plan>(dbPath, "plans", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<TreatmentDevice>(dbPath, "treatment_devices", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<Position>(dbPath, "positions", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<TreatmentField>(dbPath, "treatment_fields", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<ActualTreatmentField>(dbPath, "actual_treatment_fields", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<EmissionTreatmentField>(dbPath, "emission_treatment_fields", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<Treatment>(dbPath, "treatments"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Photo>(dbPath, "photos", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<Com.Empyreanmed.Heracles.Users.V1.User>(dbPath, "users"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Role>(dbPath, "roles"));
-        services.AddSingleton(_ => new SqliteProtoRepository<RolesPermissions>(dbPath, "roles_permissions"));
-        services.AddSingleton(_ => new SqliteProtoRepository<UserRole>(dbPath, "user_roles"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Head>(dbPath, "heads"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Collimator>(dbPath, "collimators", hasParentId: true));
-        services.AddSingleton(_ => new SqliteProtoRepository<CollimatorConfiguration>(dbPath, "collimator_configurations"));
-        services.AddSingleton(_ => new SqliteProtoRepository<CoilConfiguration>(dbPath, "coil_configurations"));
-        services.AddSingleton(_ => new SqliteProtoRepository<CorrectionMatrix>(dbPath, "correction_matrices"));
-        services.AddSingleton(_ => new SqliteProtoRepository<HeaterCurrentConfig>(dbPath, "heater_current_configs"));
-        services.AddSingleton(_ => new SqliteProtoRepository<OutputFactor>(dbPath, "output_factors"));
-        services.AddSingleton(_ => new SqliteProtoRepository<ReferenceField>(dbPath, "reference_fields"));
-        services.AddSingleton(_ => new SqliteProtoRepository<PresetConfiguration>(dbPath, "preset_configurations"));
-        services.AddSingleton(_ => new SqliteProtoRepository<QCSample>(
-            dbPath, "qcsamples", hasParentId: true, parentIdJsonField: "collimatorConfigurationId"));
-        services.AddSingleton(_ => new SqliteProtoRepository<QCSampleField>(
-            dbPath, "qcsample_fields", hasParentId: true, parentIdJsonField: "qcsampleId"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Intensity>(
-            dbPath, "intensities", hasParentId: true, parentIdJsonField: "qcsampleFieldsId"));
-        services.AddSingleton(_ => new SqliteProtoRepository<SafetyCheck>(dbPath, "safety_checks"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Warmup>(dbPath, "warmups"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Log>(dbPath, "logs"));
-        services.AddSingleton(_ => new SqliteProtoRepository<Settings>(dbPath, "settings"));
+        var initializeRepositories = new List<Action<IServiceProvider>>();
+        void RegisterRepository<T>(string tableName, bool hasParentId = false, string? parentIdJsonField = null)
+            where T : class, Google.Protobuf.IMessage<T>, new()
+        {
+            services.AddSingleton(_ => new SqliteProtoRepository<T>(
+                connections, tableName, hasParentId, parentIdJsonField));
+            initializeRepositories.Add(provider => provider.GetRequiredService<SqliteProtoRepository<T>>());
+        }
+
+        RegisterRepository<Patient>("patients");
+        RegisterRepository<Diagnosis>("diagnoses", hasParentId: true);
+        RegisterRepository<Simulation>("simulations", hasParentId: true);
+        RegisterRepository<Prescription>("prescriptions", hasParentId: true);
+        RegisterRepository<Visit>("visits", hasParentId: true);
+        RegisterRepository<Plan>("plans", hasParentId: true);
+        RegisterRepository<TreatmentDevice>("treatment_devices", hasParentId: true);
+        RegisterRepository<Position>("positions", hasParentId: true);
+        RegisterRepository<TreatmentField>("treatment_fields", hasParentId: true);
+        RegisterRepository<ActualTreatmentField>("actual_treatment_fields", hasParentId: true);
+        RegisterRepository<EmissionTreatmentField>("emission_treatment_fields", hasParentId: true);
+        RegisterRepository<Treatment>("treatments");
+        RegisterRepository<Photo>("photos", hasParentId: true);
+        RegisterRepository<Com.Empyreanmed.Heracles.Users.V1.User>("users");
+        RegisterRepository<Role>("roles");
+        RegisterRepository<RolesPermissions>("roles_permissions");
+        RegisterRepository<UserRole>("user_roles");
+        RegisterRepository<Head>("heads");
+        RegisterRepository<Collimator>("collimators", hasParentId: true);
+        RegisterRepository<CollimatorConfiguration>("collimator_configurations");
+        RegisterRepository<CoilConfiguration>("coil_configurations");
+        RegisterRepository<CorrectionMatrix>("correction_matrices");
+        RegisterRepository<HeaterCurrentConfig>("heater_current_configs");
+        RegisterRepository<OutputFactor>("output_factors");
+        RegisterRepository<ReferenceField>("reference_fields");
+        RegisterRepository<PresetConfiguration>("preset_configurations");
+        RegisterRepository<QCSample>("qcsamples", hasParentId: true, parentIdJsonField: "collimatorConfigurationId");
+        RegisterRepository<QCSampleField>("qcsample_fields", hasParentId: true, parentIdJsonField: "qcsampleId");
+        RegisterRepository<Intensity>("intensities", hasParentId: true, parentIdJsonField: "qcsampleFieldsId");
+        RegisterRepository<SafetyCheck>("safety_checks");
+        RegisterRepository<Warmup>("warmups");
+        RegisterRepository<Log>("logs");
+        RegisterRepository<Settings>("settings");
 
         // Service implementations
-        services.AddGrpc();
+        services.AddSingleton(connections);
+        services.AddSingleton(_maintenance);
+        services.AddSingleton<DatabaseMaintenanceInterceptor>();
+        services.AddSingleton<AuditSessionRegistry>();
+        services.AddGrpc(options =>
+        {
+            // Drain database operations before maintenance replaces or closes SQLite.
+            options.Interceptors.Add<DatabaseMaintenanceInterceptor>();
+        });
         services.AddSingleton<AuthServiceImpl>();
         services.AddSingleton<PatientServiceImpl>();
         services.AddSingleton<DiagnosisServiceImpl>();
@@ -139,6 +157,25 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
         services.AddSingleton<SystemServiceImpl>();
 
         _app = builder.Build();
+        try
+        {
+            foreach (var initialize in initializeRepositories)
+                initialize(_app.Services);
+        }
+        catch
+        {
+            _app.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            _stopping.Dispose();
+            throw;
+        }
+
+        _app.Use(async (context, next) =>
+        {
+            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                context.RequestAborted, _stopping.Token);
+            context.RequestAborted = cancellation.Token;
+            await next(context);
+        });
 
         _app.MapGrpcService<AuthServiceImpl>();
         _app.MapGrpcService<PatientServiceImpl>();
@@ -180,9 +217,49 @@ public sealed class SqliteGrpcServerHost : IAsyncDisposable
     public Task StartAsync(CancellationToken cancellationToken = default)
         => _app.StartAsync(cancellationToken);
 
-    public Task StopAsync(CancellationToken cancellationToken = default)
-        => _app.StopAsync(cancellationToken);
+    public Task<IDisposable> PauseUnaryCallsAsync(CancellationToken cancellationToken = default)
+        => _maintenance.PauseAsync(cancellationToken);
 
-    public async ValueTask DisposeAsync()
-        => await _app.DisposeAsync();
+    public async Task<bool> HasActiveTreatmentAsync()
+    {
+        var plans = await _app.Services.GetRequiredService<SqliteProtoRepository<Plan>>().ReadAllAsync();
+        return plans.Any(plan => plan.TreatmentLoadingState is
+            Com.Empyreanmed.Heracles.Enums.V1.TREATMENTLOADINGSTATE.Pendingload or
+            Com.Empyreanmed.Heracles.Enums.V1.TREATMENTLOADINGSTATE.Partialpendingload or
+            Com.Empyreanmed.Heracles.Enums.V1.TREATMENTLOADINGSTATE.Loaded);
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken = default)
+    {
+        lock (_lifecycleLock)
+            return _stopTask ??= StopCoreAsync(cancellationToken);
+    }
+
+    private async Task StopCoreAsync(CancellationToken cancellationToken)
+    {
+        _maintenance.Stop();
+        await _stopping.CancelAsync().ConfigureAwait(false);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+        await _app.StopAsync(timeout.Token).ConfigureAwait(false);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        lock (_lifecycleLock)
+            return new ValueTask(_disposeTask ??= DisposeCoreAsync());
+    }
+
+    private async Task DisposeCoreAsync()
+    {
+        try
+        {
+            await StopAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            await _app.DisposeAsync().ConfigureAwait(false);
+            _stopping.Dispose();
+        }
+    }
 }

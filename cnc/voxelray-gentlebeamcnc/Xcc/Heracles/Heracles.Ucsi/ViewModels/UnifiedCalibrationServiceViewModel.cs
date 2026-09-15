@@ -11,6 +11,7 @@ using Prism.Mvvm;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Enums;
 using Xcc.Infra.GryphonBoard;
+using Xcc.Application.AppLayer.Service;
 
 namespace Heracles.Ucsi.ViewModels;
 
@@ -248,6 +249,17 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private readonly ISystemTelemetryProcessor _telemetryProcessor;
     private readonly IUcsiHvpsUartCommandInterface _hvpsUartInterface;
     private readonly SessionDataExportService _exportService;
+    private readonly IActionAuditService _actionAuditService;
+    private sealed class PendingConfigChange(int firmwareIndex, float previousValue, float requestedValue)
+    {
+        public int FirmwareIndex { get; } = firmwareIndex;
+        public float PreviousValue { get; } = previousValue;
+        public float RequestedValue { get; } = requestedValue;
+        public int WriteSucceeded;
+        public int ReadbackConfirmed;
+    }
+    private PendingConfigChange? _pendingConfigChange;
+    private uint _loadedConfigMask;
     private bool _tickInProgress;
     private bool _updatingTimeline;
     private int _nextGraphNumber = 3;
@@ -363,7 +375,8 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         ISystemTelemetryProcessor telemetryProcessor,
         IUcsiHvpsUartCommandInterface hvpsUartInterface,
         SessionDataExportService exportService,
-        IUcsiKeepaliveService keepaliveService)
+        IUcsiKeepaliveService keepaliveService,
+        IActionAuditService actionAuditService)
     {
         _coordinator = coordinator;
         _catalog = catalog;
@@ -373,6 +386,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         _telemetryProcessor = telemetryProcessor;
         _hvpsUartInterface = hvpsUartInterface;
         _exportService = exportService;
+        _actionAuditService = actionAuditService;
         keepaliveService.Start();
 
         ParameterOptions = new ObservableCollection<CheckableParameterViewModel>(
@@ -443,10 +457,10 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         {
             var def = configItemDefinitions[i];
             int collectionIndex = i;  // Capture the correct collection index
-            // Set button is enabled only when NOT polling AND USB connection is active
+            // Firmware values must be read before a user can overwrite them; initial zeroes are placeholders.
             var setCommand = new DelegateCommand(
                 () => SetConfigValueFromUI(collectionIndex),
-                () => ConfigEditingEnabled && HvpsConnected);
+                () => ConfigEditingEnabled && HvpsConnected && (_loadedConfigMask & (1u << def.fwIndex)) != 0);
             ConfigItems.Add(new SystemConfigItem(
                 def.name,
                 def.initial,
@@ -481,6 +495,11 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             System.Windows.Application.Current?.Dispatcher.Invoke(() =>
             {
                 HvpsConnected = args.IsConnected;
+                if (!args.IsConnected)
+                {
+                    _loadedConfigMask = 0;
+                    Interlocked.Exchange(ref _pendingConfigChange, null);
+                }
                 RaisePropertyChanged(nameof(HvpsNotConnected));  // Also notify HvpsNotConnected changed
                 
                 // Commands that depend on HvpsConnected need to re-evaluate their CanExecute status
@@ -1037,6 +1056,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
 
     private void RefreshSystemConfig()
     {
+        Interlocked.Exchange(ref _pendingConfigChange, null);
         _configPollingActive = true;
         _configPollingSuccessful = false;  // Reset success flag
         _configPollingStartUtc = DateTimeOffset.UtcNow;
@@ -1055,11 +1075,13 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
 
     private async Task SetConfigValue(int collectionIndex, float value)
     {
+        PendingConfigChange? pendingChange = null;
         try
         {
             // Get the firmware index from the ConfigItem
             int firmwareIndex = ConfigItems[collectionIndex].FirmwareIndex;
             string itemName = ConfigItems[collectionIndex].Name;
+            float previousValue = (float)ConfigItems[collectionIndex].CurrentValue;
             
             // Start polling window BEFORE sending the command
             // This disables all Set and Refresh buttons immediately, preventing rapid clicks
@@ -1073,7 +1095,17 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             foreach (SystemConfigItem item in ConfigItems)
                 item.SetCommand.RaiseCanExecuteChanged();
             
+            if (previousValue != value)
+            {
+                pendingChange = new PendingConfigChange(firmwareIndex, previousValue, value);
+                Interlocked.Exchange(ref _pendingConfigChange, pendingChange);
+            }
             await _hvpsUartInterface.SetSystemConfigValue(firmwareIndex, value);
+            if (pendingChange is not null)
+            {
+                Volatile.Write(ref pendingChange.WriteSucceeded, 1);
+                RegisterConfirmedConfigChange(pendingChange);
+            }
             _logBuffer.Log(
                 $"System config value set: {itemName} (firmware index {firmwareIndex}) = {value}",
                 LogRecordSeverity.Info,
@@ -1092,6 +1124,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         }
         catch (Exception ex)
         {
+            Interlocked.CompareExchange(ref _pendingConfigChange, null, pendingChange);
             _logBuffer.Log(
                 $"Failed to set system config value at collection index {collectionIndex}: {ex.Message}",
                 LogRecordSeverity.Error,
@@ -1102,6 +1135,17 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             RefreshSystemConfigCommand.RaiseCanExecuteChanged();
             foreach (SystemConfigItem item in ConfigItems)
                 item.SetCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    private void RegisterConfirmedConfigChange(PendingConfigChange pendingChange)
+    {
+        if (Volatile.Read(ref pendingChange.WriteSucceeded) == 1 &&
+            Volatile.Read(ref pendingChange.ReadbackConfirmed) == 1 &&
+            ReferenceEquals(Interlocked.CompareExchange(ref _pendingConfigChange, null, pendingChange), pendingChange))
+        {
+            _actionAuditService.RegisterAction("Configuration change confirmed",
+                $"Entity=HVPSConfiguration; Id={pendingChange.FirmwareIndex}; Fields=Value");
         }
     }
 
@@ -1132,6 +1176,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         if (elapsedMs > 2000)
         {
             _configPollingActive = false;
+            Interlocked.Exchange(ref _pendingConfigChange, null);
             RaisePropertyChanged(nameof(ConfigEditingEnabled));
             RefreshSystemConfigCommand.RaiseCanExecuteChanged();
             // Notify all Set buttons that they can execute again
@@ -1165,6 +1210,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         }
 
         _configPollingGate = true;
+        var pendingChange = Volatile.Read(ref _pendingConfigChange);
         try
         {
             var response = await _hvpsUartInterface.RequestSystemConfig();
@@ -1176,6 +1222,22 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
                 if (firmwareIndex >= 0 && firmwareIndex < response.Values.Length)
                 {
                     ConfigItems[i].CurrentValue = response.Values[firmwareIndex];
+                    _loadedConfigMask |= 1u << firmwareIndex;
+                }
+            }
+
+            if (pendingChange is not null)
+            {
+                if (pendingChange.FirmwareIndex < response.Values.Length &&
+                    response.Values[pendingChange.FirmwareIndex] == pendingChange.RequestedValue &&
+                    response.Values[pendingChange.FirmwareIndex] != pendingChange.PreviousValue)
+                {
+                    Volatile.Write(ref pendingChange.ReadbackConfirmed, 1);
+                    RegisterConfirmedConfigChange(pendingChange);
+                }
+                else
+                {
+                    Interlocked.CompareExchange(ref _pendingConfigChange, null, pendingChange);
                 }
             }
             
@@ -1204,6 +1266,8 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private void SetConfigValueFromUI(int index)
     {
         SystemConfigItem item = ConfigItems[index];
+        if (!ConfigEditingEnabled || !HvpsConnected || (_loadedConfigMask & (1u << item.FirmwareIndex)) == 0)
+            return;
         
         if (string.IsNullOrWhiteSpace(item.InputValue))
         {

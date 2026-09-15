@@ -8,6 +8,7 @@ using Heracles.Core.Models.RDBMS;
 using Prism.Commands;
 using Prism.Mvvm;
 using Xcc.Application.Helpers;
+using Xcc.Application.AppLayer.Service;
 using Xcc.Core.Constants;
 using Xcc.Core.Enums;
 using Xcc.Core.Logging;
@@ -30,11 +31,13 @@ namespace Heracles.Indoor.ViewModels.Physics
         public TargetPointsViewModel(
             ICoilConfigurationStore coilConfigurationStore,
             IPopUpService popUpService,
-            ILogWriter logWriter)
+            ILogWriter logWriter,
+            IActionAuditService actionAuditService)
         {
             Store = coilConfigurationStore;
             PopUpService = popUpService;
             LogWriter = logWriter;
+            ActionAuditService = actionAuditService;
 
             Store.IsModifiedChanged += (s, e) => SaveCommand.RaiseCanExecuteChanged();
             Store.IsValidChanged += (s, e) => 
@@ -47,6 +50,7 @@ namespace Heracles.Indoor.ViewModels.Physics
 
         #region Properties
         public ICoilConfigurationStore Store { get; }
+        private IActionAuditService ActionAuditService { get; }
         public IPopUpService PopUpService { get; }
         public ILogWriter LogWriter { get; }
         #endregion Properties
@@ -315,7 +319,7 @@ namespace Heracles.Indoor.ViewModels.Physics
         {
             try
             {
-                await Store.SubmitCollimatorConfigurationAsync();
+                await Store.SubmitCollimatorConfigurationAsync(ActionAuditService);
 
                 PopUpService.ShowMessage(
                     StringConstants.Common.SettingsDialogTitle,

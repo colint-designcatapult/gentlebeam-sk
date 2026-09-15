@@ -161,6 +161,9 @@ namespace Heracles.Application.Commands.DummyCommands
             roleRecords.First(x => x.Name == "RTT")).GetAwaiter().GetResult();
         }
 
+        public Task ResetUserLockoutAsync(long userId) =>
+            Task.FromException(new NotSupportedException("Reset lockout requires an authenticated server connection."));
+
         private async Task CreateUserWithRoleMappingAsync(User user, RoleRecord role)
         {
             var storedUser = await CreateAsync(user);

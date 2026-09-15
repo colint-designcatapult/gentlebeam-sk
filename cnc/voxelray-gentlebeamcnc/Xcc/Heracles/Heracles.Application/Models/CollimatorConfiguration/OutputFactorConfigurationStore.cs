@@ -3,6 +3,8 @@ using Heracles.Application.Domain.DataManagement.System.Collimators;
 using Heracles.Application.Infra.DataManagement.System.DataAccess;
 using Heracles.Core.Enums;
 using Heracles.Core.Models;
+using System.Collections.Generic;
+using Xcc.Application.AppLayer.Service;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,7 +26,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
         double? DoseRate { get; set; }
 
         Task FetchOutputFactorsAsync();
-        Task SubmitOutputFactorsAsync();
+        Task SubmitOutputFactorsAsync(IActionAuditService? audit = null);
     }
 
     /// <summary>
@@ -52,6 +54,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
         private ICollimatorConfiguration _collimatorConfiguration;
         private double? _doseRate = null;
         private bool _hasValue;
+        private readonly Dictionary<TreatmentFieldName, double?> _savedFactors = new();
 
         #region Properties
         public OutputFactorConfigurationBase Configuration
@@ -88,6 +91,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
             {
                 if (SetProperty(ref _collimatorConfiguration, value))
                 {
+                    _savedFactors.Clear();
                     Configuration = OutputFactorConfigurationBase.Create(
                         targetType: CollimatorConfiguration?.Type ?? TargetType.TargetType_None);
                     DoseRate = value?.ReferencedDoseRate;
@@ -130,6 +134,7 @@ namespace Heracles.Application.Models.CollimatorConfiguration
 
             var outputFactorsFromDB = await OutputFactorCommands.ReadListAsync(CollimatorConfiguration.DefaultPreset.Id);
             var outputFactorsToSetup = Configuration.OutputFactors.ToDictionary(x => x.FieldName, x => x);
+            _savedFactors.Clear();
 
             foreach(var factorDB in outputFactorsFromDB)
             {
@@ -139,18 +144,19 @@ namespace Heracles.Application.Models.CollimatorConfiguration
                 {
                     factorDB.CopyProperties(factorToSetup);
                     factorToSetup.AcceptChanges();
+                    _savedFactors[factorDB.FieldName] = factorDB.Factor;
                 }
             }
             // Re-evaluate entire configuration dirty flag
             Configuration.IsModified = Configuration.OutputFactors.Any(p => p.IsModified);
         }
 
-        public async Task SubmitOutputFactorsAsync()
+        public async Task SubmitOutputFactorsAsync(IActionAuditService? audit = null)
         {
             // Update DoseRate:
             if (CollimatorConfiguration.ReferencedDoseRate != DoseRate)
             {
-                CollimatorConfiguration = await CollimatorService.UpdateCollimatorConfigurationDoseRateAsync(CollimatorConfiguration.Id, DoseRate.Value);
+                CollimatorConfiguration = await CollimatorService.UpdateCollimatorConfigurationDoseRateAsync(CollimatorConfiguration.Id, DoseRate.Value, audit);
                 DoseRate = CollimatorConfiguration.ReferencedDoseRate; // just in case if there's any difference due to conversion in the repository
             }
 
@@ -158,15 +164,25 @@ namespace Heracles.Application.Models.CollimatorConfiguration
             {
                 // Ensure that we save the data into the right preset:
                 outputFactor.PresetConfigurationId = CollimatorConfiguration.DefaultPreset.Id;
+                bool changed = !_savedFactors.TryGetValue(outputFactor.FieldName, out var savedFactor) ||
+                    savedFactor != outputFactor.Factor;
+                bool isNew = BaseEntry.IsBlankEntry(outputFactor);
 
                 IOutputFactor storedData = outputFactor;
-                if (BaseEntry.IsBlankEntry(outputFactor))
+                if (isNew)
                 {
                     storedData = await OutputFactorCommands.CreateAsync(outputFactor);
                 }
-                else if (outputFactor.IsModified)
+                else if (changed)
                 {
                     storedData = await OutputFactorCommands.UpdateAsync(null, outputFactor);
+                }
+                if (isNew || changed)
+                {
+                    if (isNew || storedData.Factor != savedFactor)
+                        audit?.RegisterAction("Configuration saved",
+                            $"Entity=OutputFactor; Id={storedData.Id}; PresetId={storedData.PresetConfigurationId}; Fields=Factor");
+                    _savedFactors[outputFactor.FieldName] = storedData.Factor;
                 }
                 // Copy stored state and reset dirty flag
                 storedData.CopyProperties(outputFactor);

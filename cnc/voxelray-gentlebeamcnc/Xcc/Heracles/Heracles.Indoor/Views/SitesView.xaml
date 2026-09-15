@@ -16,6 +16,8 @@
     xmlns:enums ="clr-namespace:Heracles.Core.Enums;assembly=Heracles.Core"
     xmlns:helpers="clr-namespace:Xcc.Application.Helpers;assembly=Xcc.Application"
     xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:behaviors="clr-namespace:Xcc.Application.UI.Behaviors;assembly=Xcc.Application"
 
     IsTabStop="False"
     UseLayoutRounding="True"
@@ -359,7 +361,7 @@
                     SelectionMode="Single" 
                     ScrollViewer.VerticalScrollBarVisibility="Auto" 
                     ItemsSource="{Binding FieldModel.Fields}" 
-                    SelectedItem="{Binding TreatmentInfo.Diagnosis, Mode=TwoWay}"
+                    SelectedItem="{Binding TreatmentInfo.Diagnosis, Mode=OneWay}"
                     IsHitTestVisible="{Binding SiteToEdit, Converter={convx:ObjectIsNullConverter}}"
                     HorizontalContentAlignment="Stretch"
                     AlternationCount="100000000">
@@ -395,6 +397,9 @@
                             </Setter>
                         </Style>
                     </ListView.ItemContainerStyle>
+                    <i:Interaction.Behaviors>
+                        <behaviors:UserSelectionCommandBehavior Command="{Binding ViewSiteCommand}"/>
+                    </i:Interaction.Behaviors>
 
                     <ListView.Template>
                         <ControlTemplate>

@@ -116,7 +116,7 @@ TITLE: Design Items
 UID: SW-H10SG-11
 TITLE: Data management API
 STATEMENT: >>>
-The application shall use a streaming communication (API) to store and retrieve data remotely from/to the centralized data storage (Database) to allow seamless and sustainable integration.
+In embedded database mode, the indoor application hosts a local gRPC database API backed by an encrypted SQLite database. The existing unary API operations store and retrieve data, and streaming subscriptions deliver change notifications. The listener can serve other gRPC clients; database persistence does not require a remote or centralized database service. Existing non-embedded configurations retain their configured database service.
 
 The list of API functions is defined in the following protocol document:
 
@@ -131,19 +131,16 @@ RELATIONS:
 UID: SW-H10SG-12
 TITLE: Patients' Data Management
 STATEMENT: >>>
-The application shall include a centralized and secure data repository for storing and managing all treatment planning data, including patient information, treatment plans, and treatment history.
-
-Patient Table will be stored in a secure manner, and data will be encrypted.
+In embedded database mode, the indoor application stores and manages patient information, treatment plans, and treatment history in its local relational repository. SQLCipher protects the whole database, including all patient and non-patient tables, rather than encrypting only patient demographic fields.
 
 The data shall be managed in a relational database, which shall support hierarchical organization based on user flow.
 
-The data shall be stored in the form of JSON-serialized Protocol Buffers based on the communication protocol. 
+The data shall be stored in the form of JSON-serialized Protocol Buffers based on the communication protocol.
 Each Protocol Buffers structure shall have a dedicated database table with the following fields:
 
-- ID
-- Parent ID
-- Data (serialized JSON)
-
+- ``id``: integer primary key with AUTOINCREMENT, retained in the serialized entity.
+- ``parent_id``: non-null integer, present for child-entity tables to retain the parent-child hierarchy; not present in every table.
+- ``data``: non-null TEXT containing the serialized Protocol Buffers JSON.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -353,14 +350,18 @@ RELATIONS:
 UID: SW-H10SG-100
 TITLE: System Data management
 STATEMENT: >>>
-The application shall include a centralized and secure data repository for storing device system data, including calibration data, system settings, QC history, and warmup history.
-
-The data shall be managed in a relational database.
+In embedded database mode, calibration data, system settings, QC history, and warmup history are stored in the same encrypted local relational database as the patient and treatment records. The existing Protocol Buffers JSON repository representation is retained. SQLCipher provides whole-database encryption and cryptographic page-integrity protection for these system records as well as clinical data.
 
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-126
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-55
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-789
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -450,9 +451,9 @@ UID: SW-H10SG-622
 TITLE: User Login Sequence
 STATEMENT: >>>
 1. The user is presented with username and password.
-2. The credentials are validated by the UsersService.
-3. If authentication fails, the error is presented to the user.
-4. Otherwise, the application AuthorizedUser is configured with the issued auth token and user information and the login screen closes to the main application screen.
+2. AuthService validates the credentials against the persisted account. Incorrect passwords for unlocked accounts increment the persisted failed-login count; accounts at or above 10 failures reject login even with a correct password. Restart does not clear the count.
+3. The server persists the login outcome security record without passwords or tokens. An audit persistence error fails closed without issuing a session. Authentication failures are presented to the user.
+4. A valid login below the threshold resets the failed-login count to zero. Only after the outcome is persisted does the application configure AuthorizedUser with the issued auth token and user information and close the login screen.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -527,6 +528,8 @@ UID: SW-H10SG-625
 TITLE: Approve Patient's Treatment Fields (Plan)
 STATEMENT: >>>
 Sequence diagram for 'approve plan' use case:
+
+Approval credential validation honors the persisted account lockout threshold but neither increments nor resets failed-login attempts. Rejected approval credentials leave the plan unchanged.
 
 .. raw:: html
 
@@ -1313,12 +1316,18 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H10SG-689
-TITLE: Create User Sequence
+TITLE: User Management and Reset Lockout
 STATEMENT: >>>
 1. The user requests to add a new user.
 2. The user add form is cleared and enabled.
 3. The form is validated. If validation fails, saving is disabled and the error is presented to the user.
 4. The new user record is presisted to the database.
+
+User Management displays the persisted failed-login count as lock status. Reset lockout is enabled only for a locked selection and an authenticated Administrator with an active, unlocked, unexpired session. The confirmed command calls ResetUserLockout with the target user ID through the user commands/repository transport, handles errors using the existing task/dialog flow, and refreshes the list after completion.
+
+ResetUserLockout resolves the bearer token through the server's session registry, then reloads the actor and role from persisted storage. Only the exact built-in Administrator role on an existing, unlocked actor authorizes the operation; a supplied user ID or stale client role alone is not authority. Missing, forged, deleted, demoted, locked, and non-administrator actors are rejected.
+
+For a target at or above 10 failed login attempts, one transaction sets only failed_login_attempts to zero and writes the reset-success security record with actor and target IDs. Failure to persist the audit rolls back the reset. The response contains the target user; a target below 10 is returned unchanged with no reset-success record. Password, last_accessed, and other user fields are preserved, and the client adds no duplicate success audit. Ordinary CRUD retains the output-only counter contract.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1338,7 +1347,7 @@ RELATIONS:
 UID: SW-H10SG-690
 TITLE: Save Endpoint Configuration Flow Diagram
 STATEMENT: >>>
-The following flow describes the flow for saving Endpoint Configuration:
+After the user saves endpoint configuration successfully, the application records the acting user and changed configuration identifiers through the action audit service. Cancelled edits, failed saves, unchanged values, automatic loads, and background RPC traffic do not produce successful configuration-change audit records.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1704,8 +1713,9 @@ RELATIONS:
 UID: SW-H10SG-705
 TITLE: Save Patient Audit Log Records
 STATEMENT: >>>
-Sequence diagram for registering the current user and patient data operation before and
-after a successful patient save. Log persistence is queued and assigns the record timestamp.
+Sequence diagram for registering the current user and patient identifier once a requested patient change is successfully persisted. Failed, unchanged, reverted, or unapplied saves produce no successful-change audit. The record identifies the save operation, not demographic field values. Log persistence is queued and assigns the record timestamp.
+
+Explicit navigation that displays a patient, diagnosis, simulation, prescription, or plan records the acting user and displayed record identifiers. Cached tab revisits and explicit returns to an already loaded record are views even without a database read; automatic navigation, background loads, and refreshes are not. A failed read is not recorded as a successful view of the unavailable record.
 
 .. raw:: html
 
@@ -1725,12 +1735,6 @@ after a successful patient save. Log persistence is queued and assigns the recor
         participant PatientService
     end
 
-    PatientsViewModel->>ActionAuditService: RegisterAction(save new patient or update patient ID)
-    ActionAuditService->>ActionAuditService: add current username and user ID
-    ActionAuditService->>DbLogRepository: LogAsync(user audit record; not awaited)
-    DbLogRepository->>LogService: CreateRecord
-    LogService-->>DbLogRepository: persisted record with timestamp
-
     PatientsViewModel->>PatientEditing: SavePatientAsync()
     PatientEditing->>PatientListModel: SavePatientAsync(patient)
     alt [new patient]
@@ -1746,7 +1750,7 @@ after a successful patient save. Log persistence is queued and assigns the recor
     PatientListModel-->>PatientEditing: saved patient
     PatientEditing-->>PatientsViewModel: saved patient
 
-    opt [save succeeded]
+    opt [requested change successfully persisted]
         PatientsViewModel->>ActionAuditService: RegisterAction(save completed with patient ID)
         ActionAuditService->>ActionAuditService: add current username and user ID
         ActionAuditService->>DbLogRepository: LogAsync(user audit record; not awaited)
@@ -1873,6 +1877,128 @@ Unknown or unavailable firmware mode does not lock the tab.
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-741
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-715
+TITLE: Encrypted Local Database and Recovery Key
+STATEMENT: >>>
+Provider and key derivation
+
+The embedded indoor database uses Microsoft.Data.Sqlite.Core 8.0.14 with SQLitePCLRaw.bundle_e_sqlcipher 2.1.11 on the existing Windows x64 target. SQLitePCL.Batteries_V2.Init initializes the provider once before any SQLite connection. Startup requires a nonempty ``PRAGMA cipher_version`` reporting major version 4; an absent or incompatible cipher fails closed without an ordinary-SQLite fallback. The ordinary Microsoft.Data.Sqlite bundle is not shipped or initialized alongside SQLCipher. This community native bundle is not an officially supported Zetetic binary or a FIPS-validated component.
+
+The master encryption key (MEK) consists of 16 cryptographically random bytes, providing 128 bits of key entropy. The local database password is ``Convert.ToHexString(mek)``: the uppercase 32-character hexadecimal representation supplied as an ordinary SQLCipher passphrase, not raw-key ``x'...'`` syntax and not the numeric recovery display. SQLCipher 4 derives an AES-256 key using PBKDF2-HMAC-SHA512 with 256000 iterations and a database salt. The design retains 4096-byte pages, per-page HMAC-SHA512, and no plaintext header. It does not reduce KDF work or disable HMAC. A 256-bit derived AES key does not increase the random MEK's 128-bit entropy.
+
+SqlCipherConnectionFactory builds a keyed connection string once, uses ReadWrite mode and pooling for runtime connections, and sets ``PRAGMA temp_store=MEMORY`` before application SQL. Missing runtime database files are not silently recreated. Failed opens dispose their connections. Initialization and transfers use explicitly created or read-only non-pooled connections. All protobuf repositories use this factory; the host eagerly initializes every registered repository before starting its listener, preserving existing schema, CRUD, parent-column migration, and approval behavior without a separate schema registry or metadata table.
+
+Encrypted private validation connections are opened without a connection-string Password, then keyed with a safely quoted PRAGMA key before database access. Deliberately plaintext connections omit PRAGMA key. This gives the application ownership of the native handle before a wrong key can fail schema validation; Microsoft.Data.Sqlite's connection-string password validation can otherwise fail during construction and defer handle release to garbage collection. Failed recovery or backup-password attempts therefore close their handles deterministically.
+
+Files and the Windows protector
+
+Paths are resolved under the configured HeraclesMainSettings.StorageRoot, whose default is ``C:/HERACLES/DATA/``. The live file is ``heracles.encrypted.db``, the protector is ``heracles.db.key``, and the development-only plaintext source is ``heracles.db``. Under the default root these are ``C:/HERACLES/DATA/heracles.encrypted.db``, ``C:/HERACLES/DATA/heracles.db.key``, and ``C:/HERACLES/DATA/heracles.db`` respectively.
+
+DpapiKeyStore uses System.Security.Cryptography.ProtectedData 8.0.0 to protect exactly the 16 MEK bytes with Windows DPAPI CurrentUser scope and null optional entropy. Only the binary protected blob is stored at the key path. Save writes a same-directory temporary protected blob and replaces the protector; no plaintext MEK file is written. Load uses the same scope and entropy. A missing blob, DPAPI cryptographic failure, or unprotected length other than 16 bytes means that no usable key was supplied. Access, permissions, disk, and other I/O failures instead propagate as sanitized operational startup errors, not instructions to generate a replacement key. Temporary key buffers are zeroed with CryptographicOperations.ZeroMemory; disposing SqlCipherDatabase clears its owned MEK bytes and releases its connection pool.
+
+The recovery display
+
+RecoveryKeyCodec splits the MEK, in byte order, into eight unsigned big-endian 16-bit integers. Each integer is multiplied by 11 and formatted as exactly six invariant-culture ASCII decimal digits; groups are joined by ASCII hyphens. For the controlled fixed vector ``00000001000A00FF01000FFF8000FFFF``, the display is ``000000-000011-000110-002805-002816-045045-360448-720885``.
+
+Parsing trims only surrounding whitespace and requires exactly eight six-digit groups separated by hyphens, with ASCII digits only. Each value must be between 0 and 720885 inclusive and divisible by 11. Division by 11 restores the corresponding two big-endian bytes. Invalid input returns no key and is not included in an error message. This is a BitLocker-style 48-digit representation, not a BitLocker-compatible protector. The group check digits detect many transcription errors but do not authenticate a key. The numeric display is formatted on demand rather than cached.
+
+Startup, provisioning, and recovery
+
+1. In the UseSqliteDatabase startup branch, initialize SqlCipherDatabase and make the configured directory available before constructing the database host, channel, FieldModel, or telemetry consumers. Access failure terminates startup with a sanitized actionable message, without creating the shell. Non-SQLite branches retain their normal operation.
+
+2. If the encrypted file exists, it is authoritative even when the development plaintext file also exists. Never generate a replacement MEK, merge, remigrate over it, or fall back to plaintext. Try the DPAPI MEK against a real ``SELECT count(*) FROM sqlite_master``. After a successful schema read, require ``PRAGMA cipher_integrity_check`` to return zero rows and ``PRAGMA integrity_check`` to return exactly ``ok``. A subsequent integrity failure is corruption: stop rather than offering overwrite or reinitialization.
+
+3. If DPAPI supplies no usable MEK, or its MEK fails the initial schema read, request the numeric recovery key. Malformed input and a validly formatted but incorrect key receive a generic retry message; cancellation stops startup. The first prompt has no validation error. Test every candidate against the existing file and both full integrity checks before saving a new CurrentUser protector. Recovery attempts never change database bytes. On success the recovered MEK restores automatic unlock; it is not rotated.
+
+4. If no encrypted database exists, reuse a valid DPAPI MEK left by an interrupted first initialization, or generate 16 bytes using RandomNumberGenerator.GetBytes. Before committing a new database or protector, display its formatted recovery key and require the explicit acknowledgement ``I have saved this recovery key``. Cancel leaves the development source untouched. Provisioning is an operator workflow before login, because application authentication depends on database access; it is distinct from the administrator-only Settings reveal.
+
+5. Only after acknowledgement, save the DPAPI protector. If the development plaintext source exists, use the same keyed-copy primitive as database transfer: create the encrypted output and copy all source schema and data with sqlcipher_export, using an explicitly empty source key. Do not use PRAGMA rekey. Preserve IDs, hierarchy, indexes, triggers, database metadata, and AUTOINCREMENT high-water marks. Validate the reopened encrypted output and close all source and destination connections before deleting the development plaintext file and its own SQLite sidecars. Do not retain a plaintext backup. Without a plaintext source, use a non-pooled keyed Create connection and VACUUM to create a valid empty encrypted database; normal host initialization supplies its tables.
+
+6. A failed migration removes only its incomplete output and retains the development source. No migration journal, rollback snapshot, or resumption protocol is introduced. A leftover protector is reused and shown again at the next no-database startup. Failure to delete a successfully migrated plaintext source prevents normal startup. A subsequent startup first fully validates the authoritative encrypted file, then retries cleanup of the remaining legacy source and sidecars. Deletion is not a secure-erasure guarantee.
+
+The standalone pre-shell recovery window uses the shared WPF resources. Provisioning shows a selectable read-only key, acknowledgement, Continue, and Cancel; recovery shows key entry, Unlock, Cancel, and a local sanitized validation message. Closing either mode cancels. Explicit WPF shutdown mode is temporarily used while the window is displayed and then restored. The key never appears in a generic exception dialog. Exit cleanup tolerates partial initialization and disposes only objects actually initialized, without resolving unused database consumers.
+
+Security boundaries
+
+Possession of the MEK is the recovery authority before database-backed login is available. A copied encrypted database and its saved numeric MEK can be recovered under another Windows account or machine, creating a protector bound to that account; the copied CurrentUser blob alone cannot perform that unlock. Saving the recovery key externally is the provisioning operator's responsibility; the application does not automatically copy, print, or export it as plaintext.
+
+Cryptographic page integrity detects unauthorized alteration but does not provide rollback or replay protection against replacement with an older authentic database. Application-role controls do not isolate keys from a process already running as the provisioning Windows account. SQLCipher diagnostics, SQL, connection strings, DPAPI buffers, passwords, and recovery keys are excluded from application logs, audit text, generic exception details, and command lines. Managed strings cannot be guaranteed erased and are retained only for the operation that needs them.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-55
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-789
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-790
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H10SG-716
+TITLE: Administrator Data Management
+STATEMENT: >>>
+Availability, authorization, and secret display
+
+Settings > Data Management retains the existing Settings/SystemSettings permission gate. Embedded-mode administrators with an active, unlocked, unexpired session can reveal the MEK recovery key, export, or import. DataManagementService is registered in every database mode, with embedded database and host objects optional; non-embedded mode reports unavailability and supplies no usable management controls. A non-administrator with Settings access sees an administrator-required message, not key or transfer controls.
+
+Every service entry independently checks embedded availability, a non-null authorized user with Role.Name exactly equal to UserRole.BuiltInNames.Administrator, and a non-null IBearerTokenUserSessionManager.UserSession that is neither locked nor expired. UI command state uses the same predicate, with authorized-user and session-change notifications marshalled to the dispatcher. Retaining an AuthorizedUser after session expiry does not authorize a management call. No new role, permission field, credential reauthentication dialog, or management gRPC endpoint is introduced.
+
+The MEK recovery key TextBox is read-only and initially contains only a fixed mask. A single eye-icon toggle reveals or hides it. Reveal obtains the display only after authorization; Hide removes the actual bound string rather than concealing it with color. Hide, view unload or tab departure, logout or user switch, lock or expiration, and the start of a transfer clear the revealed value. Returning to the tab always shows the mask. View-lifetime subscriptions are released appropriately. Recovery-key disclosure after login is administrator-only, separate from first provisioning and possession-based startup recovery.
+
+A second read-only, selectable field beneath the recovery key exposes the 32-character uppercase hexadecimal MEK with the visible label and accessibility name ``Passphrase``. Administrators obtain this value through Settings > Data Management using the shared eye toggle and copy it securely for live database inspection; no manual conversion of the numeric recovery key is required. Use it as an ordinary passphrase with SQLCipher 4 settings, not as a derived raw encryption key or raw-key-mode value. The numeric recovery key remains the startup recovery credential, while an encrypted export uses its independently chosen export password rather than the local Passphrase. The Passphrase is obtained through the same administrator/session and busy-state guards and cleared back to its own fixed mask on every recovery-key hiding transition. Copying is a deliberate standard text-selection action; no automatic clipboard write is performed. Inspection procedures clear any controlled clipboard and secret input afterward and exclude secrets from logs, command lines, screenshots, and public evidence.
+
+The nested settings view follows the existing Prism AutoWire pattern and uses BindableBase and DelegateCommand with explicit busy state and caught asynchronous errors. New settings and recovery surfaces use the application's existing shared theme and control styles. The password dialog uses DialogViewModelBase and PasswordBox controls, not the account-approval dialog or its error logging. Export requires matching confirmation; exactly empty password and confirmation select an unencrypted export. Import asks once and permits an empty password for plaintext input. Labels and help text do not instruct users to leave password fields empty. Nonempty whitespace-only passwords and embedded NUL are rejected locally; encryption passwords are used exactly as entered, without trimming, normalization, or extra complexity rules. Invalid or mismatched input keeps the dialog open with a local message. The password result is consumed immediately, and PasswordBox, view-model, and dialog-result references are cleared on every close path and in operation cleanup. No automatic clipboard action is performed.
+
+Export uses a SaveFileDialog with overwrite confirmation, default extension .db, filter ``Database (*.db)|*.db``, and default filename ``heracles-backup-yyyyMMdd-HHmmss.db``. Import uses an OpenFileDialog with the same database filter, file-existence checking and single selection. Cancelling a file or password dialog is a no-op. Before import preparation, require explicit confirmation: ``Import replaces the entire database, including users and settings, and closes the application. Continue?``
+
+Database snapshot transfer
+
+SqlCipherDatabase runs synchronous SQLCipher copy and validation work on a worker task. One per-instance semaphore serializes transfers, and the UI rejects duplicate management actions while busy. A prepared import retains that reservation until install or discard; failed preparation releases it. Pre-install refusal, cancellation, or error removes only this instance's owned staging and releases the reservation. Cancellation is allowed before replacement; once replacement begins, finish the outcome and close rather than reporting an uncertain cancellation.
+
+One private keyed-copy primitive implements development migration, export, and import. It creates a new non-pooled destination as the main database, encrypted except for an empty-password export. It then attaches the existing source through a bound, properly escaped absolute file URI with mode=ro and an explicit bound key. Development migration and plaintext imports use an empty source key. It validates and reads the source within one explicit read snapshot and invokes ``SELECT sqlcipher_export('main', 'source')``. This copies complete schema, tables, indexes, triggers, and data, not raw live bytes or selected JSON records.
+
+The primitive preserves user_version, application_id, auto_vacuum, and sqlite_sequence high-water marks, including deleted-high-ID cases. It sets auto_vacuum before populating the destination and explicitly copies sequence contents where needed. Source schema access and source-alias integrity PRAGMAs run within the read snapshot. Plaintext sources require SQLite structural integrity but have no SQLCipher HMAC to validate; encrypted sources require both checks. Filename and ATTACH-key values are bound. A required PRAGMA literal is obtained through parameterized ``SELECT quote($value)``, not manual quoting or user-path SQL concatenation.
+
+Temporary SQL data stays in memory. Migration outputs, import staging, and nonempty-password export outputs are encrypted throughout. Only an explicitly empty-password export uses a plaintext output and plaintext sibling temporary file. Connections are detached, checkpointed as needed, and closed. Each output is a self-contained DELETE-journal database, not a file depending on unexported WAL content. Reopening must pass schema access and integrity_check with exactly ok before success; encrypted outputs must additionally pass cipher_integrity_check with zero rows and must not have a plaintext SQLite header. Plaintext outputs are ordinary SQLite databases, with no SQLCipher header or cryptographic integrity requirement.
+
+With a nonempty password, an export is a standalone SQLCipher 4 database protected only by the exact user-supplied export password with a new salt. With an exactly empty password, it is an ordinary unencrypted SQLite database readable without a key; this deliberate disclosure does not decrypt or otherwise change the encrypted live database or local key protector. Neither format contains a MEK wrapper, custom archive, JSON-only subset, or companion key file. Each export is written to a unique sibling of the chosen destination in its selected format. Only after complete validation is an existing destination replaced, using file replacement rather than writing through a link. Failure or cancellation leaves an existing destination intact and removes incomplete owned output. Normal database use continues during export; the read snapshot defines one consistent point in time. Files such as external photos and application logs are outside this database-only operation.
+
+Import preparation opens the selected source read-only. An ordinary SQLite header selects plaintext handling without applying a source password; other inputs use the supplied SQLCipher password. Missing or empty files, non-databases, incorrect encryption passwords, cryptographic or structural corruption, and incompatible schema are rejected before affecting live data. Plaintext structural checks cannot authenticate the source or detect every semantically valid alteration. Compatibility is measured against all non-sqlite_% tables in the fully initialized live schema: every live table and column must exist with matching declared type, NOT NULL, and primary-key flags. Extra source tables and columns are accepted and preserved. Repository auto-migrations are not run against the source, and imported treatment loaded-state values are not reset.
+
+An accepted import snapshot is re-encrypted into a unique staging file under StorageRoot with the existing local MEK. It preserves users, roles, settings, clinical and system histories, IDs, parent relationships, and treatment states. Neither heracles.db.key nor the locally displayed recovery key changes. Installation accepts only a validated staging path produced by this SqlCipherDatabase instance. Discard deletes only an owned staging file, never a selected source.
+
+For both transfer directions, reject selected paths resolving to the live database, development source, key blob, any of their sidecars, or the instance's staging files. Normalize Windows paths case-insensitively and reject reparse-point aliases into protected locations. A selected import source is never deleted.
+
+Exclusive replacement and shutdown
+
+The host's internal DatabaseMaintenanceGate and gRPC interceptor track whole admitted unary RPCs, including error paths, under a lock; ordinary calls remain concurrent. Starting maintenance atomically rejects new unary calls with Unavailable and waits asynchronously for admitted calls to finish, including multi-connection operations. Newly starting streams are rejected during maintenance; existing streams are not part of the unary drain and are cancelled or disconnected during host shutdown. No unauthenticated database-management RPC is exposed.
+
+After preparing staging, import obtains a unary pause/drain lease with a linked 30-second timeout. Timeout or cancellation restores admission, discards staging, and refuses import without stopping the host. After a successful drain, authorization is checked again and the host queries its existing Plan repository directly, not through the paused channel. The exact active-treatment predicate is Pendingload, Partialpendingload, or Loaded. Any such plan, or lost authorization, refuses import, removes owned staging, and reopens admission. A racing external LoadForTreatment either finishes within an admitted RPC and is visible to this check or is rejected before mutation.
+
+Once permitted, a modal busy surface prevents further user interaction. Import stops LoadForTreatmentEventSource and PlanEventSource, stops and disposes the host with a 30-second shutdown bound, shuts down the local gRPC channel, and releases SQLite pools. Once stopping starts, the host never resumes admission. Stop and Dispose are idempotent for subsequent application exit cleanup. Failure to finish shutdown or release handles gives no permission to replace the database.
+
+Immediately before replacement, one final non-pooled keyed live connection checks journal mode. For WAL mode it performs wal_checkpoint(TRUNCATE) and requires a non-busy result, then switches to journal_mode=DELETE and requires success. It closes before replacement. Checkpoint or journal-mode failure preserves the original and leads to application closure, without deleting an uncheckpointed WAL. Only obsolete live sidecars whose handles are released may be removed after successful finalization; old WAL or journal content must not accompany the replacement.
+
+Installation uses same-volume File.Replace of the validated staging over the live database after all handles and pools are released. It never deletes the live database first, falls back to plaintext, or implements a merge. Replacement failure retains the original database. This limited production-import protection is distinct from the intentionally simple development migration.
+
+On success, show ``Database imported. The application will close. Start it again to use the imported data.`` and invoke the existing IExitingModel.ExitApplication on the dispatcher. Do not refresh or resume old in-memory models against imported data, rotate the MEK, or automatically restart the application. An error after host shutdown begins is reported and also closes the application, even if the original remains intact; next startup opens whichever complete database was retained. App.OnExit uses references to initialized objects and does not restart stopped consumers.
+
+Operational messages distinguish cancellation, an unavailable file or location, an invalid password or unreadable/damaged database, unsafe treatment state, and replacement failure, without including secret-bearing SQLCipher diagnostics, SQL, connection strings, recovery keys, or passwords. No unintended plaintext database copy or secret-bearing audit entry is produced. Unencrypted export files, their sibling temporary files, and selected plaintext import sources contain plaintext data and require appropriate protection. Import creates no additional plaintext copy: staging and the restored operational database remain encrypted.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-55
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-789
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H10SG-790
   ROLE: Refines
 
 [[/SECTION]]

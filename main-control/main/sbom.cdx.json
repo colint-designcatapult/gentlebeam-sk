@@ -1,0 +1,412 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "firmware",
+      "bom-ref": "urn:gentlebeam:component:main-control:main",
+      "name": "main-control/main",
+      "version": "4.0.0",
+      "description": "GentleBeam main-control application firmware for ATSAME70Q21B. The application release inherits the root version baseline; FW_VERSION adds dcdoc build/hash qualifiers. The separately built bootloader and host image-signing tools are not application libraries.",
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "version.txt; main-control/main/CMakeLists.txt; main-control/CMakeLists.txt; main-control/main/dcdoc.toml; dcdoc.toml"
+        },
+        {
+          "name": "gentlebeam:version-basis",
+          "value": "Static release baseline from version.txt; does not identify a particular signed image or CI build."
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "gentlebeam:inventory-basis",
+        "value": "Manually maintained inventory of selected compiled sources, included SDK headers and linked target runtime libraries. Not a symbol-level inventory of a post-link image; unused sections may be discarded. Build-only compilers, generators, signing tools and unselected vendor libraries are excluded."
+      },
+      {
+        "name": "gentlebeam:maintenance",
+        "value": "Dependencies are maintained statically; update this file when source selections, SDK packs or firmware release versions change."
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:atmel-start",
+      "name": "Atmel START Framework",
+      "description": "Compiled Microchip HAL, HPL, HRI and utility support plus generated initialization. Version 1.0.0 is the Framework component Cversion in AtmelStart.gpdsc, not an inferred ASF release. Middleware with separate provenance is inventoried separately.",
+      "scope": "required",
+      "version": "1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Microchip software license (use exclusively with Microchip products)"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/.atmelstart/AtmelStart.gpdsc; main-control/main/.atmelstart/atmel_start_config.atstart; main-control/main/hal/src/hal_init.c"
+        },
+        {
+          "name": "gentlebeam:atmel-start-content-version",
+          "value": "1.0.1600"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:cmsis",
+      "name": "CMSIS (Core headers)",
+      "description": "External Arm CMSIS package; only core device-access headers/intrinsics are selected, not CMSIS DSP, RTOS or other pack libraries. Version denotes the pack release. CMake toolchain defaults, also matching Microchip Studio project pack metadata. GENTLEBEAM_CMSIS_ROOT and GENTLEBEAM_SAME70_DFP_ROOT can override the defaults; such builds require inventory updates.",
+      "scope": "required",
+      "version": "5.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/Gryphon Control FW.componentinfo.xml"
+        },
+        {
+          "name": "gentlebeam:external-license-evidence",
+          "value": "C:/Program Files (x86)/Atmel/Studio/7.0/packs/arm/CMSIS/5.4.0/CMSIS/Core/Include/core_cm7.h"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:device-pack",
+      "name": "SAME70_DFP (device headers and startup)",
+      "description": "Microchip device family pack: external device/register headers and repository Device_Startup sources. Version denotes the pack release, not its Device Startup component Cversion. CMake toolchain defaults, also matching Microchip Studio project pack metadata. GENTLEBEAM_CMSIS_ROOT and GENTLEBEAM_SAME70_DFP_ROOT can override the defaults; such builds require inventory updates.",
+      "scope": "required",
+      "version": "2.4.166",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/Gryphon Control FW.componentinfo.xml; main-control/main/Device_Startup/startup_same70q21b.c; main-control/main/Device_Startup/system_same70q21b.c"
+        },
+        {
+          "name": "gentlebeam:external-license-evidence",
+          "value": "C:/Program Files (x86)/Atmel/Studio/7.0/packs/atmel/SAME70_DFP/2.4.166/same70b/include/same70q21b.h"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:newlib",
+      "name": "Newlib (nano C library and math runtime)",
+      "description": "Target runtime selected by nano.specs / UseNewlibNano and the C/math link configuration, not a build-only tool. Includes libc_nano and libm as selected by the linker. Version and a blanket license are omitted because the actual toolchain distribution is externally selected and Newlib contains per-file licenses.",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt"
+        },
+        {
+          "name": "gentlebeam:inventory-limitation",
+          "value": "Toolchain-dependent runtime versions, archive members and their individual license combinations are not pinned by this static source inventory."
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:libgcc",
+      "name": "GNU libgcc target runtime",
+      "description": "Compiler-generated ARM arithmetic/ABI support linked into firmware by the GCC driver. The host compiler itself is excluded. Version and license declaration are omitted because the target runtime comes from the externally selected toolchain, not a vendored archive.",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/cmake/microchip-studio-arm-gcc-6.3.1.cmake"
+        },
+        {
+          "name": "gentlebeam:inventory-limitation",
+          "value": "Actual libgcc version and archive-member licenses depend on the toolchain used to build the image."
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:ethernet-phy",
+      "name": "Atmel Ethernet PHY driver",
+      "description": "Generic Ethernet PHY driver selected by the Atmel START configuration. Version is the Atmel middleware definition version.",
+      "scope": "required",
+      "version": "0.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "Microchip software license (use exclusively with Microchip products)"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/.atmelstart/atmel_start_config.atstart; main-control/main/ethernet_phy/ethernet_phy.c"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:lwip",
+      "name": "lwIP",
+      "description": "TCP/IP stack selected by the build. Version macros and Atmel START metadata identify 1.4.1 despite the directory name lwip-1.4.0. Config/lwipopts.h selects the no-RTOS stack with TCP and UDP; PPP, SNMP and other disabled features are not separate dependencies.",
+      "scope": "required",
+      "version": "1.4.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/lwip/lwip-1.4.0/src/include/lwip/init.h; main-control/main/.atmelstart/atmel_start_config.atstart; main-control/main/Config/lwipopts.h"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:lwip-mac-port",
+      "name": "Atmel lwIP MAC interface",
+      "description": "Microchip-specific adapter between lwIP and the Atmel MAC HAL, separated from the upstream stack because its source license differs. Version follows the NonGNU:LwIP:1.4.1::LwIP_MAC_Interface package definition.",
+      "scope": "required",
+      "version": "1.4.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "Microchip software license (use exclusively with Microchip products)"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/lwip/lwip-1.4.0/port/ethif_mac.c; main-control/main/.atmelstart/atmel_start_config.atstart"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:sd-mmc",
+      "name": "Atmel SD/MMC stack",
+      "description": "Compiled SD/MMC middleware using the Atmel MCI HAL. Version is the Atmel middleware definition version.",
+      "scope": "required",
+      "version": "0.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "Microchip software license (use exclusively with Microchip products)"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/sd_mmc/sd_mmc.c; main-control/main/.atmelstart/atmel_start_config.atstart"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:diskio",
+      "name": "Atmel DiskIO SD/MMC adapter",
+      "description": "Compiled disk-access adapter connecting FatFs to the SD/MMC stack. Version is the Atmel middleware definition version.",
+      "scope": "required",
+      "version": "1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Microchip software license (use exclusively with Microchip products)"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/diskio/sdmmc_diskio.c; main-control/main/.atmelstart/atmel_start_config.atstart"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:fatfs",
+      "name": "FatFs",
+      "description": "Compiled FAT filesystem implementation. R0.11a is the upstream version in ff.c, distinct from the Atmel wrapper package version 1.0.0. Disk operations use the SD/MMC DiskIO adapter and time callbacks use the calendar HAL.",
+      "scope": "required",
+      "version": "R0.11a",
+      "licenses": [
+        {
+          "license": {
+            "name": "FatFs R0.11a license (ChaN, 2015; source redistribution notice and disclaimer)"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/fatfs/src/ff.c; main-control/main/fatfs_main.c"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:jsmn",
+      "name": "jsmn",
+      "description": "JSON parser compiled via the sensus_src/*.c source glob; jsmn.h is included by system_parameters.c. No upstream version is declared in the vendored files. Current application code does not call the parser, so its compiled functions may be discarded by section garbage collection.",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/sensus_src/jsmn.c; main-control/main/sensus_src/jsmn.h; main-control/main/sensus_src/system_parameters.c"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:main:libcrc",
+      "name": "libcrc",
+      "description": "Vendored CRC16, CRC32 and CRC-CCITT sources compiled by the sensus_src source glob. CRC32 and CRC-CCITT are used by application communication processing. No upstream version is declared in these copied source files.",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/main/CMakeLists.txt; main-control/main/sensus_src/crc16.c; main-control/main/sensus_src/crc32.c; main-control/main/sensus_src/crcccitt.c; main-control/main/sensus_src/checksum.h; main-control/main/sensus_src/pc_comm_parser.c; main-control/main/sensus_src/head_board.c"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "urn:gentlebeam:component:main-control:main",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:main:atmel-start",
+        "urn:gentlebeam:component:main-control:main:cmsis",
+        "urn:gentlebeam:component:main-control:main:device-pack",
+        "urn:gentlebeam:component:main-control:main:newlib",
+        "urn:gentlebeam:component:main-control:main:libgcc",
+        "urn:gentlebeam:component:main-control:main:ethernet-phy",
+        "urn:gentlebeam:component:main-control:main:lwip",
+        "urn:gentlebeam:component:main-control:main:lwip-mac-port",
+        "urn:gentlebeam:component:main-control:main:sd-mmc",
+        "urn:gentlebeam:component:main-control:main:diskio",
+        "urn:gentlebeam:component:main-control:main:fatfs",
+        "urn:gentlebeam:component:main-control:main:jsmn",
+        "urn:gentlebeam:component:main-control:main:libcrc"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:atmel-start",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:main:cmsis",
+        "urn:gentlebeam:component:main-control:main:device-pack",
+        "urn:gentlebeam:component:main-control:main:newlib",
+        "urn:gentlebeam:component:main-control:main:libgcc"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:cmsis",
+      "dependsOn": []
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:device-pack",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:main:cmsis",
+        "urn:gentlebeam:component:main-control:main:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:newlib",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:main:libgcc"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:libgcc",
+      "dependsOn": []
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:ethernet-phy",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:main:atmel-start"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:lwip",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:main:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:lwip-mac-port",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:main:lwip",
+        "urn:gentlebeam:component:main-control:main:atmel-start",
+        "urn:gentlebeam:component:main-control:main:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:sd-mmc",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:main:atmel-start",
+        "urn:gentlebeam:component:main-control:main:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:diskio",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:main:sd-mmc",
+        "urn:gentlebeam:component:main-control:main:atmel-start"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:fatfs",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:main:diskio",
+        "urn:gentlebeam:component:main-control:main:atmel-start",
+        "urn:gentlebeam:component:main-control:main:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:jsmn",
+      "dependsOn": []
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:main:libcrc",
+      "dependsOn": []
+    }
+  ]
+}

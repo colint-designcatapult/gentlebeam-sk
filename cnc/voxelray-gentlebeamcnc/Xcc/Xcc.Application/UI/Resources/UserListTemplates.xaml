@@ -23,6 +23,7 @@
                             <ColumnDefinition Width="1*"/>
                             <ColumnDefinition Width="1*"/>
                             <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
                             <ColumnDefinition Width="4" SharedSizeGroup="RightMargin"/>
                         </Grid.ColumnDefinitions>
                     </Grid>
@@ -41,6 +42,7 @@
             <TextBlock Grid.Column="2" Text="Role"/>
             <TextBlock Grid.Column="3" Text="First Name"/>
             <TextBlock Grid.Column="4" Text="Last Name"/>
+            <TextBlock Grid.Column="5" Text="Account status"/>
         </ItemsControl>
     </DataTemplate>
 
@@ -54,6 +56,18 @@
             <TextBlock Grid.Column="2" Text="{Binding Role.Name}"/>
             <TextBlock Grid.Column="3" Text="{Binding FirstName}"/>
             <TextBlock Grid.Column="4" Text="{Binding LastName}"/>
+            <TextBlock Grid.Column="5">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource ListItemTextBlockStyle}">
+                        <Setter Property="Text" Value="Not locked"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                <Setter Property="Text" Value="Locked"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
         </ItemsControl>
         
         <DataTemplate.Triggers>

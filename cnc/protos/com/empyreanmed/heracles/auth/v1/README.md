@@ -66,6 +66,15 @@ Authentication service for logging in users and returning JWTs.
 | ----------- | ------------ | ------------- | ------------|
 | Login | [LoginRequest](#com-empyreanmed-heracles-auth-v1-LoginRequest) | [LoginResponse](#com-empyreanmed-heracles-auth-v1-LoginResponse) | Logs in a user and returns a JWT if successful. |
 
+### Embedded SQLite authentication policy
+
+- Every login and approval credential check records a security audit outcome: `success`, `invalid_password`, `unknown_user`, `locked`, or `persistence_error`. Records identify the attempted or canonical user without including passwords or session tokens.
+- Failed logins for known, unlocked accounts atomically increment the persisted `User.failed_login_attempts` counter. Unknown usernames do not create accounts.
+- A successful login below 10 failures resets the counter to zero. At 10 failures, the account is locked and even the correct password is rejected. The counter survives restarts until an Administrator resets the lockout.
+- Approval credential checks reject locked accounts but do not increment or reset the login counter.
+- User creation and updates cannot set or clear the output-only counter. Authentication does not return a session or approve credentials if its audit outcome cannot be persisted.
+- Settings > User Management offers a confirmed **Reset lockout** action for locked accounts. The server verifies the bearer session and current persisted Administrator role mapping, then atomically clears the counter and records the actor and target in the security audit. Passwords and other account data are unchanged. Targets below 10 failures are unchanged and do not produce a reset-success audit.
+
  
 
 

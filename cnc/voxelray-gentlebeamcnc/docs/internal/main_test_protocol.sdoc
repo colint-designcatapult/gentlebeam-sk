@@ -354,15 +354,12 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H10SG-299
-TITLE: System Setting View - User Managements - (add user) Test Case
+TITLE: System Setting View - User Management - Add User and Reset Lockout
 STATEMENT: >>>
-Verify that the application have a user interface that allows admin users to manage the system users. Admin should be able to add user.
+Verify administrator user creation and confirmed account lockout reset, including persisted server authorization and atomic success auditing.
 <<<
 PREREQUISITES: >>>
-An Admin user account is required 
-
-Description: Verify that the application have a user interface that allows admin users to manage the system users. Admin should be able to 
-add user.
+Use disposable Administrator and non-administrator accounts, with known credentials retained outside test evidence. Provide locked targets with failed-login counts of at least 10, an unlocked target with a nonzero count below 10, and a controlled service-level fixture for bearer-session rejection and audit-write failure. Record non-secret account fields before reset.
 <<<
 STEPS: >>>
 Test Steps: 
@@ -389,12 +386,30 @@ Email address:test@email.com
 
 6.Click the Save button 
 
-Expected behavior 
+7. Select a locked target. Check Reset lockout availability; cancel its confirmation once, then confirm. Inspect the refreshed list and persisted target after restart before logging in with the target's original credentials.
 
-The newly created user should appear in the user management list view.
+8. Select the below-threshold target and check that Reset lockout is disabled. Invoke ResetUserLockout for that target directly using the valid Administrator bearer session.
+
+9. Exercise ResetUserLockout directly with no bearer token, a forged token, a non-administrator token, and tokens whose actors have since been deleted, demoted, or locked in persisted storage. Do not rely on UI permissions for this check.
+
+10. With a locked target selected, lock or expire the client session and check that the UI cannot invoke reset. Log in again before further authorized operations.
+
+11. For another locked target, force reset-success audit persistence to fail and invoke reset as an authorized Administrator. Inspect persisted target and audit state after the failure.
+
+12. Attempt to change failed_login_attempts through ordinary user update, then inspect the persisted counter. Inspect reset audit records without copying credentials or tokens into evidence.
 <<<
 EXPECTED_BEHAVIOR: >>>
 The newly created user should appear in the user management list view.
+
+7. Cancellation leaves the account unchanged. Confirmation clears only failed_login_attempts to zero, refreshes lock status, and survives restart. Password, last_accessed, and other user fields match their pre-reset values before the later login. The original credentials still work. Exactly one server reset-success audit identifies actor and target; no client duplicate is written.
+
+8. The below-threshold account is unchanged and has no reset-success audit.
+
+9-10. Unauthorized direct calls are rejected without changing the target. A retained client user object does not enable reset while the session is locked or expired.
+
+11. Audit failure returns an error and rolls back the reset; the target remains locked with no committed reset-success audit.
+
+12. Ordinary CRUD cannot change the counter. Audit evidence contains actor/target identifiers but no passwords or bearer tokens.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2988,13 +3003,20 @@ STEPS: >>>
 2.Ensure the login menu pops up. If the application already logged in, log out by navigating to the exit tab and then clicking logout. 
 
 3.Enter the username and user credentials and click the sign-in button.
+
+4. Repeat with a disposable account having a persisted failed-login count from 1 through 9. Inspect the count and successful-login security record after signing in and after restart.
 <<<
 EXPECTED_BEHAVIOR: >>>
 3.The sign in shall succeed, the login menu shall close, and the application's main window shall open.
+
+4. Successful login clears the below-threshold failed-login count to zero and persists a login-success security record without credentials or bearer tokens.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-648
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-74
   ROLE: Verifies
 
 [TEST_CASE]
@@ -3671,19 +3693,30 @@ RELATIONS:
 UID: TC-H10SG-228
 TITLE: EMR: User Login - (using non-authorized user) - Test Case
 STATEMENT: >>>
-This test case verifies the user login and authentication process. It validates the proper handling of valid and invalid credentials.
+Verify rejected login outcomes, persistent lockout at 10 failed passwords, and fail-closed behavior when login security logging is unavailable.
+<<<
+PREREQUISITES: >>>
+Use disposable accounts with known credentials, a controlled persisted counter initially zero, and an isolated service fixture that can fail security-log persistence. Keep a separate Administrator account for recovery through TC-H10SG-299.
 <<<
 STEPS: >>>
 1.Launch Heracles internal SW 
 
 2.Ensure the login menu pops up. If the application already logged in, log out by navigating to the exit tab and then clicking logout. 
 
-4.Enter an unauthorized username and user credentials and click the sign-in button.
+3. Enter an unknown username and invalid credentials, then inspect the rejected-login security record.
+
+4. For an existing account, submit nine incorrect passwords and inspect the persisted count. Restart the application and server, submit the tenth incorrect password, then retry with the correct password. Restart again and retry the correct password.
+
+5. In the isolated fixture, fail security-log persistence for otherwise valid credentials and for invalid credentials. Check each response and whether a session was issued.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The sign-in shall fail, alerting the user and offering the option to re-enter username and credentials. 
+1. Rejected sign-in alerts the user without enabling authenticated application functions.
 
-All application functionalities expect exit, or login shall be disabled.
+3. The rejected-login outcome is persisted without secrets and no account is created for the unknown username.
+
+4. Each incorrect password below the threshold increments the existing account's persisted count. The tenth failure locks the account; the lock persists across restarts, and correct credentials alone do not clear it or issue a session.
+
+5. Audit persistence failure is surfaced as an error and never issues an authenticated session, including for correct credentials.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -5211,8 +5244,7 @@ the following details:
 8. Navigate to "Log" tab by pressing "Log" on the left.
 <<<
 EXPECTED_BEHAVIOR: >>>
-8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its Last Name to 
-"NewLastName"), including the corresponding patient ID number, and the user who made the change, specifying the user ID number
+8. The Log view contains one successful patient-save action for the persisted change, including the corresponding patient ID and acting user ID. The audit does not need to expose the changed demographic value.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -5382,8 +5414,7 @@ the following details:
 8. Navigate to "Log" tab by pressing "Log" on the left.
 <<<
 EXPECTED_BEHAVIOR: >>>
-8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its MRN to "5050"), including 
-the corresponding patient ID number, and the user who made the change, specifying the user ID number
+8. The Log view contains one successful patient-save action for the persisted change, including the corresponding patient ID and acting user ID. The audit does not need to expose the changed demographic value.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -5575,25 +5606,210 @@ RELATIONS:
 UID: TC-H10SG-410
 TITLE: Security - Data Encryption
 STATEMENT: >>>
-This test case verifies data encryption and security measures. It validates that sensitive data is properly protected.
+Verify whole-database encryption at rest and automatic unlock of persisted clinical and non-clinical data. Use an isolated Windows x64 StorageRoot with dummy device services and synthetic data only. Keep all fixture keys in controlled test storage; exclude keys and passwords from command lines, logs, screenshots, and publishable evidence. Use a controlled clipboard with history and synchronization disabled for deliberate secret copying, clear it immediately after pasting, and clear inspection-tool secret inputs after use.
 <<<
 STEPS: >>>
-1. Log in to the internal application. 
+1. Launch the published indoor application against the isolated StorageRoot in embedded SQLite mode. Complete first-start recovery-key acknowledgement if necessary. Use a disposable development fixture with an Administrator, or seed equivalent synthetic users and roles through the existing repositories; do not introduce production test credentials.
 
-2. Navigate to the Patient view. 
+2. Log in and save distinctive patient demographic data, user/role and system-setting values, and treatment records with identifiable IDs and parent relationships. Record their non-secret expected values.
 
-3. Press the New button 
+3. Close normally, restart under the same Windows account, and check all recorded values through the application. With an active, unlocked Administrator session, open Settings > Data Management, use the eye toggle to reveal Passphrase, and securely copy the displayed value into controlled test storage for the subsequent closed-copy inspection. Hide both displayed secrets afterward. Do not derive a passphrase manually from the numeric recovery key. Close again to release database handles.
 
-4. Enter required data 
+4. Make a disposable copy of the closed encrypted database. Attempt an unkeyed schema query with ordinary SQLite. Check that the file does not have the ordinary plaintext SQLite header. Do not use a failed query or header inspection alone as evidence of encryption strength.
 
-5. Press save button.
+5. Open the same copy with a SQLCipher-aware inspection tool using SQLCipher 4 settings. Supply the Passphrase securely captured in step 3 through secret-safe input in ordinary passphrase mode, not raw-key syntax or the numeric recovery key. Query schema and representative patient, user/settings, and treatment records. Run cipher_integrity_check and integrity_check.
+
+6. Inspect the published native payload and active provider. Record non-secret evidence of SQLCipher major version 4, AES-256 encryption, cipher_page_size=4096, kdf_iter=256000, PBKDF2-HMAC-SHA512, HMAC enabled with HMAC-SHA512, and cipher_plaintext_header_size=0. Confirm that the local MEK is generated from 16 cryptographically random bytes and that no competing ordinary-SQLite provider is selected. Relate this evidence to the minimum 128-bit encryption-strength requirement.
 <<<
 EXPECTED_BEHAVIOR: >>>
-Open pgAdmin. Query for Patients' data. Verify that data is encrypted
+1-3. All saved clinical and non-clinical values, IDs, and relationships survive automatic-unlock restart without requesting the recovery key again.
+
+4. Ordinary unkeyed SQLite cannot read the schema or records. The database is not merely a plaintext schema with encrypted patient fields.
+
+5. The displayed Passphrase reads all representative records. cipher_integrity_check returns zero result rows, and integrity_check returns exactly ok.
+
+6. The published application uses SQLCipher 4 with the stated encryption, KDF, and HMAC settings. The 128-bit random MEK and documented provider algorithms support the strength claim; failed plaintext access alone does not prove key strength. No secret values are included in retained evidence.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H10SG-55
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H10SG-789
+TITLE: Security - Cryptographic Database Integrity
+STATEMENT: >>>
+Verify that cryptographic modification of stored data is rejected without recreating a damaged database or altering current data during import. Use only isolated synthetic fixtures and controlled keys. Exclude all secrets from command lines, logs, screenshots, and public evidence. For deliberate copying, use a controlled clipboard with history and synchronization disabled, clear it immediately after pasting, and clear inspection-tool secret inputs after use.
+<<<
+STEPS: >>>
+1. Populate an encrypted fixture with enough distinctive records to span multiple 4096-byte pages. Before closing, log in with an active, unlocked Administrator session, open Settings > Data Management, use the eye toggle to reveal Passphrase, and securely copy that displayed value into controlled test storage. Hide both values; do not manually convert the numeric recovery key. Close with all writes checkpointed and handles released. With a SQLCipher-aware inspector using SQLCipher 4 settings and the captured Passphrase in ordinary passphrase mode, not raw-key mode, identify a non-header table-data page other than the schema page. Retain an untouched original and create separate startup and backup test copies.
+
+2. In the startup copy, flip one byte within the encrypted data area of that identified page, for example 128 bytes into a page numbered greater than one, without changing its length or first page. Record a non-secret digest of the damaged file and place it in an isolated StorageRoot with its matching protector.
+
+3. Start the application on this damaged copy so that schema access is followed by full cipher_integrity_check and integrity_check. Separately inspect the damaged copy with the Passphrase securely captured in step 1, using the same SQLCipher 4 passphrase settings, to exercise full integrity validation. After startup refusal, compare its digest and check for replacement/reinitialized database files.
+
+4. Start the untouched original with its matching protector and verify the distinctive records and both integrity checks. Any separate SQLCipher inspection uses the Passphrase securely captured in step 1 with SQLCipher 4 passphrase settings.
+
+5. From a healthy running fixture, make an administrator password export using a chosen export password distinct from the local Passphrase and retain a clean copy. Any keyed inspection of this exported snapshot uses its export password with SQLCipher 4 settings, not the local Passphrase or numeric recovery key. Flip a byte on a non-header data page of a copy of that export. Attempt import using its correct export password; also attempt a truncated copy. Check current patient, user/settings, and treatment records afterward, and verify that the selected sources remain present.
+<<<
+EXPECTED_BEHAVIOR: >>>
+2-3. Full integrity validation detects the modified page. Application startup refuses the corrupt database without overwriting, recreating, or changing it; a successful schema read followed by corruption does not offer fresh provisioning. The correct Passphrase does not make a damaged page acceptable. cipher_integrity_check success means zero rows, not an ok row.
+
+4. The untouched original still automatically unlocks, returns the expected records, and passes both integrity checks.
+
+5. Tampered and truncated imports are refused before replacement. Current clinical and non-clinical data remain unchanged, the application remains usable, and selected source files are not deleted. Error messages expose neither passwords nor low-level secret-bearing diagnostics.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-789
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H10SG-790
+TITLE: Database Provisioning and Recovery
+STATEMENT: >>>
+Verify first-start acknowledgement, development migration, automatic CurrentUser unlock, and possession-based recovery without data loss. Use disposable Windows accounts, isolated StorageRoots, and synthetic data. MEKs belong only in controlled fixtures, never in publishable evidence or screenshots.
+<<<
+STEPS: >>>
+1. Start with an empty StorageRoot. Check that a selectable read-only recovery key is shown before login, with Continue unavailable until acknowledgement. Close or Cancel without acknowledgement and check that no database or protector has been committed. Relaunch, securely save the displayed key, acknowledge I have saved this recovery key, and continue.
+
+2. Verify the eight six-digit ASCII groups and hyphens with the controlled recovery-codec fixture. Exercise the fixed vector MEK 00000001000A00FF01000FFF8000FFFF, expecting 000000-000011-000110-002805-002816-045045-360448-720885, including the 0 and 65535 group boundaries. Verify round-trip parsing with surrounding whitespace. Exercise incorrect group count/length, missing separators, non-ASCII digits or hyphens, an out-of-range group, and an in-range group not divisible by 11.
+
+3. Populate synthetic clinical and user/settings data, close normally, and restart under the provisioning Windows account. Retain a closed disposable fixture for each remaining destructive case.
+
+4. In a separate root, supply a development-only plaintext heracles.db containing representative protobuf JSON records, IDs and parent relationships, an index and trigger, and a deleted-high-ID AUTOINCREMENT case. Cancel the initial acknowledgement and verify that the source is unchanged. Repeat and acknowledge. With an active, unlocked Administrator session, open Settings > Data Management, use the eye toggle to reveal Passphrase, securely copy the displayed value into controlled test storage, and hide both secrets. Do not convert the numeric recovery key manually. Close normally, make a disposable copy of the migrated database, and inspect it using the captured Passphrase with SQLCipher 4 settings in ordinary passphrase mode, not raw-key mode. Insert a further row in that copy to check the retained sequence high-water mark. Use a controlled clipboard with history and synchronization disabled, clear it immediately after pasting, and clear inspection-tool secret inputs after use; retain no secrets in public evidence.
+
+5. Repeat migration using an unreadable or structurally damaged plaintext source to force failure. Confirm that the source is retained and only incomplete encrypted output is removed. Retry the no-database startup with its leftover valid protector and verify that the same recovery key is shown for acknowledgement. In another disposable root, retain a valid encrypted database alongside a different plaintext source; confirm that the encrypted data are authoritative. Simulate inability to remove the legacy source after successful copying, then remove that impediment and restart.
+
+6. In separate closed copies of the healthy encrypted fixture, delete the key blob and corrupt the key blob. Restart each copy. At the recovery prompt, try the malformed/check-failing values from step 2 and a validly formatted key for a different MEK, then Cancel. Compare the closed database against the pre-attempt fixture and confirm no replacement protector was saved from a rejected key.
+
+7. Repeat step 6, this time supplying the correct saved numeric key after incorrect attempts. Verify all original data, close, and restart to test the replacement protector's automatic unlock. Also supply a valid DPAPI blob for a different MEK and confirm that its failed schema read invokes recovery rather than creating a new database.
+
+8. Copy the healthy closed database and protector to a disposable second Windows account's accessible test directory, without changing file access into the variable under test. Demonstrate that the copied CurrentUser protector cannot unlock under the second account. Supply the saved numeric key through the startup recovery window; verify original data, then close and restart under that account.
+
+9. In a disposable root, deny access to the existing key file or storage location and attempt startup. Restore permissions afterward. Check that the failure is reported as an operational access error rather than permission to replace an existing MEK or database.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1-2. First provisioning requires explicit acknowledgement before writing a database or protector. Closing cancels safely. Encoding and parsing match the specified vector and boundaries; malformed encodings are rejected without echoing the input in errors.
+
+3. Same-account DPAPI automatically unlocks and preserves all synthetic data.
+
+4. Cancel leaves the plaintext source untouched. Successful migration preserves data, JSON schema, hierarchy, indexes, triggers, and AUTOINCREMENT sequence behavior. The next generated ID exceeds the deleted high ID. Only after successful encrypted validation are the plaintext source and its own sidecars removed; no plaintext .bak is left.
+
+5. Failure retains the development source. An interrupted provisioning protector is reused and shown again. Existing encrypted data are never merged with or overwritten by a legacy source. Failed legacy cleanup prevents normal startup; after the impediment is removed, startup validates the encrypted database before retrying cleanup.
+
+6-7. Missing, corrupt, or wrong-key protectors invoke recovery; malformed and valid-but-wrong keys cannot unlock. Wrong or cancelled recovery never changes the live database. The correct numeric key restores all data and subsequent automatic unlock without rotating the MEK.
+
+8. CurrentUser rejects cross-account use of the copied protector. Possession of the correct recovery key restores access and creates an automatically usable protector for the second account.
+
+9. Access failures are sanitized operational errors; they do not cause fresh provisioning or overwrite. No MEK, Passphrase, export password, plaintext key file, or secret-bearing diagnostic appears in application logs, command lines, or retained test evidence. No secret is automatically copied to the clipboard; deliberate controlled clipboard contents from inspection are cleared after use.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-55
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-790
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H10SG-791
+TITLE: Administrator Data Management Access and Secret Lifecycle
+STATEMENT: >>>
+Verify management authorization at both the Settings surface and service boundary, recovery-key and Passphrase masking, and no-op dialog cancellation. Use isolated synthetic accounts: an Administrator and a non-administrator with SystemSettings permission. Preserve secrets only in controlled fixtures; exclude them from command lines, logs, screenshots, and public evidence. Use a controlled clipboard with history and synchronization disabled for deliberate copying and clear it immediately after pasting.
+<<<
+STEPS: >>>
+1. Log in with the active, unlocked Administrator session and open Settings > Data Management. Verify that the MEK recovery key and the Passphrase field beneath it are masked, read-only, and selectable, with one shared eye-icon visibility toggle. Confirm that the second field's visible label and accessibility name are exactly Passphrase. Reveal both and compare the numeric recovery key privately with the saved recovery key. Securely copy the displayed Passphrase directly into a SQLCipher-aware inspection tool using ordinary passphrase mode and SQLCipher 4 settings, not raw-key mode, and query a representative live record. Do not manually convert the numeric recovery key or use an export password for this live database inspection. Clear the controlled clipboard immediately after pasting and the inspection-tool secret input after use. Click the same eye toggle to hide both values. Check that all new surfaces use the existing application theme and control styles.
+
+2. Reveal again before each independent transition: leave the tab, unload the view, log out, switch user, lock the session, and let the session expire. After each transition return or log in as necessary and revisit Data Management.
+
+3. As the non-administrator with Settings access, inspect Data Management. Use the service-level fixture to invoke RevealRecoveryKey, RevealDatabasePassword, ExportAsync, and ImportAsync directly under that user, without relying on disabled UI controls. Repeat with an Administrator whose session is locked, expired, or absent, and with no authorized user.
+
+4. Run a non-embedded configuration and inspect Data Management; exercise the same service entry points in the isolated fixture.
+
+5. As an authorized Administrator, reveal the key and start each transfer to check immediate remasking. Cancel export and import file dialogs, password dialogs, and the import replacement confirmation independently. Check the live records and any existing chosen export target after each cancellation.
+
+6. In the export password dialog, enter mismatched confirmation (including only one empty field) and nonempty whitespace-only input. Exercise embedded NUL rejection at the service boundary. Invalid input keeps the dialog open with a local validation message. Use exactly empty matching export fields for the disposable plaintext export in TC-H10SG-792. Confirm that import has one password entry, accepts an empty value for plaintext input, and rejects nonempty whitespace-only input. Check that no label or help text instructs users to leave password fields empty.
+
+7. Close password dialogs by every available close path and reopen them. Attempt a second management action while one transfer is busy. Inspect logs and temporary output for unintended plaintext secrets without copying those secrets into evidence.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1-2. The default masks contain neither the numeric recovery key nor the Passphrase. Both revealed values are read-only; the recovery key matches the saved numeric key, and the displayed Passphrase opens the live database using SQLCipher 4 passphrase settings. Hide and every departure/session transition clear both revealed strings; every return starts masked.
+
+3. Non-admin Settings users see the administrator-required message without reveal/import/export controls. Direct service calls are denied for non-admin, locked, expired, absent-session, or absent-user contexts, even if an AuthorizedUser object remains after expiration. No key is disclosed or transfer started.
+
+4. Non-embedded mode reports unavailability, exposes no usable controls, and refuses direct management operations without affecting its configured database service.
+
+5-6. Transfers remask the key before continuing. All cancellations leave current data and existing export targets unchanged. Invalid or mismatched passwords cannot proceed and do not appear in generic error dialogs. Exactly empty matching export fields are accepted. Import asks for no confirmation password and permits plaintext sources without a password. No empty-password instructions appear in labels or help text. The import warning states that the entire database, including users/settings, is replaced and that the application closes.
+
+7. Reopened password dialogs are empty and retain no prior password result. Duplicate actions are refused while busy. Keys and passwords are not automatically copied to the clipboard or emitted in logs or plaintext temporary files.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-790
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H10SG-792
+TITLE: Database Export and Exclusive Restore
+STATEMENT: >>>
+Verify complete, consistent encrypted and unencrypted exports and validated imports of both formats, including concurrent clients, treatment safety, failure preservation, and stable local key recovery. Use isolated Windows x64 roots, dummy device services, controlled credentials, and synthetic data. Simulate persisted treatment states; no physical emission is required. Exclude secrets from command lines, logs, screenshots, and public evidence. For deliberate copying, use a controlled clipboard with history and synchronization disabled, clear it immediately after pasting, and clear inspection-tool secret inputs after use.
+<<<
+STEPS: >>>
+1. Prepare dataset A with distinctive users, roles, settings, clinical records and histories, parent relationships, and known IDs. Include an index, trigger, deleted-high-ID AUTOINCREMENT case, non-default user_version/application_id/auto_vacuum, and a compatible extra table and column. Securely retain the numeric recovery key and a non-secret digest of heracles.db.key. With an active, unlocked Administrator session, open Settings > Data Management, use the eye toggle to reveal Passphrase, and securely copy that displayed value into controlled test storage before hiding both secrets. Do not convert the numeric recovery key manually. Whenever these tests directly inspect or modify the live encrypted fixture through SQLCipher, use this captured Passphrase with SQLCipher 4 settings in ordinary passphrase mode, not raw-key mode; exported encrypted snapshots instead use their chosen export password.
+
+2. As an active Administrator, export dataset A using password A, different from the securely captured local Passphrase. Include an apostrophe, semicolon, and non-ASCII characters in the controlled export password; include leading/trailing nonempty whitespace in a separate run to verify exact password use. Exercise a filename containing characters that require URI escaping. Check the default filename, .db filter/extension, and overwrite confirmation.
+
+3. Close all inspection connections and inspect a disposable backup with SQLCipher 4 settings in ordinary passphrase mode through secret-safe password input. Verify that only the exact chosen export password opens it: reject a wrong password, trimmed/normalized alternatives, and the local Passphrase securely captured in step 1. The numeric recovery key is not an inspection credential. Read representative records and metadata, exercise the next AUTOINCREMENT ID, and run both full integrity checks. Check that the backup is standalone and opens without a WAL, companion key, or custom container.
+
+4. Replace the live fixture's contents with distinct dataset B, including changed users and settings. Attempt imports of missing/empty files, a non-database file, structurally damaged or truncated plaintext SQLite, truncated and non-header-page-tampered encrypted backups, and the clean encrypted backup with a wrong password. Create incompatible copies of both formats missing a required table or column, or with a mismatched declared type, NOT NULL flag, or primary-key flag, and attempt each. Compare B's observable records and local protector after every refusal.
+
+5. Attempt transfer selections targeting the live database, legacy source, key blob, their sidecars, or owned staging. Repeat with normalized case variants and reparse-point aliases into protected locations. Verify that selected sources are not deleted and no protected target is replaced.
+
+6. Choose an existing export target with known contents. Decline its overwrite prompt. Separately allow overwrite but induce an unavailable destination/replacement failure, and cancel a sufficiently large export before completion. Confirm that the existing target is unchanged after each case and incomplete owned output is removed. Repeat for both nonempty-password encrypted export and exactly empty-password plaintext export.
+
+7. During an export, run concurrent writes that atomically update two linked marker records together in a transaction. Repeat with a sufficiently large fixture to overlap the operations, using both encrypted and plaintext export modes. Inspect encrypted snapshots with their chosen export password and SQLCipher 4 settings, not the local Passphrase; inspect plaintext snapshots with ordinary SQLite. Check the exported markers and full data integrity: both markers must come from the same committed generation, not mixed generations. Confirm that normal application reads and writes continue during export.
+
+8. In separate live B fixtures set a plan to Pendingload, Partialpendingload, and Loaded. Attempt importing the valid A backup in each case. Inspect current data and ongoing API usability afterward; then clear the simulated active state through the existing test fixture path.
+
+9. Race a separate gRPC client's LoadForTreatment against import. In one deterministic fixture hold an already-admitted unary call in progress before initiating the pause; verify the drain waits until that whole operation finishes. Attempt a new unary call while paused. Repeat with LoadForTreatment arriving only after admission closes. Exercise a unary error path to confirm its lease is released. No plan state is mutated through an unauthenticated management endpoint.
+
+10. Hold an admitted unary call beyond the 30-second drain bound, and separately cancel before irreversible replacement. Expire or lock the administrator session during import preparation in another run. Verify refusal, owned staging cleanup, and restored admission without host shutdown.
+
+11. With no active treatment and a valid Administrator session, enable WAL on B and create committed records still resident in its WAL. Keep an external streaming subscription active, then import the valid A backup. Observe the modal busy surface, stream termination, host/channel shutdown, and final WAL checkpoint and switch to DELETE before replacement. Retain imported loaded-state values in A deliberately different from B, including a controlled loaded value, to verify they are not reset or used as the pre-import B safety check.
+
+12. Acknowledge successful import and confirm that the application closes. Relaunch and verify automatic unlock, dataset A's users/roles/settings, clinical records and histories, IDs, hierarchy, extra schema, metadata, and AUTOINCREMENT behavior. Verify that the local recovery key and protector digest are unchanged and that no obsolete B WAL/journal content has appeared in A.
+
+13. In separate disposable runs, prevent final WAL checkpoint completion with an external reader, prevent bounded host shutdown using the controlled fixture, and cause File.Replace to fail after successful preparation. Observe each outcome after the irreversible shutdown phase begins. Release the fixture impediment and restart to inspect the retained complete database. Also attempt a new client RPC during successful replacement to confirm that the stopped host cannot mutate the replaced data.
+
+14. Export dataset A with exactly empty password and confirmation. Open the resulting standalone file using ordinary SQLite with no key. Query distinctive users, settings, clinical records, IDs and parent relationships; inspect the schema, index, trigger, user_version/application_id/auto_vacuum, and extra table/column. Insert a row to exercise the retained AUTOINCREMENT high-water mark and trigger, and run SQLite integrity_check. Confirm no WAL or companion key file is required. In separate B fixtures, import this plaintext export with an empty password and with a nonempty password; the source format selects unkeyed reading. Include a valid plaintext source with 1024-byte pages. Verify source preservation, encrypted staging, application closure, and restored A records on restart. Confirm that the local protector is unchanged and the live database rejects unkeyed schema access.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1-3. A nonempty-password export is a complete SQLCipher 4 snapshot encrypted solely with the exact chosen export password and a new salt, not the local Passphrase. Quotes, semicolons, Unicode, and escaped paths cannot alter SQL structure. All representative records, schema extensions, metadata, and sequence behavior survive. cipher_integrity_check returns zero rows and integrity_check exactly ok. The next sequence ID exceeds the deleted high ID.
+
+4-5. Invalid, damaged, incompatible, or protected-path imports are refused before affecting B. The application remains usable, the local MEK/protector stay unchanged, and user-selected sources remain untouched. Extra compatible tables and columns in the valid A backup are accepted rather than discarded. Repository migration does not modify an import source.
+
+6-7. Cancellation or export failure preserves an existing destination; successful overwrite occurs only after full validation and confirmation. Export does not block ordinary database use for its duration. Concurrent writes yield a consistent committed snapshot, never mixed marker generations.
+
+8-10. Each active B treatment state refuses import without changing B or stopping the host. The whole admitted RPC drains before the direct plan-state check; new unary calls receive Unavailable while paused. A racing load either completes and causes treatment-state refusal or is rejected before mutation. Error, timeout, cancellation, or lost authorization releases leases and owned staging, restores admission, and does not begin replacement.
+
+11-12. Permitted import disconnects existing streams, rejects new calls, releases host/channel/pool handles, and finalizes a non-busy WAL checkpoint and DELETE journal before replacing the file. It re-encrypts A with the existing local MEK, preserves imported treatment states, and closes with the message Database imported. The application will close. Start it again to use the imported data. The next launch automatically unlocks A, including its imported account/settings data, with an unchanged local recovery key and protector. No old models continue against A and no automatic application restart is initiated.
+
+13. Failure to drain the host or finalize the WAL gives no permission to replace or delete an uncheckpointed WAL. Replacement failure retains the original complete database without first deleting it. Every error after host shutdown begins is reported and closes the application; after releasing the impediment, restart opens the retained complete database. No new RPC can run against a replaced file through the stopped host.
+
+14. The plaintext export is a complete ordinary SQLite database readable without a password. Representative records, schema, metadata, sequence high-water marks and trigger behavior are preserved; SQLite integrity_check returns exactly ok. No SQLCipher cryptographic integrity check applies to plaintext input or output. Both compatible plaintext imports succeed and restore A under the existing local MEK without changing its protector or selected source. Staging and the live operational database remain encrypted, and the application closes after replacement.
+
+All runs distinguish cancellation, unavailable file/location, unreadable or damaged input/invalid password, unsafe treatment, and replacement failure without revealing secrets. Plaintext database output and its sibling temporary file occur only for an explicitly chosen empty-password export. Encrypted export, migration output, import staging, and the live operational database remain encrypted. No MEK/password log or audit entry or automatic clipboard disclosure is produced. Protect and remove disposable plaintext exports after verification; do not include their sensitive contents in retained evidence.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H10SG-55
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-789
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H10SG-790
   ROLE: Verifies
 
 [TEST_CASE]
@@ -5781,13 +5997,19 @@ STEPS: >>>
 
 5. Log in to the internal application. 
 
+6. As an Administrator with an active unlocked session, use Settings > Data Management to export a password-protected database snapshot. Open the snapshot with a SQLCipher-aware inspection tool using SQLCipher 4 settings and the chosen export password through secret-safe passphrase input, not the local Passphrase or numeric recovery key. Exclude secrets from command lines, logs, screenshots, and public evidence. If copying, use a controlled clipboard with history and synchronization disabled, clear it immediately after pasting, and clear inspection-tool secret inputs after use.
+
+7. Repeat the treatment workflow for the same patient on the same date.
+
+8. Create a fresh administrator password export and inspect that snapshot with the same keyed procedure.
+
 <<<
 EXPECTED_BEHAVIOR: >>>
-4 - Open pgAdmin. Query for Visit data. Verify that a visit was created and there is only one visit for the current date. 
+6 - In the first keyed SQLCipher snapshot, query Visit data. Verify that a visit was created and there is only one visit for the current date.
 
 Query for Treatment table and verify the created treatment references to this visit. 
 
-8- Open pgAdmin and verify that no new visit was created and series references to the previously created visit.
+8 - In the second keyed SQLCipher snapshot, verify that no new visit was created and series references to the previously created visit.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -5829,10 +6051,17 @@ the following details:
 7. Change the First name to "NewFirstName" and click Save patient. 
 
 8. Navigate to "Log" tab by pressing "Log" on the left.
+
+9. Open the patient's clinical records explicitly, including diagnosis, simulation, prescription, and plan as available. Leave and revisit a cached clinical tab, then use the camera/navigation return to revisit an already loaded record.
+
+10. Allow automatic refreshes and background record loads without explicit user navigation. In a controlled fixture fail a requested record read and inspect the audit.
 <<<
 EXPECTED_BEHAVIOR: >>>
-8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its First name to 
-"NewFirstName"), including the corresponding patient ID number, and the user who made the change, specifying the user ID number
+8. The Log view contains one successful patient-save action for the persisted change, including the corresponding patient ID and acting user ID. The audit does not need to expose the changed demographic value.
+
+9. Every explicit display or cached revisit records the acting user and displayed record identifiers, even when no database read is needed.
+
+10. Background loads and automatic refreshes add no user-view records. A failed read is not recorded as a successful view of the unavailable record; other records actually displayed may still be audited.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -6621,13 +6850,19 @@ STEPS: >>>
 
 4. Save Simulation. 
 
+5. As an Administrator with an active unlocked session, use Settings > Data Management to export a password-protected database snapshot. Open the snapshot with a SQLCipher-aware inspection tool using SQLCipher 4 settings and the chosen export password through secret-safe passphrase input, not the local Passphrase or numeric recovery key. Exclude secrets from command lines, logs, screenshots, and public evidence. If copying, use a controlled clipboard with history and synchronization disabled, clear it immediately after pasting, and clear inspection-tool secret inputs after use.
+
+6. Create and save another simulation for the same patient on the same date.
+
+7. Create a fresh administrator password export and inspect that snapshot with the same keyed procedure.
+
 <<<
 EXPECTED_BEHAVIOR: >>>
-4 - Open pgAdmin. Query for Visit data. Verify that a visit was created and there is only one visit for the current date. 
+5 - In the first keyed SQLCipher snapshot, query Visit data. Verify that a visit was created and there is only one visit for the current date.
 
 Query for Simulation Table and verify the created simulation references to this visit. 
 
-7 - Open pgAdmin and verify that no new visit was created and series references to the previously created visit.
+7 - In the second keyed SQLCipher snapshot, verify that no new visit was created and series references to the previously created visit.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -6646,9 +6881,17 @@ STEPS: >>>
 2.Click the Setting tab 
 
 3.Click the Endpoints Configuration tab
+
+4. Change and save an endpoint value, then inspect its persisted value and the action audit. Repeat with an unchanged save and a cancelled edit.
+
+5. Force a save failure in the controlled database fixture and inspect the audit. Restore service and allow a background reload.
 <<<
 EXPECTED_BEHAVIOR: >>>
 The interface shall allow the user to configure the system endpoints to enable communication between system components.
+
+4. The committed change is audited with the acting user and changed configuration identifier. Unchanged saves and cancelled edits do not produce successful configuration-change records.
+
+5. The failed save is not recorded as a successful configuration change; the background reload creates no user-action record.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -7006,12 +7249,10 @@ the following details:
 
 Expected behavior 
 
-8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its Sex to "Female"), including 
-the corresponding patient ID number, and the user who made the change, specifying the user ID number.
+8. The Log view contains one successful patient-save action for the persisted change, including the corresponding patient ID and acting user ID. The audit does not need to expose the changed demographic value.
 <<<
 EXPECTED_BEHAVIOR: >>>
-8.In the Log list view, there shall be a line with details about changes made to the patient's details (changing its Sex to "Female"), including 
-the corresponding patient ID number, and the user who made the change, specifying the user ID number.
+8. The Log view contains one successful patient-save action for the persisted change, including the corresponding patient ID and acting user ID. The audit does not need to expose the changed demographic value.
 <<<
 RELATIONS:
 - TYPE: Parent

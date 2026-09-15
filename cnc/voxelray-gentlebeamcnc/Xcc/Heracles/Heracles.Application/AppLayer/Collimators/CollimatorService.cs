@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Xcc.Application.AppLayer.Service;
 
 namespace Heracles.Application.AppLayer.Collimators
 {
@@ -38,7 +39,7 @@ namespace Heracles.Application.AppLayer.Collimators
             collimatorModel.Reset(head, configurations, collimators);
         }
 
-        public async Task<ICollimator> CreateCollimatorAsync(string serial, TargetType targetType, Energy energy, bool isActive)
+        public async Task<ICollimator> CreateCollimatorAsync(string serial, TargetType targetType, Energy energy, bool isActive, IActionAuditService? audit = null)
         {
             if (serial == null)
             {
@@ -53,29 +54,48 @@ namespace Heracles.Application.AppLayer.Collimators
                 throw new NullReferenceException("Create applicator - error: active head is not specified");
             }
 
-            ICollimatorConfiguration configuration = await FindOrCreateConfiguration(targetType, energy);
+            ICollimatorConfiguration configuration = await FindOrCreateConfiguration(targetType, energy, audit);
 
             var storedCollimator = await collimatorRepository.CreateCollimatorAsync(
                 serial,
                 collimatorModel.ActiveHead,
                 configuration,
                 isActive);
+            audit?.RegisterAction("Configuration created",
+                $"Entity=Collimator; Id={storedCollimator.Id}; Fields=Serial,CollimatorConfigurationId,IsActive");
 
             return collimatorModel.AddCollimator(storedCollimator);
         }
 
-        public async Task<ICollimator> UpdateCollimatorAsync(string serial, TargetType targetType, Energy energy, bool isActive)
+        public async Task<ICollimator> UpdateCollimatorAsync(string serial, TargetType targetType, Energy energy, bool isActive, IActionAuditService? audit = null)
         {
             var existingValue = collimatorModel.FindCollimatorBySerial(serial);
 
-            ICollimatorConfiguration configuration = await FindOrCreateConfiguration(targetType, energy);
+            ICollimatorConfiguration configuration = await FindOrCreateConfiguration(targetType, energy, audit);
             var newValue = new Collimator(existingValue)
             {
                 CollimatorConfigurationId = configuration.Id,
                 IsActive = isActive,
             };
+            var previousConfigurationId = existingValue.CollimatorConfigurationId;
+            var previousIsActive = existingValue.IsActive;
+            var fields = new List<string>();
+            if (previousConfigurationId != newValue.CollimatorConfigurationId)
+                fields.Add(nameof(newValue.CollimatorConfigurationId));
+            if (previousIsActive != newValue.IsActive)
+                fields.Add(nameof(newValue.IsActive));
+            if (fields.Count == 0)
+                return existingValue;
 
             var storedValue = await collimatorRepository.UpdateCollimatorAsync(existingValue, newValue);
+            fields.Clear();
+            if (previousConfigurationId != storedValue.CollimatorConfigurationId)
+                fields.Add(nameof(storedValue.CollimatorConfigurationId));
+            if (previousIsActive != storedValue.IsActive)
+                fields.Add(nameof(storedValue.IsActive));
+            if (fields.Count > 0)
+                audit?.RegisterAction("Configuration saved",
+                    $"Entity=Collimator; Id={storedValue.Id}; Fields={string.Join(",", fields)}");
 
             return collimatorModel.UpdateCollimator(storedValue);
         }
@@ -89,7 +109,7 @@ namespace Heracles.Application.AppLayer.Collimators
         /// <param name="doseRate"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public async Task<ICollimatorConfiguration> UpdateCollimatorConfigurationDoseRateAsync(long configurationId, double doseRate)
+        public async Task<ICollimatorConfiguration> UpdateCollimatorConfigurationDoseRateAsync(long configurationId, double doseRate, IActionAuditService? audit = null)
         {
             var configurationToUpdate = collimatorModel.FindConfigurationById(configurationId);
             if (configurationToUpdate == null)
@@ -97,22 +117,26 @@ namespace Heracles.Application.AppLayer.Collimators
                 throw new ArgumentException($"Applicator configuration update error: no configuration with id={configurationId} in the list");
             }
 
+            var previousDoseRate = configurationToUpdate.ReferencedDoseRate;
             var updatedConfiguration = await collimatorRepository.UpdateCollimatorConfigurationAsync(
                 configurationToUpdate,
                 new CollimatorConfiguration(configurationToUpdate) { ReferencedDoseRate = (float)doseRate });
+            if (updatedConfiguration.ReferencedDoseRate != previousDoseRate)
+                audit?.RegisterAction("Configuration saved",
+                    $"Entity=CollimatorConfiguration; Id={updatedConfiguration.Id}; Fields=ReferencedDoseRate");
 
             // For now, we just update the existing value in the model,
             // in order to maintain model consistency more easily:
-            return collimatorModel.UpdateConfigurationDoseRate(configurationToUpdate, doseRate);
+            return collimatorModel.UpdateConfigurationDoseRate(configurationToUpdate, updatedConfiguration.ReferencedDoseRate);
         }
 
-        private async Task<ICollimatorConfiguration> FindOrCreateConfiguration(TargetType targetType, Energy energy)
+        private async Task<ICollimatorConfiguration> FindOrCreateConfiguration(TargetType targetType, Energy energy, IActionAuditService? audit)
         {
             // Find a matching configuration, and if there's no such, create a new one:
             var configuration = collimatorModel.FindConfigurationByType(targetType, energy);
             if (configuration is null)
             {
-                configuration = await collimatorRepository.CreateCollimatorConfigurationAsync(targetType, energy);
+                configuration = await collimatorRepository.CreateCollimatorConfigurationAsync(targetType, energy, audit);
                 collimatorModel.AddConfiguration(configuration);
             }
 

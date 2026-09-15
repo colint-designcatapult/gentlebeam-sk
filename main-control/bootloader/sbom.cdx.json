@@ -1,0 +1,327 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "firmware",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader",
+      "name": "main-control/bootloader",
+      "version": "4.0.0",
+      "description": "GentleBeam SAME70 bootloader firmware for ATSAME70Q21B, including MCUboot serial recovery, scratch-area image swapping and ECDSA P-256 signature verification. Project-owned mcuboot_port adapters are part of this firmware, not a separate inferred third-party package.",
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/bootloader/version.txt; main-control/bootloader/CMakeLists.txt; mcuboot/CMakeLists.txt; main-control/bootloader/mcuboot_port/mcuboot_config/mcuboot_config.h"
+        },
+        {
+          "name": "gentlebeam:version-basis",
+          "value": "Static release baseline from main-control/bootloader/version.txt; does not identify a particular signed image or CI build."
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "gentlebeam:inventory-basis",
+        "value": "Manually maintained inventory of selected compiled sources, included SDK headers and linked target runtime libraries. Not a symbol-level inventory of a post-link image; unused sections may be discarded. Build-only compilers, generators, signing tools and unselected vendor libraries are excluded."
+      },
+      {
+        "name": "gentlebeam:maintenance",
+        "value": "Dependencies are maintained statically; update this file when source selections, SDK packs or firmware release versions change."
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader:atmel-start",
+      "name": "Atmel START Framework",
+      "description": "Compiled Microchip HAL, HPL, HRI and utility support plus generated initialization. Version 1.0.0 is the Framework component Cversion in AtmelStart.gpdsc, not an inferred ASF release. Middleware with separate provenance is inventoried separately.",
+      "scope": "required",
+      "version": "1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Microchip software license (use exclusively with Microchip products)"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/bootloader/CMakeLists.txt; main-control/bootloader/.atmelstart/AtmelStart.gpdsc; main-control/bootloader/.atmelstart/atmel_start_config.atstart; main-control/bootloader/hal/src/hal_init.c"
+        },
+        {
+          "name": "gentlebeam:atmel-start-content-version",
+          "value": "1.0.1600"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader:cmsis",
+      "name": "CMSIS (Core headers)",
+      "description": "External Arm CMSIS package; only core device-access headers/intrinsics are selected, not CMSIS DSP, RTOS or other pack libraries. Version denotes the pack release. CMake toolchain defaults, also matching Microchip Studio project pack metadata. GENTLEBEAM_CMSIS_ROOT and GENTLEBEAM_SAME70_DFP_ROOT can override the defaults; such builds require inventory updates.",
+      "scope": "required",
+      "version": "5.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/bootloader/CMakeLists.txt; main-control/bootloader/Gryphon System Bootloader FW.componentinfo.xml"
+        },
+        {
+          "name": "gentlebeam:external-license-evidence",
+          "value": "C:/Program Files (x86)/Atmel/Studio/7.0/packs/arm/CMSIS/5.4.0/CMSIS/Core/Include/core_cm7.h"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader:device-pack",
+      "name": "SAME70_DFP (device headers and startup)",
+      "description": "Microchip device family pack: external device/register headers and repository Device_Startup sources. Version denotes the pack release, not its Device Startup component Cversion. CMake toolchain defaults, also matching Microchip Studio project pack metadata. GENTLEBEAM_CMSIS_ROOT and GENTLEBEAM_SAME70_DFP_ROOT can override the defaults; such builds require inventory updates.",
+      "scope": "required",
+      "version": "2.4.166",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/bootloader/CMakeLists.txt; main-control/bootloader/Gryphon System Bootloader FW.componentinfo.xml; main-control/bootloader/Device_Startup/startup_same70q21b.c; main-control/bootloader/Device_Startup/system_same70q21b.c"
+        },
+        {
+          "name": "gentlebeam:external-license-evidence",
+          "value": "C:/Program Files (x86)/Atmel/Studio/7.0/packs/atmel/SAME70_DFP/2.4.166/same70b/include/same70q21b.h"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader:newlib",
+      "name": "Newlib (nano C library and math runtime)",
+      "description": "Target runtime selected by nano.specs / UseNewlibNano and the C/math link configuration, not a build-only tool. Includes libc_nano and libm as selected by the linker. Version and a blanket license are omitted because the actual toolchain distribution is externally selected and Newlib contains per-file licenses.",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/bootloader/CMakeLists.txt"
+        },
+        {
+          "name": "gentlebeam:inventory-limitation",
+          "value": "Toolchain-dependent runtime versions, archive members and their individual license combinations are not pinned by this static source inventory."
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader:libgcc",
+      "name": "GNU libgcc target runtime",
+      "description": "Compiler-generated ARM arithmetic/ABI support linked into firmware by the GCC driver. The host compiler itself is excluded. Version and license declaration are omitted because the target runtime comes from the externally selected toolchain, not a vendored archive.",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/bootloader/CMakeLists.txt; main-control/cmake/microchip-studio-arm-gcc-6.3.1.cmake"
+        },
+        {
+          "name": "gentlebeam:inventory-limitation",
+          "value": "Actual libgcc version and archive-member licenses depend on the toolchain used to build the image."
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader:mcuboot",
+      "name": "MCUboot",
+      "description": "Boot utility and serial-recovery sources explicitly selected by gentlebeam::mcuboot. The project configuration selects TinyCrypt SHA-256/ECDSA P-256. Host imgtool/Python dependencies, unused ports and unselected crypto backends are excluded.",
+      "scope": "required",
+      "version": "2.4.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "main-control/bootloader/CMakeLists.txt; mcuboot/CMakeLists.txt; main-control/bootloader/mcuboot_port/mcuboot_config/mcuboot_config.h; mcuboot/mcuboot-2.4.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader:zcbor",
+      "name": "zcbor",
+      "description": "Bundled CBOR runtime used by MCUboot serial recovery. Only zcbor_common.c, zcbor_decode.c and zcbor_encode.c are selected; the host code generator is excluded.",
+      "scope": "required",
+      "version": "0.8.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "mcuboot/CMakeLists.txt; mcuboot/mcuboot-2.4.0/boot/zcbor/include/zcbor_common.h"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader:tinycrypt",
+      "name": "TinyCrypt",
+      "description": "Bundled SHA-256 and P-256 ECDSA implementation: ecc.c, ecc_dsa.c, sha256.c and utils.c. Its embedded micro-ecc-derived code is also identified as a dependency. Other TinyCrypt algorithms and the separate tinycrypt-sha512 directory are not selected.",
+      "scope": "required",
+      "version": "0.2.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "mcuboot/CMakeLists.txt; mcuboot/mcuboot-2.4.0/ext/tinycrypt/VERSION; mcuboot/mcuboot-2.4.0/ext/tinycrypt/LICENSE; mcuboot/mcuboot-2.4.0/ext/tinycrypt/lib/source/ecc.c"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader:micro-ecc",
+      "name": "micro-ecc (embedded in TinyCrypt)",
+      "description": "Kenneth MacKay micro-ecc-derived elliptic-curve code embedded in the selected TinyCrypt ECC sources, not a separately linked copy. The bundled license identifies the upstream project but does not establish a micro-ecc release or commit; version is omitted.",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "mcuboot/CMakeLists.txt; mcuboot/mcuboot-2.4.0/ext/tinycrypt/LICENSE; mcuboot/mcuboot-2.4.0/ext/tinycrypt/lib/source/ecc.c"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:main-control:bootloader:mbedtls-asn1",
+      "name": "Mbed TLS (ASN.1 subset)",
+      "description": "Bundled ASN.1 parser and platform utility sources used by MCUboot ECDSA signature processing. Version 3.0.0 is declared by the bundled build_info.h. This is not the full Mbed TLS cryptography/TLS stack: only asn1parse.c and platform_util.c are compiled by the wrapper.",
+      "scope": "required",
+      "version": "3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "gentlebeam:evidence",
+          "value": "mcuboot/CMakeLists.txt; mcuboot/mcuboot-2.4.0/ext/mbedtls-asn1/README; mcuboot/mcuboot-2.4.0/ext/mbedtls-asn1/include/mbedtls/build_info.h; mcuboot/mcuboot-2.4.0/ext/mbedtls-asn1/src/asn1parse.c"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:bootloader:atmel-start",
+        "urn:gentlebeam:component:main-control:bootloader:cmsis",
+        "urn:gentlebeam:component:main-control:bootloader:device-pack",
+        "urn:gentlebeam:component:main-control:bootloader:newlib",
+        "urn:gentlebeam:component:main-control:bootloader:libgcc",
+        "urn:gentlebeam:component:main-control:bootloader:mcuboot"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader:atmel-start",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:bootloader:cmsis",
+        "urn:gentlebeam:component:main-control:bootloader:device-pack",
+        "urn:gentlebeam:component:main-control:bootloader:newlib",
+        "urn:gentlebeam:component:main-control:bootloader:libgcc"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader:cmsis",
+      "dependsOn": []
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader:device-pack",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:bootloader:cmsis",
+        "urn:gentlebeam:component:main-control:bootloader:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader:newlib",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:bootloader:libgcc"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader:libgcc",
+      "dependsOn": []
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader:mcuboot",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:bootloader:zcbor",
+        "urn:gentlebeam:component:main-control:bootloader:tinycrypt",
+        "urn:gentlebeam:component:main-control:bootloader:mbedtls-asn1",
+        "urn:gentlebeam:component:main-control:bootloader:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader:zcbor",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:bootloader:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader:tinycrypt",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:bootloader:micro-ecc",
+        "urn:gentlebeam:component:main-control:bootloader:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader:micro-ecc",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:bootloader:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:main-control:bootloader:mbedtls-asn1",
+      "dependsOn": [
+        "urn:gentlebeam:component:main-control:bootloader:newlib"
+      ]
+    }
+  ]
+}

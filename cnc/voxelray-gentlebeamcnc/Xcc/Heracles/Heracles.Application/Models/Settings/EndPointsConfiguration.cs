@@ -13,6 +13,7 @@ namespace Heracles.Application.Models.Settings
         public EndPointsConfiguration(IEndPointsConfiguration configuration)
         {
             RecordAndVerifyEndPoint = new SystemEndPoint(configuration.RecordAndVerifyEndPoint);
+            DatabaseEndpoint = new SystemEndPoint(configuration.DatabaseEndpoint);
             TreatmentHeadCamEndPoint = new SystemEndPoint(configuration.TreatmentHeadCamEndPoint);
             GCBTelemetryEndPoint = new SystemEndPoint(configuration.GCBTelemetryEndPoint);
             GCBCommandsEndPoint = new SystemEndPoint(configuration.GCBCommandsEndPoint);

@@ -17,6 +17,8 @@
     xmlns:common="clr-namespace:Heracles.Application.Common;assembly=Heracles.Application"
     xmlns:coreEnums="clr-namespace:Xcc.Core.Enums;assembly=Xcc.Core"
     xmlns:heraclesControls="clr-namespace:Heracles.Application.UI.UserControls;assembly=Heracles.Application"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:behaviors="clr-namespace:Xcc.Application.UI.Behaviors;assembly=Xcc.Application"
 
     xmlns:ucsiViews="clr-namespace:Heracles.Ucsi.Views;assembly=Heracles.Ucsi"
     mc:Ignorable="d" 
@@ -66,6 +68,9 @@
             SelectedIndex="{Binding SelectedTabIndex}"
             SelectedItem="{Binding SelectedTab}"
             SelectFirstVisibleItem="True">
+            <i:Interaction.Behaviors>
+                <behaviors:UserSelectionCommandBehavior Command="{Binding ViewSelectedTabCommand}" UseSelectedIndex="True"/>
+            </i:Interaction.Behaviors>
             
             <!--Treatment Tab-->
             <TabItem

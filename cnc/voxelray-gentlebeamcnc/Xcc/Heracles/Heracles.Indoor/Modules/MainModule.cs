@@ -8,6 +8,9 @@ using Heracles.Application.Models.Supervision;
 using Heracles.Application.UI.Views;
 using Heracles.Core.Models;
 using Heracles.Indoor.ViewModels;
+using Heracles.Indoor.Services;
+using Heracles.Indoor.ViewModels.Settings;
+using Heracles.Indoor.Views.Settings;
 using Heracles.Indoor.Views;
 using Heracles.Indoor.Views.Dialogs;
 using Heracles.Indoor.Views.Patients.Patient.Treatments;
@@ -98,8 +101,10 @@ internal class MainModule(IRegionManager regionManager, IDialogService dialogSer
         var sessionEvents = containerProvider.Resolve<INotifyUserSessionChanged>();
         var treatmentEventSource = containerProvider.Resolve<LoadForTreatmentEventSource>();
         var planEventSource = containerProvider.Resolve<PlanEventSource>();
+        var dataManagement = containerProvider.Resolve<DataManagementService>();
         sessionEvents.UserSessionChanged += (_, e) =>
         {
+            if (dataManagement.IsShuttingDown) return;
             switch (e.EventType)
             {
                 case UserSessionEventType.Open:
@@ -352,5 +357,6 @@ internal class MainModule(IRegionManager regionManager, IDialogService dialogSer
         containerRegistry.RegisterDialog<InterlocksDialogView>();
         containerRegistry.RegisterDialog<FaultsView>();
         containerRegistry.RegisterDialog<PhotoViewerModalView>();
+        containerRegistry.RegisterDialog<DatabasePasswordView, DatabasePasswordViewModel>();
     }
 }

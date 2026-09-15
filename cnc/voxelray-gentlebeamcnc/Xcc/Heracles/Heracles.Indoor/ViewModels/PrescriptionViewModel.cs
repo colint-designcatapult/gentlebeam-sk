@@ -16,6 +16,7 @@ using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
 using Prism.Regions;
+using Heracles.Indoor.Models.UseCases;
 using Prism.Services.Dialogs;
 using System;
 using System.Collections.Generic;
@@ -51,7 +52,8 @@ namespace Heracles.Indoor.ViewModels
             ICollimatorModel collimatorModel,
             IDispatcherService dispatcherService,
             IEventAggregator eventAggregator,
-            IPopUpService popUpService)
+            IPopUpService popUpService,
+            PatientRecordReadAudit readAudit)
         {
             RegionManager = regionManager;
             PlanModel = planModel;
@@ -65,7 +67,9 @@ namespace Heracles.Indoor.ViewModels
             DispatcherService = dispatcherService;
             EventAggregator = eventAggregator;
             PopUpService = popUpService;
+            ReadAudit = readAudit;
             TreatmentInfoStore.SimulationChanged += OnSimulationChanged;
+            eventAggregator.GetEvent<ViewPlanningRecordsEvent>().Subscribe(request => _ = ViewPrescriptionAsync(request));
             //TreatmentInfoStore.PrescriptionChanged += OnPrescriptionChanged;
 
             //Set watchdog on the PrescriptionForm.IsModified flag
@@ -103,6 +107,26 @@ namespace Heracles.Indoor.ViewModels
         public IEnumerable<TDF> AvailableTdfValues { get; } = Enum.GetValues<TDF>();
 
         #endregion Read-only properties
+
+        private async Task ViewPrescriptionAsync(PatientRecordReadAudit.Request? request)
+        {
+            try
+            {
+                if (CurrentPrescriptionTask is not null)
+                    await CurrentPrescriptionTask.Task;
+                if (TreatmentInfoStore.Simulation?.DiagnosisId != request?.DiagnosisId ||
+                    TreatmentInfoStore.Prescription?.SimulationId != TreatmentInfoStore.Simulation?.Id)
+                    return;
+                ReadAudit.Record(request, "prescription", TreatmentInfoStore.Prescription?.Id ?? 0, planningOnly: true);
+                if (PlanModel.Plan?.PrescriptionId == TreatmentInfoStore.Prescription?.Id)
+                    ReadAudit.Record(request, "plan", PlanModel.Plan?.Id ?? 0, planningOnly: true);
+            }
+            catch
+            {
+                // Failed reads remain on the existing task overlay.
+            }
+        }
+        public PatientRecordReadAudit ReadAudit { get; }
 
 
         #region Properties
@@ -165,7 +189,7 @@ namespace Heracles.Indoor.ViewModels
 
         private DelegateCommand? _resetCommand;
         public DelegateCommand ResetCommand => _resetCommand ??= new DelegateCommand(
-            executeMethod: FetchPrescription);
+            executeMethod: () => FetchPrescription(ReadAudit.CreateRequest(TreatmentInfoStore.Diagnosis?.Id)));
 
 
         private DelegateCommand? _retryPrescriptionTaskCommand;
@@ -261,16 +285,16 @@ namespace Heracles.Indoor.ViewModels
             RaiseCanExecuteCommands();
         }
 
-        private void FetchPrescription()
+        private void FetchPrescription(PatientRecordReadAudit.Request? request = null)
         {
             RetryPrescriptionCommand = new DelegateCommand(() =>
             {
-                CurrentPrescriptionTask = new ObservableTask(FetchPrescriptionAsync(), StringConstants.EMR.FetchPrescriptionMessage);
+                CurrentPrescriptionTask = new ObservableTask(FetchPrescriptionAsync(request), StringConstants.EMR.FetchPrescriptionMessage);
             });
             RetryPrescriptionCommand.Execute();
         }
 
-        private async Task FetchPrescriptionAsync()
+        private async Task FetchPrescriptionAsync(PatientRecordReadAudit.Request? request)
         {
             try
             {
@@ -285,7 +309,8 @@ namespace Heracles.Indoor.ViewModels
                     TreatmentInfoStore.Prescription = await PrescriptionRepository.FetchLatestPrescriptionAsync(TreatmentInfoStore.Simulation.Id);
                 }
 
-                await OnPrescriptionChanged(TreatmentInfoStore.Prescription);
+                await OnPrescriptionChanged(TreatmentInfoStore.Prescription, request);
+                ReadAudit.Record(request, "prescription", TreatmentInfoStore.Prescription?.Id ?? 0, planningOnly: true);
             }
             catch (Exception ex)
             {
@@ -313,7 +338,7 @@ namespace Heracles.Indoor.ViewModels
                         {
                             var reason = result.Parameters.GetValue<string>(AcknowledgePrescriptionViewModel.SelectedOptionsParameterKey);
 
-                            _ = LogWriter.LogAsync(reason, LogRecordSeverity.Info, LogRecordType.User);
+                            _ = LogWriter.LogAsync(reason, LogRecordSeverity.Info, LogRecordType.Security);
                         }
                     });
             }
@@ -387,16 +412,20 @@ namespace Heracles.Indoor.ViewModels
 
         private void OnSimulationChanged(object? sender, Core.Models.EMR.ISimulation s)
         {
-            FetchPrescription();
+            FetchPrescription(ReadAudit.CurrentRequest);
         }
 
-        private async Task OnPrescriptionChanged(Core.Models.EMR.IPrescription? prescription)
+        private async Task OnPrescriptionChanged(Core.Models.EMR.IPrescription? prescription,
+            PatientRecordReadAudit.Request? request)
         {
             var targetType = TreatmentInfoStore.Simulation?.TargetType ?? TargetType.TargetType_None;
             var previousTargetType = targetType;
             try
             {
                 var plan = await PlanModel.OnUpdatePrescriptionAsync(prescription);
+                ReadAudit.Record(request, "plan", plan?.Id ?? 0, planningOnly: true);
+                if (request is { PlanningVisible: false } && !ReadAudit.PlanningVisible)
+                    EventAggregator.GetEvent<ViewTreatmentHistoryEvent>().Publish(request);
                 previousTargetType = plan?.CollimatorType ?? TargetType.TargetType_None;
                 // Some changes in prescription, need to reload treatment factors and check the plan,
                 // as it may be so that the energy was changed:

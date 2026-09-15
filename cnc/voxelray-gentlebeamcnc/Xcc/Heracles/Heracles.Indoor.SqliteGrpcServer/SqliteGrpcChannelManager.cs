@@ -3,6 +3,7 @@ using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using System;
 using Xcc.Infra.Networking.gRPC.Channels;
+using Xcc.Infra.UserSessions.BearerToken;
 
 namespace Heracles.Indoor.SqliteGrpcServer;
 
@@ -13,9 +14,12 @@ namespace Heracles.Indoor.SqliteGrpcServer;
 public sealed class SqliteGrpcChannelManager : IGrpcChannelManager
 {
     private readonly GrpcChannel _channel;
+    private readonly IBearerTokenUserSessionManager _sessions;
 
-    public SqliteGrpcChannelManager(int port = SqliteGrpcServerHost.DefaultPort)
+    public SqliteGrpcChannelManager(IBearerTokenUserSessionManager sessions,
+        int port = SqliteGrpcServerHost.DefaultPort)
     {
+        _sessions = sessions;
         var address = $"http://localhost:{port}";
         _channel = GrpcChannel.ForAddress(address, new GrpcChannelOptions
         {
@@ -26,8 +30,17 @@ public sealed class SqliteGrpcChannelManager : IGrpcChannelManager
 
     public CallInvoker? Channel { get; private set; }
 
-    // No real auth headers needed for the embedded local server
-    public Metadata Headers { get; } = new Metadata();
+    public Metadata Headers
+    {
+        get
+        {
+            var headers = new Metadata();
+            var token = _sessions.UserSession.AuthBearerToken;
+            if (!string.IsNullOrEmpty(token))
+                headers.Add("authorization", $"Bearer {token}");
+            return headers;
+        }
+    }
 
     // Long timeout — local in-process calls are instant but some ops (streaming) run long
     public uint RpcTimeoutMs { get; } = 30_000;

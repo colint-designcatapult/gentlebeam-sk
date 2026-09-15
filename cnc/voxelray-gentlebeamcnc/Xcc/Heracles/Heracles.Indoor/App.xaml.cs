@@ -57,10 +57,14 @@ using Xcc.Infra.Logging;
 using Xcc.Infra.Networking.gRPC.Channels;
 using Xcc.Infra.Services;
 using Heracles.Indoor.SqliteGrpcServer;
+using Heracles.Indoor.SqliteGrpcServer.Infrastructure;
+using Heracles.Indoor.Views.Settings;
 using Xcc.Infra.UserSessions.BearerToken;
 using Xcc.Shared.Services;
 using Xcc.Shared.Views;
 using System;
+using System.Threading.Tasks;
+using Xcc.Core.Enums;
 
 namespace Heracles.Indoor
 {
@@ -69,6 +73,16 @@ namespace Heracles.Indoor
     /// </summary>
     public partial class App
     {
+        private SqlCipherDatabase? _database;
+        private SqliteGrpcServerHost? _sqliteHost;
+        private IGrpcChannelManager? _channel;
+        private ITelemetrySessionCoordinator? _telemetryCoordinator;
+        private ITelemetryService? _telemetryService;
+        private DataManagementService? _dataManagement;
+        private LoadForTreatmentEventSource? _treatmentEvents;
+        private PlanEventSource? _planEvents;
+        private int _exitStarted;
+
         public class Val1
         {
             public int value1 = 1;
@@ -77,6 +91,9 @@ namespace Heracles.Indoor
         protected override Window CreateShell()
         {
             Container.Resolve<ITelemetrySessionCoordinator>().Start();
+
+            _telemetryCoordinator = Container.Resolve<ITelemetrySessionCoordinator>();
+            _telemetryCoordinator.Start();
 
             return Container.Resolve<MainWindow>();
         }
@@ -170,14 +187,24 @@ namespace Heracles.Indoor
 
             if (heraclesMainSettings.UseSqliteDatabase)
             {
-                // Start the embedded SQLite gRPC server and register a local channel manager
-                Directory.CreateDirectory(heraclesMainSettings.StorageRoot);
-                var dbPath = Path.Combine(
-                    heraclesMainSettings.StorageRoot,
-                    "heracles.db");
-                var sqliteHost = new SqliteGrpcServerHost(dbPath);
-                sqliteHost.StartAsync().GetAwaiter().GetResult();
-                containerRegistry.RegisterInstance<SqliteGrpcServerHost>(sqliteHost);
+                try
+                {
+                    _database = new SqlCipherDatabase(heraclesMainSettings.StorageRoot);
+                    _database.Initialize(DatabaseRecoveryWindow.ConfirmNewKey, DatabaseRecoveryWindow.RequestKey);
+                    containerRegistry.RegisterInstance(_database);
+                    _sqliteHost = new SqliteGrpcServerHost(_database.Connections);
+                    _sqliteHost.StartAsync().GetAwaiter().GetResult();
+                    containerRegistry.RegisterInstance(_sqliteHost);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new DatabaseStartupException(cancelled: true);
+                }
+                catch (Exception)
+                {
+                    // Do not send SQLCipher, connection-string or key diagnostics to generic reporting.
+                    throw new DatabaseStartupException(cancelled: false);
+                }
                 containerRegistry.RegisterManySingleton<SqliteGrpcChannelManager>();
 
                 // Reuse the same gRPC command registrations as the real server path
@@ -333,16 +360,22 @@ namespace Heracles.Indoor
             }
 
             containerRegistry.RegisterSingleton<IActionAuditService, ActionAuditService>();
+            containerRegistry.RegisterSingleton<Heracles.Indoor.Models.UseCases.PatientRecordReadAudit>();
 
             if (heraclesMainSettings.UseDummyServices)
             {
-                containerRegistry.RegisterSingleton<ITelemetryService, DummyTelemetryService>();
+                containerRegistry.RegisterSingleton<ITelemetryService>(provider =>
+                    _telemetryService = provider.Resolve<DummyTelemetryService>());
             }
             else
             {
                 containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
-                containerRegistry.RegisterSingleton<ITelemetryService, GcbTelemetryService>();
+                containerRegistry.RegisterSingleton<ITelemetryService>(provider =>
+                    _telemetryService = provider.Resolve<GcbTelemetryService>());
             }
+
+            _channel = Container.Resolve<IGrpcChannelManager>();
+            containerRegistry.RegisterSingleton<DataManagementService>(CreateDataManagementService);
 
 
             containerRegistry.RegisterSingleton<FieldModel>();
@@ -368,20 +401,26 @@ namespace Heracles.Indoor
         }
         protected override void OnExit(ExitEventArgs e)
         {
-            Container.Resolve<ITelemetrySessionCoordinator>().DisposeAsync().AsTask().GetAwaiter().GetResult();
-            base.OnExit(e);
-            // Stop the embedded SQLite gRPC server if it was started
-            if (Container.IsRegistered<SqliteGrpcServerHost>())
-                Container.Resolve<SqliteGrpcServerHost>().StopAsync().GetAwaiter().GetResult();
-
-            if (Container.Resolve<IGrpcChannelManager>() is { } emrGrpcSettings)
-                emrGrpcSettings.ShutdownChannel();
-
-            DisposeResources();
-
-            // Force-terminate the process so background threads (e.g. the Kestrel thread pool)
-            // don't keep it alive after the WPF window has closed.
-            Environment.Exit(e.ApplicationExitCode);
+            if (Interlocked.Exchange(ref _exitStarted, 1) != 0) return;
+            try
+            {
+                // Only release objects that actually participated in startup. Import may already own shutdown.
+                TryRelease(() => _treatmentEvents?.Stop());
+                TryRelease(() => _planEvents?.Stop());
+                TryRelease(() => _telemetryCoordinator?.DisposeAsync().AsTask().GetAwaiter().GetResult());
+                TryRelease(() => (_telemetryService as IDisposable)?.Dispose());
+                if (_dataManagement?.IsShuttingDown != true)
+                    TryRelease(() => _sqliteHost?.DisposeAsync().AsTask().GetAwaiter().GetResult());
+                TryRelease(() => ShutdownChannelAsync().GetAwaiter().GetResult());
+                TryRelease(() => _dataManagement?.Dispose());
+                TryRelease(() => _database?.Dispose());
+                base.OnExit(e);
+            }
+            finally
+            {
+                // Preserve existing exit behavior for device/network background threads.
+                Environment.Exit(e.ApplicationExitCode);
+            }
         }
 
         protected override void OnStartup(StartupEventArgs e)
@@ -402,12 +441,72 @@ namespace Heracles.Indoor
                 typeof(FrameworkElement), 
                 new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)));
 
-            base.OnStartup(e);
+            try
+            {
+                base.OnStartup(e);
+            }
+            catch (DatabaseStartupException exception)
+            {
+                if (!exception.Cancelled)
+                    MessageBox.Show(
+                        "The encrypted database could not be opened. Check storage access and available disk space. If the database is damaged, retain it and contact your administrator to restore a valid backup. An existing encrypted database is never recreated automatically.",
+                        "Database startup failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown(exception.Cancelled ? 0 : 1);
+            }
         }
 
-        private void DisposeResources()
+        private DataManagementService CreateDataManagementService()
         {
-            Xcc.Application.Helpers.ContainerProviderHelper.DisposeByType<ITelemetryService>(Container);
+            _treatmentEvents = Container.Resolve<LoadForTreatmentEventSource>();
+            _planEvents = Container.Resolve<PlanEventSource>();
+            var popups = Container.Resolve<IPopUpService>();
+            var exiting = Container.Resolve<IExitingModel>();
+            return _dataManagement = new DataManagementService(
+                Container.Resolve<IAuthorizedUserStore>(),
+                Container.Resolve<IBearerTokenUserSessionManager>(),
+                _database, _sqliteHost,
+                () => Dispatcher.Invoke(() =>
+                {
+                    _treatmentEvents.Stop();
+                    _planEvents.Stop();
+                }),
+                ShutdownChannelAsync,
+                operation => Dispatcher.InvokeAsync(() =>
+                    DatabaseImportWindow.RunAsync(operation, () => _dataManagement?.IsShuttingDown == true)).Task.Unwrap(),
+                (message, isError) => Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        popups.ShowMessage("Import database", message, isError ? ReportType.Error : ReportType.Info);
+                    }
+                    finally
+                    {
+                        exiting.ExitApplication();
+                    }
+                }));
+        }
+
+        private Task ShutdownChannelAsync()
+        {
+            var channel = Interlocked.Exchange(ref _channel, null);
+            return channel is null
+                ? Task.CompletedTask
+                : Task.Run(channel.ShutdownChannel).WaitAsync(TimeSpan.FromSeconds(30));
+        }
+
+        private static void TryRelease(Action release)
+        {
+            try { release(); }
+            catch (Exception)
+            {
+                // Cleanup must continue after a partial startup or failed replacement.
+                // Provider diagnostics are deliberately not logged.
+            }
+        }
+
+        private sealed class DatabaseStartupException(bool cancelled) : Exception
+        {
+            public bool Cancelled { get; } = cancelled;
         }
     }
 }

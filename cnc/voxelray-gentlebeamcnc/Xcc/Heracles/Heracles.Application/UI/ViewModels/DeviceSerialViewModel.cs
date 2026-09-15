@@ -1,6 +1,7 @@
 ﻿using Heracles.Application.Models.Settings;
 using Prism.Commands;
 using Xcc.Application.UI.Mvvm;
+using Xcc.Application.AppLayer.Service;
 
 namespace Heracles.Application.UI.ViewModels
 {
@@ -12,10 +13,11 @@ namespace Heracles.Application.UI.ViewModels
             Title = "Device Serial ID";
         }
 
-        public DeviceSerialViewModel(ISettingsModel settingsModel)
+        public DeviceSerialViewModel(ISettingsModel settingsModel, IActionAuditService actionAuditService)
         {
             Title = "Device Serial ID";
             SettingsModel = settingsModel;
+            ActionAuditService = actionAuditService;
         }
         #endregion Contructors
 
@@ -41,8 +43,17 @@ namespace Heracles.Application.UI.ViewModels
             {
                 var settings = new SystemSettings(
                     (SettingsModel.Settings is null) ? await SettingsModel.FetchSettingsAsync() : SettingsModel.Settings);
+                var previousSerial = settings.DeviceSerial;
+                if (previousSerial == DeviceSerialId)
+                {
+                    CloseDialog();
+                    return;
+                }
                 settings.DeviceSerial = DeviceSerialId;
                 var updatedSettings = await SettingsModel.SubmitSettingsAsync(settings);
+                if (updatedSettings.DeviceSerial != previousSerial)
+                    ActionAuditService.RegisterAction("Configuration saved",
+                        $"Entity=SystemSettings; Id={updatedSettings.Id}; Fields=DeviceSerial");
                 if (updatedSettings.DeviceSerial == DeviceSerialId)
                 {
                     CloseDialog();
@@ -51,6 +62,7 @@ namespace Heracles.Application.UI.ViewModels
             () => string.IsNullOrWhiteSpace(DeviceSerialId) == false);
 
         public ISettingsModel SettingsModel { get; }
+        private IActionAuditService ActionAuditService { get; }
         #endregion Commands
 
 

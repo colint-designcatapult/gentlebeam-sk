@@ -13,6 +13,7 @@ using Heracles.Application.Infra.DataManagement.EMR;
 using Heracles.Application.Models.EMR;
 using Heracles.Application.Models.RDBMS.EMR;
 using Heracles.Application.Models.Treatment;
+using Heracles.Application.Protos;
 using Heracles.Core.Enums;
 using Heracles.Core.Models.EMR;
 using Prism.Events;
@@ -207,6 +208,7 @@ namespace Heracles.Application.Models
         }
 
         private Dictionary<ITreatmentFieldEntry, OutgoingActionStateMachine> TreatmentFieldActions { get; } = new();
+        private readonly Dictionary<ITreatmentFieldEntry, Com.Empyreanmed.Heracles.TreatmentFields.V1.TreatmentField> _savedTreatmentFields = new();
 
         public ReadOnlyObservableCollection<ITreatmentFieldEntry> TreatmentFields { get; }
 
@@ -343,6 +345,7 @@ namespace Heracles.Application.Models
             Plan = null;
             _treatmentFields.Clear();
             TreatmentFieldActions.Clear();
+            _savedTreatmentFields.Clear();
 
             if (Prescription == null)
             {
@@ -392,6 +395,7 @@ namespace Heracles.Application.Models
 
                 _treatmentFields.Clear();
                 TreatmentFieldActions.Clear();
+                _savedTreatmentFields.Clear();
                 foreach (var field in fields)
                 {
                     // todo: why do we update the energy here?
@@ -404,6 +408,7 @@ namespace Heracles.Application.Models
             {
                 _treatmentFields.Clear();
                 TreatmentFieldActions.Clear();
+                _savedTreatmentFields.Clear();
             }
 
             IsModified = false;
@@ -483,7 +488,10 @@ namespace Heracles.Application.Models
             if (BaseEntry.IsBlankEntry(Plan))
             {
                 Plan = await PlanRepository.CreatePlanAsync(Plan);
-                ActionAuditService.RegisterAction($"New plan with id={Plan.Id} was created");
+                if (!BaseEntry.IsNullOrBlankEntry(Plan))
+                {
+                    ActionAuditService.RegisterAction($"New plan with id={Plan.Id} was created");
+                }
 
                 // Update plan Id in the fields with actual value:
                 foreach (var field in TreatmentFields)
@@ -508,14 +516,26 @@ namespace Heracles.Application.Models
                 if (field.Value.Action == OutgoingActionType.Create)
                 {
                     var createdField = await PlanRepository.CreateTreatmentFieldAsync(field.Key);
+                    if (!BaseEntry.IsNullOrBlankEntry(createdField))
+                    {
+                        ActionAuditService.RegisterAction($"Create treatment field id={createdField.Id} in plan id={Plan.Id}");
+                    }
                     createdField.CopyProperties(field.Key);
-                    ActionAuditService.RegisterAction($"Create treatment field id={createdField.Id} in plan id={Plan.Id}");
+                    _savedTreatmentFields[field.Key] = ProtoTypesConverter.ToProto(createdField);
                 }
                 else if (field.Value.Action == OutgoingActionType.Update)
                 {
+                    _savedTreatmentFields.TryGetValue(field.Key, out var previousField);
+                    var hasRequestedChanges = previousField is not null &&
+                        !previousField.Equals(ProtoTypesConverter.ToProto(field.Key));
                     var updatedField = await PlanRepository.UpdateTreatmentFieldAsync(null, field.Key);
+                    var savedField = ProtoTypesConverter.ToProto(updatedField);
+                    if (hasRequestedChanges && previousField is not null && !previousField.Equals(savedField))
+                    {
+                        ActionAuditService.RegisterAction($"Update treatment field id={updatedField.Id} in plan id={Plan.Id}");
+                    }
                     updatedField.CopyProperties(field.Key);
-                    ActionAuditService.RegisterAction($"Update treatment field id={updatedField.Id} in plan id={Plan.Id}");
+                    _savedTreatmentFields[field.Key] = savedField;
                 }
             }
 
@@ -556,14 +576,18 @@ namespace Heracles.Application.Models
             {
                 if (!BaseEntry.IsBlankEntry(Plan))
                 {
+                    var previousStatus = Plan.Status;
                     var plan = await PlanRepository.UpdateStatusAsync(username, password, Plan.Id, status);
                     // todo: temporarily check Plan for null, because Moses does not return an updated one
                     if (plan == null)
                     {
-                        ActionAuditService.RegisterAction($"Change status of plan id={Plan.Id} to {status}");
                         plan = new Plan(Plan) { Status = status };
                     }
                     Plan = plan;
+                    if (Plan.Status != previousStatus)
+                    {
+                        ActionAuditService.RegisterAction($"Change status of plan id={Plan.Id} to {Plan.Status}");
+                    }
                 }
                 else
                     throw new InvalidOperationException("Cannot verify unsaved Plan");
@@ -656,6 +680,10 @@ namespace Heracles.Application.Models
             
             _treatmentFields.Add(fieldEntry);
             TreatmentFieldActions.Add(fieldEntry, new OutgoingActionStateMachine(action));
+            if (action == OutgoingActionType.None)
+            {
+                _savedTreatmentFields[fieldEntry] = ProtoTypesConverter.ToProto(safeFieldData);
+            }
 
             return fieldEntry;
         }
@@ -688,6 +716,7 @@ namespace Heracles.Application.Models
         {
             _treatmentFields.Clear();
             TreatmentFieldActions.Clear();
+            _savedTreatmentFields.Clear();
 
             var plan = MakeNewBlankPlan();
 

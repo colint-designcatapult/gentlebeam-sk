@@ -39,4 +39,8 @@ message User {
 
   // Last accessed timestamp
   optional google.protobuf.Timestamp last_accessed = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Consecutive failed logins. At 10 the account is locked. Ordinary user writes
+  // cannot change this counter; an Administrator can use ResetUserLockout.
+  optional uint32 failed_login_attempts = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

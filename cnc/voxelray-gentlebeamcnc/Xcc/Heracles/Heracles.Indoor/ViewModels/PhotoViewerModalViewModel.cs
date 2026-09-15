@@ -1,4 +1,5 @@
 using Heracles.Core.Models.EMR;
+using Heracles.Indoor.Models.UseCases;
 using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Services.Dialogs;
@@ -8,6 +9,13 @@ namespace Heracles.Indoor.ViewModels
 {
     public class PhotoViewerModalViewModel : BindableBase, IDialogAware
     {
+        private readonly PatientRecordReadAudit _readAudit;
+
+        public PhotoViewerModalViewModel(PatientRecordReadAudit readAudit)
+        {
+            _readAudit = readAudit;
+        }
+
         private IPhoto? _currentPhoto;
         public IPhoto? CurrentPhoto
         {
@@ -38,6 +46,8 @@ namespace Heracles.Indoor.ViewModels
                 if (parameters.TryGetValue("photo", out IPhoto? photo))
                 {
                     CurrentPhoto = photo;
+                    if (CurrentPhoto is not null)
+                        _readAudit.Record(_readAudit.CreateRequest(CurrentPhoto.DiagnosisId), "photo", CurrentPhoto.Id);
                 }
             }
             catch (Exception ex)

@@ -18,20 +18,20 @@ namespace Xcc.Application.AppLayer.Service
         public void RegisterAction(string actionDescription)
         {
             var activeUser = AuthorizedUserStore.AuthorizedUser;
-            string message = (activeUser is null)
-                ? $"User Action. {actionDescription} by an unauthorized user"
-                : $"User Action. {actionDescription} by {activeUser.Username} (user id={activeUser.Id})";
-            // TODO: we should make a queue of these records, just in case if network/server goes down
+            if (activeUser is null || activeUser.Id <= 0 || string.IsNullOrWhiteSpace(activeUser.Username))
+                return;
+
+            string message = $"User Action. {actionDescription} by {activeUser.Username} (user id={activeUser.Id})";
             _ = LogWriter.LogAsync(message, LogRecordSeverity.Info, LogRecordType.User);
         }
 
         public void RegisterAction(string actionDescription, string actionDetails)
         {
             var activeUser = AuthorizedUserStore.AuthorizedUser;
-            string message = (activeUser is null)
-                ? $"User Action. {actionDescription} by an unauthorized user: {actionDetails}"
-                : $"User Action. {actionDescription} by {activeUser.Username} (user id={activeUser.Id}): {actionDetails}";
-            // TODO: we should make a queue of these records, just in case if network/server goes down
+            if (activeUser is null || activeUser.Id <= 0 || string.IsNullOrWhiteSpace(activeUser.Username))
+                return;
+
+            string message = $"User Action. {actionDescription} by {activeUser.Username} (user id={activeUser.Id}): {actionDetails}";
             _ = LogWriter.LogAsync(message, LogRecordSeverity.Info, LogRecordType.User);
         }
 

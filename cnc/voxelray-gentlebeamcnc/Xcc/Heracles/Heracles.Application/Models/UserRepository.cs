@@ -1,4 +1,5 @@
 ﻿using Heracles.Core.Commands;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,18 +28,29 @@ namespace Heracles.Application.Models
             return users;
         }
 
-        public async Task SaveUserAsync(IUser userToSave)
-        {
-            await userCommands.UpdateAsync(null!, userToSave);
-            var userRoleMapping = await userRoleMappingCommands.ReadAsync(userToSave.Id);
-            userRoleMapping.RoleId = userToSave.Role.Id;
+        public Task ResetUserLockoutAsync(long userId) => userCommands.ResetUserLockoutAsync(userId);
 
-            await userRoleMappingCommands.UpdateAsync(null!, userRoleMapping);
+        public async Task SaveUserAsync(IUser userToSave, Action<string>? auditCommittedChange = null)
+        {
+            var previous = auditCommittedChange is null ? null : new User(await userCommands.ReadAsync(userToSave.Id));
+            var hasRequestedChanges = previous is not null && HasEditableChanges(previous, userToSave);
+            var storedUser = await userCommands.UpdateAsync(null!, userToSave);
+            if (hasRequestedChanges && previous is not null && HasEditableChanges(previous, storedUser))
+                auditCommittedChange?.Invoke($"Update user configuration id={storedUser.Id}");
+
+            var userRoleMapping = await userRoleMappingCommands.ReadAsync(userToSave.Id);
+            var previousRoleId = userRoleMapping.RoleId;
+            userRoleMapping.RoleId = userToSave.Role.Id;
+            var storedMapping = await userRoleMappingCommands.UpdateAsync(null!, userRoleMapping);
+            if (storedMapping.RoleId != previousRoleId)
+                auditCommittedChange?.Invoke($"Change user role userId={userToSave.Id} roleId={storedMapping.RoleId}");
         }
 
-        public async Task CreateUserAsync(IUser userToCreate)
+        public async Task CreateUserAsync(IUser userToCreate, Action<string>? auditCommittedChange = null)
         {
             var storedUser = await userCommands.CreateAsync(userToCreate);
+            if (storedUser.Id > 0)
+                auditCommittedChange?.Invoke($"Create user configuration id={storedUser.Id}");
 
             var userRoleMapping = new UserRoleRecord
             {
@@ -47,15 +59,25 @@ namespace Heracles.Application.Models
                 RoleId = userToCreate.Role.Id
             };
 
-            await userRoleMappingCommands.CreateAsync(userRoleMapping);
+            var storedMapping = await userRoleMappingCommands.CreateAsync(userRoleMapping);
+            if (storedMapping.Id > 0)
+                auditCommittedChange?.Invoke($"Assign user role userId={storedUser.Id} roleId={storedMapping.RoleId}");
         }
 
-        public async Task DeleteUserAsync(long userId)
+        public async Task DeleteUserAsync(long userId, Action<string>? auditCommittedChange = null)
         {
             var userRoleMapping = await userRoleMappingCommands.ReadAsync(userId);
-            await userRoleMappingCommands.DeleteAsync(userRoleMapping.Id);
-            await userCommands.DeleteAsync(userId);
+            if (await userRoleMappingCommands.DeleteAsync(userRoleMapping.Id))
+                auditCommittedChange?.Invoke($"Remove user role userId={userId} roleId={userRoleMapping.RoleId}");
+            if (await userCommands.DeleteAsync(userId))
+                auditCommittedChange?.Invoke($"Delete user configuration id={userId}");
         }
+
+        private static bool HasEditableChanges(IUser before, IUser after) =>
+            before.Username != after.Username || before.Password != after.Password ||
+            before.FirstName != after.FirstName || before.MiddleName != after.MiddleName ||
+            before.LastName != after.LastName || before.EmailAddress != after.EmailAddress ||
+            before.Picture != after.Picture || before.Role.Name != after.Role.Name;
 
         public async Task<UserRole> FetchUserRoleAsync(string userEmail)
         {

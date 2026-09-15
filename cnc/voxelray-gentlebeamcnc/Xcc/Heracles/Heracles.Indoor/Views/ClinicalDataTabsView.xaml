@@ -11,6 +11,8 @@
     prism:ViewModelLocator.AutoWireViewModel="True"
              
     xmlns:appx="clr-namespace:Xcc.Application.UI;assembly=Xcc.Application"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:behaviors="clr-namespace:Xcc.Application.UI.Behaviors;assembly=Xcc.Application"
     UseLayoutRounding="True"
                 
     IsTabStop="False"
@@ -32,6 +34,9 @@
         Style="{StaticResource FolderTabControl}"
         SelectedIndex="{Binding SelectedTabIndex}"
         Grid.IsSharedSizeScope="True">
+        <i:Interaction.Behaviors>
+            <behaviors:UserSelectionCommandBehavior Command="{Binding ViewSelectedTabCommand}" UseSelectedIndex="True"/>
+        </i:Interaction.Behaviors>
 
         <TabItem Header="Simulation">
             <ContentControl IsTabStop="False" prism:RegionManager.RegionName="{x:Static appx:Regions+Main+ClinicalData.PlanRegion}"/>

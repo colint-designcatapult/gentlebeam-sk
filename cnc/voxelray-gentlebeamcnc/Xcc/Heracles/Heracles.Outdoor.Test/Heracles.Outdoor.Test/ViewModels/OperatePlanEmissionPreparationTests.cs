@@ -8,7 +8,6 @@ using NUnit.Framework;
 using Prism.Events;
 using Prism.Regions;
 using Prism.Services.Dialogs;
-using Xcc.Application.AppLayer.Service;
 using Xcc.Application.AppLayer.Warmup;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
 using Xcc.Core.Domain.GryphonBoard;
@@ -41,7 +40,6 @@ internal sealed class SingleEmissionWorkflowHarness : Heracles.External.ViewMode
             indicators,
             Mock.Of<ICollimatorModel>(),
             Mock.Of<ICollimatorConfigurationStore>(),
-            Mock.Of<IActionAuditService>(),
             Mock.Of<ISafetyCheckModel>(),
             Mock.Of<IBearerTokenUserSessionManager>())
     {

@@ -1,0 +1,199 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "firmware",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:bootloader",
+      "name": "hvps-interface/bootloader",
+      "version": "4.0.0",
+      "description": "Static, manually maintained source inventory for the STM32F373 MCUboot bootloader, with TinyCrypt EC256 image verification and serial recovery enabled.",
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/bootloader/CMakeLists.txt; hvps-interface/bootloader/cmake/stm32cubemx/CMakeLists.txt; mcuboot/CMakeLists.txt" },
+        { "name": "gentlebeam:evidence:configuration", "value": "hvps-interface/bootloader/mcuboot/include/mcuboot_config/mcuboot_config.h: MCUBOOT_USE_TINYCRYPT, MCUBOOT_SIGN_EC256 and MCUBOOT_SERIAL" },
+        { "name": "gentlebeam:evidence:version", "value": "hvps-interface/bootloader/version.txt" }
+      ]
+    },
+    "properties": [
+      {
+        "name": "gentlebeam:inventory:scope",
+        "value": "Compiled source dependencies and referenced runtime libraries, not a post-link binary inventory. First-party MCUboot platform integration, generated startup/system files and board glue belong to the firmware root. Paths are repository-relative."
+      },
+      {
+        "name": "gentlebeam:inventory:limitations",
+        "value": "Link-time --gc-sections and compile-time MCUboot configuration may remove unused source functionality. Toolchain runtime versions, runtime license metadata and compiler support archive selection are not established by the vendored source tree. No independent release version is established for the micro-ecc code embedded in TinyCrypt. Unavailable versions and licenses are omitted."
+      },
+      {
+        "name": "gentlebeam:inventory:exclusions",
+        "value": "FreeRTOS is not selected by this bootloader build. The inventory excludes host signing tools, Python packages, CMSIS DSP/NN/RTOS reference implementations and unselected MCUboot crypto implementations, including the full Mbed TLS stack, fiat and standalone alternative micro-ecc backends."
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:bootloader:stm32f3-hal",
+      "name": "STM32F3xx HAL Driver",
+      "version": "1.5.8",
+      "scope": "required",
+      "description": "ST HAL modules selected by STM32_Drivers_Src; not the entire STM32CubeF3 distribution. The component license supplies BSD-3-Clause as its fallback when no package license accompanies it.",
+      "licenses": [{ "license": { "id": "BSD-3-Clause" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/bootloader/cmake/stm32cubemx/CMakeLists.txt: STM32_Drivers_Src" },
+        { "name": "gentlebeam:evidence:version", "value": "hvps-interface/bootloader/Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal.c: __STM32F3xx_HAL_VERSION_MAIN/SUB1/SUB2" },
+        { "name": "gentlebeam:evidence:license", "value": "hvps-interface/bootloader/Drivers/STM32F3xx_HAL_Driver/LICENSE.txt" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:bootloader:cmsis-device-stm32f3",
+      "name": "CMSIS Device STM32F3xx",
+      "version": "2.3.8",
+      "scope": "required",
+      "description": "STM32F373xC device headers used by the selected MCU. Generated startup and system files remain part of the firmware root. The component license supplies Apache-2.0 as its fallback when no package license accompanies it.",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/bootloader/cmake/stm32cubemx/CMakeLists.txt: STM32F373xC and CMSIS device MX_Include_Dirs" },
+        { "name": "gentlebeam:evidence:version", "value": "hvps-interface/bootloader/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f3xx.h: __STM32F3_CMSIS_VERSION_MAIN/SUB1/SUB2" },
+        { "name": "gentlebeam:evidence:license", "value": "hvps-interface/bootloader/Drivers/CMSIS/Device/ST/STM32F3xx/LICENSE.txt" },
+        { "name": "gentlebeam:evidence:dependency", "value": "hvps-interface/bootloader/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f373xc.h includes core_cm4.h" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:bootloader:cmsis-core",
+      "name": "CMSIS Core(M)",
+      "version": "5.1",
+      "scope": "required",
+      "description": "Arm Cortex-M4 core and compiler-support headers. Version is the declared CMSIS Core(M) MAIN/SUB value, not the individual header revision or the full CMSIS distribution version.",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/bootloader/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f373xc.h; hvps-interface/bootloader/cmake/stm32cubemx/CMakeLists.txt: MX_Include_Dirs" },
+        { "name": "gentlebeam:evidence:version", "value": "hvps-interface/bootloader/Drivers/CMSIS/Include/cmsis_version.h: __CM_CMSIS_VERSION_MAIN=5, __CM_CMSIS_VERSION_SUB=1" },
+        { "name": "gentlebeam:evidence:license", "value": "hvps-interface/bootloader/Drivers/CMSIS/Include/cmsis_version.h: SPDX-License-Identifier" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:bootloader:mcuboot",
+      "name": "MCUboot",
+      "version": "2.4.0",
+      "scope": "required",
+      "description": "Vendored bootutil and serial-recovery sources selected by gentlebeam::mcuboot, plus boot_record.c and swap_move.c selected by the firmware target. The local configuration enables TinyCrypt EC256 verification, primary-slot validation and serial recovery. Dependencies represent the selected crypto and CBOR implementations, not every library shipped in the MCUboot tree.",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "mcuboot/CMakeLists.txt: gentlebeam_mcuboot interface sources; hvps-interface/bootloader/CMakeLists.txt: bootutil sources and gentlebeam::mcuboot link" },
+        { "name": "gentlebeam:evidence:configuration", "value": "hvps-interface/bootloader/mcuboot/include/mcuboot_config/mcuboot_config.h" },
+        { "name": "gentlebeam:evidence:version", "value": "mcuboot/mcuboot-2.4.0/boot/zephyr/VERSION; mcuboot/CMakeLists.txt: GENTLEBEAM_MCUBOOT_SOURCE_DIR" },
+        { "name": "gentlebeam:evidence:license", "value": "mcuboot/mcuboot-2.4.0/LICENSE" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:bootloader:tinycrypt",
+      "name": "TinyCrypt",
+      "version": "0.2.8",
+      "scope": "required",
+      "description": "MCUboot's selected SHA-256 and ECDSA P-256 backend. Compiled subset: ecc.c, ecc_dsa.c, sha256.c, utils.c and ecc_platform_specific.c. The embedded micro-ecc-derived code and its additional BSD-2-Clause attribution are represented as a dependency, not a separate linked crypto backend.",
+      "licenses": [{ "license": { "id": "BSD-3-Clause" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "mcuboot/CMakeLists.txt: ext/tinycrypt source entries; hvps-interface/bootloader/CMakeLists.txt: ecc_platform_specific.c" },
+        { "name": "gentlebeam:evidence:configuration", "value": "hvps-interface/bootloader/mcuboot/include/mcuboot_config/mcuboot_config.h: MCUBOOT_USE_TINYCRYPT and MCUBOOT_SIGN_EC256" },
+        { "name": "gentlebeam:evidence:version", "value": "mcuboot/mcuboot-2.4.0/ext/tinycrypt/VERSION" },
+        { "name": "gentlebeam:evidence:license", "value": "mcuboot/mcuboot-2.4.0/ext/tinycrypt/LICENSE: Intel license; mcuboot/mcuboot-2.4.0/ext/tinycrypt/lib/source/ecc.c" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:bootloader:micro-ecc",
+      "name": "micro-ecc (embedded in TinyCrypt)",
+      "scope": "required",
+      "description": "Kenneth MacKay micro-ecc code incorporated into TinyCrypt's ECC implementation. This records embedded third-party provenance within TinyCrypt, not an additional compilation of the standalone MCUboot micro-ecc backend. No independent upstream version is established by the vendored subset.",
+      "licenses": [{ "license": { "id": "BSD-2-Clause" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:source", "value": "mcuboot/mcuboot-2.4.0/ext/tinycrypt/lib/source/ecc.c: Kenneth MacKay attribution and uECC implementation" },
+        { "name": "gentlebeam:evidence:license", "value": "mcuboot/mcuboot-2.4.0/ext/tinycrypt/LICENSE: Kenneth MacKay micro-ecc section; mcuboot/mcuboot-2.4.0/ext/tinycrypt/lib/source/ecc.c" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:bootloader:mbedtls-asn1",
+      "name": "Mbed TLS (ASN.1 subset)",
+      "version": "3.0.0",
+      "scope": "required",
+      "description": "Extracted ASN.1 parser and platform utility sources used with TinyCrypt EC verification. Only asn1parse.c and platform_util.c are compiled; the full TLS, X.509 and Mbed TLS cryptographic backend are not included.",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "mcuboot/CMakeLists.txt: ext/mbedtls-asn1/src/asn1parse.c and platform_util.c" },
+        { "name": "gentlebeam:evidence:source", "value": "mcuboot/mcuboot-2.4.0/ext/mbedtls-asn1/README" },
+        { "name": "gentlebeam:evidence:version", "value": "mcuboot/mcuboot-2.4.0/ext/mbedtls-asn1/include/mbedtls/build_info.h: MBEDTLS_VERSION_STRING" },
+        { "name": "gentlebeam:evidence:license", "value": "mcuboot/mcuboot-2.4.0/ext/mbedtls-asn1/src/asn1parse.c; mcuboot/mcuboot-2.4.0/ext/mbedtls-asn1/src/platform_util.c: SPDX-License-Identifier" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:bootloader:zcbor",
+      "name": "zcbor",
+      "version": "0.8.1",
+      "scope": "required",
+      "description": "Vendored CBOR runtime used by MCUboot serial recovery. Compiled subset: zcbor_common.c, zcbor_decode.c and zcbor_encode.c. MCUboot's zcbor_bulk.c integration remains part of MCUboot; the host code generator is not included.",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "mcuboot/CMakeLists.txt: boot/zcbor/src source entries; mcuboot/mcuboot-2.4.0/boot/boot_serial/src/boot_serial.c includes zcbor_decode.h and zcbor_encode.h" },
+        { "name": "gentlebeam:evidence:version", "value": "mcuboot/mcuboot-2.4.0/boot/zcbor/include/zcbor_common.h: ZCBOR_VERSION_MAJOR/MINOR/BUGFIX" },
+        { "name": "gentlebeam:evidence:license", "value": "mcuboot/mcuboot-2.4.0/boot/zcbor/include/zcbor_common.h; mcuboot/mcuboot-2.4.0/boot/zcbor/src/zcbor_common.c: SPDX-License-Identifier" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:bootloader:newlib",
+      "name": "newlib-nano runtime",
+      "scope": "required",
+      "description": "Toolchain-provided nano C library and associated math runtime selected by --specs=nano.specs and the m link library. Not a build-only tool. Exact runtime version, licenses and archive contents are not established by this repository and are intentionally omitted.",
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/bootloader/cmake/gcc-arm-none-eabi.cmake: --specs=nano.specs and TOOLCHAIN_LINK_LIBRARIES=m" },
+        { "name": "gentlebeam:evidence:integration", "value": "hvps-interface/bootloader/cmake/stm32cubemx/CMakeLists.txt: MX_LINK_LIBS, Src/sysmem.c and Src/syscalls.c" }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "urn:gentlebeam:component:hvps-interface:bootloader",
+      "dependsOn": [
+        "urn:gentlebeam:component:hvps-interface:bootloader:stm32f3-hal",
+        "urn:gentlebeam:component:hvps-interface:bootloader:cmsis-device-stm32f3",
+        "urn:gentlebeam:component:hvps-interface:bootloader:cmsis-core",
+        "urn:gentlebeam:component:hvps-interface:bootloader:mcuboot",
+        "urn:gentlebeam:component:hvps-interface:bootloader:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:hvps-interface:bootloader:stm32f3-hal",
+      "dependsOn": ["urn:gentlebeam:component:hvps-interface:bootloader:cmsis-device-stm32f3"]
+    },
+    {
+      "ref": "urn:gentlebeam:component:hvps-interface:bootloader:cmsis-device-stm32f3",
+      "dependsOn": ["urn:gentlebeam:component:hvps-interface:bootloader:cmsis-core"]
+    },
+    { "ref": "urn:gentlebeam:component:hvps-interface:bootloader:cmsis-core", "dependsOn": [] },
+    {
+      "ref": "urn:gentlebeam:component:hvps-interface:bootloader:mcuboot",
+      "dependsOn": [
+        "urn:gentlebeam:component:hvps-interface:bootloader:tinycrypt",
+        "urn:gentlebeam:component:hvps-interface:bootloader:mbedtls-asn1",
+        "urn:gentlebeam:component:hvps-interface:bootloader:zcbor",
+        "urn:gentlebeam:component:hvps-interface:bootloader:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:hvps-interface:bootloader:tinycrypt",
+      "dependsOn": ["urn:gentlebeam:component:hvps-interface:bootloader:micro-ecc", "urn:gentlebeam:component:hvps-interface:bootloader:newlib"]
+    },
+    { "ref": "urn:gentlebeam:component:hvps-interface:bootloader:micro-ecc", "dependsOn": ["urn:gentlebeam:component:hvps-interface:bootloader:newlib"] },
+    { "ref": "urn:gentlebeam:component:hvps-interface:bootloader:mbedtls-asn1", "dependsOn": ["urn:gentlebeam:component:hvps-interface:bootloader:newlib"] },
+    { "ref": "urn:gentlebeam:component:hvps-interface:bootloader:zcbor", "dependsOn": ["urn:gentlebeam:component:hvps-interface:bootloader:newlib"] },
+    { "ref": "urn:gentlebeam:component:hvps-interface:bootloader:newlib", "dependsOn": [] }
+  ]
+}

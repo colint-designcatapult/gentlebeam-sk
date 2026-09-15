@@ -2128,6 +2128,7 @@ namespace Heracles.Application.Protos
                 LastName = user.LastName,
                 MiddleName = user.MiddleName,
                 LastAccessed = FromTimestamp(user.LastAccessed),
+                FailedLoginAttempts = user.FailedLoginAttempts,
                 Role = new UserRole(user.Role),
                 Picture = user.Picture,
                 Username = user.Username,

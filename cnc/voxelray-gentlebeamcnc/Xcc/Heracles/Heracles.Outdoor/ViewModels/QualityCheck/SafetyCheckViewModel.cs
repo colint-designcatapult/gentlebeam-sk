@@ -1,4 +1,4 @@
-﻿using Heracles.Application.AppLayer.Collimators;
+using Heracles.Application.AppLayer.Collimators;
 using Heracles.Application.AppLayer.Patient.Planning;
 using Heracles.Application.Domain.DataManagement.System.Collimators;
 using Heracles.Application.Enums;
@@ -16,7 +16,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows.Data;
 using Xcc.Application.AppLayer.Model;
-using Xcc.Application.AppLayer.Service;
 using Xcc.Application.AppLayer.Warmup;
 using Xcc.Application.Common;
 using Xcc.Application.Domain.GryphonBoard.Model.Indicators;
@@ -58,13 +57,12 @@ namespace Heracles.External.ViewModels.QualityCheck
             ISafetyCheckModel safetyCheckModel,
             ICollimatorConfigurationStore collimatorConfigurationStore,
             ApplicatorCompatibilityService applicatorCompatibilityService,
-            IActionAuditService actionAuditService,
             IBearerTokenUserSessionManager userSessionManager)
             : base(regionManager, eventAggregator, heraclesExternalSettings,
                 gcbDataStore, uiStateMachine, logWriter, warmUpService,
                 popUpService, dialogService, mainBoardModel, gcbIndicators,
                 collimatorModel, collimatorConfigurationStore, 
-                actionAuditService, safetyCheckModel, userSessionManager)
+                safetyCheckModel, userSessionManager)
         {
             UserStore = userStore;
             ApplicatorCompatibilityService = applicatorCompatibilityService;
@@ -251,11 +249,11 @@ namespace Heracles.External.ViewModels.QualityCheck
 
         #region private methods
 
-        protected override void UserActionAudit(string actionMessage)
+        protected override void LogUserRequest(string actionMessage)
         {
             actionMessage = $"SafetyCheck: {actionMessage}";
 
-            base.UserActionAudit(actionMessage);
+            base.LogUserRequest(actionMessage);
         }
 
         private void OnCollimatorModelChanged(object sender, PropertyChangedEventArgs e)
@@ -505,7 +503,7 @@ namespace Heracles.External.ViewModels.QualityCheck
                 Debug.WriteLine($"Update UI state machine: State={UIStateMachine.State}, LB=({UIStateMachine.LeftButton.State}, {UIStateMachine.LeftButton.IsEnabled}), " +
                     $"CB=({UIStateMachine.CentralButton.State}, {UIStateMachine.CentralButton.IsEnabled}), Stop={UIStateMachine.RightButton.IsEnabled}");
 
-                _ = LogWriter.LogAsync($"Run Safety check by {UserStore.AuthorizedUser.EmailAddress}", LogRecordSeverity.Info, LogRecordType.User);
+                _ = LogWriter.LogAsync($"Run Safety check by {UserStore.AuthorizedUser.EmailAddress}", LogRecordSeverity.Info, LogRecordType.System);
 
                 // Highlight emitting cell
                 SelectCurrentField(SafetyCheckModel.Fields?.FirstOrDefault());

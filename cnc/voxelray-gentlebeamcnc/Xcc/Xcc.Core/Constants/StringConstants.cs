@@ -652,6 +652,11 @@ namespace Xcc.Core.Constants
                 public const string DeleteUserConfirmationUiMessage = "Are you sure you want to delete the user?";
                 public const string DeleteAuthorizedUserUiMessage = "Cannot delete a user that is currently logged in.";
 
+                public const string ResetLockoutConfirmationUiMessage = "Reset lockout for user '{0}' (ID {1})? The password will not be changed.";
+                public static readonly string ResetLockoutErrorMessage = $"Failed to reset the user lockout.{Environment.NewLine}{Common.Generic.RetryOrContactSupportMessageFooter}";
+                public static readonly string ResetLockoutUiErrorMessage = $"{ResetLockoutErrorMessage} {DetailsMessage}";
+                public const string ResetLockoutAuthorizationErrorMessage = "A current, unlocked Administrator session is required to reset lockout.";
+
                 public const string UserIsNotSelectedErrorMessage = "User is not selected.";
 
                 public static class Validation

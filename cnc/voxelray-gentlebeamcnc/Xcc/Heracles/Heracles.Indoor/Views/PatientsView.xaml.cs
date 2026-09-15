@@ -1,4 +1,5 @@
 ﻿using System.Windows.Controls;
+using Heracles.Indoor.ViewModels;
 
 namespace Heracles.Indoor.Views
 {
@@ -10,6 +11,16 @@ namespace Heracles.Indoor.Views
         public PatientsView()
         {
             InitializeComponent();
+            IsVisibleChanged += (_, _) =>
+            {
+                if (DataContext is PatientsViewModel viewModel)
+                    viewModel.SetPatientListVisible(IsVisible);
+            };
+            Loaded += (_, _) =>
+            {
+                if (DataContext is PatientsViewModel viewModel)
+                    viewModel.SetPatientListVisible(IsVisible);
+            };
         }
     }
 }

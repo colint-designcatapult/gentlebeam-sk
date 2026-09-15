@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Prism.Ioc;
 using Prism.Unity;
 using Xcc.Application.Models;
+using Xcc.Application.AppLayer.Model;
+using Xcc.Application.AppLayer.Service;
 using Xcc.Core.Domain.GryphonBoard;
 using Xcc.Core.Logging;
 using Xcc.Core.Models;
@@ -53,6 +55,8 @@ public partial class App : PrismApplication
         var logBuffer = new UcsiLogBuffer();
         containerRegistry.RegisterInstance(logBuffer);
         containerRegistry.RegisterInstance<ILogWriter>(logBuffer);
+        containerRegistry.RegisterSingleton<IAuthorizedUserStore, AuthorizedUserStore>();
+        containerRegistry.RegisterSingleton<IActionAuditService, ActionAuditService>();
 
         containerRegistry.RegisterSingleton<UcsiStandaloneTelemetryOptions>();
         containerRegistry.RegisterSingleton<IGcbTelemetryConnectionFactory, StandaloneTelemetryConnectionFactory>();

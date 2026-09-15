@@ -7,6 +7,8 @@
  
     xmlns:views ="clr-namespace:Heracles.Indoor.Views"
     xmlns:viewModels="clr-namespace:Heracles.Indoor.ViewModels.Patients.Patient.Treatments"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:behaviors="clr-namespace:Xcc.Application.UI.Behaviors;assembly=Xcc.Application"
     
     xmlns:prism="http://prismlibrary.com/"
     prism:ViewModelLocator.AutoWireViewModel="True"
@@ -147,7 +149,11 @@
                             Tag="{StaticResource TreatmentsListHeaderTemplate}"
                             ItemTemplate="{StaticResource TreatmentsListItemTemplate}"
                             ItemsSource="{Binding TreatmentHistoryModel.Treatments}"
-                            SelectedItem="{Binding TreatmentHistoryModel.SelectedTreatment}"/>
+                            SelectedItem="{Binding TreatmentHistoryModel.SelectedTreatment, Mode=OneWay}">
+                            <i:Interaction.Behaviors>
+                                <behaviors:UserSelectionCommandBehavior Command="{Binding ShowActualFieldsCommand}"/>
+                            </i:Interaction.Behaviors>
+                        </ListView>
                     </Grid>
                 </Border>
 

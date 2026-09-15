@@ -1,0 +1,63 @@
+<ContentControl x:Class="Heracles.Indoor.Views.Settings.DataManagementView"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:prism="http://prismlibrary.com/"
+                xmlns:controls="clr-namespace:Xcc.Controls;assembly=Xcc.Controls"
+                FontFamily="{StaticResource BaseFont}" FontSize="{StaticResource BaseFontSize}"
+                prism:ViewModelLocator.AutoWireViewModel="True">
+    <ContentControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/DefaultStylesDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Application;Component/UI/Resources/Styles/ToggleButton/RevealToggleButton.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Xcc.Styles;Component/Styles/ProgressBar/ProgressBarDefaultStyle.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanVisibility" />
+        </ResourceDictionary>
+    </ContentControl.Resources>
+    <Border Style="{StaticResource BorderBlockStyle}" Margin="24">
+        <StackPanel Margin="24" VerticalAlignment="Top">
+            <TextBlock Text="Data Management" Style="{StaticResource TextBlockLegendStyle}" FontSize="{StaticResource HugeFontSize}" Margin="0,0,0,24" />
+            <TextBlock Text="Embedded database management is unavailable in this mode." Style="{StaticResource TextBlockLegendStyle}" FontWeight="Normal"
+                       Visibility="{Binding IsUnavailable, Converter={StaticResource BooleanVisibility}}" TextWrapping="Wrap" />
+            <TextBlock Text="An administrator with an active, unlocked session is required to reveal the recovery key or import and export the database." Style="{StaticResource TextBlockLegendStyle}" FontWeight="Normal"
+                       Visibility="{Binding AdministratorRequired, Converter={StaticResource BooleanVisibility}}" TextWrapping="Wrap" />
+            <StackPanel Visibility="{Binding CanManage, Converter={StaticResource BooleanVisibility}}">
+                <TextBlock Text="MEK recovery key" Style="{StaticResource TextBlockLegendStyle}" Margin="0,0,0,8" />
+                <Grid HorizontalAlignment="Left" Margin="0,0,0,28">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <controls:XccTextBox x:Name="RecoveryKeyBox" Text="{Binding RecoveryKey, Mode=OneWay}"
+                                         IsReadOnly="True" IsUndoEnabled="False" SpellCheck.IsEnabled="False"
+                                         AutomationProperties.Name="MEK recovery key"
+                                         FontFamily="Consolas" FontSize="20" Padding="8" MinWidth="740" />
+                    <ToggleButton x:Name="RecoveryKeyToggle" Grid.Column="1" Margin="12,0,0,0" Width="42" Height="42"
+                                  Style="{StaticResource RevealToggleButton}"
+                                  IsChecked="{Binding IsRevealed, Mode=TwoWay}" IsEnabled="{Binding CanToggleRecoveryKey}"
+                                  ToolTip="{Binding RecoveryKeyToggleAction}" AutomationProperties.Name="{Binding RecoveryKeyToggleAction}" />
+                </Grid>
+                <TextBlock Text="Passphrase" Style="{StaticResource TextBlockLegendStyle}" Margin="0,0,0,8" />
+                <controls:XccTextBox x:Name="DatabasePasswordBox" Text="{Binding DatabasePassword, Mode=OneWay}"
+                                     IsReadOnly="True" IsUndoEnabled="False" SpellCheck.IsEnabled="False"
+                                     AutomationProperties.Name="Passphrase"
+                                     FontFamily="Consolas" FontSize="20" Padding="8" MinWidth="740" HorizontalAlignment="Left" />
+                <TextBlock Text="Use as a password/passphrase with SQLCipher 4 settings, not in raw-key mode."
+                           Style="{StaticResource TextBlockLegendStyle}" FontWeight="Normal" TextWrapping="Wrap"
+                           MaxWidth="850" HorizontalAlignment="Left" Margin="0,8,0,28" />
+                <TextBlock Text="Backups contain the entire database, including users and settings. Protect backup files and passwords appropriately. Import replaces all database data and closes the application."
+                           Style="{StaticResource TextBlockLegendStyle}" FontWeight="Normal" TextWrapping="Wrap" MaxWidth="850" HorizontalAlignment="Left" Margin="0,0,0,20" />
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Export database" Command="{Binding ExportCommand}" Width="200" Height="46" Margin="0,0,16,0" />
+                    <Button Content="Import database" Command="{Binding ImportCommand}" Width="200" Height="46" />
+                </StackPanel>
+            </StackPanel>
+            <StackPanel Visibility="{Binding IsBusy, Converter={StaticResource BooleanVisibility}}" Margin="0,24,0,0">
+                <ProgressBar Style="{StaticResource ProgressBarDefaultStyle}" IsIndeterminate="True" Height="10" MaxWidth="850" HorizontalAlignment="Left" Width="740" />
+                <Button Content="Cancel operation" Command="{Binding CancelCommand}" Width="200" Height="42" HorizontalAlignment="Left" Margin="0,12,0,0" />
+            </StackPanel>
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource TextBlockLegendStyle}" FontWeight="Normal" TextWrapping="Wrap" Margin="0,16,0,0" />
+        </StackPanel>
+    </Border>
+</ContentControl>

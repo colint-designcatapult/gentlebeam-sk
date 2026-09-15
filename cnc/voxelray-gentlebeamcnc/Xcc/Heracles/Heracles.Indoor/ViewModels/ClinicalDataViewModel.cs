@@ -72,7 +72,11 @@ namespace Heracles.Indoor.ViewModels
         public override void OnNavigatedTo(NavigationContext navigationContext)
         {
             base.OnNavigatedTo(navigationContext);
-            RegionManager.RequestNavigate(Regions.Main.ClinicalDataRegion, "ClinicalDataTabsView");
+            RegionManager.RequestNavigate(Regions.Main.ClinicalDataRegion, "ClinicalDataTabsView",
+                new NavigationParameters
+                {
+                    { "UserPatientView", navigationContext.Parameters.TryGetValue("UserPatientView", out bool requested) && requested }
+                });
         }
 
         public override void OnNavigatedFrom(NavigationContext navigationContext)

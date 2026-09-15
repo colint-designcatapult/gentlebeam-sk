@@ -1,0 +1,125 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "firmware",
+      "bom-ref": "urn:gentlebeam:component:head-interface",
+      "name": "head-interface",
+      "version": "4.0.0",
+      "description": "Static, manually maintained source inventory for the STM32F411 head-interface firmware, including Normal and Calibration configurations. The firmware build sources are under head-interface/main.",
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "head-interface/main/CMakeLists.txt; head-interface/main/cmake/stm32cubemx/CMakeLists.txt; head-interface/main/cmake/gcc-arm-none-eabi.cmake" },
+        { "name": "gentlebeam:evidence:version", "value": "head-interface/main/version.txt" }
+      ]
+    },
+    "properties": [
+      {
+        "name": "gentlebeam:inventory:scope",
+        "value": "Compiled source dependencies and referenced runtime libraries, not a post-link binary inventory. First-party application and generated board glue belong to the firmware root. Paths are repository-relative."
+      },
+      {
+        "name": "gentlebeam:inventory:limitations",
+        "value": "Link-time --gc-sections may remove unused functions or entire compiled source modules. Toolchain runtime versions, runtime license metadata and compiler support archive selection are not established by the vendored source tree. Unavailable versions and licenses are omitted."
+      },
+      {
+        "name": "gentlebeam:inventory:exclusions",
+        "value": "No FreeRTOS or MCUboot source is selected by this firmware's CMake build. Build tools, CMSIS DSP/NN/RTOS reference implementations and other unselected vendor sources are excluded."
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:head-interface:stm32f4-hal",
+      "name": "STM32F4xx HAL Driver",
+      "version": "1.8.5",
+      "scope": "required",
+      "description": "ST HAL modules selected by STM32_Drivers_Src; not the entire STM32CubeF4 distribution. The component license supplies BSD-3-Clause as its fallback when no package license accompanies it.",
+      "licenses": [{ "license": { "id": "BSD-3-Clause" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "head-interface/main/cmake/stm32cubemx/CMakeLists.txt: STM32_Drivers_Src" },
+        { "name": "gentlebeam:evidence:version", "value": "head-interface/main/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c: __STM32F4xx_HAL_VERSION_MAIN/SUB1/SUB2" },
+        { "name": "gentlebeam:evidence:license", "value": "head-interface/main/Drivers/STM32F4xx_HAL_Driver/LICENSE.txt" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:head-interface:cmsis-device-stm32f4",
+      "name": "CMSIS Device STM32F4xx",
+      "version": "2.6.11",
+      "scope": "required",
+      "description": "STM32F411xE device headers used by the selected MCU. Generated startup and system files remain part of the firmware root. The component license supplies Apache-2.0 as its fallback when no package license accompanies it.",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "head-interface/main/cmake/stm32cubemx/CMakeLists.txt: STM32F411xE and CMSIS device MX_Include_Dirs" },
+        { "name": "gentlebeam:evidence:version", "value": "head-interface/main/Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h: __STM32F4xx_CMSIS_VERSION_MAIN/SUB1/SUB2" },
+        { "name": "gentlebeam:evidence:license", "value": "head-interface/main/Drivers/CMSIS/Device/ST/STM32F4xx/LICENSE.txt" },
+        { "name": "gentlebeam:evidence:dependency", "value": "head-interface/main/Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f411xe.h includes core_cm4.h" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:head-interface:cmsis-core",
+      "name": "CMSIS Core(M)",
+      "version": "5.6",
+      "scope": "required",
+      "description": "Arm Cortex-M4 core and compiler-support headers. Version is the declared CMSIS Core(M) MAIN/SUB value, not the individual header revision or the full CMSIS distribution version.",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "head-interface/main/Drivers/CMSIS/Include/core_cm4.h; head-interface/main/cmake/stm32cubemx/CMakeLists.txt: MX_Include_Dirs" },
+        { "name": "gentlebeam:evidence:version", "value": "head-interface/main/Drivers/CMSIS/Include/cmsis_version.h: __CM_CMSIS_VERSION_MAIN=5, __CM_CMSIS_VERSION_SUB=6" },
+        { "name": "gentlebeam:evidence:license", "value": "head-interface/main/Drivers/CMSIS/LICENSE.txt; head-interface/main/Drivers/CMSIS/Include/cmsis_version.h" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:head-interface:libcrc",
+      "name": "libcrc",
+      "scope": "required",
+      "description": "Vendored Lammert Bies CCITT CRC source subset. control_comm.c calls crc_ccitt_1d0f to checksum transmitted control frames. No library release version is present in this source subset.",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "head-interface/main/CMakeLists.txt: SENSUS_SRC recursive C-source glob" },
+        { "name": "gentlebeam:evidence:source", "value": "head-interface/main/SensusSrc/crcccitt.c; head-interface/main/SensusSrc/checksum.h; head-interface/main/SensusSrc/control_comm.c" },
+        { "name": "gentlebeam:evidence:license", "value": "head-interface/main/SensusSrc/crcccitt.c: Library: libcrc, Author: Lammert Bies and MIT license header" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:head-interface:newlib",
+      "name": "newlib-nano runtime",
+      "scope": "required",
+      "description": "Toolchain-provided nano C library and associated math runtime selected by --specs=nano.specs and the m link library. Not a build-only tool. Exact runtime version, licenses and archive contents are not established by this repository and are intentionally omitted.",
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "head-interface/main/cmake/gcc-arm-none-eabi.cmake: --specs=nano.specs and TOOLCHAIN_LINK_LIBRARIES=m" },
+        { "name": "gentlebeam:evidence:integration", "value": "head-interface/main/cmake/stm32cubemx/CMakeLists.txt: MX_LINK_LIBS and Src/syscalls.c" }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "urn:gentlebeam:component:head-interface",
+      "dependsOn": [
+        "urn:gentlebeam:component:head-interface:stm32f4-hal",
+        "urn:gentlebeam:component:head-interface:cmsis-device-stm32f4",
+        "urn:gentlebeam:component:head-interface:cmsis-core",
+        "urn:gentlebeam:component:head-interface:libcrc",
+        "urn:gentlebeam:component:head-interface:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:head-interface:stm32f4-hal",
+      "dependsOn": ["urn:gentlebeam:component:head-interface:cmsis-device-stm32f4"]
+    },
+    {
+      "ref": "urn:gentlebeam:component:head-interface:cmsis-device-stm32f4",
+      "dependsOn": ["urn:gentlebeam:component:head-interface:cmsis-core"]
+    },
+    { "ref": "urn:gentlebeam:component:head-interface:cmsis-core", "dependsOn": [] },
+    { "ref": "urn:gentlebeam:component:head-interface:libcrc", "dependsOn": [] },
+    { "ref": "urn:gentlebeam:component:head-interface:newlib", "dependsOn": [] }
+  ]
+}

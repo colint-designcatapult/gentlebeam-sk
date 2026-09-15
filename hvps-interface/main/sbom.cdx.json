@@ -1,0 +1,164 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "firmware",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:main",
+      "name": "hvps-interface/main",
+      "description": "Static, manually maintained source inventory for the STM32F373 application, including Normal and Calibration configurations. The separately built bootloader and combined HEX are not this component.",
+      "properties": [
+        {
+          "name": "gentlebeam:evidence:build",
+          "value": "hvps-interface/main/CMakeLists.txt; hvps-interface/main/cmake/stm32cubemx/CMakeLists.txt; hvps-interface/main/cmake/gcc-arm-none-eabi.cmake"
+        },
+        {
+          "name": "gentlebeam:version:note",
+          "value": "No version.txt is present for this application. FW_VERSION is supplied by the build or tools/resolve_dcdoc_version.py; a build-specific version is deliberately not asserted here."
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "gentlebeam:inventory:scope",
+        "value": "Compiled source dependencies and referenced runtime libraries, not a post-link binary inventory. First-party application and generated board glue belong to the firmware root. Paths are repository-relative."
+      },
+      {
+        "name": "gentlebeam:inventory:limitations",
+        "value": "Link-time --gc-sections may remove unused functions or entire compiled source modules. Toolchain runtime versions, runtime license metadata and compiler support archive selection are not established by the vendored source tree. Unavailable versions and licenses are omitted."
+      },
+      {
+        "name": "gentlebeam:inventory:exclusions",
+        "value": "MCUboot is used here only for host-side image signing and the separate bootloader build, not linked into the application. Build tools, CMSIS DSP/NN/RTOS reference implementations and other unselected vendor sources are excluded."
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:main:stm32f3-hal",
+      "name": "STM32F3xx HAL Driver",
+      "version": "1.5.8",
+      "scope": "required",
+      "description": "ST HAL modules selected by STM32_Drivers_Src; not the entire STM32CubeF3 distribution. The component license supplies BSD-3-Clause as its fallback when no package license accompanies it.",
+      "licenses": [{ "license": { "id": "BSD-3-Clause" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/main/cmake/stm32cubemx/CMakeLists.txt: STM32_Drivers_Src" },
+        { "name": "gentlebeam:evidence:version", "value": "hvps-interface/main/Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal.c: __STM32F3xx_HAL_VERSION_MAIN/SUB1/SUB2" },
+        { "name": "gentlebeam:evidence:license", "value": "hvps-interface/main/Drivers/STM32F3xx_HAL_Driver/LICENSE.txt" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:main:cmsis-device-stm32f3",
+      "name": "CMSIS Device STM32F3xx",
+      "version": "2.3.8",
+      "scope": "required",
+      "description": "STM32F373xC device headers used by the selected MCU. Generated startup and system files remain part of the firmware root. The component license supplies Apache-2.0 as its fallback when no package license accompanies it.",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/main/cmake/stm32cubemx/CMakeLists.txt: STM32F373xC and CMSIS device MX_Include_Dirs" },
+        { "name": "gentlebeam:evidence:version", "value": "hvps-interface/main/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f3xx.h: __STM32F3_CMSIS_VERSION_MAIN/SUB1/SUB2" },
+        { "name": "gentlebeam:evidence:license", "value": "hvps-interface/main/Drivers/CMSIS/Device/ST/STM32F3xx/LICENSE.txt" },
+        { "name": "gentlebeam:evidence:dependency", "value": "hvps-interface/main/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f373xc.h includes core_cm4.h" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:main:cmsis-core",
+      "name": "CMSIS Core(M)",
+      "version": "5.1",
+      "scope": "required",
+      "description": "Arm Cortex-M4 core and compiler-support headers. Version is the declared CMSIS Core(M) MAIN/SUB value, not the individual header revision or the full CMSIS distribution version.",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/main/Drivers/CMSIS/Include/core_cm4.h; hvps-interface/main/cmake/stm32cubemx/CMakeLists.txt: MX_Include_Dirs" },
+        { "name": "gentlebeam:evidence:version", "value": "hvps-interface/main/Drivers/CMSIS/Include/cmsis_version.h: __CM_CMSIS_VERSION_MAIN=5, __CM_CMSIS_VERSION_SUB=1" },
+        { "name": "gentlebeam:evidence:license", "value": "hvps-interface/main/Drivers/CMSIS/LICENSE.txt; hvps-interface/main/Drivers/CMSIS/Include/cmsis_version.h" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:main:freertos",
+      "name": "FreeRTOS Kernel",
+      "version": "10.0.1",
+      "scope": "required",
+      "description": "Kernel sources selected by FreeRTOS_Src, including the GCC ARM_CM4F port and heap_4 allocator. The separately licensed CMSIS-RTOS2 wrapper is represented as its own component.",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/main/cmake/stm32cubemx/CMakeLists.txt: FreeRTOS_Src" },
+        { "name": "gentlebeam:evidence:version", "value": "hvps-interface/main/Middlewares/Third_Party/FreeRTOS/Source/include/task.h: tskKERNEL_VERSION_NUMBER" },
+        { "name": "gentlebeam:evidence:license", "value": "hvps-interface/main/Middlewares/Third_Party/FreeRTOS/Source/include/task.h; hvps-interface/main/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:main:cmsis-rtos2-freertos",
+      "name": "CMSIS-RTOS2 wrapper for FreeRTOS",
+      "scope": "required",
+      "description": "ST/Arm CMSIS-RTOS2 adapter compiled as cmsis_os2.c. No independent wrapper release version is declared; the FreeRTOS kernel version reported by this adapter is not used as its version.",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/main/cmake/stm32cubemx/CMakeLists.txt: FreeRTOS_Src includes CMSIS_RTOS_V2/cmsis_os2.c" },
+        { "name": "gentlebeam:evidence:license", "value": "hvps-interface/main/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c: SPDX-License-Identifier" },
+        { "name": "gentlebeam:evidence:dependency", "value": "hvps-interface/main/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c includes cmsis_compiler.h, FreeRTOS.h, task.h, event_groups.h and semphr.h" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:main:libcrc",
+      "name": "libcrc",
+      "scope": "required",
+      "description": "Vendored Lammert Bies CRC16, CRC32 and CCITT source subset compiled by the Sensus Src/*.c glob. No library release version is present. No application CRC function caller was identified; inclusion in the final image depends on linker garbage collection, so this is a compiled-source dependency rather than a claim of retained binary code.",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/main/CMakeLists.txt: SENSUS_SRC recursive C-source glob" },
+        { "name": "gentlebeam:evidence:source", "value": "hvps-interface/main/Sensus Src/crc16.c; hvps-interface/main/Sensus Src/crc32.c; hvps-interface/main/Sensus Src/crcccitt.c; hvps-interface/main/Sensus Src/checksum.h" },
+        { "name": "gentlebeam:evidence:license", "value": "MIT license and Library: libcrc attribution in the headers of the vendored CRC source files" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "urn:gentlebeam:component:hvps-interface:main:newlib",
+      "name": "newlib-nano runtime",
+      "scope": "required",
+      "description": "Toolchain-provided nano C library and associated math runtime selected by --specs=nano.specs and the m link library. Not a build-only tool. Exact runtime version, licenses and archive contents are not established by this repository and are intentionally omitted.",
+      "properties": [
+        { "name": "gentlebeam:evidence:build", "value": "hvps-interface/main/cmake/gcc-arm-none-eabi.cmake: --specs=nano.specs and TOOLCHAIN_LINK_LIBRARIES=m" },
+        { "name": "gentlebeam:evidence:integration", "value": "hvps-interface/main/cmake/stm32cubemx/CMakeLists.txt: MX_LINK_LIBS, Src/sysmem.c and Src/syscalls.c" }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "urn:gentlebeam:component:hvps-interface:main",
+      "dependsOn": [
+        "urn:gentlebeam:component:hvps-interface:main:stm32f3-hal",
+        "urn:gentlebeam:component:hvps-interface:main:cmsis-device-stm32f3",
+        "urn:gentlebeam:component:hvps-interface:main:cmsis-core",
+        "urn:gentlebeam:component:hvps-interface:main:freertos",
+        "urn:gentlebeam:component:hvps-interface:main:cmsis-rtos2-freertos",
+        "urn:gentlebeam:component:hvps-interface:main:libcrc",
+        "urn:gentlebeam:component:hvps-interface:main:newlib"
+      ]
+    },
+    {
+      "ref": "urn:gentlebeam:component:hvps-interface:main:stm32f3-hal",
+      "dependsOn": ["urn:gentlebeam:component:hvps-interface:main:cmsis-device-stm32f3"]
+    },
+    {
+      "ref": "urn:gentlebeam:component:hvps-interface:main:cmsis-device-stm32f3",
+      "dependsOn": ["urn:gentlebeam:component:hvps-interface:main:cmsis-core"]
+    },
+    { "ref": "urn:gentlebeam:component:hvps-interface:main:cmsis-core", "dependsOn": [] },
+    { "ref": "urn:gentlebeam:component:hvps-interface:main:freertos", "dependsOn": ["urn:gentlebeam:component:hvps-interface:main:newlib"] },
+    {
+      "ref": "urn:gentlebeam:component:hvps-interface:main:cmsis-rtos2-freertos",
+      "dependsOn": ["urn:gentlebeam:component:hvps-interface:main:freertos", "urn:gentlebeam:component:hvps-interface:main:cmsis-core", "urn:gentlebeam:component:hvps-interface:main:newlib"]
+    },
+    { "ref": "urn:gentlebeam:component:hvps-interface:main:libcrc", "dependsOn": [] },
+    { "ref": "urn:gentlebeam:component:hvps-interface:main:newlib", "dependsOn": [] }
+  ]
+}
