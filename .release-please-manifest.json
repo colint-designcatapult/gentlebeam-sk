@@ -1,5 +1,5 @@
 {
-  ".": "5.0.0",
+  ".": "5.0.1",
   "head-interface/main": "5.0.0",
   "backup-timers": "5.0.0",
   "hvps-interface/bootloader": "5.0.0",

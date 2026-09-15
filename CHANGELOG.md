@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.1](https://github.com/DesignCatapult/gentlebeam-sk/compare/5.0.0...5.0.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ci:** prevent CNC test hangs [GBSK-94] ([#95](https://github.com/DesignCatapult/gentlebeam-sk/issues/95)) ([b9172c0](https://github.com/DesignCatapult/gentlebeam-sk/commit/b9172c0acb6334e7d692d2b18f811b16e8d851b4))
+
 ## [5.0.0](https://github.com/DesignCatapult/gentlebeam-sk/compare/4.0.0...5.0.0) (2026-09-15)
 
 
