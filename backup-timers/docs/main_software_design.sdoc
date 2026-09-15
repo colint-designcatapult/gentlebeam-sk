@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Backup Timer FW Software Design Document
-UID: DHF-HRC-0087
+TITLE: GBSK Backup Timer FW Software Design Document
+UID: DHF-GBSK-0087
 METADATA:
   COMPONENT: backup-timers
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to outline the design specifications of the Heracles Backup Timer
+The purpose of this document is to outline the design specifications of the GBSK Backup Timer
 Firmware.
 <<<
 
@@ -23,7 +23,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the design modules and sub-modules of the Heracles Backup Timer Firmware. The information in this document is derived from the Backup Timer FW SRS, referenced in this document.
+This document describes the design modules and sub-modules of the GBSK Backup Timer Firmware. The information in this document is derived from the Backup Timer FW SRS, referenced in this document.
 
 \*The term Software applies to both Software and Firmware components.
 <<<
@@ -75,13 +75,13 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
+DHF-GBSK-0001, Rev. 1: GBSK Software Development Plan (SDP)
 
-DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
+DHF-GBSK-0003, Rev. 1: GBSK Software Verification Plan (SVP)
 
-DHF-HRC-0017, Rev. 1: Heracles Backup Timer Software Requirements Specification (SRS)
+DHF-GBSK-0017, Rev. 1: GBSK Backup Timer Software Requirements Specification (SRS)
 
-DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+DHF-GBSK-0031, Rev. 1: GBSK Firmware Architecture Description
 <<<
 
 [[/SECTION]]

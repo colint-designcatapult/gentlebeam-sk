@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Software Design Document for Internal GUI
-UID: DHF-HRC-0033
+TITLE: GBSK Software Design Document for Internal GUI
+UID: DHF-GBSK-0033
 METADATA:
   COMPONENT: heracles-internal-gui
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to outline the design specifications of the Heracles Internal GUI Software.
+The purpose of this document is to outline the design specifications of the GBSK Internal GUI Software.
 <<<
 
 [[/SECTION]]
@@ -22,7 +22,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the design modules and sub-modules of the Heracles Internal GUI Software.
+This document describes the design modules and sub-modules of the GBSK Internal GUI Software.
 
 The information in this document is derived from the Internal GUI SRS, referenced in this document.
 
@@ -77,17 +77,17 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-Document ID / Reference Number: DHF-HRC-0001, Rev. 2
-Document Title: Heracles Software Development Plan (SDP)
+Document ID / Reference Number: DHF-GBSK-0001, Rev. 1
+Document TITLE: GBSK Software Development Plan (SDP)
 
-Document ID / Reference Number: DHF-HRC-0003, Rev. 2
-Document Title: Heracles Software Verification Plan (SVP)
+Document ID / Reference Number: DHF-GBSK-0003, Rev. 1
+Document TITLE: GBSK Software Verification Plan (SVP)
 
-Document ID / Reference Number: DHF-HRC-0005, Rev. 3
-Document Title: Heracles Internal GUI Software Requirements Specification (SRS)
+Document ID / Reference Number: DHF-GBSK-0005, Rev. 3
+Document TITLE: GBSK Internal GUI Software Requirements Specification (SRS)
 
-Document ID / Reference Number: DHF-HRC-0004, Rev. 2
-Document Title: Heracles Software Architecture Description
+Document ID / Reference Number: DHF-GBSK-0004, Rev. 1
+Document TITLE: GBSK Software Architecture Description
 <<<
 
 [[/SECTION]]
@@ -120,7 +120,7 @@ In embedded database mode, the indoor application hosts a local gRPC database AP
 
 The list of API functions is defined in the following protocol document:
 
-Heracles DB API
+GBSK DB API
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -156,9 +156,9 @@ TITLE: High Level System Architecture
 STATEMENT: >>>
 Approvals Calibration - Heater current configuration.
 
-The application is comprised of two key components: Heracles Device Control console (Indoor application) and Treatment Control console (Outdoor application).
+The application is comprised of two key components: GBSK Device Control console (Indoor application) and Treatment Control console (Outdoor application).
 
-The Heracles Device Control console is integrated within the Heracles device. This application addresses functionalities related to patients, demographic data management, clinical data management, treatment data management, user access, clinical workflows, and system setup and services.
+The GBSK Device Control console is integrated within the GBSK device. This application addresses functionalities related to patients, demographic data management, clinical data management, treatment data management, user access, clinical workflows, and system setup and services.
 
 The Treatment Control application must be located in a console outside the treatment room. This is to provide the operator with a safe work environment. It should allow healthcare professionals e.g., radiation therapists (RTT), and physicians to activate the radiation emission for the patient's treatment and to provide tools for physicists to program the system's calibration values.
 <<<
@@ -1753,7 +1753,7 @@ Explicit navigation that displays a patient, diagnosis, simulation, prescription
     opt [requested change successfully persisted]
         PatientsViewModel->>ActionAuditService: RegisterAction(save completed with patient ID)
         ActionAuditService->>ActionAuditService: add current username and user ID
-        ActionAuditService->>DbLogRepository: LogAsync(user audit record; not awaited)
+        ActionAuditService->>DbLogRepository: LogAsync(user audit record, not awaited)
         DbLogRepository->>LogService: CreateRecord
         LogService-->>DbLogRepository: persisted record with timestamp
     end
@@ -1895,7 +1895,7 @@ Encrypted private validation connections are opened without a connection-string 
 
 Files and the Windows protector
 
-Paths are resolved under the configured HeraclesMainSettings.StorageRoot, whose default is ``C:/HERACLES/DATA/``. The live file is ``heracles.encrypted.db``, the protector is ``heracles.db.key``, and the development-only plaintext source is ``heracles.db``. Under the default root these are ``C:/HERACLES/DATA/heracles.encrypted.db``, ``C:/HERACLES/DATA/heracles.db.key``, and ``C:/HERACLES/DATA/heracles.db`` respectively.
+Paths are resolved under the configured GBSKMainSettings.StorageRoot, whose default is ``C:/HERACLES/DATA/``. The live file is ``heracles.encrypted.db``, the protector is ``heracles.db.key``, and the development-only plaintext source is ``heracles.db``. Under the default root these are ``C:/HERACLES/DATA/heracles.encrypted.db``, ``C:/HERACLES/DATA/heracles.db.key``, and ``C:/HERACLES/DATA/heracles.db`` respectively.
 
 DpapiKeyStore uses System.Security.Cryptography.ProtectedData 8.0.0 to protect exactly the 16 MEK bytes with Windows DPAPI CurrentUser scope and null optional entropy. Only the binary protected blob is stored at the key path. Save writes a same-directory temporary protected blob and replaces the protector; no plaintext MEK file is written. Load uses the same scope and entropy. A missing blob, DPAPI cryptographic failure, or unprotected length other than 16 bytes means that no usable key was supplied. Access, permissions, disk, and other I/O failures instead propagate as sanitized operational startup errors, not instructions to generate a replacement key. Temporary key buffers are zeroed with CryptographicOperations.ZeroMemory; disposing SqlCipherDatabase clears its owned MEK bytes and releases its connection pool.
 

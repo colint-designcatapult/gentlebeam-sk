@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Head Interface FW Software Design Document
-UID: DHF-HRC-0114
+TITLE: GBSK Head Interface FW Software Design Document
+UID: DHF-GBSK-0114
 METADATA:
   COMPONENT: head-interface/main
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to outline the design specifications of the Heracles Head Interface
+The purpose of this document is to outline the design specifications of the GBSK Head Interface
 Firmware.
 <<<
 
@@ -23,7 +23,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the design modules and sub-modules of the Heracles Head Interface Firmware.
+This document describes the design modules and sub-modules of the GBSK Head Interface Firmware.
 The information in this document is derived from the Head Interface FW SRS, referenced in this
 document.
 
@@ -78,13 +78,13 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
+DHF-GBSK-0001, Rev. 1: GBSK Software Development Plan (SDP)
 
-DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
+DHF-GBSK-0003, Rev. 1: GBSK Software Verification Plan (SVP)
 
-DHF-HRC-0023, Rev. 1: Heracles Head Interface Software Requirements Specification (SRS)
+DHF-GBSK-0023, Rev. 1: GBSK Head Interface Software Requirements Specification (SRS)
 
-DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+DHF-GBSK-0031, Rev. 1: GBSK Firmware Architecture Description
 <<<
 
 [[/SECTION]]

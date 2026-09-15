@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Backup Timer FW Verification Testing Protocol
-UID: DHF-HRC-0092
+TITLE: GBSK Backup Timer FW Verification Testing Protocol
+UID: DHF-GBSK-0092
 
 [GRAMMAR]
 IMPORT_FROM_FILE: @grammar
@@ -11,7 +11,7 @@ TITLE: Purpose
 [TEXT]
 STATEMENT: >>>
 This document provides the full test protocol (a full collection of test cases) for the Backup Timer
-Firmware for the Heracles 1.0 system.
+Firmware for the GBSK 1.0 system.
 <<<
 
 [[/SECTION]]
@@ -21,8 +21,8 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This report contains a detailed test description to conduct verification testing of Heracles 1.0 Backup
-Timer Firmware that covers Heracles Backup Timer FW SRS.
+This report contains a detailed test description to conduct verification testing of GBSK 1.0 Backup
+Timer Firmware that covers GBSK Backup Timer FW SRS.
 <<<
 
 [[/SECTION]]
@@ -55,13 +55,13 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-DHF-HRC-0001, Rev. 2: Heracles SDP
+DHF-GBSK-0001, Rev. 1: GBSK SDP
 
-DHF-HRC-0003, Rev. 2: Heracles SVP
+DHF-GBSK-0003, Rev. 1: GBSK SVP
 
-[LINK: DHF-HRC-0017]
+[LINK: DHF-GBSK-0017]
 
-[LINK: DHF-HRC-0087]
+[LINK: DHF-GBSK-0087]
 <<<
 
 [[/SECTION]]

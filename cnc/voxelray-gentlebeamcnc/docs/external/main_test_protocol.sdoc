@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles External GUI SW Verification Test Protocol
-UID: DHF-HRC-0047-TP
+TITLE: GBSK External GUI SW Verification Test Protocol
+UID: DHF-GBSK-0047-TP
 METADATA:
   COMPONENT: heracles-external-gui
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-This document provides the verification test protocol and execution results of the External GUI SW for the Heracles system. It defines the test cases that are used to verify the compliance of the software with the Heracles External GUI SW Verification Plan and Software Requirements Specification.
+This document provides the verification test protocol and execution results of the External GUI SW for the GBSK system. It defines the test cases that are used to verify the compliance of the software with the GBSK External GUI SW Verification Plan and Software Requirements Specification.
 <<<
 
 [[/SECTION]]
@@ -22,7 +22,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document details all regression test cases for the Verification testing activities of Heracles External GUI Software. Each test case is designed to verify specific functional, interface, and usability requirements of the system, including treatment control, quality assurance, and operational workflows.
+This document details all regression test cases for the Verification testing activities of GBSK External GUI Software. Each test case is designed to verify specific functional, interface, and usability requirements of the system, including treatment control, quality assurance, and operational workflows.
 <<<
 
 [[/SECTION]]
@@ -76,17 +76,17 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-Heracles SDP - DHF-HRC-0001 Rev. 2
+GBSK SDP - DHF-GBSK-0001 Rev. 1
 
-Heracles SVP - DHF-HRC-0003 Rev. 2
+GBSK SVP - DHF-GBSK-0003 Rev. 1
 
-Heracles External GUI SRS - DHF-HRC-0007 Rev. 3
+GBSK External GUI SRS - DHF-GBSK-0007 Rev. 3
 
-Heracles Software Architecture Description - DHF-HRC-0004 Rev. 2
+GBSK Software Architecture Description - DHF-GBSK-0004 Rev. 1
 
-Heracles External GUI Verification Protocol - DHF-HRC-0047 Rev. 2
+GBSK External GUI Verification Protocol - DHF-GBSK-0047 Rev. 1
 
-Heracles External GUI Verification Execution Report - DHF-HRC-0048 Rev. 2
+GBSK External GUI Verification Execution Report - DHF-GBSK-0048 Rev. 1
 <<<
 
 [[/SECTION]]
@@ -102,7 +102,7 @@ STATEMENT: >>>
 Verify the user interface layout of the application accurately reflects the system's status and button labels during the treatment preparation process.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit.
+Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -179,7 +179,7 @@ STATEMENT: >>>
 This test case aims to verify the application displays a visible indicator for an emission error in the system.
 <<<
 PREREQUISITES: >>>
-1)Load a plan for treatment in the Heracles Internal unit.
+1)Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -212,7 +212,7 @@ PREREQUISITES: >>>
 Load a plan for treatment from the internal unit.
 <<<
 STEPS: >>>
-1.Launch Heracles External 
+1.Launch GBSK External 
 
 2.Click the Treatment tab
 <<<
@@ -233,12 +233,12 @@ STATEMENT: >>>
 This test case aims to verify that the telemetry controls provide a clear indication when there is no communication with the GCB.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in Heracles Internal unit 
+Load a plan for treatment in GBSK Internal unit 
 
 This test case requires the capability to generate a communication error with the GCB
 <<<
 STEPS: >>>
-1.Launch Heracles External 
+1.Launch GBSK External 
 
 2.Click the Treatment tab 
 
@@ -291,7 +291,7 @@ STATEMENT: >>>
 This test case verifies that the application alerts the operator if the loaded plan was not completely delivered and enables the operator to choose to deliver the remaining plan.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit.
+Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -461,7 +461,7 @@ STATEMENT: >>>
 This test case verifies the system warmup and initialization process. It validates that the system is properly prepared for operation and all parameters are initialized.
 <<<
 STEPS: >>>
-1. Launch Heracles SW External. (The external unit should be located outside the treatment room). 
+1. Launch GBSK SW External. (The external unit should be located outside the treatment room). 
 
 2. Click the Prepare button. 
 
@@ -543,7 +543,7 @@ STATEMENT: >>>
 This test case verifies the layout and user interface components of the Treatment View. It validates that all UI elements are properly displayed and arranged according to specifications.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit.
+Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -693,10 +693,10 @@ RELATIONS:
 UID: TC-H10TG-46
 TITLE: Treatment Console - Radiation Emission Control - Beam On process - Test Case
 STATEMENT: >>>
-This test case verifies the functionality and status transitions of the Heracles External GUI during a treatment plan execution. To ensure that the system responds correctly to user interactions.
+This test case verifies the functionality and status transitions of the GBSK External GUI during a treatment plan execution. To ensure that the system responds correctly to user interactions.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit.
+Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -859,7 +859,7 @@ STATEMENT: >>>
 Verify that the layout unlocks when the emission is completed, allowing navigation to other tabs.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit.
+Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -951,7 +951,7 @@ Conduct quality checks within the system prior to conducting this test
 STEPS: >>>
 Test Steps: 
 
-1.Launch Heracles External 
+1.Launch GBSK External 
 
 2.Click the Quality Assurance tab 
 
@@ -979,7 +979,7 @@ PREREQUISITES: >>>
 Intentionally create errors ( e.g., interlocks) during Daily Warmup
 <<<
 STEPS: >>>
-1.Launch Heracles External 
+1.Launch GBSK External 
 
 2.Click the Quality Assurance tab 
 
@@ -1027,7 +1027,7 @@ STATEMENT: >>>
 Verify that the user is unable to switch to other views after pressing the “Prepare” button. The treatment tab should remain locked.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit.
+Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -1079,7 +1079,7 @@ Verify that Resume reconfirms and releases the same scalar emission and remainin
 after an error is cleared.
 <<<
 PREREQUISITES: >>>
-1)Create treatment field with duration of 12 Seconds and Load a plan for treatment in the Heracles Internal unit . 
+1)Create treatment field with duration of 12 Seconds and Load a plan for treatment in the GBSK Internal unit . 
 
 2) The ability to intentionally create an error in the system.
 <<<
@@ -1259,7 +1259,7 @@ STATEMENT: >>>
 This test case verifies the layout and user interface components of the Treatment Console. It validates that all UI elements are properly displayed and arranged according to specifications.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit. 
+Load a plan for treatment in the GBSK Internal unit. 
 
 Verify the existence of an interface through which the user can initiate radiation delivery in accordance with a predefined treatment plan.
 <<<
@@ -1351,7 +1351,7 @@ STATEMENT: >>>
 Verify that upon pressing the stop button, an informative pop-up message is displayed, indicating that the emission has been halted. Ensure the layout and UI elements function correctly.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit.
+Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -1427,10 +1427,10 @@ STATEMENT: >>>
 Verify that the layout unlocks correctly and that the Clear button unloads the Plan.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit.
+Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
-1.Launch Heracles SW External . (The external unit should be located outside the treatment room). 
+1.Launch GBSK SW External . (The external unit should be located outside the treatment room). 
 
 2.Click the Prepare button. 
 
@@ -1618,7 +1618,7 @@ PREREQUISITES: >>>
 2. Make the latest reference more than 24 hours old.
 <<<
 STEPS: >>>
-1. Log in to Heracles External and open Beam QA Checks.
+1. Log in to GBSK External and open Beam QA Checks.
 2. Select the same collimator, energy, and QA emission as the stored references.
 3. Prepare and emit a current QC sample within 24 hours of the test.
 4. Open the report view, select the configuration, inspect the reference and latest results,
@@ -1694,7 +1694,7 @@ STATEMENT: >>>
 Verify that the user can not navigate to any view during the emission process.
 <<<
 PREREQUISITES: >>>
-Load a treatment plan in the Heracles Internal unit.
+Load a treatment plan in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -1730,14 +1730,14 @@ PREREQUISITES: >>>
    configured ``maxMagnetomerDiff`` for the treatment configuration.
 <<<
 STEPS: >>>
-1. In Heracles External, load the treatment plan and press Prepare.
-2. In Heracles Internal, open the Quality Assurance approval interface and attempt to approve
+1. In GBSK External, load the treatment plan and press Prepare.
+2. In GBSK Internal, open the Quality Assurance approval interface and attempt to approve
    the failed result with an unknown username and then with the known username and an incorrect
    password.
-3. Restart Heracles Internal, reopen the QC result, and inspect its approval state.
+3. Restart GBSK Internal, reopen the QC result, and inspect its approval state.
 4. Approve the same result using a case variant of the known username and its correct password.
-5. Restart Heracles Internal, reopen the result, and inspect the stored approver.
-6. Return to the treatment plan in Heracles External and press Prepare.
+5. Restart GBSK Internal, reopen the result, and inspect the stored approver.
+6. Return to the treatment plan in GBSK External and press Prepare.
 7. Run the SQLite QC approval persistence tests.
 8. With the excessive magnetometer delta still stored, load the applicable treatment plan and
    press Prepare.
@@ -1777,7 +1777,7 @@ PREREQUISITES: >>>
 Intentionally create Daily Warmup errors in the system prior to conducting this test
 <<<
 STEPS: >>>
-1.Launch Heracles External 
+1.Launch GBSK External 
 
 2.Click the Quality Assurance tab 
 
@@ -1805,7 +1805,7 @@ STATEMENT: >>>
 This test case verifies that the application enables the operator to resume an uncompleted treatment.
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit.
+Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -1878,7 +1878,7 @@ STATEMENT: >>>
 This test case verifies the user interface and user experience of the application by ensuring that, upon clicking the error indicator, the user is presented with detailed fault information when the device transitions to FAULT mode.
 <<<
 PREREQUISITES: >>>
-1)Load a plan for treatment in the Heracles Internal unit.
+1)Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -1977,7 +1977,7 @@ Perform System Safety Checks which includes the following system safety features
 interlock, e-stop, normal stop, live video stream, and live audio stream between the patient and operator.
 <<<
 STEPS: >>>
-1.Launch Heracles External 
+1.Launch GBSK External 
 
 2.Click the Quality Assurance tab 
 
@@ -2309,7 +2309,7 @@ STATEMENT: >>>
 Verify that the application provides a stop control that allows the user to terminate radiation emissions immediately
 <<<
 PREREQUISITES: >>>
-Load a plan for treatment in the Heracles Internal unit.
+Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
 1. Log in to the External application. 
@@ -2430,10 +2430,10 @@ STATEMENT: >>>
 Verifying the layout for recording partial treatment, to ensure that the UI correctly displays the details of a partially completed treatment session after the emission is stopped prematurely twice.
 <<<
 PREREQUISITES: >>>
-Create treatment field with duration of 12 Seconds and Load a plan for treatment in the Heracles Internal unit.
+Create treatment field with duration of 12 Seconds and Load a plan for treatment in the GBSK Internal unit.
 <<<
 STEPS: >>>
-1. Launch Heracles SW External. (The external unit should be located outside the treatment room).
+1. Launch GBSK SW External. (The external unit should be located outside the treatment room).
 
 2. Click the Prepare button.
 

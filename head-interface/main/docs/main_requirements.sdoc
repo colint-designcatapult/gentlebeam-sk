@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Head Interface FW Software Requirements Specification
-UID: DHF-HRC-0023
+TITLE: GBSK Head Interface FW Software Requirements Specification
+UID: DHF-GBSK-0023
 METADATA:
   COMPONENT: head-interface/main
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to provide Software Requirements Specifications for the Heracles Head
+The purpose of this document is to provide Software Requirements Specifications for the GBSK Head
 Interface Firmware (FW).
 <<<
 
@@ -23,8 +23,8 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes all requirements of the Heracles Head Interface FW.
-The information in this document has been derived from the VoxelRay Heracles Product Requirements
+This document describes all requirements of the GBSK Head Interface FW.
+The information in this document has been derived from the VoxelRay GBSK Product Requirements
 Specification, referenced in this document.
 
 \*The term Software applies to both Software and Firmware systems.
@@ -81,9 +81,9 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-DHF-HRC-0001, Rev 2: Heracles Software Development Plan (SDP)
+DHF-GBSK-0001, Rev 2: GBSK Software Development Plan (SDP)
 
-DHF-HRC-0003, Rev 2: Heracles Software Verification Plan (SVP)
+DHF-GBSK-0003, Rev 2: GBSK Software Verification Plan (SVP)
 <<<
 
 [[/SECTION]]

@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles HVPS Interface Bootloader FW Software Design Document
-UID: DHF-HRC-0105
+TITLE: GBSK HVPS Interface Bootloader FW Software Design Document
+UID: DHF-GBSK-0105
 METADATA:
   COMPONENT: hvps-interface/bootloader
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to outline the design specifications of the Heracles HVPS Interface
+The purpose of this document is to outline the design specifications of the GBSK HVPS Interface
 Bootloader Firmware.
 <<<
 
@@ -23,7 +23,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the design modules and sub-modules of the Heracles HVPS Interface
+This document describes the design modules and sub-modules of the GBSK HVPS Interface
 Bootloader Firmware.
 The information in this document is derived from the HVPS Interface Bootloader FW SRS, referenced in
 this document.
@@ -91,13 +91,13 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
+DHF-GBSK-0001, Rev. 1: GBSK Software Development Plan (SDP)
 
-DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
+DHF-GBSK-0003, Rev. 1: GBSK Software Verification Plan (SVP)
 
-DHF-HRC-0021, Rev. 1: Heracles HVPS Interface Bootloader Software Requirements Specification (SRS)
+DHF-GBSK-0021, Rev. 1: GBSK HVPS Interface Bootloader Software Requirements Specification (SRS)
 
-DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+DHF-GBSK-0031, Rev. 1: GBSK Firmware Architecture Description
 <<<
 
 [[/SECTION]]
@@ -110,7 +110,7 @@ TITLE: High Level System Architecture
 
 [TEXT]
 STATEMENT: >>>
-See source document DHF-HRC-0105 for the high-level system architecture diagram.
+See source document DHF-GBSK-0105 for the high-level system architecture diagram.
 <<<
 
 [[/SECTION]]

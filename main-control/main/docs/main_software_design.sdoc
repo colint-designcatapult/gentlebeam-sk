@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Main Control Application FW Software Design Document
-UID: DHF-HRC-0069
+TITLE: GBSK Main Control Application FW Software Design Document
+UID: DHF-GBSK-0069
 METADATA:
   COMPONENT: main-control/main
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to outline the design specifications of the Heracles Main Control Application Firmware.
+The purpose of this document is to outline the design specifications of the GBSK Main Control Application Firmware.
 <<<
 
 [[/SECTION]]
@@ -22,7 +22,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the design modules and sub-modules of the Heracles Main Control Application Firmware.
+This document describes the design modules and sub-modules of the GBSK Main Control Application Firmware.
 
 The information in this document is derived from the Main Control Application FW SRS, referenced in this document.
 
@@ -74,13 +74,13 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
+DHF-GBSK-0001, Rev. 1: GBSK Software Development Plan (SDP)
 
-DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
+DHF-GBSK-0003, Rev. 1: GBSK Software Verification Plan (SVP)
 
-DHF-HRC-0013, Rev. 2: Heracles Main Control Application Software Requirements Specification (SRS)
+DHF-GBSK-0013, Rev. 1: GBSK Main Control Application Software Requirements Specification (SRS)
 
-DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+DHF-GBSK-0031, Rev. 1: GBSK Firmware Architecture Description
 <<<
 
 [[/SECTION]]

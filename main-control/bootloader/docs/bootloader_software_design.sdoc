@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Main Control Bootloader FW Software Design Document
-UID: DHF-HRC-0078
+TITLE: GBSK Main Control Bootloader FW Software Design Document
+UID: DHF-GBSK-0078
 METADATA:
   COMPONENT: main-control/bootloader
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to outline the design specifications of the Heracles Main Control
+The purpose of this document is to outline the design specifications of the GBSK Main Control
 Bootloader Firmware.
 <<<
 
@@ -23,7 +23,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the design modules and sub-modules of the Heracles Main Control Bootloader
+This document describes the design modules and sub-modules of the GBSK Main Control Bootloader
 Firmware.
 
 The information in this document is derived from the Main Control Bootloader FW SRS, referenced in this
@@ -77,13 +77,13 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
+DHF-GBSK-0001, Rev. 1: GBSK Software Development Plan (SDP)
 
-DHF-HRC-0003, Rev. 2: Heracles Software Verification Plan (SVP)
+DHF-GBSK-0003, Rev. 1: GBSK Software Verification Plan (SVP)
 
-[LINK: DHF-HRC-0015]
+[LINK: DHF-GBSK-0015]
 
-DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+DHF-GBSK-0031, Rev. 1: GBSK Firmware Architecture Description
 <<<
 
 [[/SECTION]]

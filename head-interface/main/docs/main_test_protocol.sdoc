@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Head Interface Application FW Verification Testing Protocol
-UID: DHF-HRC-0119
+TITLE: GBSK Head Interface Application FW Verification Testing Protocol
+UID: DHF-GBSK-0119
 
 [GRAMMAR]
 IMPORT_FROM_FILE: @grammar
@@ -11,7 +11,7 @@ TITLE: Purpose
 [TEXT]
 STATEMENT: >>>
 This document provides the full test protocol (a full collection of test cases) for the Head Interface
-Firmware for the Heracles 1.0 system.
+Firmware for the GBSK 1.0 system.
 <<<
 
 [[/SECTION]]
@@ -21,8 +21,8 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This report contains a detailed test description to conduct verification testing of Heracles 1.0 Head
-Interface Firmware that covers Heracles Head Interface FW SRS.
+This report contains a detailed test description to conduct verification testing of GBSK 1.0 Head
+Interface Firmware that covers GBSK Head Interface FW SRS.
 <<<
 
 [[/SECTION]]
@@ -55,13 +55,13 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-DHF-HRC-0001, Rev. 2: Heracles SDP
+DHF-GBSK-0001, Rev. 1: GBSK SDP
 
-DHF-HRC-0003, Rev. 2: Heracles SVP
+DHF-GBSK-0003, Rev. 1: GBSK SVP
 
-[LINK: DHF-HRC-0023]
+[LINK: DHF-GBSK-0023]
 
-DHF-HRC-0031, Rev. 1: Heracles Firmware Architecture Description
+DHF-GBSK-0031, Rev. 1: GBSK Firmware Architecture Description
 <<<
 
 [[/SECTION]]

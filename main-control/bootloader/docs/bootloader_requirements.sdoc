@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Main Control Bootloader FW Software Requirements Specification
-UID: DHF-HRC-0015
+TITLE: GBSK Main Control Bootloader FW Software Requirements Specification
+UID: DHF-GBSK-0015
 METADATA:
   COMPONENT: main-control/bootloader
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to provide Software Requirements Specifications for the Heracles Main
+The purpose of this document is to provide Software Requirements Specifications for the GBSK Main
 Control Bootloader Firmware (FW).
 <<<
 
@@ -23,8 +23,8 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes all requirements of the Heracles Main Control Bootloader FW.
-The information in this document has been derived from the VoxelRay Heracles Product Requirements
+This document describes all requirements of the GBSK Main Control Bootloader FW.
+The information in this document has been derived from the VoxelRay GBSK Product Requirements
 Specification, as referenced in this document.
 
 \*The term Software applies to both Software and Firmware systems.
@@ -76,13 +76,10 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-EMS-WI-057-13: Generating Documents and Traceability Matrix Analysis in Ketryx WI
 
-EMS-SOP-057: Software Design Control
+DHF-GBSK-0001, Rev. 1: GBSK Software Development Plan (SDP)
 
-DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
-
-DHF-HRC-0002: VoxelRay Product Requirements Specification (PRS)
+DHF-GBSK-0002: VoxelRay Product Requirements Specification (PRS)
 <<<
 
 [[/SECTION]]

@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles UCSI Test Protocol
-UID: DHF-HRC-UCSI-0003-TP
+TITLE: GBSK UCSI Test Protocol
+UID: DHF-GBSK-UCSI-0003-TP
 METADATA:
   COMPONENT: heracles-ucsi
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-This protocol defines the minimum verification tests for the Heracles UCSI Software Requirements Specification, DHF-HRC-UCSI-0001.
+This protocol defines the minimum verification tests for the GBSK UCSI Software Requirements Specification, DHF-GBSK-UCSI-0001.
 <<<
 
 [[/SECTION]]
@@ -22,7 +22,7 @@ TITLE: Test Configuration
 
 [TEXT]
 STATEMENT: >>>
-Unless a test specifies otherwise, execute it on a fully assembled Heracles system in its approved service/test configuration. A bench test uses the machine PCBs on a bench without machine peripherals.
+Unless a test specifies otherwise, execute it on a fully assembled GBSK system in its approved service/test configuration. A bench test uses the machine PCBs on a bench without machine peripherals.
 
 Manual X-ray emission testing shall be performed only by qualified personnel under the approved radiation-safety procedure and in the approved service/test configuration.
 <<<
@@ -39,7 +39,7 @@ Abbreviation/Term    Definition
 ===================  ==========================================
 GCB                  Gryphon Control Board
 HVPS                 High Voltage Power Supply
-UCSI                 Heracles technician-facing service interface
+UCSI                 GBSK technician-facing service interface
 ===================  ==========================================
 <<<
 
@@ -98,7 +98,7 @@ STATEMENT: >>>
 Verify that UCSI commands HVPS service operating parameters and manually enables and disables X-ray emission while showing HVPS feedback and interlock status.
 <<<
 PREREQUISITES: >>>
-Fully assembled Heracles system in the approved service/test configuration.
+Fully assembled GBSK system in the approved service/test configuration.
 
 Qualified personnel have completed the approved radiation-safety procedure for manual emission testing.
 <<<

@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Main Control Application FW Software Requirements Specification
-UID: DHF-HRC-0013
+TITLE: GBSK Main Control Application FW Software Requirements Specification
+UID: DHF-GBSK-0013
 METADATA:
   COMPONENT: main-control/main
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to provide Software Requirements Specifications for the Heracles Main Control
+The purpose of this document is to provide Software Requirements Specifications for the GBSK Main Control
 Application Firmware (FW).
 <<<
 
@@ -23,8 +23,8 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes all requirements of the Heracles Main Control Application FW.
-The information in this document has been derived from the VoxelRay Heracles Product Requirements
+This document describes all requirements of the GBSK Main Control Application FW.
+The information in this document has been derived from the VoxelRay GBSK Product Requirements
 Specification, as referenced in this document.
 
 *The term Software applies to both Software and Firmware systems.*
@@ -87,9 +87,9 @@ STATEMENT: >>>
 +--------------------------------+-------------------------------------------+
 | Document ID / Reference Number | Document Title                            |
 +================================+===========================================+
-| DHF-HRC-0001, Rev.2            | Heracles Software Development Plan (SDP)  |
+| DHF-GBSK-0001, Rev.1           | GBSK Software Development Plan (SDP)      |
 +--------------------------------+-------------------------------------------+
-| DHF-HRC-0003, Rev.2            | Heracles Software Verification Plan (SVP) |
+| DHF-GBSK-0003, Rev.1           | GBSK Software Verification Plan (SVP)     |
 +--------------------------------+-------------------------------------------+
 <<<
 

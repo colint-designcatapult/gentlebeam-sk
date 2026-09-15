@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles UCSI Software Requirements Specification
-UID: DHF-HRC-UCSI-0001
+TITLE: GBSK UCSI Software Requirements Specification
+UID: DHF-GBSK-UCSI-0001
 METADATA:
   COMPONENT: heracles-ucsi
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-This document defines the software requirements for the Heracles UCSI service interface.
+This document defines the software requirements for the GBSK UCSI service interface.
 <<<
 
 [[/SECTION]]
@@ -22,7 +22,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-UCSI is a technician-facing service interface for the Heracles superficial radiation therapy system. It is available as a standalone application and as a module hosted by the system PC software. It presents system telemetry, status, and servicing information and provides manual high-voltage power supply (HVPS) control for service activities, including manually initiated X-ray emission.
+UCSI is a technician-facing service interface for the GBSK superficial radiation therapy system. It is available as a standalone application and as a module hosted by the system PC software. It presents system telemetry, status, and servicing information and provides manual high-voltage power supply (HVPS) control for service activities, including manually initiated X-ray emission.
 <<<
 
 [[/SECTION]]
@@ -38,7 +38,7 @@ Abbreviation/Term    Definition
 HVPS                 High Voltage Power Supply
 SDS                  Software Design Specification
 SRS                  Software Requirements Specification
-UCSI                 Heracles technician-facing service interface
+UCSI                 GBSK technician-facing service interface
 ===================  ==========================================
 <<<
 

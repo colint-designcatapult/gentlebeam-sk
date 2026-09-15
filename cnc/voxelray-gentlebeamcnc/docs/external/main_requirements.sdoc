@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Software Requirements Specification for External GUI
-UID: DHF-HRC-0007
+TITLE: GBSK Software Requirements Specification for External GUI
+UID: DHF-GBSK-0007
 METADATA:
   COMPONENT: heracles-external-gui
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to provide Software Requirements Specifications for the Heracles External GUI Software.
+The purpose of this document is to provide Software Requirements Specifications for the GBSK External GUI Software.
 <<<
 
 [[/SECTION]]
@@ -22,9 +22,9 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes all requirements of the Heracles External GUI Software.
+This document describes all requirements of the GBSK External GUI Software.
 
-The information in this document is derived from the VoxelRay Heracles Product Requirements Specification, referenced in this document.
+The information in this document is derived from the VoxelRay GBSK Product Requirements Specification, referenced in this document.
 
 *The term Software applies to both Software and Firmware systems.*
 <<<
@@ -71,10 +71,10 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-Document ID / Reference Number: DHF-HRC-0001
-Document Title: Heracles Software Development Plan (SDP)
+Document ID / Reference Number: DHF-GBSK-0001
+Document TITLE: GBSK Software Development Plan (SDP)
 
-Document ID / Reference Number: DHF-HRC-0002
+Document ID / Reference Number: DHF-GBSK-0002
 Document Title: VoxelRay Product Requirements Specification (PRS)
 <<<
 
@@ -559,8 +559,8 @@ TITLE: Quality Assurance - System Safety Checks Reports
 STATEMENT: >>>
 The application shall provide the operator with an interface to display the history of test results which includes the following system safety features: X-Ray light, X-Ray sound, door interlock, estop, normal stop, live video stream, and live audio stream between the patient and operator.
 
-.. image:: _images/RQ-H10TG-91-1.png
-.. image:: _images/RQ-H10TG-91-2.png
+.. image:: _images/RQ-H10TG-92-1.png
+.. image:: _images/RQ-H10TG-92-2.png
 <<<
 
 [REQUIREMENT]

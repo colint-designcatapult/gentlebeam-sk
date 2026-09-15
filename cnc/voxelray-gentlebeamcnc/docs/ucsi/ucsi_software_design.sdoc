@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles UCSI Software Design Specification
-UID: DHF-HRC-UCSI-0002
+TITLE: GBSK UCSI Software Design Specification
+UID: DHF-GBSK-UCSI-0002
 METADATA:
   COMPONENT: heracles-ucsi
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-This document describes the architectural design of the Heracles UCSI service interface.
+This document describes the architectural design of the GBSK UCSI service interface.
 <<<
 
 [[/SECTION]]
@@ -22,7 +22,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the UCSI application and module architecture that implements the UCSI Software Requirements Specification, DHF-HRC-UCSI-0001.
+This document describes the UCSI application and module architecture that implements the UCSI Software Requirements Specification, DHF-GBSK-UCSI-0001.
 <<<
 
 [[/SECTION]]
@@ -38,7 +38,7 @@ Abbreviation/Term    Definition
 GCB                  Gryphon Control Board
 HVPS                 High Voltage Power Supply
 MVVM                 Model-View-ViewModel
-UCSI                 Heracles technician-facing service interface
+UCSI                 GBSK technician-facing service interface
 ===================  ==========================================
 <<<
 
@@ -49,7 +49,7 @@ TITLE: Architecture Overview
 
 [TEXT]
 STATEMENT: >>>
-The UCSI user interface is implemented as WPF views bound to an MVVM view model. The same view model and service registrations are used by the standalone application and by the UCSI module hosted in the Heracles system PC software. Telemetry and command services connect the interface to the control-board and HVPS communication channels.
+The UCSI user interface is implemented as WPF views bound to an MVVM view model. The same view model and service registrations are used by the standalone application and by the UCSI module hosted in the GBSK system PC software. Telemetry and command services connect the interface to the control-board and HVPS communication channels.
 <<<
 
 [[/SECTION]]

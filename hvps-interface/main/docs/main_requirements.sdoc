@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles HVPS Interface Application FW Software Requirements Specification
-UID: DHF-HRC-0019
+TITLE: GBSK HVPS Interface Application FW Software Requirements Specification
+UID: DHF-GBSK-0019
 METADATA:
   COMPONENT: hvps-interface/main
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to provide Software Requirements Specifications for the Heracles
+The purpose of this document is to provide Software Requirements Specifications for the GBSK
 HVPS Interface Application Firmware (FW).
 <<<
 
@@ -23,8 +23,8 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes all requirements of the Heracles HVPS Interface Application FW. The
-information in this document has been derived from the VoxelRay Heracles Product Requirements
+This document describes all requirements of the GBSK HVPS Interface Application FW. The
+information in this document has been derived from the VoxelRay GBSK Product Requirements
 Specification.
 
 \*The term Software applies to both Software and Firmware systems.
@@ -89,13 +89,13 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-Heracles SDP: DHF-HRC-0001 Rev. 2
+GBSK SDP: DHF-GBSK-0001 Rev. 1
 
-Heracles SVP: DHF-HRC-0003 Rev. 2
+GBSK SVP: DHF-GBSK-0003 Rev. 1
 
-Heracles FW Architecture Description: DHF-HRC-0031 Rev. 1
+GBSK FW Architecture Description: DHF-GBSK-0031 Rev. 1
 
-Heracles HVPS Interface Application FW SDD: DHF-HRC-0096 Rev. 1
+GBSK HVPS Interface Application FW SDD: DHF-GBSK-0096 Rev. 1
 <<<
 
 [[/SECTION]]

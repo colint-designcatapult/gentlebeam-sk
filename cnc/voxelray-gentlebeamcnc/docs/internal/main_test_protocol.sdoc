@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Internal GUI SW Verification Test Protocol
-UID: DHF-HRC-0038-TP
+TITLE: GBSK Internal GUI SW Verification Test Protocol
+UID: DHF-GBSK-0038-TP
 METADATA:
   COMPONENT: heracles-internal-gui
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-This document provides the verification test protocol and execution results of the Internal GUI SW for the Heracles 1.0 system. It defines the test cases that are used to verify the compliance of the software with the Heracles Internal GUI SW Verification Plan and Software Requirements Specification.
+This document provides the verification test protocol and execution results of the Internal GUI SW for the GBSK 1.0 system. It defines the test cases that are used to verify the compliance of the software with the GBSK Internal GUI SW Verification Plan and Software Requirements Specification.
 <<<
 
 [[/SECTION]]
@@ -22,7 +22,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document details all test cases for the Verification testing activities of Heracles 1.0 Internal GUI Software. Each test case is designed to verify specific functional, interface, and usability requirements of the system.
+This document details all test cases for the Verification testing activities of GBSK 1.0 Internal GUI Software. Each test case is designed to verify specific functional, interface, and usability requirements of the system.
 <<<
 
 [[/SECTION]]
@@ -76,15 +76,15 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-Heracles SDP - DHF-HRC-0001 Rev. 2
+GBSK SDP - DHF-GBSK-0001 Rev. 1
 
-Heracles SVP - DHF-HRC-0003 Rev. 2
+GBSK SVP - DHF-GBSK-0003 Rev. 1
 
-Heracles Internal GUI SW SRS - DHF-HRC-0005 Rev. 3
+GBSK Internal GUI SW SRS - DHF-GBSK-0005 Rev. 3
 
-Heracles Software Architecture Description - DHF-HRC-0004 Rev. 2
+GBSK Software Architecture Description - DHF-GBSK-0004 Rev. 1
 
-Heracles Internal GUI SW Verification Execution Report - DHF-HRC-0039 Rev. 2
+GBSK Internal GUI SW Verification Execution Report - DHF-GBSK-0039 Rev. 1
 <<<
 
 [[/SECTION]]
@@ -110,7 +110,7 @@ This test case is designed to verify that the application displays an error mess
 application.
 <<<
 STEPS: >>>
-1.Launch and login Heracles Internal 
+1.Launch and login GBSK Internal 
 
 2.Change Applicator to QC applicator. 
 
@@ -139,7 +139,7 @@ STATEMENT: >>>
 This test case verifies that appropriate alerts are displayed to the user when system conditions warrant notification. It validates the alert presentation and timing.
 <<<
 STEPS: >>>
-1. Launch and login Heracles internal 
+1. Launch and login GBSK internal 
 
 2. Click the Physics tab 
 
@@ -180,7 +180,7 @@ STATEMENT: >>>
 This test case verifies the layout and user interface components of the EMR: Patient's Registration form. It validates that all UI elements are properly displayed and arranged according to specifications.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the "Patients" tab. 
 
@@ -224,7 +224,7 @@ STATEMENT: >>>
 This test case verifies the save functionality. It validates that data is properly persisted when save operations are executed.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Navigate to the patients’ tab 
 
@@ -252,7 +252,7 @@ STATEMENT: >>>
 This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Navigate to the patients’ tab 
 
@@ -296,7 +296,7 @@ PREREQUISITES: >>>
 STEPS: >>>
 Test steps: 
 
-1. Launch and login Heracles internal application 
+1. Launch and login GBSK internal application 
 
 2. Create an intended communication error with the database to prevent it from quality assurance history data. 
 
@@ -321,7 +321,7 @@ STATEMENT: >>>
 This test case verifies the save functionality. It validates that data is properly persisted when save operations are executed.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Navigate to the patients’ tab 
 
@@ -364,7 +364,7 @@ Use disposable Administrator and non-administrator accounts, with known credenti
 STEPS: >>>
 Test Steps: 
 
-1.Launch and login Heracles internal with Admin user 
+1.Launch and login GBSK internal with Admin user 
 
 2.Click the Setting tab 
 
@@ -477,7 +477,7 @@ STATEMENT: >>>
 This test case verifies the layout and user interface components of the System Setting View. It validates that all UI elements are properly displayed and arranged according to specifications.
 <<<
 STEPS: >>>
-1Launch and login Heracles internal 
+1Launch and login GBSK internal 
 
 2.Click the Setting tab 
 
@@ -518,7 +518,7 @@ This test case requires the ability to intentionally create a communication erro
 saving prescription data to the database.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -746,7 +746,7 @@ filtered by the visit during which they were captured.
 STEPS: >>>
 Test Steps: 
 
-1.Launch and login Heracles Internal 
+1.Launch and login GBSK Internal 
 
 2.In the patients’ tab click the pre-created patient with the pre-captured images. 
 
@@ -768,7 +768,7 @@ STATEMENT: >>>
 This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients tab 
 
@@ -842,7 +842,7 @@ PREREQUISITES: >>>
 No device ID should be defined in the application prior to this test case.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal unit
+1.Launch and login GBSK internal unit
 <<<
 EXPECTED_BEHAVIOR: >>>
 1.The application shall have an interface (pop-up) allowing the user to enter the device serial ID.
@@ -859,7 +859,7 @@ STATEMENT: >>>
 This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -1106,7 +1106,7 @@ STATEMENT: >>>
 This test case verifies system calibration procedures and parameters. It validates that calibration values are correctly stored and applied.
 <<<
 STEPS: >>>
-1. Launch and login Heracles internal 
+1. Launch and login GBSK internal 
 
 2.Click the Setting tab 
 
@@ -1383,7 +1383,7 @@ STATEMENT: >>>
 This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -1491,7 +1491,7 @@ STATEMENT: >>>
 This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -1734,7 +1734,7 @@ Description: Verify that the application presents the user with a warning messag
 communication error with the database.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -1911,7 +1911,7 @@ Calibration data.
 STEPS: >>>
 Test Steps: 
 
-1. Launch and login Heracles internal 
+1. Launch and login GBSK internal 
 
 2.Click the Setting tab 
 
@@ -2096,7 +2096,7 @@ saving Settings data.
 STEPS: >>>
 Test Steps: 
 
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 3.Click the Service tab. 
 
@@ -2122,7 +2122,7 @@ STATEMENT: >>>
 This test case verifies that mandatory fields are properly enforced. It validates that the system prevents submission when required fields are not populated.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -2163,7 +2163,7 @@ STATEMENT: >>>
 This test case verifies the functionality and operation of System Setting View. It validates that the component behaves according to specifications and system requirements.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal 
+1.Launch and login GBSK internal 
 
 2.Click the Setting tab 
 
@@ -2262,7 +2262,7 @@ STATEMENT: >>>
 This test case verifies the functionality and operation of EMR: Clinical view. It validates that the component behaves according to specifications and system requirements.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -2450,7 +2450,7 @@ STATEMENT: >>>
 This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -2673,7 +2673,7 @@ STATEMENT: >>>
 This test case verifies the cancellation functionality. It validates that operations can be properly cancelled and system state is correctly reverted.
 <<<
 STEPS: >>>
-1. Launch and login Heracles internal SW 
+1. Launch and login GBSK internal SW 
 
 2. Navigate to the Treatment tab 
 
@@ -2696,7 +2696,7 @@ STATEMENT: >>>
 This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Navigate to the patients’ tab 
 
@@ -2739,7 +2739,7 @@ loading patient's Demographic Data
 STEPS: >>>
 Test Steps: 
 
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -2894,7 +2894,7 @@ STATEMENT: >>>
 This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Navigate to the patients’ tab 
 
@@ -2998,7 +2998,7 @@ Description:
 Verifying the ability to log in the application using username and credentials via the login menu.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Ensure the login menu pops up. If the application already logged in, log out by navigating to the exit tab and then clicking logout. 
 
@@ -3026,7 +3026,7 @@ STATEMENT: >>>
 This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Navigate to the patient’s tab 
 
@@ -3063,7 +3063,7 @@ STATEMENT: >>>
 This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal 
+1.Launch and login GBSK internal 
 
 2.Click the Setting tab 
 
@@ -3184,7 +3184,7 @@ This test case requires the ability to intentionally create a communication erro
 saving new Site data.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -3237,7 +3237,7 @@ STATEMENT: >>>
 This test case verifies the functionality and operation of EMR: Patients Registration Feedback. It validates that the component behaves according to specifications and system requirements.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -3273,7 +3273,7 @@ STATEMENT: >>>
 This test case verifies that appropriate alerts are displayed to the user when system conditions warrant notification. It validates the alert presentation and timing.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -3366,7 +3366,7 @@ The test uses a special version of the application that artificially receives co
 prescriptions.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -3435,7 +3435,7 @@ Energy [kV]: 10 (Select from the drop-down menu)
 
 12.Exit the application by navigating the Exit tab and clicking exit. 
 
-Exit the application and run the testing version of Heracles internal SW, which artificially returns a DB connection error when 
+Exit the application and run the testing version of GBSK internal SW, which artificially returns a DB connection error when 
 fetching the prescription. 
 
 13. Re-Launch and login the application. 
@@ -3532,7 +3532,7 @@ STATEMENT: >>>
 This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Navigate to the patients’ tab 
 
@@ -3569,7 +3569,7 @@ STATEMENT: >>>
 This test case verifies the layout and user interface components of the System Setting View. It validates that all UI elements are properly displayed and arranged according to specifications.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal 
+1.Launch and login GBSK internal 
 
 2.Click the Setting tab 
 
@@ -3605,7 +3605,7 @@ This test case requires the ability to intentionally create a communication erro
 The test uses a special version of the application that artificially receives communication errors from the DB.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW (Not the testing version) 
+1.Launch GBSK internal SW (Not the testing version) 
 
 2.Navigate to the patients tab 
 
@@ -3623,10 +3623,10 @@ DOB: 01/01/1980
 
 MRN:77771 
 
-Exit the application and run the testing version of Heracles internal SW, which artificially returns a DB connection error when 
+Exit the application and run the testing version of GBSK internal SW, which artificially returns a DB connection error when 
 fetching the patient list. 
 
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Log-in with User/password 
 
@@ -3649,7 +3649,7 @@ STATEMENT: >>>
 This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
 <<<
 STEPS: >>>
-1. Launch and login Heracles internal 
+1. Launch and login GBSK internal 
 
 2.Click the Setting tab 
 
@@ -3699,7 +3699,7 @@ PREREQUISITES: >>>
 Use disposable accounts with known credentials, a controlled persisted counter initially zero, and an isolated service fixture that can fail security-log persistence. Keep a separate Administrator account for recovery through TC-H10SG-299.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Ensure the login menu pops up. If the application already logged in, log out by navigating to the exit tab and then clicking logout. 
 
@@ -3733,7 +3733,7 @@ STATEMENT: >>>
 This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -3775,7 +3775,7 @@ STATEMENT: >>>
 This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -3956,7 +3956,7 @@ STATEMENT: >>>
 This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -4189,7 +4189,7 @@ STATEMENT: >>>
 This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -4229,7 +4229,7 @@ STATEMENT: >>>
 This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Navigate to the patients’ tab 
 
@@ -4266,7 +4266,7 @@ STATEMENT: >>>
 This test case verifies input validation and data integrity checks. It ensures that only valid data is accepted by the system.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -4289,7 +4289,7 @@ STATEMENT: >>>
 This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -4331,9 +4331,9 @@ STATEMENT: >>>
 This test case aims to verify that the application provides a user interface displaying a view of the actual treatment fields delivered by the device.
 <<<
 PREREQUISITES: >>>
-1. Create a patient and a plan in Heracles Internal 
+1. Create a patient and a plan in GBSK Internal 
 
-2. Execute the plan in Heracles External unit
+2. Execute the plan in GBSK External unit
 <<<
 STEPS: >>>
 . 
@@ -4342,7 +4342,7 @@ STEPS: >>>
 
 Test steps: 
 
-1.Click the Patients tab in Heracles internal 
+1.Click the Patients tab in GBSK internal 
 
 2.Click the pre-created patient, whose plan has been executed on the external unit 
 
@@ -4366,7 +4366,7 @@ STATEMENT: >>>
 This test case verifies the search functionality and result accuracy. It validates that the system correctly filters and returns records matching the search criteria.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -4545,7 +4545,7 @@ STATEMENT: >>>
 This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -4636,7 +4636,7 @@ STATEMENT: >>>
 This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -4823,7 +4823,7 @@ Create a patient and create a treatment plan for this patient with the Applicato
 Ability to physically change the Applicator type
 <<<
 STEPS: >>>
-1.Launch and login Heracles Internal 
+1.Launch and login GBSK Internal 
 
 2.Change collimator Applicator from 1.5 cm to QC 
 
@@ -4848,7 +4848,7 @@ This test case requires the ability to intentionally create a communication erro
 saving new simulation data.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -5156,7 +5156,7 @@ STATEMENT: >>>
 This test case verifies the sorting functionality. It validates that records are properly sorted according to the selected criteria.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -5214,7 +5214,7 @@ STATEMENT: >>>
 This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -5384,7 +5384,7 @@ STATEMENT: >>>
 This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -5584,7 +5584,7 @@ STATEMENT: >>>
 This test case verifies input validation and data integrity checks. It ensures that only valid data is accepted by the system.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -5819,7 +5819,7 @@ STATEMENT: >>>
 This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -6023,7 +6023,7 @@ STATEMENT: >>>
 This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -6128,7 +6128,7 @@ STATEMENT: >>>
 This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -6168,7 +6168,7 @@ STATEMENT: >>>
 This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -6270,7 +6270,7 @@ communication error with the database.
 STEPS: >>>
 Test Steps: 
 
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Create an intended communication error with the database to prevent it from loading Settings data. 
 
@@ -6298,7 +6298,7 @@ PREREQUISITES: >>>
 This test case requires the ability to intentionally create a communication error with the database.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -6381,7 +6381,7 @@ STATEMENT: >>>
 This test case verifies customizable features and user preferences. It validates that users can properly configure display and layout options.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -6429,7 +6429,7 @@ This test case requires the ability to intentionally create a communication erro
 loading Site list data.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -6487,7 +6487,7 @@ STATEMENT: >>>
 This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -6578,7 +6578,7 @@ STATEMENT: >>>
 This test case verifies input validation and data integrity checks. It ensures that only valid data is accepted by the system.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -6627,7 +6627,7 @@ An Admin user account is required
 STEPS: >>>
 Test Steps: 
 
-1.Launch and login Heracles internal with Admin user 
+1.Launch and login GBSK internal with Admin user 
 
 2.Click the Setting tab 
 
@@ -6876,7 +6876,7 @@ STATEMENT: >>>
 This test case verifies the functionality and operation of System Setting View. It validates that the component behaves according to specifications and system requirements.
 <<<
 STEPS: >>>
-1. Launch and login Heracles internal 
+1. Launch and login GBSK internal 
 
 2.Click the Setting tab 
 
@@ -6960,7 +6960,7 @@ STATEMENT: >>>
 This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
 <<<
 STEPS: >>>
-1.Launch and login Heracles internal SW 
+1.Launch and login GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -7055,7 +7055,7 @@ PREREQUISITES: >>>
 This test case requires the ability to intentionally create a communication error with the database.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients tab 
 
@@ -7218,7 +7218,7 @@ STATEMENT: >>>
 This test case verifies that system actions are properly logged and audited. It validates that the audit trail accurately records user actions and data modifications.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -7266,7 +7266,7 @@ STATEMENT: >>>
 This test case verifies the creation and addition of new items in the system. It validates the complete workflow from initiation through successful data persistence.
 <<<
 STEPS: >>>
-1. Launch and login Heracles internal 
+1. Launch and login GBSK internal 
 
 2.Click the Setting tab 
 
@@ -7299,7 +7299,7 @@ STATEMENT: >>>
 This test case verifies the cancellation functionality. It validates that operations can be properly cancelled and system state is correctly reverted.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Navigate to the patients’ tab 
 
@@ -7388,7 +7388,7 @@ STATEMENT: >>>
 This test case verifies input validation and data integrity checks. It ensures that only valid data is accepted by the system.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -7414,7 +7414,7 @@ PREREQUISITES: >>>
 A patient with an existing simulation.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW 
+1. Launch GBSK internal SW 
 
 2. Navigate to the patient’s tab 
 
@@ -7452,7 +7452,7 @@ STATEMENT: >>>
 This test case verifies the editing and updating of system data. It validates that changes are properly saved and reflected in the application.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -7494,7 +7494,7 @@ STATEMENT: >>>
 This test case verifies the handling of errors and faults in the system. It ensures appropriate responses to error conditions.
 <<<
 STEPS: >>>
-1.Launch Heracles internal SW 
+1.Launch GBSK internal SW 
 
 2.Navigate to the patients’ tab 
 
@@ -7533,14 +7533,14 @@ STATEMENT: >>>
 This test case verifies that the internal application UI is completely frozen and disabled during active emission delivery from the external treatment unit. Remote monitoring (camera system) will be used to observe application behavior while treatment is running on the external unit.
 <<<
 PREREQUISITES: >>>
-Internal and External Heracles units must be connected and communicating. 
+Internal and External GBSK units must be connected and communicating. 
 
 A prepared treatment plan must exist in "Loaded" state ready for delivery. 
 
 Remote monitoring system (camera or screen sharing) must be set up to observe the internal unit display from a safe location.
 <<<
 STEPS: >>>
-1. Launch Heracles internal SW and load a prepared treatment plan in the Patients tab. 
+1. Launch GBSK internal SW and load a prepared treatment plan in the Patients tab. 
 
 2. Set up remote monitoring camera/screen sharing to observe the internal unit display.
 
@@ -7571,12 +7571,12 @@ This test case verifies that the Patients tab is disabled and obscured with a se
 PREREQUISITES: >>>
 Access to the control board to enable calibration firmware mode. 
 
-Heracles internal SW must be running and connected to the control board.
+GBSK internal SW must be running and connected to the control board.
 <<<
 STEPS: >>>
 1. Ensure board is in calibration firmware mode.
 
-2. Launch Heracles internal SW and verify Patients tab is inaccessible and non-functional. 
+2. Launch GBSK internal SW and verify Patients tab is inaccessible and non-functional. 
 
 3. Verify that service-related tabs (Settings, Service, Log) remain accessible.
 <<<

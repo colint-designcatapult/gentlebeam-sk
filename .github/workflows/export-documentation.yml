@@ -73,7 +73,9 @@ jobs:
       - name: Verify documentation
         id: verify-documentation
         continue-on-error: true
-        run: dcdoc verify
+        # Keep verification assets separate: dcdoc's resource copier moves existing
+        # output files back to the source on a second invocation in the same tree.
+        run: dcdoc verify --output-dir "${{ runner.temp }}/dcdoc-verify"
 
       - name: Export documentation
         shell: bash

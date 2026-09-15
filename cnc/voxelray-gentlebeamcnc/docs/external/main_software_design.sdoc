@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Software Design Document for External GUI
-UID: DHF-HRC-0042
+TITLE: GBSK Software Design Document for External GUI
+UID: DHF-GBSK-0042
 METADATA:
   COMPONENT: heracles-external-gui
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to outline the design specifications of the Heracles External GUI Software.
+The purpose of this document is to outline the design specifications of the GBSK External GUI Software.
 <<<
 
 [[/SECTION]]
@@ -22,7 +22,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the design modules and sub-modules of the Heracles External GUI Software. The information in this document is derived from the External GUI SRS, referenced in this document.
+This document describes the design modules and sub-modules of the GBSK External GUI Software. The information in this document is derived from the External GUI SRS, referenced in this document.
 
 \*The term Software applies to both Software and Firmware components.
 <<<
@@ -72,17 +72,17 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-Document ID / Reference Number: DHF-HRC-0001, Rev. 2
-Document Title: Heracles Software Development Plan (SDP)
+Document ID / Reference Number: DHF-GBSK-0001, Rev. 1
+Document TITLE: GBSK Software Development Plan (SDP)
 
-Document ID / Reference Number: DHF-HRC-0003, Rev. 2
-Document Title: Heracles Software Verification Plan (SVP)
+Document ID / Reference Number: DHF-GBSK-0003, Rev. 1
+Document TITLE: GBSK Software Verification Plan (SVP)
 
-Document ID / Reference Number: DHF-HRC-0007, Rev. 2
-Document Title: Heracles External GUI Software Requirements Specification (SRS)
+Document ID / Reference Number: DHF-GBSK-0007, Rev. 1
+Document TITLE: GBSK External GUI Software Requirements Specification (SRS)
 
-Document ID / Reference Number: DHF-HRC-0004, Rev. 1
-Document Title: Heracles Software Architecture Description
+Document ID / Reference Number: DHF-GBSK-0004, Rev. 1
+Document TITLE: GBSK Software Architecture Description
 <<<
 
 [[/SECTION]]

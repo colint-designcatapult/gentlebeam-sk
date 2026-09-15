@@ -1,6 +1,6 @@
 [DOCUMENT]
-TITLE: Heracles Software Requirements Specification for Backup Timer FW
-UID: DHF-HRC-0017
+TITLE: GBSK Software Requirements Specification for Backup Timer FW
+UID: DHF-GBSK-0017
 METADATA:
   COMPONENT: backup-timers
 
@@ -12,7 +12,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to provide Software Requirements Specifications for the Heracles
+The purpose of this document is to provide Software Requirements Specifications for the GBSK
 Backup Timer Firmware (FW).
 <<<
 
@@ -23,9 +23,9 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes all requirements of the Heracles Backup Timer FW.
+This document describes all requirements of the GBSK Backup Timer FW.
 
-The information in this document has been derived from the VoxelRay Heracles Product Requirements
+The information in this document has been derived from the VoxelRay GBSK Product Requirements
 Specification, as referenced in this document.
 
 \*The term Software applies to both Software and Firmware systems.
@@ -78,13 +78,9 @@ TITLE: References
 
 [TEXT]
 STATEMENT: >>>
-EMS-WI-057-13: Generating Documents and Traceability Matrix Analysis in Ketryx WI
+DHF-GBSK-0001, Rev. 1: GBSK Software Development Plan (SDP)
 
-EMS-SOP-057: Software Design Control
-
-DHF-HRC-0001, Rev. 2: Heracles Software Development Plan (SDP)
-
-DHF-HRC-0002: VoxelRay Product Requirements Specification (PRS)
+DHF-GBSK-0002: VoxelRay Product Requirements Specification (PRS)
 <<<
 
 [[/SECTION]]
