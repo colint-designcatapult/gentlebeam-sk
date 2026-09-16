@@ -5,7 +5,6 @@
 #include "control_comm.h"
 #include "flow.h"
 #include "magnetometer.h"
-#include "timer.h"
 #include "sys_data.h"
 #include "dotstar.h"
 #include "led_ring.h"
@@ -58,6 +57,7 @@ void run_loop()
 	process_collimator();
 	process_qc();
 #endif
+	dotstar_effect_tick();
 	led_ring_tick(20);
 }
 

@@ -130,7 +130,7 @@ STATEMENT: >>>
     Buttons --> GPIO
 
     Magnetometers --> I2C
-    I2C --> LEDRing["LED Ring"]
+    SPI --> IndicatorLEDs["Indicator LED Ring"]
 
     ADC <--> Temp["Temperature<br/>Sensor"]
     ADC <--> Pressure["Pressure<br/>Sensor"]
@@ -153,7 +153,8 @@ Buttons - The Head Interface reads 5 GPIO buttons that can change the function f
 
 Lasers - GPIO output controls low power positioning lasers.
 
-LED Ring - RGB LED's controlled by a UART signal that determines color, brightness, and behavior.
+Indicator LED Ring - 51 DotStar RGB LEDs controlled through SPI. Commands received from the main
+control firmware select a non-blocking color effect that is advanced by the processing loop.
 
 Analog Sensors - The Head Interface reads analog signal data from Water Temperature, Pressure, and
 Flow sensors. This analog data is processed and then reported to the Main Control firmware. Sensors
@@ -404,25 +405,29 @@ RELATIONS:
 UID: SW-H1FHI-38
 TITLE: Indicator LED Data
 STATEMENT: >>>
-As the firmware implements an indicator LED interface with its individual colors for individual
-sections of the indicator LED ring, the data is structured in such a way so that the indicator LEDs
-can display specific 'sequences' or 'patterns'. These patterns are each structs, which are then all
-organized into an array of such patterns. Each pattern is indexed according to a specific system
-state (that is, each animation pattern is tied to a specific state).
+The indicator ring contains 51 DotStar RGB LEDs connected to SPI1. The driver maintains one color
+and brightness entry per LED and transmits a DotStar start frame, the 51 LED frames, and a latch
+frame sized for the strip. Static color commands and animation frames use the same strip buffer.
 
-The animation struct contains two components: an integer indicating the number of 'frames' in the
-animation, and an array of multiple 'frames'. In turn, each 'frame' is itself a struct. A frame is
-comprised of two components: an integer value indicating the millisecond duration of the frame,
-and a two-dimension array indicating the colors of the frame.
+The main control command supplies an LED sequence ID as a duplicated byte followed by two copies
+of its one's complement. Valid commands select the following indications; sequence ID 3 is unused:
 
-The color array of each frame is two dimensional since each frame not only has multiple sectors
-(corresponding to the physical quadrants of the indicator LED ring), but also each sector is
-represented by the values of three individual LEDs (red, green, and blue).
+- ``LED_SEQ_OFF`` (0): all LEDs off.
+- ``LED_SEQ_COLD`` (1): white pulsating over a 3-second cycle.
+- ``LED_SEQ_WARMUP`` (2): a 15-LED purple segment rotating every 75 msec while pulsating over a
+  3-second cycle.
+- ``LED_SEQ_PRIMED`` (4): the full ring alternating between blue and green every 500 msec.
+- ``LED_SEQ_SETUP`` (5): separate six-LED blue and orange segments rotating every 75 msec, with
+  blue leading and orange following by 14 LED positions on an otherwise dark ring.
+- ``LED_SEQ_READY`` (6): solid green.
+- ``LED_SEQ_XRAY`` (7): amber pulsating over a 3-second cycle.
+- ``LED_SEQ_IDLE`` (8): solid white.
+- ``LED_SEQ_FAULT`` (9): red alternating with off every 250 msec.
 
-When the indicator LED interface is outputting data to the LED controllers, it will cycle through the
-current animation pattern to output the current frame. It does so by setting the output of the LED
-controllers to the specified colors of the frame, for the given duration of the frame. Once the frame
-time has expired, the LED interface moves onto the next frame of the current pattern.
+The non-blocking effect engine is serviced every 20 msec from the processing loop. Rotation and
+pulsation use independent elapsed-time accumulators when combined. Pulsation scales the 8-bit RGB
+channels instead of the DotStar 5-bit global brightness, providing a finer visible fade. Selecting a
+static color stops any active animation before updating the strip.
 <<<
 RELATIONS:
 - TYPE: Parent

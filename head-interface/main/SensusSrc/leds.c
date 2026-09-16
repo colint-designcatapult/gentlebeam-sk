@@ -76,13 +76,6 @@ void init_leds()
 		}
 	}
 
-	//Set warmup fault animation
-	led_pattern[LED_SEQ_WARMUP_FAULT].num_frames_used = 2;
-	led_pattern[LED_SEQ_WARMUP_FAULT].frames[0].ms = 500;
-	led_pattern[LED_SEQ_WARMUP_FAULT].frames[1].ms = 500;
-	set_led_frame_single(LED_SEQ_WARMUP_FAULT, 0, 0, 0, 0);
-	set_led_frame_single(LED_SEQ_WARMUP_FAULT, 1, 200, 0, 0);
-
 	//Set primed animation
 	led_pattern[LED_SEQ_PRIMED].num_frames_used = 1;
 	led_pattern[LED_SEQ_PRIMED].frames[0].ms = 1000;
@@ -188,12 +181,12 @@ void init_leds()
 	}
 	led_pattern[LED_SEQ_XRAY].num_frames_used = 14;
 
-	//Set standby animation
-	led_pattern[LED_SEQ_STANDBY].num_frames_used = 2;
-	led_pattern[LED_SEQ_STANDBY].frames[0].ms = 360;
-	led_pattern[LED_SEQ_STANDBY].frames[1].ms = 360;
-	set_led_frame_single(LED_SEQ_STANDBY, 0, 0, 0, 0);
-	set_led_frame_single(LED_SEQ_STANDBY, 1, 0, 0, 120);
+	//Set idle animation
+	led_pattern[LED_SEQ_IDLE].num_frames_used = 2;
+	led_pattern[LED_SEQ_IDLE].frames[0].ms = 360;
+	led_pattern[LED_SEQ_IDLE].frames[1].ms = 360;
+	set_led_frame_single(LED_SEQ_IDLE, 0, 0, 0, 0);
+	set_led_frame_single(LED_SEQ_IDLE, 1, 0, 0, 120);
 
 	//Set fault animation
 	led_pattern[LED_SEQ_FAULT].num_frames_used = 2;

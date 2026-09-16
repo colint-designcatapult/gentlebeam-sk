@@ -133,9 +133,9 @@ TITLE: Indicator LEDs 1 - Test Case
 STATEMENT: >>>
 User can verify the color of the LED lights for different scenarios which can be listed as follows:
 
-1. Red blinking indicating a fault.
+1. Flashing red indicating a fault.
 2. Solid green indicating ready to emit.
-3. Pulsing yellow indicating emission.
+3. Pulsating amber indicating emission.
 <<<
 PREREQUISITES: >>>
 1. System is up and ready to run a treatment plan
@@ -157,7 +157,7 @@ EXPECTED_BEHAVIOR: >>>
 2. Verify the state is Ready
 3. Verify it’s Solid Green and ready to emit.
 4. Verify the emission started.
-5. Verify it is pulsing Yellow.
+5. Verify it is pulsating amber.
 6. Verify the fault is created.
 7. Verify it is blinking Red.
 <<<
@@ -244,28 +244,40 @@ RELATIONS:
 UID: TC-H1FHI-18
 TITLE: Indicator LEDs 2 - Test Case
 STATEMENT: >>>
-The user should be able to see the changes in the indicator LEDs and make notes in whole process of the clinical workflow. All of these can be done by head interface firmware and then user can review the changes physically in the system.
+Verify every supported indicator LED sequence, including its color, spatial pattern, timing, and
+transition from the previously active effect.
 <<<
 PREREQUISITES: >>>
-1. The system is powered on and ready to use.
-2. A treatment plan is ready to load onto the system.
-3. The tester should view LEDs remotely from a safe location through webcam or camera as to not be exposed to radiation.
+1. The head interface and indicator LED ring are powered.
+2. A UART control tool is connected at the configured head-interface baud rate and can send valid
+   normal-firmware 12-byte command packets with duplicated values and complements.
+3. The tester can observe the complete 51-LED ring and measure elapsed time.
 <<<
 STEPS: >>>
-1. Check the system when it is powered on.
-2. Check the indicator LEDs.
-3. Load a treatment plan.
-4. Check the indicator LEDs.
-5. Run an emission.
-6. Check the indicator LEDs.
+1. Send ``LED_SEQ_OFF`` (0) and observe the ring.
+2. Send ``LED_SEQ_COLD`` (1) and observe one complete pulse cycle.
+3. Send ``LED_SEQ_WARMUP`` (2) and observe one complete pulse cycle and one complete rotation.
+4. Send ``LED_SEQ_PRIMED`` (4) and observe at least two color transitions.
+5. Send ``LED_SEQ_SETUP`` (5) and observe one complete rotation.
+6. Send ``LED_SEQ_READY`` (6) and observe the ring.
+7. Send ``LED_SEQ_XRAY`` (7) and observe one complete pulse cycle.
+8. Send ``LED_SEQ_IDLE`` (8) and observe the ring.
+9. Send ``LED_SEQ_FAULT`` (9) and observe at least two on/off transitions.
+10. Send sequence ID 3 and observe the ring.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system is ready to use and there is no treatment plan is loaded.
-2. Make a note of any changes in the LEDs.
-3. Verify the plan is loaded successfully.
-4. Make a note of any changes in the LEDs.
-5. Verify the emission started.
-6. Make a note of any changes in the LEDs.
+1. Sequence 0 turns every LED off.
+2. Sequence 1 smoothly pulses white over a 3-second cycle.
+3. Sequence 2 displays a 15-LED purple segment that advances every 75 msec while smoothly pulsing
+   over a 3-second cycle.
+4. Sequence 4 alternates the full ring between blue and green every 500 msec.
+5. Sequence 5 displays separate six-LED blue and orange segments on a dark ring. Blue leads orange
+   by 14 LED positions, and both advance every 75 msec.
+6. Sequence 6 displays solid green.
+7. Sequence 7 smoothly pulses amber over a 3-second cycle.
+8. Sequence 8 displays solid white.
+9. Sequence 9 flashes red on and off every 250 msec.
+10. Sequence ID 3 is unsupported and causes the ring to turn off.
 <<<
 RELATIONS:
 - TYPE: Parent

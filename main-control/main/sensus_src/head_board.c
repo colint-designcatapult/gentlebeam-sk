@@ -127,7 +127,6 @@ void set_led_sequence(int led_idx)
 	switch(led_idx)
 	{
 		case LED_SEQ_FAULT:
-		case LED_SEQ_WARMUP_FAULT:
 			gpio_set_pin_level(GPIO(GPIO_PORTD, 22), true);
 			gpio_set_pin_level(GPIO(GPIO_PORTD, 23), true);
 			break;

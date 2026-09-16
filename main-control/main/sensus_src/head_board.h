@@ -129,16 +129,15 @@ typedef enum
 
 enum
 {
-	LED_SEQ_OFF= 0,
-	LED_SEQ_COLD,
-	LED_SEQ_WARMUP,
-	LED_SEQ_WARMUP_FAULT,
-	LED_SEQ_READY,	//Index positioning swapped with prime due to HB config
-	LED_SEQ_SETUP,
-	LED_SEQ_PRIMED, //Index positioning swapped with ready due to HB config
-	LED_SEQ_XRAY,
-	LED_SEQ_STANDBY,
-	LED_SEQ_FAULT,
+	LED_SEQ_OFF = 0,
+	LED_SEQ_COLD = 1,
+	LED_SEQ_WARMUP = 2,
+	LED_SEQ_PRIMED = 4,
+	LED_SEQ_SETUP = 5,
+	LED_SEQ_READY = 6,
+	LED_SEQ_XRAY = 7,
+	LED_SEQ_IDLE = 8,
+	LED_SEQ_FAULT = 9,
 	NUM_LED_SEQUENCES = 24
 };
 

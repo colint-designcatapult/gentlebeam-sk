@@ -6,6 +6,7 @@ void update_system_timers()
 {
 	read_mag_ms--;
 	control_comm_ms--;
+	dotstar_effect_ms--;
 	update_flow = true;
 #if !defined(CALIBRATION_MODE)
 	update_led_ms--;

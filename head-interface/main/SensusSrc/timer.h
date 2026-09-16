@@ -9,6 +9,7 @@
 extern volatile int32_t read_mag_ms;
 extern volatile int32_t control_comm_ms;
 extern volatile bool update_flow;
+extern volatile int32_t dotstar_effect_ms;
 #if !defined (CALIBRATION_MODE)
 extern volatile int32_t update_led_ms;
 extern volatile int32_t collim_ms;

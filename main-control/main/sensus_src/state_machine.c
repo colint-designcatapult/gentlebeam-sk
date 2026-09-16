@@ -630,7 +630,7 @@ static void goto_warmup_fault_state()
 	//Stop coolant pump and fan
 	enable_pump(false);
 	
-	set_led_sequence(LED_SEQ_WARMUP_FAULT);
+	set_led_sequence(LED_SEQ_FAULT);
 	
 	//Set state
 	*state = STATE_WARMUP_FAULT;

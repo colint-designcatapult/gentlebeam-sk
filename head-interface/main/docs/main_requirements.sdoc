@@ -179,7 +179,10 @@ UID: RQ-H1FHI-14
 TYPE: Functional
 TITLE: Indicator LEDs
 STATEMENT: >>>
-The head interface firmware shall provide LED status indications that enable the user to verify the operational state of the device based on LED color and behavior.
+The head interface firmware shall drive the indicator LED ring with distinct colors and effects that
+enable the user to identify the commanded operational state. The indications shall include off,
+pulsating white, rotating and pulsating purple, alternating blue and green, orange chasing blue,
+solid green, pulsating amber, solid white, and flashing red.
 <<<
 
 [REQUIREMENT]
