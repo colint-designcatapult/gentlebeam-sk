@@ -119,8 +119,8 @@ void setup_system_monitoring()
 	config_vals[SYS_CONFIG_FIL_LIM] = 3250;
 
 	config_vals[SYS_CONFIG_KV_BOUND] = 0.1;
-	config_vals[SYS_CONFIG_KV_RAMP_FAST] = 20;
-	config_vals[SYS_CONFIG_KV_RAMP_SLOW] = 5;
+	config_vals[SYS_CONFIG_KV_RAMP_FAST] = 5;	// was 20
+	config_vals[SYS_CONFIG_KV_RAMP_SLOW] = 2;	// was 5
 
 	config_vals[SYS_CONFIG_GRID_KP_50] = -25.0f;
 	config_vals[SYS_CONFIG_GRID_KP_70] = -35.0f;
