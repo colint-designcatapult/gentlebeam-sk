@@ -13,6 +13,8 @@ namespace Heracles.Indoor.SqliteGrpcServer.Infrastructure;
 public sealed class SqlCipherDatabase : IDisposable
 {
     private const string InvalidDatabaseMessage = "The password is incorrect, or the database is unreadable or damaged.";
+    private const int LocalKdfIterations = 4000;
+    private const int PasswordKdfIterations = 256000;
     private static readonly string[] SidecarSuffixes = ["-wal", "-shm", "-journal"];
     private readonly string _storageRoot;
     private readonly string _databasePath;
@@ -23,6 +25,7 @@ public sealed class SqlCipherDatabase : IDisposable
     private readonly object _stateLock = new();
     private readonly HashSet<string> _ownedStaging = new(StringComparer.OrdinalIgnoreCase);
     private byte[]? _mek;
+    private int _kdfIterations = LocalKdfIterations;
     private SqlCipherConnectionFactory? _connections;
     private string? _pendingImport;
     private bool _disposed;
@@ -92,6 +95,7 @@ public sealed class SqlCipherDatabase : IDisposable
             }
             else
             {
+                _kdfIterations = LocalKdfIterations;
                 if (!loaded)
                     candidate = RandomNumberGenerator.GetBytes(16);
                 if (!confirmNewRecoveryKey(RecoveryKeyCodec.Format(candidate!)))
@@ -104,9 +108,10 @@ public sealed class SqlCipherDatabase : IDisposable
                     ReserveFile(_databasePath);
                     created = true;
                     if (Exists(_legacyPath))
-                        CopyDatabase(_legacyPath, "", _databasePath, Convert.ToHexString(candidate!), true, null, CancellationToken.None);
+                        CopyDatabase(_legacyPath, "", null, _databasePath, Convert.ToHexString(candidate!), _kdfIterations,
+                            true, null, CancellationToken.None);
                     else
-                        CreateEmptyDatabase(_databasePath, Convert.ToHexString(candidate!));
+                        CreateEmptyDatabase(_databasePath, Convert.ToHexString(candidate!), _kdfIterations);
                     validated = true;
                 }
                 finally
@@ -117,7 +122,7 @@ public sealed class SqlCipherDatabase : IDisposable
                 DeleteDatabaseFiles(_legacyPath);
             }
 
-            _connections = new SqlCipherConnectionFactory(_databasePath, Convert.ToHexString(candidate!));
+            _connections = new SqlCipherConnectionFactory(_databasePath, Convert.ToHexString(candidate!), _kdfIterations);
             _mek = candidate;
             candidate = null;
         }
@@ -177,7 +182,8 @@ public sealed class SqlCipherDatabase : IDisposable
                 cancellationToken.ThrowIfCancellationRequested();
                 ReserveFile(output);
                 created = true;
-                CopyDatabase(_databasePath, localPassword, output, password, false, null, cancellationToken);
+                CopyDatabase(_databasePath, localPassword, _kdfIterations, output, password, PasswordKdfIterations,
+                    false, null, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 ValidateSelectedPath(destination);
                 // Replace the directory entry, never write through a selected link or destroy an old backup on failure.
@@ -227,14 +233,14 @@ public sealed class SqlCipherDatabase : IDisposable
                 cancellationToken.ThrowIfCancellationRequested();
                 var plaintextSource = IsPlaintextFile(source);
                 Dictionary<string, Dictionary<string, Column>> requiredSchema;
-                using (var live = OpenPrivate(_databasePath, localPassword, SqliteOpenMode.ReadOnly))
+                using (var live = OpenPrivate(_databasePath, localPassword, SqliteOpenMode.ReadOnly, _kdfIterations))
                 using (var snapshot = live.BeginTransaction(deferred: true))
                     requiredSchema = ReadSchema(live, "main", snapshot);
                 ReserveFile(output);
                 created = true;
                 lock (_stateLock) { _ownedStaging.Add(output); }
-                CopyDatabase(source, plaintextSource ? string.Empty : password, output, localPassword,
-                    plaintextSource, requiredSchema, cancellationToken);
+                CopyDatabase(source, plaintextSource ? string.Empty : password, null, output, localPassword,
+                    _kdfIterations, plaintextSource, requiredSchema, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
             }, cancellationToken).ConfigureAwait(false);
             lock (_stateLock) { _pendingImport = stagingPath; }
@@ -276,12 +282,12 @@ public sealed class SqlCipherDatabase : IDisposable
             {
                 // The record becomes visible only if the prepared database is installed.
                 // The live gRPC host has already stopped, so audit directly in staging.
-                var stagedConnections = new SqlCipherConnectionFactory(owned, password);
+                var stagedConnections = new SqlCipherConnectionFactory(owned, password, _kdfIterations);
                 try { AppendUserAuditAsync(new SqliteProtoRepository<Log>(stagedConnections, "logs"), auditRecord).GetAwaiter().GetResult(); }
                 finally { stagedConnections.ClosePool(); }
             }
-            ValidateFile(owned, password);
-            using (var live = OpenPrivate(_databasePath, password, SqliteOpenMode.ReadWrite))
+            ValidateFile(owned, password, _kdfIterations);
+            using (var live = OpenPrivate(_databasePath, password, SqliteOpenMode.ReadWrite, _kdfIterations))
             {
                 var mode = Scalar(live, "PRAGMA journal_mode") as string;
                 if (string.Equals(mode, "wal", StringComparison.OrdinalIgnoreCase))
@@ -350,26 +356,55 @@ public sealed class SqlCipherDatabase : IDisposable
     private bool TryValidateLocal(byte[] key)
     {
         RequireEncryptedFile(_databasePath);
+        SqliteConnection connection;
         try
         {
-            using var connection = OpenPrivate(_databasePath, Convert.ToHexString(key), SqliteOpenMode.ReadOnly);
-            using var transaction = connection.BeginTransaction(deferred: true);
-            Scalar(connection, "SELECT count(*) FROM main.sqlite_master", transaction);
-            // Integrity errors become InvalidDataException: never retry a key after successful schema access.
-            ValidateIntegrity(connection, "main", true, transaction);
-            return true;
+            connection = OpenReadable(_databasePath, Convert.ToHexString(key), SqliteOpenMode.ReadOnly, null, out _kdfIterations);
         }
         catch (SqliteException error) when (error.SqliteErrorCode is 26 or 11) { return false; }
+        using (connection)
+        using (var transaction = connection.BeginTransaction(deferred: true))
+        {
+            // Schema access selected the key and KDF. Integrity failure must never retry another key or format.
+            ValidateIntegrity(connection, "main", true, transaction);
+        }
+        return true;
     }
 
-    private static void CreateEmptyDatabase(string path, string password)
+    private static void CreateEmptyDatabase(string path, string password, int kdfIterations)
     {
-        using (var connection = OpenPrivate(path, password, SqliteOpenMode.ReadWriteCreate))
+        using (var connection = OpenPrivate(path, password, SqliteOpenMode.ReadWriteCreate, kdfIterations))
             Execute(connection, "VACUUM");
-        ValidateFile(path, password);
+        ValidateFile(path, password, kdfIterations);
     }
 
-    private static SqliteConnection OpenPrivate(string path, string password, SqliteOpenMode mode)
+    private static SqliteConnection OpenReadable(string path, string password, SqliteOpenMode mode,
+        int? kdfIterations, out int selectedIterations)
+    {
+        selectedIterations = kdfIterations ?? LocalKdfIterations;
+        while (true)
+        {
+            var connection = OpenPrivate(path, password, mode, selectedIterations);
+            try
+            {
+                Scalar(connection, "SELECT count(*) FROM main.sqlite_master");
+                return connection;
+            }
+            catch (SqliteException error) when (kdfIterations is null && password.Length != 0 &&
+                selectedIterations == LocalKdfIterations && error.SqliteErrorCode is 26 or 11)
+            {
+                connection.Dispose();
+                selectedIterations = PasswordKdfIterations;
+            }
+            catch
+            {
+                connection.Dispose();
+                throw;
+            }
+        }
+    }
+
+    private static SqliteConnection OpenPrivate(string path, string password, SqliteOpenMode mode, int kdfIterations)
     {
         SqlCipherConnectionFactory.EnsureProvider();
         var connection = new SqliteConnection(new SqliteConnectionStringBuilder
@@ -389,6 +424,7 @@ public sealed class SqlCipherDatabase : IDisposable
                 quote.Parameters.AddWithValue("$password", password);
                 var literal = (string)quote.ExecuteScalar()!;
                 Execute(connection, $"PRAGMA key={literal}");
+                Execute(connection, $"PRAGMA kdf_iter={kdfIterations.ToString(CultureInfo.InvariantCulture)}");
             }
             SqlCipherConnectionFactory.Configure(connection);
             return connection;
@@ -400,58 +436,68 @@ public sealed class SqlCipherDatabase : IDisposable
         }
     }
 
-    private static void CopyDatabase(string sourcePath, string sourcePassword, string outputPath, string outputPassword,
-        bool plaintextSource, Dictionary<string, Dictionary<string, Column>>? requiredSchema, CancellationToken cancellationToken)
+    private static void CopyDatabase(string sourcePath, string sourcePassword, int? sourceKdfIterations,
+        string outputPath, string outputPassword, int outputKdfIterations, bool plaintextSource,
+        Dictionary<string, Dictionary<string, Column>>? requiredSchema, CancellationToken cancellationToken)
     {
         if (!plaintextSource)
             RequireEncryptedFile(sourcePath);
-        using (var output = OpenPrivate(outputPath, outputPassword, SqliteOpenMode.ReadWriteCreate))
+        // SQLite preserves the connection's ReadWrite flags for ATTACH, while this URI opens main read-only.
+        // Only the already-reserved, empty destination may be opened for writing.
+        var sourceUri = new Uri(Path.GetFullPath(sourcePath)).AbsoluteUri + "?mode=ro";
+        using (var source = OpenReadable(sourceUri, sourcePassword, SqliteOpenMode.ReadWrite, sourceKdfIterations, out _))
         {
-            Execute(output, "PRAGMA journal_mode=DELETE");
-            using (var attach = Command(output, "ATTACH DATABASE $path AS source KEY $key"))
+            if (SQLitePCL.raw.sqlite3_db_readonly(source.Handle, "main") != 1)
+                throw new InvalidDataException("The database source could not be opened read-only.");
+            using (var attach = Command(source, "ATTACH DATABASE $path AS output KEY $key"))
             {
-                attach.Parameters.AddWithValue("$path", new Uri(Path.GetFullPath(sourcePath)).AbsoluteUri + "?mode=ro");
-                attach.Parameters.AddWithValue("$key", sourcePassword);
+                attach.Parameters.AddWithValue("$path", outputPath);
+                attach.Parameters.AddWithValue("$key", outputPassword);
                 attach.ExecuteNonQuery();
             }
-            using (var snapshot = output.BeginTransaction(deferred: true))
+            // ATTACH reads schema before returning: attach only the empty output, never an existing encrypted source.
+            // Set its KDF before the first write; no process-global cipher defaults are changed.
+            if (outputPassword.Length != 0)
+                Execute(source, $"PRAGMA output.kdf_iter={outputKdfIterations.ToString(CultureInfo.InvariantCulture)}");
+            Execute(source, "PRAGMA output.journal_mode=DELETE");
+            using (var snapshot = source.BeginTransaction(deferred: true))
             {
-                // This first read fixes the source snapshot for validation, metadata and the complete copy.
-                Scalar(output, "SELECT count(*) FROM source.sqlite_master", snapshot);
-                ValidateIntegrity(output, "source", !plaintextSource, snapshot);
+                // This read fixes the source snapshot for validation, metadata and the complete copy.
+                Scalar(source, "SELECT count(*) FROM main.sqlite_master", snapshot);
+                ValidateIntegrity(source, "main", !plaintextSource, snapshot);
                 cancellationToken.ThrowIfCancellationRequested();
                 if (requiredSchema is not null)
-                    RequireCompatibleSchema(requiredSchema, ReadSchema(output, "source", snapshot));
-                var userVersion = Scalar(output, "PRAGMA source.user_version", snapshot);
-                var applicationId = Scalar(output, "PRAGMA source.application_id", snapshot);
-                var autoVacuum = Scalar(output, "PRAGMA source.auto_vacuum", snapshot);
-                SetPragma(output, "auto_vacuum", autoVacuum!, snapshot);
-                Execute(output, "SELECT sqlcipher_export('main', 'source')", snapshot);
+                    RequireCompatibleSchema(requiredSchema, ReadSchema(source, "main", snapshot));
+                var userVersion = Scalar(source, "PRAGMA main.user_version", snapshot);
+                var applicationId = Scalar(source, "PRAGMA main.application_id", snapshot);
+                var autoVacuum = Scalar(source, "PRAGMA main.auto_vacuum", snapshot);
+                SetPragma(source, "output", "auto_vacuum", autoVacuum!, snapshot);
+                Execute(source, "SELECT sqlcipher_export('output', 'main')", snapshot);
                 // sqlcipher_export may reconstruct sequence values from current rows. Preserve deleted high IDs too.
-                if (Convert.ToInt64(Scalar(output, "SELECT count(*) FROM main.sqlite_master WHERE name='sqlite_sequence'", snapshot), CultureInfo.InvariantCulture) != 0)
+                if (Convert.ToInt64(Scalar(source, "SELECT count(*) FROM output.sqlite_master WHERE name='sqlite_sequence'", snapshot), CultureInfo.InvariantCulture) != 0)
                 {
-                    Execute(output, "DELETE FROM main.sqlite_sequence", snapshot);
-                    Execute(output, "INSERT INTO main.sqlite_sequence(name, seq) SELECT name, seq FROM source.sqlite_sequence", snapshot);
+                    Execute(source, "DELETE FROM output.sqlite_sequence", snapshot);
+                    Execute(source, "INSERT INTO output.sqlite_sequence(name, seq) SELECT name, seq FROM main.sqlite_sequence", snapshot);
                 }
-                SetPragma(output, "user_version", userVersion!, snapshot);
-                SetPragma(output, "application_id", applicationId!, snapshot);
+                SetPragma(source, "output", "user_version", userVersion!, snapshot);
+                SetPragma(source, "output", "application_id", applicationId!, snapshot);
                 cancellationToken.ThrowIfCancellationRequested();
                 snapshot.Commit();
             }
-            Execute(output, "DETACH DATABASE source");
-            if (!string.Equals(Scalar(output, "PRAGMA journal_mode=DELETE") as string, "delete", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(Scalar(source, "PRAGMA output.journal_mode=DELETE") as string, "delete", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("The database snapshot could not be finalized.");
+            Execute(source, "DETACH DATABASE output");
         }
-        ValidateFile(outputPath, outputPassword);
+        ValidateFile(outputPath, outputPassword, outputKdfIterations);
         cancellationToken.ThrowIfCancellationRequested();
     }
 
-    private static void ValidateFile(string path, string password)
+    private static void ValidateFile(string path, string password, int kdfIterations)
     {
         var encrypted = password.Length != 0;
         if (encrypted)
             RequireEncryptedFile(path);
-        using var connection = OpenPrivate(path, password, SqliteOpenMode.ReadOnly);
+        using var connection = OpenPrivate(path, password, SqliteOpenMode.ReadOnly, kdfIterations);
         using var snapshot = connection.BeginTransaction(deferred: true);
         Scalar(connection, "SELECT count(*) FROM main.sqlite_master", snapshot);
         ValidateIntegrity(connection, "main", encrypted, snapshot);
@@ -511,12 +557,12 @@ public sealed class SqlCipherDatabase : IDisposable
         }
     }
 
-    private static void SetPragma(SqliteConnection connection, string name, object value, SqliteTransaction transaction)
+    private static void SetPragma(SqliteConnection connection, string alias, string name, object value, SqliteTransaction transaction)
     {
         using var quote = Command(connection, "SELECT quote($value)", transaction);
         quote.Parameters.AddWithValue("$value", value);
         var literal = (string)quote.ExecuteScalar()!;
-        Execute(connection, $"PRAGMA main.{name}={literal}", transaction);
+        Execute(connection, $"PRAGMA {alias}.{name}={literal}", transaction);
     }
 
     private static SqliteCommand Command(SqliteConnection connection, string sql, SqliteTransaction? transaction = null)

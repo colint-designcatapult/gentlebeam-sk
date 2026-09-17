@@ -516,7 +516,8 @@ public sealed class SqliteAuthAuditTests
 
     private void Execute(string sql)
     {
-        using var connection = _database.Connections.Open();
+        using var lease = _database.Connections.Rent();
+        var connection = lease.Connection;
         using var command = connection.CreateCommand();
         command.CommandText = sql;
         command.ExecuteNonQuery();

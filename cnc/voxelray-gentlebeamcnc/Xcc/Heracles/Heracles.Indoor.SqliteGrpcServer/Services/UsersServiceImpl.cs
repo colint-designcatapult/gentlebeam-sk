@@ -78,7 +78,8 @@ public sealed class UsersServiceImpl : UsersService.UsersServiceBase
 
         try
         {
-            await using var connection = await _connections.OpenAsync(context.CancellationToken);
+            await using var lease = await _connections.RentAsync(context.CancellationToken);
+            var connection = lease.Connection;
             // Authorize against current persisted state under the same write lock
             // as the reset, so demotion, deletion or lockout cannot race this check.
             using var transaction = connection.BeginTransaction(deferred: false);

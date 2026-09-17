@@ -27,7 +27,7 @@ public sealed class SqliteEncryptionTests
         _root = Path.Combine(Path.GetTempPath(), $"heracles-cipher-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_root);
         // Use the application's provider initialization, never an ordinary SQLite bundle.
-        _ = new ConnectionFactory(Path.Combine(_root, "provider-only.db"), "provider-initialization");
+        ConnectionFactory.EnsureProvider();
     }
 
     [TearDown]
@@ -52,14 +52,15 @@ public sealed class SqliteEncryptionTests
         Assert.That(File.ReadAllBytes(LivePath).AsSpan(0, 16).SequenceEqual("SQLite format 3\0"u8), Is.False);
         Assert.Throws<SqliteException>(() => ReadScalar(LivePath, "", "SELECT count(*) FROM sqlite_master"));
         Assert.Throws<SqliteException>(() => ReadScalar(LivePath, new string('0', 32), "SELECT count(*) FROM sqlite_master"));
+        Assert.Throws<SqliteException>(() => ReadScalar(LivePath, localPassword, "SELECT count(*) FROM sqlite_master"));
 
         var reopened = InitializeWithoutPrompt();
         var persisted = await new LogRepository(reopened.Connections, "logs").ReadAsync(created.Id);
         Assert.That(persisted!.Message, Is.EqualTo("distinctive encrypted clinical record"));
-        using var keyed = Open(LivePath, localPassword);
+        using var keyed = Open(LivePath, localPassword, kdfIterations: 4000);
         Assert.That(Scalar(keyed, "PRAGMA cipher_version")!.ToString(), Does.StartWith("4."));
         Assert.That(Scalar(keyed, "PRAGMA cipher_use_hmac")!.ToString(), Is.EqualTo("1"));
-        Assert.That(Scalar(keyed, "PRAGMA kdf_iter")!.ToString(), Is.EqualTo("256000"));
+        Assert.That(Scalar(keyed, "PRAGMA kdf_iter")!.ToString(), Is.EqualTo("4000"));
         Assert.That(Scalar(keyed, "PRAGMA cipher_page_size")!.ToString(), Is.EqualTo("4096"));
         using var check = keyed.CreateCommand();
         check.CommandText = "PRAGMA cipher_integrity_check";
@@ -68,14 +69,34 @@ public sealed class SqliteEncryptionTests
     }
 
     [Test]
-    public void RuntimeConnectionsCannotRecreateDeletedDatabase()
+    public void ClosedRuntimeConnectionsCannotRecreateDeletedDatabase()
     {
         var database = Initialize();
         var factory = database.Connections;
-        SqliteConnection.ClearAllPools();
+        var password = LocalPassword(database);
+        database.Dispose();
         File.Delete(LivePath);
-        Assert.Throws<IOException>(() => factory.Open());
+        Assert.Throws<ObjectDisposedException>(() => factory.Rent());
+        Assert.Throws<IOException>(() => new ConnectionFactory(LivePath, password, 4000));
         Assert.That(File.Exists(LivePath), Is.False);
+    }
+
+    [Test]
+    public void Preexisting256000DatabaseReopensWithoutRekeying()
+    {
+        var database = InitializeExisting(256000);
+        SeedRecords(database, "existing encrypted record");
+        var password = LocalPassword(database);
+        var recoveryKey = database.GetRecoveryKey();
+        database.Dispose();
+        var before = Digest(LivePath);
+        var reopened = InitializeWithoutPrompt();
+        Assert.That(reopened.GetRecoveryKey(), Is.EqualTo(recoveryKey));
+        using (var lease = reopened.Connections.Rent())
+            Assert.That(Scalar(lease.Connection, "SELECT data FROM records"), Is.EqualTo("existing encrypted record"));
+        Assert.That(ReadScalar(LivePath, password, "SELECT data FROM records", 256000), Is.EqualTo("existing encrypted record"));
+        Assert.Throws<SqliteException>(() => ReadScalar(LivePath, password, "SELECT data FROM records", 4000));
+        Assert.That(Digest(LivePath), Is.EqualTo(before));
     }
 
     [Test]
@@ -102,7 +123,9 @@ public sealed class SqliteEncryptionTests
         var repository = new LogRepository(database.Connections, "logs");
         Assert.That((await repository.ReadAsync(7))!.Message, Is.EqualTo("migrated protobuf log"));
         Assert.That((await repository.CreateAsync(new Log { Message = "after migration" })).Id, Is.EqualTo(901));
-        using var connection = database.Connections.Open();
+        using var lease = database.Connections.Rent();
+        var connection = lease.Connection;
+        Assert.That(ReadScalar(LivePath, LocalPassword(database), "SELECT parent_id FROM children", 4000), Is.EqualTo(7L));
         Assert.That(Scalar(connection, "PRAGMA user_version"), Is.EqualTo(42L));
         Assert.That(Scalar(connection, "PRAGMA application_id"), Is.EqualTo(1729L));
         Assert.That(Scalar(connection, "PRAGMA auto_vacuum"), Is.EqualTo(1L));
@@ -150,17 +173,20 @@ public sealed class SqliteEncryptionTests
         using (var legacy = Open(LegacyPath, "", create: true))
             Execute(legacy, "CREATE TABLE obsolete(value TEXT); INSERT INTO obsolete VALUES('do not merge')");
         var reopened = InitializeWithoutPrompt();
-        using var connection = reopened.Connections.Open();
+        using var lease = reopened.Connections.Rent();
+        var connection = lease.Connection;
         Assert.That(Scalar(connection, "SELECT data FROM records"), Is.EqualTo("authoritative"));
         Assert.That(Scalar(connection, "SELECT count(*) FROM sqlite_master WHERE name='obsolete'"), Is.EqualTo(0L));
         Assert.That(File.Exists(LegacyPath), Is.False);
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public void MissingOrCorruptProtectorAllowsRecoveryAndRestoresAutomaticUnlock(bool corrupt)
+    [TestCase(false, 4000)]
+    [TestCase(true, 4000)]
+    [TestCase(false, 256000)]
+    [TestCase(true, 256000)]
+    public void MissingOrCorruptProtectorAllowsRecoveryAndRestoresAutomaticUnlock(bool corrupt, int kdfIterations)
     {
-        var database = Initialize();
+        var database = kdfIterations == 4000 ? Initialize() : InitializeExisting(kdfIterations);
         SeedRecords(database, "recover without data loss");
         var recoveryKey = database.GetRecoveryKey();
         database.Dispose();
@@ -186,8 +212,10 @@ public sealed class SqliteEncryptionTests
         Assert.That(Digest(LivePath), Is.EqualTo(before));
         recovered.Dispose();
         var reopened = InitializeWithoutPrompt();
-        using var connection = reopened.Connections.Open();
+        using var lease = reopened.Connections.Rent();
+        var connection = lease.Connection;
         Assert.That(Scalar(connection, "SELECT data FROM records"), Is.EqualTo("recover without data loss"));
+        Assert.That(ReadScalar(LivePath, LocalPassword(reopened), "SELECT data FROM records", kdfIterations), Is.EqualTo("recover without data loss"));
     }
 
     [Test]
@@ -229,10 +257,11 @@ public sealed class SqliteEncryptionTests
         finally { CryptographicOperations.ZeroMemory(key); }
     }
 
-    [Test]
-    public void NonHeaderPageCorruptionFailsClosedWithoutRecoveryOrRecreation()
+    [TestCase(4000)]
+    [TestCase(256000)]
+    public void NonHeaderPageCorruptionFailsClosedWithoutRecoveryOrRecreation(int kdfIterations)
     {
-        var database = Initialize();
+        var database = kdfIterations == 4000 ? Initialize() : InitializeExisting(kdfIterations);
         SeedRecords(database, new string('x', 14000));
         database.Dispose();
         CorruptDataPage(LivePath);
@@ -271,18 +300,21 @@ public sealed class SqliteEncryptionTests
             return savedKey;
         });
         Assert.That(prompted, Is.True);
-        using var connection = recovered.Connections.Open();
+        using var lease = recovered.Connections.Rent();
+        var connection = lease.Connection;
         Assert.That(Scalar(connection, "SELECT data FROM records"), Is.EqualTo("original encrypted data"));
     }
 
-    [Test]
-    public async Task PasswordSnapshotRoundTripPreservesEverythingAndStableLocalKey()
+    [TestCase(4000)]
+    [TestCase(256000)]
+    public async Task PasswordSnapshotRoundTripPreservesEverythingAndStableLocalKey(int localKdfIterations)
     {
         const string transferPassword = "  pa'ss;密碼;雪  ";
-        var database = Initialize();
+        var database = localKdfIterations == 4000 ? Initialize() : InitializeExisting(localKdfIterations);
         SeedRecords(database, "prior clinical record");
-        using (var connection = database.Connections.Open())
+        using (var lease = database.Connections.Rent())
         {
+            var connection = lease.Connection;
             Execute(connection, """
                 CREATE TABLE users(id INTEGER PRIMARY KEY, data TEXT NOT NULL);
                 CREATE TABLE settings(id INTEGER PRIMARY KEY, data TEXT NOT NULL);
@@ -301,14 +333,16 @@ public sealed class SqliteEncryptionTests
         Assert.Throws<SqliteException>(() => ReadScalar(backup, localPassword, "SELECT count(*) FROM sqlite_master"));
         Assert.Throws<SqliteException>(() => ReadScalar(backup, transferPassword.Trim(), "SELECT count(*) FROM sqlite_master"));
         Assert.That(ReadScalar(backup, transferPassword, "SELECT data FROM records"), Is.EqualTo("prior clinical record"));
-        using (var connection = database.Connections.Open())
+        Assert.Throws<SqliteException>(() => ReadScalar(backup, transferPassword, "SELECT data FROM records", 4000));
+        using (var lease = database.Connections.Rent())
         {
+            var connection = lease.Connection;
             Execute(connection, "UPDATE records SET data='later clinical record'; UPDATE users SET data='later users'; UPDATE settings SET data='later settings'");
         }
         var staged = await database.PrepareImportAsync(backup, transferPassword);
         try
         {
-            Assert.That(ReadScalar(staged, localPassword, "SELECT data FROM records"), Is.EqualTo("prior clinical record"));
+            Assert.That(ReadScalar(staged, localPassword, "SELECT data FROM records", localKdfIterations), Is.EqualTo("prior clinical record"));
             Assert.Throws<SqliteException>(() => ReadScalar(staged, transferPassword, "SELECT count(*) FROM sqlite_master"));
             var prepared = staged;
             staged = null!;
@@ -318,23 +352,71 @@ public sealed class SqliteEncryptionTests
         var reopened = InitializeWithoutPrompt();
         Assert.That(reopened.GetRecoveryKey(), Is.EqualTo(recoveryKey));
         Assert.That(File.ReadAllBytes(KeyPath), Is.EqualTo(protector));
-        using var imported = reopened.Connections.Open();
+        using var importedLease = reopened.Connections.Rent();
+        var imported = importedLease.Connection;
         Assert.That(Scalar(imported, "SELECT data FROM users WHERE id=17"), Is.EqualTo("administrator and permissions"));
         Assert.That(Scalar(imported, "SELECT data FROM settings WHERE id=4"), Is.EqualTo("prior settings"));
         Assert.That(Scalar(imported, "SELECT data FROM records"), Is.EqualTo("prior clinical record"));
         Assert.That(Scalar(imported, "INSERT INTO records(parent_id,data) VALUES(0,'next'); SELECT last_insert_rowid()"), Is.EqualTo(801L));
         Assert.That(Scalar(imported, "PRAGMA journal_mode"), Is.EqualTo("delete"));
+        Assert.That(ReadScalar(LivePath, localPassword, "SELECT data FROM records", localKdfIterations), Is.EqualTo("prior clinical record"));
+    }
+
+    [TestCase(4000)]
+    [TestCase(256000)]
+    public async Task Import4000DatabasePreservesLocalKdfAndRejectsWrongKeyOrCorruption(int localKdfIterations)
+    {
+        const string password = "source transfer password";
+        var database = localKdfIterations == 4000 ? Initialize() : InitializeExisting(localKdfIterations);
+        SeedRecords(database, "live record");
+        var localPassword = LocalPassword(database);
+        var source = Path.Combine(_root, "source-4000.db");
+        using (var connection = Open(source, password, create: true, kdfIterations: 4000))
+        {
+            Execute(connection, "CREATE TABLE records(id INTEGER PRIMARY KEY AUTOINCREMENT,parent_id INTEGER NOT NULL,data TEXT NOT NULL)");
+            using var insert = connection.CreateCommand();
+            insert.CommandText = "INSERT INTO records(parent_id,data) VALUES(0,$data)";
+            insert.Parameters.AddWithValue("$data", new string('s', 14000));
+            insert.ExecuteNonQuery();
+        }
+        var sourceBefore = Digest(source);
+        var liveBefore = Digest(LivePath);
+        Assert.ThrowsAsync<InvalidDataException>(() => database.PrepareImportAsync(source, "wrong password"));
+        var damaged = Path.Combine(_root, "source-4000-damaged.db");
+        File.Copy(source, damaged);
+        CorruptDataPage(damaged);
+        var damagedBefore = Digest(damaged);
+        Assert.ThrowsAsync<InvalidDataException>(() => database.PrepareImportAsync(damaged, password));
+        Assert.That(Digest(damaged), Is.EqualTo(damagedBefore));
+        Assert.That(Digest(LivePath), Is.EqualTo(liveBefore));
+
+        var staging = await database.PrepareImportAsync(source, password);
+        var installed = false;
+        try
+        {
+            Assert.That(ReadScalar(staging, localPassword, "SELECT data FROM records", localKdfIterations), Is.EqualTo(new string('s', 14000)));
+            var otherIterations = localKdfIterations == 4000 ? 256000 : 4000;
+            Assert.Throws<SqliteException>(() => ReadScalar(staging, localPassword, "SELECT data FROM records", otherIterations));
+            installed = true;
+            database.InstallPreparedImport(staging);
+        }
+        finally { if (!installed) database.DiscardPreparedImport(staging); }
+        var reopened = InitializeWithoutPrompt();
+        using (var lease = reopened.Connections.Rent())
+            Assert.That(Scalar(lease.Connection, "SELECT data FROM records"), Is.EqualTo(new string('s', 14000)));
+        Assert.That(Digest(source), Is.EqualTo(sourceBefore));
     }
 
     [Test]
     public async Task EmptyExportPasswordCreatesUnkeyedSnapshotWithoutChangingLiveEncryption()
     {
         var database = Initialize();
-        using (var connection = database.Connections.Open())
-            Execute(connection, "PRAGMA auto_vacuum=FULL; VACUUM; PRAGMA user_version=42; PRAGMA application_id=1729;");
+        using (var lease = database.Connections.Rent())
+            Execute(lease.Connection, "PRAGMA auto_vacuum=FULL; VACUUM; PRAGMA user_version=42; PRAGMA application_id=1729;");
         SeedRecords(database, "clinical plaintext export");
-        using (var connection = database.Connections.Open())
+        using (var lease = database.Connections.Rent())
         {
+            var connection = lease.Connection;
             Execute(connection, """
                 CREATE TABLE users(id INTEGER PRIMARY KEY, data TEXT NOT NULL);
                 CREATE TABLE settings(id INTEGER PRIMARY KEY, data TEXT NOT NULL);
@@ -371,17 +453,17 @@ public sealed class SqliteEncryptionTests
         Assert.That(Digest(LivePath), Is.EqualTo(liveBefore));
         Assert.That(File.ReadAllBytes(KeyPath), Is.EqualTo(protectorBefore));
         Assert.Throws<SqliteException>(() => ReadScalar(LivePath, "", "SELECT data FROM records"));
-        Assert.That(ReadScalar(LivePath, LocalPassword(database), "SELECT data FROM records"), Is.EqualTo("clinical plaintext export"));
+        Assert.That(ReadScalar(LivePath, LocalPassword(database), "SELECT data FROM records", 4000), Is.EqualTo("clinical plaintext export"));
     }
 
-    [TestCase("", 1024)]
-    [TestCase("not used for plaintext", 4096)]
-    public async Task PlaintextImportRestoresDataUnderExistingLocalKey(string password, int pageSize)
+    [TestCase("", 1024, 4000)]
+    [TestCase("not used for plaintext", 4096, 256000)]
+    public async Task PlaintextImportRestoresDataUnderExistingLocalKey(string password, int pageSize, int localKdfIterations)
     {
-        var database = Initialize();
+        var database = localKdfIterations == 4000 ? Initialize() : InitializeExisting(localKdfIterations);
         SeedRecords(database, "archived clinical data");
-        using (var connection = database.Connections.Open())
-            Execute(connection, """
+        using (var lease = database.Connections.Rent())
+            Execute(lease.Connection, """
                 CREATE TABLE users(id INTEGER PRIMARY KEY, data TEXT NOT NULL);
                 CREATE TABLE settings(id INTEGER PRIMARY KEY, data TEXT NOT NULL);
                 INSERT INTO users VALUES(17,'archived administrator');
@@ -395,19 +477,19 @@ public sealed class SqliteEncryptionTests
         using (var connection = Open(source, "", write: true))
             Execute(connection, $"PRAGMA page_size={pageSize}; VACUUM");
         var sourceBefore = Digest(source);
-        using (var connection = database.Connections.Open())
-            Execute(connection, "UPDATE records SET data='new clinical data'; DELETE FROM users; UPDATE settings SET data='new settings'");
+        using (var lease = database.Connections.Rent())
+            Execute(lease.Connection, "UPDATE records SET data='new clinical data'; DELETE FROM users; UPDATE settings SET data='new settings'");
 
         var staging = await database.PrepareImportAsync(source, password);
         Assert.Throws<SqliteException>(() => ReadScalar(staging, "", "SELECT data FROM records"));
-        Assert.That(ReadScalar(staging, localPassword, "SELECT data FROM records"), Is.EqualTo("archived clinical data"));
+        Assert.That(ReadScalar(staging, localPassword, "SELECT data FROM records", localKdfIterations), Is.EqualTo("archived clinical data"));
         database.InstallPreparedImport(staging);
 
         var reopened = Initialize();
         Assert.That(reopened.GetRecoveryKey(), Is.EqualTo(recoveryKey));
         Assert.That(File.ReadAllBytes(KeyPath), Is.EqualTo(protector));
-        Assert.That(ReadScalar(LivePath, localPassword, "SELECT data FROM users WHERE id=17"), Is.EqualTo("archived administrator"));
-        Assert.That(ReadScalar(LivePath, localPassword, "SELECT data FROM settings WHERE id=4"), Is.EqualTo("archived settings"));
+        Assert.That(ReadScalar(LivePath, localPassword, "SELECT data FROM users WHERE id=17", localKdfIterations), Is.EqualTo("archived administrator"));
+        Assert.That(ReadScalar(LivePath, localPassword, "SELECT data FROM settings WHERE id=4", localKdfIterations), Is.EqualTo("archived settings"));
         Assert.Throws<SqliteException>(() => ReadScalar(LivePath, "", "SELECT data FROM records"));
         Assert.That(Digest(source), Is.EqualTo(sourceBefore));
     }
@@ -493,11 +575,12 @@ public sealed class SqliteEncryptionTests
         var staged = await database.PrepareImportAsync(incompatible, "source password");
         try
         {
-            Assert.That(ReadScalar(staged, LocalPassword(database), "SELECT extra FROM records"), Is.EqualTo("extra column retained"));
-            Assert.That(ReadScalar(staged, LocalPassword(database), "SELECT value FROM additional"), Is.EqualTo("extra table retained"));
+            Assert.That(ReadScalar(staged, LocalPassword(database), "SELECT extra FROM records", 4000), Is.EqualTo("extra column retained"));
+            Assert.That(ReadScalar(staged, LocalPassword(database), "SELECT value FROM additional", 4000), Is.EqualTo("extra table retained"));
         }
         finally { database.DiscardPreparedImport(staged); }
-        using var live = database.Connections.Open();
+        using var liveLease = database.Connections.Rent();
+        var live = liveLease.Connection;
         Assert.That(Scalar(live, "SELECT data FROM records"), Is.EqualTo("current data"));
     }
 
@@ -569,18 +652,20 @@ public sealed class SqliteEncryptionTests
         var factory = database.Connections;
         var backup = Path.Combine(_root, "wal-backup.db");
         await database.ExportAsync(backup, "password");
-        using (var connection = factory.Open())
+        using (var lease = factory.Rent())
         {
+            var connection = lease.Connection;
             Assert.That(Scalar(connection, "PRAGMA journal_mode=WAL"), Is.EqualTo("wal"));
             Execute(connection, "PRAGMA wal_autocheckpoint=0; UPDATE records SET data='live WAL state'");
         }
         Assert.That(File.Exists(LivePath + "-wal"), Is.True);
         var staged = await database.PrepareImportAsync(backup, "password");
         database.InstallPreparedImport(staged);
-        Assert.Throws<ObjectDisposedException>(() => factory.Open());
+        Assert.Throws<ObjectDisposedException>(() => factory.Rent());
         Assert.That(File.Exists(LivePath + "-wal"), Is.False);
         Assert.That(File.Exists(LivePath + "-shm"), Is.False);
-        using var connectionAfter = InitializeWithoutPrompt().Connections.Open();
+        using var connectionAfterLease = InitializeWithoutPrompt().Connections.Rent();
+        var connectionAfter = connectionAfterLease.Connection;
         Assert.That(Scalar(connectionAfter, "SELECT data FROM records"), Is.EqualTo("backup state"));
     }
 
@@ -591,14 +676,14 @@ public sealed class SqliteEncryptionTests
         SeedRecords(database, "backup state");
         var backup = Path.Combine(_root, "backup.db");
         await database.ExportAsync(backup, "password");
-        using (var connection = database.Connections.Open())
-            Execute(connection, "UPDATE records SET data='original must survive'");
+        using (var lease = database.Connections.Rent())
+            Execute(lease.Connection, "UPDATE records SET data='original must survive'");
         var staged = await database.PrepareImportAsync(backup, "password");
         var password = LocalPassword(database);
         SqliteConnection.ClearAllPools();
         using (var replacementBlocker = new FileStream(LivePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             Assert.Throws<IOException>(() => database.InstallPreparedImport(staged));
-        Assert.That(ReadScalar(LivePath, password, "SELECT data FROM records"), Is.EqualTo("original must survive"));
+        Assert.That(ReadScalar(LivePath, password, "SELECT data FROM records", 4000), Is.EqualTo("original must survive"));
         Assert.That(File.Exists(staged), Is.False);
         database.Dispose();
     }
@@ -608,8 +693,9 @@ public sealed class SqliteEncryptionTests
     public async Task ExportReadSnapshotCannotMixCommittedWriterStates(string password)
     {
         var database = Initialize();
-        using (var connection = database.Connections.Open())
+        using (var lease = database.Connections.Rent())
         {
+            var connection = lease.Connection;
             Execute(connection, "PRAGMA journal_mode=WAL");
             Execute(connection, "CREATE TABLE first_state(value INTEGER); CREATE TABLE second_state(value INTEGER); INSERT INTO first_state VALUES(0); INSERT INTO second_state VALUES(0)");
         }
@@ -619,7 +705,8 @@ public sealed class SqliteEncryptionTests
         {
             try
             {
-                using var connection = database.Connections.Open();
+                using var lease = database.Connections.Rent();
+                var connection = lease.Connection;
                 while (!stop.IsCancellationRequested)
                 {
                     using var transaction = connection.BeginTransaction();
@@ -669,6 +756,19 @@ public sealed class SqliteEncryptionTests
         return database;
     }
 
+    private Database InitializeExisting(int kdfIterations)
+    {
+        var key = RandomNumberGenerator.GetBytes(16);
+        try
+        {
+            new KeyStore(KeyPath).Save(key);
+            using (var connection = Open(LivePath, Convert.ToHexString(key), create: true, kdfIterations: kdfIterations))
+                Execute(connection, "VACUUM");
+        }
+        finally { CryptographicOperations.ZeroMemory(key); }
+        return InitializeWithoutPrompt();
+    }
+
     private Database InitializeWithoutPrompt()
     {
         var database = NewDatabase();
@@ -686,7 +786,8 @@ public sealed class SqliteEncryptionTests
 
     private static void SeedRecords(Database database, string value)
     {
-        using var connection = database.Connections.Open();
+        using var lease = database.Connections.Rent();
+        var connection = lease.Connection;
         Execute(connection, "CREATE TABLE records(id INTEGER PRIMARY KEY AUTOINCREMENT,parent_id INTEGER NOT NULL,data TEXT NOT NULL)");
         using var command = connection.CreateCommand();
         command.CommandText = "INSERT INTO records(parent_id,data) VALUES(0,$data)";
@@ -694,7 +795,7 @@ public sealed class SqliteEncryptionTests
         command.ExecuteNonQuery();
     }
 
-    private static SqliteConnection Open(string path, string password, bool create = false, bool write = false)
+    private static SqliteConnection Open(string path, string password, bool create = false, bool write = false, int kdfIterations = 256000)
     {
         var connection = new SqliteConnection(new SqliteConnectionStringBuilder
         {
@@ -712,6 +813,7 @@ public sealed class SqliteEncryptionTests
                 quote.Parameters.AddWithValue("$password", password);
                 var literal = (string)quote.ExecuteScalar()!;
                 Execute(connection, $"PRAGMA key={literal}");
+                Execute(connection, $"PRAGMA kdf_iter={kdfIterations}");
             }
             Execute(connection, "PRAGMA temp_store=MEMORY");
             return connection;
@@ -719,9 +821,9 @@ public sealed class SqliteEncryptionTests
         catch { connection.Dispose(); throw; }
     }
 
-    private static object? ReadScalar(string path, string password, string sql)
+    private static object? ReadScalar(string path, string password, string sql, int kdfIterations = 256000)
     {
-        using var connection = Open(path, password);
+        using var connection = Open(path, password, kdfIterations: kdfIterations);
         return Scalar(connection, sql);
     }
 

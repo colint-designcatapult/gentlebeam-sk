@@ -386,8 +386,8 @@ public sealed class SqliteServiceAuditTests
         var (_, _, _, headers) = await CreateResetActorAsync();
         var target = await CreateResetTargetAsync(10);
         var before = await _logs.ReadAllAsync();
-        using (var connection = _database.Connections.Open())
-        using (var command = connection.CreateCommand())
+        using (var lease = _database.Connections.Rent())
+        using (var command = lease.Connection.CreateCommand())
         {
             command.CommandText = $"CREATE TRIGGER reject_reset BEFORE {operation} BEGIN SELECT RAISE(ABORT, 'secret-storage-detail'); END;";
             command.ExecuteNonQuery();
@@ -401,8 +401,8 @@ public sealed class SqliteServiceAuditTests
         var store = new Infra::SqliteProtoRepository<ServerProto.Users.V1.User>(_database.Connections, "users");
         Assert.That(await store.ReadAsync(target.Id), Is.EqualTo(target));
         Assert.That(await _logs.ReadAllAsync(), Is.EqualTo(before));
-        using (var connection = _database.Connections.Open())
-        using (var command = connection.CreateCommand())
+        using (var lease = _database.Connections.Rent())
+        using (var command = lease.Connection.CreateCommand())
         {
             command.CommandText = "DROP TRIGGER reject_reset;";
             command.ExecuteNonQuery();

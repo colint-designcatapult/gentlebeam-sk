@@ -25,8 +25,6 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
     private readonly bool _hasParentId;
     private readonly string? _parentIdJsonField;
 
-    public string DbPath { get; }
-
     public SqliteProtoRepository(
         SqlCipherConnectionFactory connections,
         string tableName,
@@ -44,7 +42,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     private void EnsureTable()
     {
-        using var conn = Open();
+        using var lease = _connections.Rent();
+        var conn = lease.Connection;
         using var cmd = conn.CreateCommand();
 
         if (_hasParentId)
@@ -113,7 +112,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<T> CreateAsync(T message, long parentId = 0)
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         using var transaction = conn.BeginTransaction(deferred: false);
         var created = await CreateAsync(message, transaction, parentId);
         transaction.Commit();
@@ -159,7 +159,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<T?> ReadAsync(long id)
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         return await ReadAsync(id, conn, null);
     }
 
@@ -197,7 +198,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
         skip = Math.Max(0, skip);
         get = Math.Max(1, get);
 
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $"SELECT data FROM {_tableName} ORDER BY id DESC LIMIT @get OFFSET @skip";
         cmd.Parameters.AddWithValue("@get", get);
@@ -212,7 +214,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<long> CountAsync()
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $"SELECT COUNT(*) FROM {_tableName}";
         return (long)(await cmd.ExecuteScalarAsync())!;
@@ -220,7 +223,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<IList<T>> ReadAllOrderedAsync()
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $"SELECT data FROM {_tableName} ORDER BY id DESC";
 
@@ -233,7 +237,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<IList<T>> ReadAllAsync()
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $"SELECT data FROM {_tableName}";
 
@@ -246,7 +251,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<IList<T>> ReadByParentIdAsync(long parentId)
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $"SELECT data FROM {_tableName} WHERE parent_id = @p";
         cmd.Parameters.AddWithValue("@p", parentId);
@@ -260,7 +266,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<T> UpdateAsync(long id, T message, bool preserveOutputOnly = true)
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         // Reserve the write lock before reading output-only fields. A concurrent
         // authentication must not be overwritten by a stale normal user update.
         using var transaction = conn.BeginTransaction(deferred: false);
@@ -290,7 +297,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
     // transaction serializes separate service instances and normal CRUD writers.
     internal async Task<T?> UpdateFirstAsync(Func<T, bool> matches, Func<T, bool> update)
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         using var transaction = conn.BeginTransaction(deferred: false);
         T? selected = null;
         long id = 0;
@@ -325,7 +333,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task DeleteAsync(long id)
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $"DELETE FROM {_tableName} WHERE id = @id";
         cmd.Parameters.AddWithValue("@id", id);
@@ -336,7 +345,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<T?> ReadSingleAsync()
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $"SELECT data FROM {_tableName} LIMIT 1";
         var json = (string?)await cmd.ExecuteScalarAsync();
@@ -345,7 +355,8 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
 
     public async Task<T> UpsertSingleAsync(T message)
     {
-        await using var conn = await OpenAsync();
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
         using var cmd = conn.CreateCommand();
         cmd.CommandText =
             $"DELETE FROM {_tableName}; " +
@@ -387,10 +398,6 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
-
-    private SqliteConnection Open() => _connections.Open();
-
-    private Task<SqliteConnection> OpenAsync() => _connections.OpenAsync();
 
     /// <summary>
     /// Reflectively sets the <c>Id</c> property on proto messages that expose it.

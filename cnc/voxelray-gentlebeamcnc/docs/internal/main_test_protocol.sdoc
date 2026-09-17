@@ -5619,7 +5619,7 @@ STEPS: >>>
 
 5. Open the same copy with a SQLCipher-aware inspection tool using SQLCipher 4 settings. Supply the Passphrase securely captured in step 3 through secret-safe input in ordinary passphrase mode, not raw-key syntax or the numeric recovery key. Query schema and representative patient, user/settings, and treatment records. Run cipher_integrity_check and integrity_check.
 
-6. Inspect the published native payload and active provider. Record non-secret evidence of SQLCipher major version 4, AES-256 encryption, cipher_page_size=4096, kdf_iter=256000, PBKDF2-HMAC-SHA512, HMAC enabled with HMAC-SHA512, and cipher_plaintext_header_size=0. Confirm that the local MEK is generated from 16 cryptographically random bytes and that no competing ordinary-SQLite provider is selected. Relate this evidence to the minimum 128-bit encryption-strength requirement.
+6. Inspect the published native payload and active provider. Record non-secret evidence of SQLCipher major version 4, AES-256 encryption, PBKDF2-HMAC-SHA512, HMAC enabled with HMAC-SHA512, and cipher_plaintext_header_size=0. Confirm that the local MEK is generated from 16 cryptographically random bytes and that no competing ordinary-SQLite provider is selected. Relate this evidence to the minimum 128-bit encryption-strength requirement.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1-3. All saved clinical and non-clinical values, IDs, and relationships survive automatic-unlock restart without requesting the recovery key again.

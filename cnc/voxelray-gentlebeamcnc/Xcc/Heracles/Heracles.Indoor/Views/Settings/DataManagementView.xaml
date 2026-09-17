@@ -43,7 +43,7 @@
                                      IsReadOnly="True" IsUndoEnabled="False" SpellCheck.IsEnabled="False"
                                      AutomationProperties.Name="Passphrase"
                                      FontFamily="Consolas" FontSize="20" Padding="8" MinWidth="740" HorizontalAlignment="Left" />
-                <TextBlock Text="Use as a password/passphrase with SQLCipher 4 settings, not in raw-key mode."
+                <TextBlock Text="Use passphrase mode. Set kdf_iter to 4000 for newly created local databases, or 256000 for older databases. Password-protected exports use 256000."
                            Style="{StaticResource TextBlockLegendStyle}" FontWeight="Normal" TextWrapping="Wrap"
                            MaxWidth="850" HorizontalAlignment="Left" Margin="0,8,0,28" />
                 <TextBlock Text="Backups contain the entire database, including users and settings. Protect backup files and passwords appropriately. Import replaces all database data and closes the application."

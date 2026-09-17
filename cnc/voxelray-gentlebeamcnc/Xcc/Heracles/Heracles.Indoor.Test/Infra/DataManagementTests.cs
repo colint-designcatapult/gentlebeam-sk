@@ -95,11 +95,13 @@ public sealed class DataManagementTests
         {
             DataSource = Path.Combine(fixture.DirectoryPath, "heracles.encrypted.db"),
             Mode = Microsoft.Data.Sqlite.SqliteOpenMode.ReadOnly,
-            Pooling = false,
-            Password = fixture.Service.RevealDatabasePassword()
+            Pooling = false
         }.ToString());
         connection.Open();
         using var query = connection.CreateCommand();
+        // Own the handle before key validation, and use the new local database's KDF.
+        query.CommandText = $"PRAGMA key='{fixture.Service.RevealDatabasePassword()}'; PRAGMA kdf_iter=4000";
+        query.ExecuteNonQuery();
         query.CommandText = "SELECT data FROM plans WHERE id=$id";
         query.Parameters.AddWithValue("$id", plan.Id);
         Assert.That(Plan.Parser.ParseJson((string)query.ExecuteScalar()!).Id, Is.EqualTo(plan.Id));
