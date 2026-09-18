@@ -362,7 +362,8 @@
                         Grid.Row="2"
                         CameraUrlRoom="{Binding HeraclesExternalSettings.CameraUrlRoom}"
                         CameraUrlTreatmentHead="{Binding HeraclesExternalSettings.CameraUrlTreatmentHead}"
-                        ControlPanelVisibility="Collapsed"/>
+                        ControlPanelVisibility="Collapsed"
+                        Visibility="{Binding Path=DataContext.CameraVisible, RelativeSource={RelativeSource AncestorType=Window}, Converter={conv2:BooleanToVisibilityConverter}, FallbackValue=Visible}"/>
                 </Grid>
 
                 <Grid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="5" IsEnabled="{Binding CommonProperties.IsInSafeState}">

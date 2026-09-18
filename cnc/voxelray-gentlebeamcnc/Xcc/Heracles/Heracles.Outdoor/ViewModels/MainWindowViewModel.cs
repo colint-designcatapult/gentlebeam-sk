@@ -66,6 +66,13 @@ namespace Heracles.External.ViewModels
             set => SetProperty(ref _showSessionLock, value);
         }
 
+        private bool _cameraVisible = true;
+        public bool CameraVisible
+        {
+            get => _cameraVisible;
+            set => SetProperty(ref _cameraVisible, value);
+        }
+
 
 
         #region Virtual keyboard properties
@@ -102,9 +109,11 @@ namespace Heracles.External.ViewModels
                 case UserSessionEventType.Open:
                 case UserSessionEventType.Unlocked:
                     ShowSessionLock = false;
+                    CameraVisible = true;
                     break;
                 case UserSessionEventType.Close:
                     ShowSessionLock = false;
+                    CameraVisible = true;
                     RegionManager.RequestNavigate(Regions.ExternalRegion, "ExternalTabsView");
                     break;
                 case UserSessionEventType.Locked:
@@ -121,6 +130,9 @@ namespace Heracles.External.ViewModels
 
         private void OnSessionLocked(bool showLoginView = false)
         {
+            // Hide the camera (collapse WebView section without removing from region to preserve state)
+            CameraVisible = false;
+            
             ShowSessionLock = true;
             if (showLoginView)
             {
