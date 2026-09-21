@@ -110,29 +110,31 @@ TITLE: Requirements
 [REQUIREMENT]
 UID: RQ-H1FWHVPSIB-1
 TYPE: Functional
-TITLE: Functional
+TITLE: Authenticated Application Boot
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall jump to execution of the HVPS interface application
-if and only if the existing application code at startup is valid. The application code is valid if the
-programmed CRC value matches the application firmware loaded in flash memory
+The HVPS interface bootloader firmware shall transfer execution to the HVPS interface application
+only after MCUboot validates the image header, SHA-256 integrity metadata, and EC256 signature using
+the trusted public key compiled into the bootloader.
 <<<
 
 [REQUIREMENT]
 UID: RQ-H1FWHVPSIB-2
 TYPE: Functional
-TITLE: Functional
+TITLE: Application Image Programming
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall be able to write a specified flash memory page with
-provided data from the PC.
+The HVPS interface bootloader firmware shall accept an MCUboot image-management upload for image 0
+and program the received image data within the configured primary application slot without writing
+outside that slot.
 <<<
 
 [REQUIREMENT]
 UID: RQ-H1FWHVPSIB-3
 TYPE: Functional
-TITLE: Functional
+TITLE: Application Slot Erasure
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall be able to erase a predetermined area of flash
-memory, corresponding to the application firmware programming area.
+The HVPS interface bootloader firmware shall erase the 2048-byte physical flash pages required for
+an application image upload and shall not erase flash outside the configured primary application
+slot.
 <<<
 
 [REQUIREMENT]
@@ -140,8 +142,9 @@ UID: RQ-H1FWHVPSIB-4
 TYPE: Functional
 TITLE: PC Communication
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall be able to respond to a ping command from the PC,
-indicating that the system is in bootloader mode
+The HVPS interface bootloader firmware shall communicate with a PC over UART3 using the MCUboot
+serial-management protocol with NLIP framing and shall respond to a management echo request to
+indicate that the system is in bootloader mode.
 <<<
 
 [REQUIREMENT]
@@ -149,9 +152,9 @@ UID: RQ-H1FWHVPSIB-5
 TYPE: Functional
 TITLE: MCUboot Image Validation
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall validate application images using the MCUboot bootutil
-library, including cryptographic signature verification using EC256 algorithms and verification of
-image metadata headers.
+The HVPS interface bootloader firmware shall reject an image when its MCUboot header, SHA-256
+integrity metadata, or EC256 signature is missing, malformed, or invalid, and shall remain available
+for serial recovery rather than executing the rejected image.
 <<<
 
 [REQUIREMENT]
@@ -160,8 +163,8 @@ TYPE: Functional
 TITLE: Stack Pointer Validation
 STATEMENT: >>>
 The HVPS interface bootloader firmware shall validate that the stack pointer value read from the
-application image vector table resides within the valid RAM address range (0x20000000 to 0x20008000)
-before jumping to the application.
+application image vector table resides within the inclusive RAM address range 0x20000000 through
+0x20008000 before jumping to the application.
 <<<
 
 [REQUIREMENT]
@@ -170,18 +173,46 @@ TYPE: Functional
 TITLE: Reset Handler Validation
 STATEMENT: >>>
 The HVPS interface bootloader firmware shall validate that the reset handler address read from the
-application image vector table resides within the valid application code range before jumping to the
-application.
+application image vector table is greater than or equal to the application image start address and
+less than the configured executable-image upper bound before jumping to the application.
 <<<
 
 [REQUIREMENT]
-UID: RQ-H1FWHVPSIB-8
+UID: RQ-H1FWHVPSIB-9
 TYPE: Functional
-TITLE: Image Address Validation
+TITLE: Serial Recovery
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall validate that the application image start address falls
-within the valid application slot range (0x0800C200 to 0x08024000) before attempting to execute the
-application.
+The HVPS interface bootloader firmware shall provide a serial recovery interval before each boot
+attempt and shall continue to provide serial recovery while no valid application image is available.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-10
+TYPE: Functional
+TITLE: Application Handoff
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall transfer control to a validated application in a state
+that permits normal application startup.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-11
+TYPE: Functional
+TITLE: Invalid Serial Input
+STATEMENT: >>>
+The HVPS interface bootloader firmware shall reject serial-management packets with invalid framing,
+CRC, encoding, command data, upload offsets, or image bounds without executing unvalidated image
+content or writing outside the primary application slot.
+<<<
+
+[REQUIREMENT]
+UID: RQ-H1FWHVPSIB-12
+TYPE: Functional
+TITLE: Interrupted Update Recovery
+STATEMENT: >>>
+Following an interrupted or incomplete application upload, the HVPS interface bootloader firmware
+shall reject the incomplete application image and remain available for a subsequent serial recovery
+upload.
 <<<
 
 [[/SECTION]]

@@ -99,7 +99,7 @@ TITLE: Test Protocol
 
 [TEST_CASE]
 UID: TC-H1FWMC-88
-TITLE: Discharge 2
+TITLE: Operation 12: Discharge - Staged-State Timeout - Test Case
 STATEMENT: >>>
 Warm the system into "Staged" status and leave the system running without intervention for 5 minutes. Ensure that the system returns to cold state.
 <<<
@@ -128,7 +128,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-89
-TITLE: Operation 11: Termination
+TITLE: Operation 11: Termination - PC Stop Command - Test Case
 STATEMENT: >>>
 When the user starts the emission and presses the stop button, make sure the emission terminated.
 <<<
@@ -151,7 +151,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-90
-TITLE: Head Interface 1
+TITLE: Head Interface - IO Feedback - Test Case
 STATEMENT: >>>
 When the user presses and releases keys in the keypad of the head of the system, the service screen should record all of the toggles.
 <<<
@@ -175,7 +175,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-91
-TITLE: Head Interface 2
+TITLE: Head Interface - Communication Monitoring - Test Case
 STATEMENT: >>>
 When the head interface board is unplugged from main control board, a fault should display in the system after 3 seconds.
 <<<
@@ -199,7 +199,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-92
-TITLE: Fault Information 1
+TITLE: Fault information - Active Fault Reporting - Test Case
 STATEMENT: >>>
 When the user stops the system during run time, a fault will happen on GUI and the details of the fault can be seen in logs.
 <<<
@@ -223,7 +223,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-93
-TITLE: Emission Indicator
+TITLE: Emission indicator - Test Case
 STATEMENT: >>>
 Verify that an accepted direct emission start enables the external indicators only when
 the required interlocks are ready, and that an emission stop disables the indicators.
@@ -257,7 +257,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-94
-TITLE: Interlocks
+TITLE: Interlocks - Test Case
 STATEMENT: >>>
 Verify physical interlock reporting and verify that an open emergency-stop interlock
 prevents entry into conditioning and produces a typed interlock fault.
@@ -297,7 +297,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-95
-TITLE: Coils 1
+TITLE: Coils - Focus Coil Feedback Monitoring - Test Case
 STATEMENT: >>>
 When an emission starts to run after the Focus Coil is unplugged, a fault can be found in the logs.
 <<<
@@ -323,7 +323,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-96
-TITLE: Backup Timer 1
+TITLE: Backup Timer Communication Integrity - Test Case
 STATEMENT: >>>
 Load test version of timer firmware to simulate corrupted communication. Run system and look for timer fault in log.
 <<<
@@ -346,7 +346,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-97
-TITLE: Backup Timer 2
+TITLE: Backup Timer Response Monitoring - Test Case
 STATEMENT: >>>
 Delete timer firmware to simulate lack of communication. Run system and look for timer fault in log.
 <<<
@@ -373,7 +373,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-98
-TITLE: Operation 01: Filament Conditioning 6
+TITLE: Operation 01: Filament conditioning - Target Timeout - Test Case
 STATEMENT: >>>
 The firmware shall report a fault if the HVPS has not reached the target filament current setpoint during the conditioning procedure within a timeout period of 20 minutes.
 <<<
@@ -402,7 +402,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-99
-TITLE: Operation 02: Warmup Procedure
+TITLE: Operation 02: Warmup procedure - Target Timeout - Test Case
 STATEMENT: >>>
 When user loads a firmware that reports a fault if the HVPS interface has a filament current limit of 1500 mA during the conditioning procedure within a timeout period of 30 minutes +/- 2 seconds.
 <<<
@@ -433,7 +433,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-100
-TITLE: Operation 07: Operational Point Setup
+TITLE: Operation 07: Operational point setup - Target kV Timeout - Test Case
 STATEMENT: >>>
 When the high voltage interlock jumper is removed from the HVPS, verify that the system creates a fault.
 <<<
@@ -463,7 +463,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-101
-TITLE: Operation 10 – Emission 3
+TITLE: Operation 10 - Emission - High-Voltage Monitoring - Test Case
 STATEMENT: >>>
 When user loads a firmware that reports a fault if the HVPS interface clamps the kV on emission.
 <<<
@@ -492,7 +492,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-102
-TITLE: Discharge 3
+TITLE: Operation 12: Discharge - Ready-State Timeout - Test Case
 STATEMENT: >>>
 Warm the system into "Ready" status and leave the system running without intervention for 2 minutes. Ensure that the system returns to cold state.
 <<<
@@ -522,7 +522,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-103
-TITLE: Operation 09: Initiation
+TITLE: Operation 09: Initiation - Filament Current Ramp - Test Case
 STATEMENT: >>>
 When the user runs an ordinary treatment plan and clicks Beam On, the system enters Launching
 before emission. When a QC session is armed, Launching additionally waits for the head-interface
@@ -558,7 +558,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-104
-TITLE: Operation 08: Ready 1
+TITLE: Operation 08: Ready - Explicit Emission Release - Test Case
 STATEMENT: >>>
 When the user prepares one emission, verify that entering Ready never starts radiation
 without an explicit Beam On action.
@@ -583,7 +583,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-105
-TITLE: Operation 08: Ready 2
+TITLE: Operation 08: Ready - Single-Point Session Completion - Test Case
 STATEMENT: >>>
 When two requested QA emissions are run as separate sessions, verify each session requires
 its own Beam On action.
@@ -609,7 +609,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-106
-TITLE: Operation 07: Operational Point Setup 1
+TITLE: Operation 07: Operational point setup - Target kV Verification - Test Case
 STATEMENT: >>>
 When the user runs a scalar emission, verify that prior to emission the kV reading is within
 5% of the target kV.
@@ -635,7 +635,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-107
-TITLE: Operation 07: Operational Point Setup 2
+TITLE: Operation 07: Operational point setup - Target kV Command - Test Case
 STATEMENT: >>>
 When an emission is interrupted and resumed, verify the same scalar kV setpoint is reached
 before the resumed emission.
@@ -661,7 +661,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-108
-TITLE: Termination
+TITLE: Operation 11: Termination - Return to Staged State - Test Case
 STATEMENT: >>>
 After finishing a treatment, the system needs to switch to STAGED status.
 <<<
@@ -683,7 +683,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-109
-TITLE: Operation 06 – HVPS Check
+TITLE: Operation 06 - HVPS Check - Test Case
 STATEMENT: >>>
 When the user opens and closes the interlock door, verify FW can cycle HVPS interlocks successfully.
 <<<
@@ -711,7 +711,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-110
-TITLE: Operation 02: Warmup Procedure 1
+TITLE: Operation 02: Warmup procedure - Invalid Request Format - Test Case
 STATEMENT: >>>
 When user runs a specific invalid parameter warm up attempt, make sure it won't run and the system stays in COLD state and it will error in the logs.
 <<<
@@ -743,7 +743,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-111
-TITLE: Treatment Plan Reporting 1
+TITLE: Treatment plan reporting - Indexless Query / Treatment plan reporting - Programmed Parameter Query - Test Case
 STATEMENT: >>>
 Verify the scalar operational-point query has no index payload and that indexed legacy
 queries are rejected.
@@ -770,7 +770,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-112
-TITLE: PC Ethernet Commands 2
+TITLE: PC Ethernet commands - Command Response / Report device information to PC - Test Case
 STATEMENT: >>>
 When the Ethernet cable is disconnected from the system, user can see the logs and check the lost of communication log.
 <<<
@@ -801,7 +801,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-113
-TITLE: Operation 4: Treatment Plan Confirmation 1
+TITLE: Operation 04: Treatment plan confirmation - Uninterrupted Parameter Match / Operation 04: Treatment plan confirmation - Confirmation Timing - Test Case
 STATEMENT: >>>
 Verify a session becomes confirmed only when the singular scalar parameters match the
 staged point without an intervening standby timeout or fault.
@@ -830,7 +830,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-114
-TITLE: Operation 05: Treatment Plan Release 1
+TITLE: Operation 05: Treatment plan release - Interlock Readiness - Test Case
 STATEMENT: >>>
 When the user wants to run an emission with the interlock door is open, make sure FW can't run it.
 <<<
@@ -858,7 +858,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-115
-TITLE: Operation 05: Treatment Plan Release 2
+TITLE: Operation 05: Treatment plan release - Request State Validation - Test Case
 STATEMENT: >>>
 When the user sends a request to attempt an invalid treatment plan, make sure the system can't progress to ramp high voltage and run an emission. A treatment plan request will be considered invalid if the system is not in the staged state with a confirmed treatment plan.
 <<<
@@ -883,7 +883,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-116
-TITLE: Operation 04: Treatment Plan Confirmation 3
+TITLE: Operation 04: Treatment plan confirmation - Incorrect Parameter Values - Test Case
 STATEMENT: >>>
 When user loads a plan with invalid treatment plan operational point confirmation parameters from the PC, the system should display an error. Incorrect parameters are values which do not match staged parameters.
 <<<
@@ -908,7 +908,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-117
-TITLE: Operation 04: Treatment Plan Confirmation 4
+TITLE: Operation 04: Treatment plan confirmation - Invalid Parameter Format - Test Case
 STATEMENT: >>>
 When user loads a plan with invalid treatment plan operational point confirmation parameters from the PC, the system should display an error. Invalid parameters are those which cannot be processed or are formatted improperly.
 <<<
@@ -933,7 +933,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-118
-TITLE: Operation 4: Treatment Plan Confirmation 2
+TITLE: Operation 04: Treatment plan confirmation - Parameter Range Validation - Test Case
 STATEMENT: >>>
 When a user loads a plan containing values outside the configured operating ranges, the system should display an error and record it in the logs.
 <<<
@@ -958,7 +958,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-119
-TITLE: Operation 04: Treatment Plan Confirmation 6
+TITLE: Operation 04: Treatment plan confirmation - Valid Parameter Acknowledgment - Test Case
 STATEMENT: >>>
 When a user loads and runs a normal plan, verify every treatment parameter is within its configured operating range.
 <<<
@@ -986,7 +986,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-120
-TITLE: Report Telemetry to UCSI
+TITLE: Report telemetry to PC - Test Case
 STATEMENT: >>>
 Verify that the firmware decodes the supported head-interface packet into system status and
 publishes complete, consistently mapped system telemetry to UCSI, including the two live QC
@@ -1024,7 +1024,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-121
-TITLE: Operation 3.2: Treatment Staging 1
+TITLE: Operation 03.2: Treatment staging - Scalar Treatment Point Loading - Test Case
 STATEMENT: >>>
 Verify the firmware accepts exactly one scalar operational point with valid emission and
 beam-optics parameters and no point index, point count, or automatic-execution field.
@@ -1048,7 +1048,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-122
-TITLE: Treatment Plan Reporting 2
+TITLE: Treatment plan reporting - Programmed Parameter Query - Test Case
 STATEMENT: >>>
 Users should be able to request GUI about parameters in the treatment plan. Also, these parameters can be found in the logs as well.
 <<<
@@ -1072,7 +1072,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-123
-TITLE: Fault Mode 2
+TITLE: Fault mode - Safe State Handling - Test Case
 STATEMENT: >>>
 Verify ordinary fault entry, lossless FIFO state-event dispatch, queue-overflow handling,
 and invalid-state crash dispatch.
@@ -1119,7 +1119,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-124
-TITLE: Fault Information 3
+TITLE: Fault information - Fault Latching - Test Case
 STATEMENT: >>>
 When the system enters fault mode after an e-stop event, it does not automatically exit fault mode when the e-stop is released.
 <<<
@@ -1145,7 +1145,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-125
-TITLE: Fault Information 2
+TITLE: Fault information - Fault Clearing - Test Case
 STATEMENT: >>>
 An accepted PC clear-fault directive clears the main-control fault state, requests that the
 HVPS clear its faults, and returns success without waiting for an HVPS response. A
@@ -1181,7 +1181,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-126
-TITLE: Energized Fault Shutdown and Discharge
+TITLE: Fault mode - Emission Termination and Safe Discharge - Test Case
 STATEMENT: >>>
 When a fault is detected during an energized emission, verify that the firmware terminates
 the emission, commands the energized outputs to zero, and remains in Fault Discharge until
@@ -1222,7 +1222,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-127
-TITLE: Warmup Procedure
+TITLE: Operation 02: Warmup procedure - Initiation Conditions - Test Case
 STATEMENT: >>>
 Verify warmup is rejected safely when either emergency stop is open and starts only when
 both inputs permit operation.
@@ -1254,7 +1254,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TCH1FWMC-128
-TITLE: Operation 10 – Emission 4
+TITLE: Operation 10 - Emission - Cathode Current Monitoring - Test Case
 STATEMENT: >>>
 If a special version of HVPS interface FW is loaded which always reports 0.1 mA current, then an emission never completes.
 <<<
@@ -1282,7 +1282,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-129
-TITLE: Operation 05: Treatment plan release
+TITLE: Operation 05: Treatment plan release - Confirmed Plan Release - Test Case
 STATEMENT: >>>
 If the user runs a treatment plan, its status changes from STAGED to HVPS check / HV setup.
 <<<
@@ -1305,7 +1305,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-130
-TITLE: Operation 10 – Emission 1
+TITLE: Operation 10 - Emission - Backup Timer Start - Test Case
 STATEMENT: >>>
 When an emission starts to run, backup timers will change accordingly.
 <<<
@@ -1328,7 +1328,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-131
-TITLE: Operation 10 – Emission 2
+TITLE: Operation 10 - Emission - Delivery Timer Start - Test Case
 STATEMENT: >>>
 When an emission starts to run, main / primary timers will change accordingly on GUI.
 <<<
@@ -1351,7 +1351,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-132
-TITLE: Undesired Emission Monitoring
+TITLE: Undesired emission monitoring - Test Case
 STATEMENT: >>>
 If a special version of HVPS interface FW is loaded which always reports x10 mA current, then the system will trigger the associated fault after rebooting.
 <<<
@@ -1376,7 +1376,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-133
-TITLE: Operation 09: Initiation
+TITLE: Operation 09: Initiation - Coil Setpoints - Test Case
 STATEMENT: >>>
 When user runs a normal treatment plan with coils plugged in, check the deflection and focus coil values in the services screen.
 <<<
@@ -1408,7 +1408,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-134
-TITLE: Discharge 1
+TITLE: Operation 12: Discharge - Primed-State Timeout - Test Case
 STATEMENT: >>>
 Warm the system into "Primed" status and leave the system running without intervention for 5 minutes. Ensure that the system returns to cold state.
 <<<
@@ -1438,7 +1438,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-135
-TITLE: HVPS Interface Communication
+TITLE: HVPS Interface Communication - Test Case
 STATEMENT: >>>
 Verify that valid HVPS status communication produces an LED4 activity blink and that loss
 of communication produces a fault.
@@ -1466,7 +1466,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-136
-TITLE: Temperature Monitoring 2
+TITLE: Temperature monitoring - Cabinet Temperature Limit - Test Case
 STATEMENT: >>>
 Verify that cabinet-temperature monitoring reports a fault when the reported temperature
 exceeds 40°C.
@@ -1492,7 +1492,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-137
-TITLE: Temperature Monitoring 1
+TITLE: Cooling control - Test Case
 STATEMENT: >>>
 Verify temperature-based cabinet-fan control and delayed coolant-pump shutdown.
 <<<
@@ -1526,7 +1526,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-138
-TITLE: Temperature Monitoring
+TITLE: Temperature monitoring - Heatsink Fan Control - Test Case
 STATEMENT: >>>
 When the user runs an emission from COLD state of the system, check the heatsink fan and make sure it's off during COLD status and on during emission.
 <<<
@@ -1557,7 +1557,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-139
-TITLE: Head Interface 4
+TITLE: Head Interface - Test Case
 STATEMENT: >>>
 Firmware should provide coolant flow, temperature, and pressure in the service screen.
 <<<
@@ -1580,7 +1580,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-140
-TITLE: Coolant Monitoring 2
+TITLE: Coolant monitoring - Flow Rate - Test Case
 STATEMENT: >>>
 The user can check the coolant flow rate on GUI which is provided by firmware. If the user unplugs the coolant, they can see the fault for invalid values of the coolant flow rate.
 <<<
@@ -1609,7 +1609,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-141
-TITLE: Coolant Monitoring 1
+TITLE: Coolant monitoring - Temperature - Test Case
 STATEMENT: >>>
 When the temperature sensor is unplugged, the user can check the logs and verify the high temperature which is provided by firmware.
 <<<
@@ -1636,7 +1636,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-146
-TITLE: Coils 3
+TITLE: Coils - Setpoint Control - Test Case
 STATEMENT: >>>
 When the system is up and running, the user can see the values of the Deflection Coil and Focus Coil on GUI, and can also change the values.
 <<<
@@ -1664,7 +1664,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-147
-TITLE: Coils 2
+TITLE: Coils - Deflection Coil Feedback Monitoring - Test Case
 STATEMENT: >>>
 When an emission starts to run after the Deflection Coil is unplugged, a fault can be found in the logs.
 <<<
@@ -1690,7 +1690,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-148
-TITLE: Backup Timer 4
+TITLE: Backup Timer - Initialization - Test Case
 STATEMENT: >>>
 Run system as normal and view value of backup timers during emission
 <<<
@@ -1717,7 +1717,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-149
-TITLE: Backup Timer 3
+TITLE: Backup Timer - Countdown Reporting - Test Case
 STATEMENT: >>>
 Run system as normal and view the value of backup timers during emission.
 <<<
@@ -1744,7 +1744,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-151
-TITLE: Head Interface 3
+TITLE: Head Interface - IO Feedback - Test Case
 STATEMENT: >>>
 The firmware should configure and change the LED color of the head ring during the workflow which is provided by communication of the Head Interface board and firmware.
 <<<
@@ -1769,7 +1769,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-153
-TITLE: USB 3
+TITLE: USB - PC Command Processing - Test Case
 STATEMENT: >>>
 The user can run the boot loading process via GUI and erase the flash memory's space of the firmware application.
 <<<
@@ -1794,7 +1794,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-154
-TITLE: USB 2
+TITLE: USB - Bootloader Entry - Test Case
 STATEMENT: >>>
 The user can run the boot loading process via GUI and erase the flash memory's space of the firmware application.
 <<<
@@ -1819,7 +1819,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-155
-TITLE: USB 1
+TITLE: USB - CRC Flash Erase - Test Case
 STATEMENT: >>>
 The user can run the boot loading process via GUI and erase the flash memory's space of the firmware application.
 <<<
@@ -1844,7 +1844,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-156
-TITLE: PC Ethernet Commands 1
+TITLE: PC Ethernet commands - Unrecognized Command Handling / Report device information to PC - Test Case
 STATEMENT: >>>
 When GUI build sends a command to FW which is not formatted properly, FW should provide a proper response.
 <<<
@@ -1870,7 +1870,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-157
-TITLE: Operation 03.2: Treatment Staging 3
+TITLE: Operation 03.2: Treatment staging - Parameter Range Validation - Test Case
 STATEMENT: >>>
 When user runs a specific out of bound staging parameters attempt, make sure it won't run, and it will error in the logs.
 <<<
@@ -1897,7 +1897,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-158
-TITLE: Operation 03.2: Treatment Staging 2
+TITLE: Operation 03.2: Treatment staging - Invalid Parameter Format - Test Case
 STATEMENT: >>>
 When user runs a specific out of bound staging parameters attempt, make sure it won't run, and it will error in the logs.
 <<<
@@ -1924,7 +1924,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-159
-TITLE: Operation 03.2: Treatment Staging 1
+TITLE: Operation 03.2: Treatment staging - Staging Process Restriction - Test Case
 STATEMENT: >>>
 When the system is in primed state, run a specific build to attempt to stage treatment plan values without loading a new plan and verify it won't run the treatment plan, and it stays in primed state.
 <<<
@@ -1956,7 +1956,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-160
-TITLE: Operation 3.1: Treatment Staging – Session Initiation 1
+TITLE: Operation 03.1: Treatment staging - new session commencement - Primed-State Restriction - Test Case
 STATEMENT: >>>
 When the system is initiated and it is in Primed status, the user can load a new plan. After a plan is already loaded, the user cannot load another plan.
 <<<
@@ -1985,7 +1985,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-161
-TITLE: Operation 02: Warmup Procedure 2
+TITLE: Operation 02: Warmup procedure - Target Range Validation - Test Case
 STATEMENT: >>>
 When user runs a specific out of bound warm up attempt, make sure it won't run and the system stays in COLD state and it will error in the logs.
 <<<
@@ -2017,7 +2017,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-162
-TITLE: Operation 03.1: Treatment Staging – New Session Commencement
+TITLE: Operation 03.1: Treatment staging - new session commencement - Request Validation - Test Case
 STATEMENT: >>>
 When user runs a specific out of bound staged attempt, make sure it won't run, and it will error in the logs.
 <<<
@@ -2046,7 +2046,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-163
-TITLE: Operation 0: Startup 2
+TITLE: Operation 00: Startup - Power-On State - Test Case
 STATEMENT: >>>
 The system begins on the STARTUP state after the initial device power on.
 <<<
@@ -2066,7 +2066,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-164
-TITLE: Operation 0: Startup 1
+TITLE: Operation 00: Startup - Initialization Transition - Test Case
 STATEMENT: >>>
 The system enters COLD state after being in STARTUP state and getting an initialization command from PC.
 <<<
@@ -2086,7 +2086,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-165
-TITLE: Operation 01: Filament Conditioning 5
+TITLE: Operation 01: Filament conditioning - Target Ramp and Hold / Operation 01: Filament conditioning - PC-Requested Conditioning - Test Case
 STATEMENT: >>>
 Verify that filament conditioning holds a stable target for 15 minutes before completing.
 <<<
@@ -2117,7 +2117,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-166
-TITLE: Operation 01: Filament Conditioning 4
+TITLE: Operation 01: Filament conditioning - PC-Requested Conditioning - Test Case
 STATEMENT: >>>
 When the system is in Cold status, start the process till it goes back to Cold again and notice the filament current increases.
 <<<
@@ -2149,7 +2149,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-167
-TITLE: Operation 01: Filament Conditioning 3
+TITLE: Operation 01: Filament conditioning - Target Range Validation - Test Case
 STATEMENT: >>>
 When the filament current is out of bound, the conditioning won't happen and the system stays in COLD state.
 <<<
@@ -2179,7 +2179,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-168
-TITLE: Operation 01: Filament Conditioning 2
+TITLE: Operation 01: Filament conditioning - Invalid Target Format - Test Case
 STATEMENT: >>>
 When the filament current is out of bound, the conditioning won't happen and the system stays in COLD state.
 <<<
@@ -2209,7 +2209,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-169
-TITLE: Operation 01: Filament Conditioning 1
+TITLE: Operation 01: Filament conditioning - Cold-State Restriction - Test Case
 STATEMENT: >>>
 When the system's state is not COLD, filament conditioning won't happen.
 <<<
@@ -2235,7 +2235,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-170
-TITLE: Operation 03.1: Treatment Staging – New Session Commencement
+TITLE: Operation 03.1: Treatment staging - new session commencement - Session Creation - Test Case
 STATEMENT: >>>
 Verify an argument-free new-session command creates one scalar session in Primed and
 returns its generated session ID.
@@ -2259,7 +2259,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-171
-TITLE: Operation 04: Treatment Plan Confirmation 5
+TITLE: Operation 04: Treatment plan confirmation - Confirmation Timing - Test Case
 STATEMENT: >>>
 When the system is in primed state, run a specific build to attempt to stage treatment plan values without loading a new plan and verify it won't run the treatment plan, and it stays in primed state.
 <<<
@@ -2290,33 +2290,8 @@ RELATIONS:
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FWMC-172
-TITLE: Temperature Monitoring 4
-STATEMENT: >>>
-Verify that the firmware reports a Peltier heatsink fault above 50°C.
-<<<
-PREREQUISITES: >>>
-1. The system is operating without an active heatsink-temperature fault
-2. A fixture can control or simulate the reported Peltier heatsink temperature
-<<<
-STEPS: >>>
-1. Set the reported Peltier heatsink temperature to 50°C and run a monitoring cycle
-2. Set the reported temperature above 50°C and run a monitoring cycle
-3. Open the system logs
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. No heatsink over-temperature fault is reported at 50°C
-2. A heatsink over-temperature fault is reported above 50°C
-3. The log identifies the measured temperature and the 50°C high limit
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-64
-  ROLE: Verifies
-
-[TEST_CASE]
 UID: TC-H1FWMC-306
-TITLE: QC Processing
+TITLE: QC Processing - Test Case
 STATEMENT: >>>
 The firmware receives a command from the console application, runs emission and records the accumulated values from the QC diodes with support from the headboard
 <<<
@@ -2352,7 +2327,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-307
-TITLE: Device Information Version Reporting Through UCSI
+TITLE: Report device information to PC - Test Case
 STATEMENT: >>>
 Verify the device-information exchange from the HVPS interface through main control to UCSI.
 <<<
@@ -2378,7 +2353,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMC-308
-TITLE: Emission Magnetometer Fault Monitoring
+TITLE: Emission magnetometer monitoring - Test Case
 STATEMENT: >>>
 Verify that magnetometer deviations during emission produce a fault.
 <<<

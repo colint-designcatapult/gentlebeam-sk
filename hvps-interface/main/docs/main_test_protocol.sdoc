@@ -185,16 +185,17 @@ RELATIONS:
 UID: TC-H1FWHVPS-20
 TITLE: Main control reporting - Test Case
 STATEMENT: >>>
-When the system is powered on, LED TBD on mainboard should pulse at a rate much faster than
+When the system is powered on, LED4 on mainboard should pulse at a rate much faster than
 1 Hz.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and ready to use.
+* The silkscreen reference for LED4 is DS2206
 <<<
 STEPS: >>>
 1. Power on the system.
-2. Check LED TBD on the Main Board.
-3. Measure the pulsing of the LED TBD on the Main board.
+2. Check LED4 on the Main Board.
+3. Measure the pulsing of the LED4 on the Main board.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. Verify the system is powered on successfully.
@@ -571,7 +572,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-31
-TITLE: FTDI bootloader entry - Test Case
+TITLE: FTDI Bootloader Entry - Test Case
 STATEMENT: >>>
 A valid FTDI bootloader request shall cause the application firmware to reset into the bootloader.
 <<<
@@ -597,26 +598,27 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-32
-TITLE: Bootloader request CRC-page erasure - Test Case
+TITLE: FTDI Unknown-Command Rejection and Recovery - Test Case
 STATEMENT: >>>
-Before resetting into the bootloader, a valid FTDI bootloader request shall erase the application CRC
-flash page without erasing adjacent pages.
+The application shall ignore an unrecognized FTDI command and remain able to process a subsequent
+valid command.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and running the application firmware.
-* A USB FTDI host tool is connected to USART3.
-* An approved flash-memory inspection method is available, and the application CRC page contains known
-  non-erased data.
+* A USB FTDI host tool that can transmit and capture binary frames is connected to USART3.
+* A valid configuration index and its expected value are available.
 <<<
 STEPS: >>>
-1. Record the contents of the application CRC page and its adjacent flash pages.
-2. Send the seven-byte `*B00TL\n` frame over the FTDI interface.
-3. After the reset enters the bootloader, inspect the same flash pages before restarting the application.
+1. Confirm that the application firmware is running and responding normally.
+2. Send the unrecognized seven-byte `*B00TX\n` frame over the FTDI interface.
+3. Confirm that the application remains operational and that no response is transmitted.
+4. Send a valid 11-byte GET frame for the selected configuration index and capture the response.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the CRC page contains the known data and retain the adjacent-page contents for comparison.
-2. Verify the system resets after receiving the valid bootloader frame.
-3. Verify the complete CRC page is erased to `0xFF` and the adjacent pages are unchanged.
+1. Verify the application is operational before testing.
+2. Verify the unrecognized command does not reset the system and produces no response.
+3. Verify the subsequent GET request returns the expected configuration value, demonstrating that
+   FTDI reception recovered for the next valid command.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -625,7 +627,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-38
-TITLE: PC Communication 3 - Test Case
+TITLE: FTDI Configuration GET and SET Commands - Test Case
 STATEMENT: >>>
 When the system is powered on, the user can retrieve or update an individual configuration
 parameter through the FTDI GET and SET protocol. Binary payload bytes do not end a frame early, and
@@ -671,7 +673,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-39
-TITLE: PC Communication 4 - Test Case
+TITLE: FTDI Bulk-Read Commands - Test Case
 STATEMENT: >>>
 When the system is powered on, the user can retrieve every configuration value, setpoint, or
 feedback value with the corresponding FTDI bulk-read command.
@@ -947,44 +949,6 @@ EXPECTED_BEHAVIOR: >>>
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-20
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FWHVPS-41
-TITLE: Development-build boot validation marker - Test Case
-STATEMENT: >>>
-Verify that FTDI initialization writes the development boot validation marker only in a build where
-``RELEASE`` is not defined and that the marker allows the bootloader to start that application after
-a reset.
-<<<
-PREREQUISITES: >>>
-* Application images built from the same source with and without the ``RELEASE`` definition are
-  available.
-* A debugger can erase and read the application CRC flash page, start the application directly at
-  its entry point, and observe application startup.
-<<<
-STEPS: >>>
-1. Program the non-``RELEASE`` application image and erase its application CRC flash page.
-2. Start the application directly with the debugger, allow FTDI initialization to complete, and read
-   the application CRC location.
-3. Reset the microcontroller through the bootloader and observe application startup.
-4. Program the ``RELEASE`` application image, erase its application CRC flash page, and start the
-   application directly with the debugger.
-5. Allow FTDI initialization to complete and read the application CRC location.
-6. Reset the microcontroller through the bootloader and observe whether the application starts.
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. The non-``RELEASE`` application starts with an erased application CRC location.
-2. FTDI initialization programs and verifies ``0xDEADBEEF`` at the application CRC location.
-3. The bootloader accepts the development marker and starts the non-``RELEASE`` application.
-4. The ``RELEASE`` application starts directly with an erased application CRC location.
-5. FTDI initialization leaves the application CRC location erased and does not write the development
-   marker.
-6. The bootloader does not accept the ``RELEASE`` application on the basis of a development marker.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-21
   ROLE: Verifies
 
 [[/SECTION]]

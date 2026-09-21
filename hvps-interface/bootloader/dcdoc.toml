@@ -1,5 +1,9 @@
 [component]
 name = "hvps-interface/bootloader"
 include_docs = [ "docs/*.sdoc" ]
-include_src = [ "Src/*.c" ]
+include_src = [
+  "Src/*.c",
+  "mcuboot/src/*.c",
+  "mcuboot/include/**/*.h",
+]
 version = "5.0.0-{HASH}.{BUILD}" # x-release-please-version

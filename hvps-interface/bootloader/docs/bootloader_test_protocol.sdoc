@@ -98,7 +98,18 @@ Verify that:
 
 **Assumptions & Constraints**
 
-None
+The primary bootloader test tool is the mcumgr command-line utility connected to UART3. Unless a
+test case states otherwise, use 38400 baud and an MTU of 128. The examples use COM19; replace it
+with the serial port assigned to the test system.
+
+Before executing mcumgr commands in PowerShell, define the connection once:
+
+```powershell
+$conn = "dev=COM19,baud=38400,mtu=128"
+```
+
+The debugger and purpose-built malformed-packet generator are supplementary tools used only for
+checks that mcumgr cannot perform.
 
 **Acceptance Criteria**
 
@@ -113,266 +124,311 @@ TITLE: Test Protocol
 
 [TEST_CASE]
 UID: TC-H1FWHVPSIB-5
-TITLE: Functional 1 - Test Case
+TITLE: Authenticated Boot and Serial Recovery - Test Case
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall jump to execution of the HVPS interface application
-if and only if the existing application code at startup is valid. The application code is valid if the
-programmed CRC value matches the application firmware loaded in flash memory.
+Verify authenticated application boot, normal application startup, MCUboot serial communication,
+and recovery after an invalid image is rejected.
 <<<
 PREREQUISITES: >>>
-* The system is ready to start.
-* Flash memory is present which contains firmware application.
+* The bootloader is programmed on the target board.
+* A known application is available as valid-signed.bin, unsigned.bin, wrong-key.bin, and
+  corrupt-header.bin.
+* mcumgr is installed and the common serial connection is configured.
+* UART3 output and application-start evidence can be captured.
 <<<
 STEPS: >>>
-1. Start the system from power.
-2. Do not load any treatment plan.
-3. Utilize the bootloader utility to load a new set of application firmware from the flash memory, but partway through, terminate the PC utility.
-4. Power cycle the system.
-5. Load a treatment plan.
-6. Run the loaded treatment.
-7. While keeping power on, load the application firmware once more through to completion from the flash memory.
-8. Power cycle the system.
+1. Place the board in serial recovery mode and upload the correctly signed image:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn image upload --image 0 valid-signed.bin
+   ```
+
+2. Reset the board:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn reset
+   ```
+
+3. During the recovery interval before the application starts, run:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn echo "recovery-window"
+   ```
+
+4. Confirm that the valid application starts normally.
+5. Repeat the upload command and then the reset command separately for unsigned.bin, wrong-key.bin,
+   and corrupt-header.bin.
+6. After each invalid-image reset, run:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn echo "recovery-check"
+   ```
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify system starts up successfully.
-2. Verify system does not have any treatment plan loaded on it.
-3. Verify the system is off.
-4. Verify system starts up successfully.
-5. Verify the plan is loaded successfully.
-6. Verify the treatment plan cannot be executed.
-7. Verify the application is loaded successfully.
-8. Verify the system powered up successfully and the loaded treatment can now be performed.
+1. mcumgr completes the valid-image upload.
+2. The reset command succeeds.
+3. The echo succeeds and displays "recovery-window" before application startup.
+4. The bootloader reports BOOT_GO_OK and the valid application starts normally.
+5. The bootloader rejects each invalid image after reset, and none of them starts.
+6. After each rejection, the echo succeeds and displays "recovery-check".
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-1
   ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-4
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-5
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-9
+  ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-10
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWHVPSIB-6
-TITLE: Functional 2 - Test Case
+TITLE: Oversized Image Upload Rejection - Test Case
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall write application data provided by the PC through
-application-relative page index 180.
+Verify that the bootloader rejects an application image larger than the 180 KiB primary slot.
 <<<
 PREREQUISITES: >>>
-* The system is ready to start.
-* A bootloader-compatible application image contains known, non-erased data at application-relative
-  page index 180.
-* A flash inspection tool is available to read the programmed application memory.
+* The board is in serial recovery mode.
+* An MCUboot image larger than 180 KiB is available.
+* The mcumgr command-line utility is installed and connected to UART3.
 <<<
 STEPS: >>>
-1. Start the system from power.
-2. Do not load any treatment plan.
-3. Utilize the bootloader utility to load the prepared application firmware image.
-4. Record the utility log for the write to application-relative page index 180.
-5. Read back application-relative page index 180 with the flash inspection tool.
+1. Use mcumgr to upload the oversized image to image 0:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn image upload --image 0 oversized.bin
+   ```
+
+2. Observe the live mcumgr output in the terminal.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify system starts up successfully.
-2. Verify system does not have any treatment plan loaded on it.
-3. Verify the bootloader utility completes the application load without rejecting page index 180.
-4. Verify the utility log reports that page index 180 was written successfully.
-5. Verify the read-back data at page index 180 matches the prepared application image.
+1. mcumgr sends the upload request to the bootloader.
+2. The terminal displays "Error: 3", indicating that the bootloader rejected the oversized image
+   and did not begin the upload.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-2
   ROLE: Verifies
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-11
+  ROLE: Verifies
 
 [TEST_CASE]
 UID: TC-H1FWHVPSIB-7
-TITLE: Functional 3 - Test Case
+TITLE: Progressive Application-Slot Erase - Test Case
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall be able to erase a predetermined area of flash
-memory, corresponding to the application firmware programming area.
+Verify that the bootloader erases and reprograms the required application flash pages when replacing
+one valid application image with another.
 <<<
 PREREQUISITES: >>>
-* The system is ready to start in bootloader mode.
-* The application programming area contains known, non-erased marker data in its first page and at
-  application-relative page index 180.
-* A protocol-compatible tool can send an erase command and inspect MCU flash memory.
+* Two different valid signed application images are available as image-A.bin and image-B.bin.
+* Application A reports version A, and application B reports version B through the normal system
+  version display or interface.
+* The mcumgr command-line utility is installed and connected to UART3.
+* The common serial connection is configured.
 <<<
 STEPS: >>>
-1. Start the system from power in bootloader mode.
-2. Use the protocol-compatible tool to send an erase command.
-3. Record the bootloader response.
-4. Read back the marker locations in the first application page and at application-relative page
-   index 180.
+1. Place the board in serial recovery mode.
+2. Upload image A:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn image upload --image 0 image-A.bin
+   ```
+
+3. Reset the board:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn reset
+   ```
+
+4. Wait for application startup and read the reported application version.
+5. Place the board in serial recovery mode again.
+6. Upload image B:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn image upload --image 0 image-B.bin
+   ```
+
+7. Reset the board:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn reset
+   ```
+
+8. Wait for application startup and read the reported application version.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify system starts up successfully in bootloader mode.
-2. Verify the bootloader reports that the erase completed.
-3. Verify the erase response is received before inspecting flash.
-4. Verify both marker locations contain the erased flash value.
+1. The board enters serial recovery mode and responds to mcumgr.
+2. The image-A.bin upload reaches 100 percent.
+3. The reset command succeeds.
+4. The bootloader validates image A, application A starts, and the system reports version A.
+5. The board re-enters serial recovery mode and responds to mcumgr.
+6. The image-B.bin upload reaches 100 percent. Completing this upload
+   requires the bootloader to erase and reprogram the affected primary-slot flash pages.
+7. The reset command succeeds.
+8. The bootloader validates image B, application B starts, and the system reports version B.
 <<<
 RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-2
+  ROLE: Verifies
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-3
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FWHVPSIB-8
-TITLE: PC Communication - Test Case
-STATEMENT: >>>
-The HVPS interface bootloader firmware shall be able to respond to a ping command from the PC,
-indicating that the system is in bootloader mode.
-<<<
-PREREQUISITES: >>>
-* The system is ready to start.
-* Flash memory is present which contains firmware application.
-<<<
-STEPS: >>>
-1. Start the system from power.
-2. Do not load any treatment plan.
-3. Utilize the bootloader utility to load a new set of application firmware from the flash memory.
-4. Record the utility log to ensure application enters bootloader mode.
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Verify system starts up successfully.
-2. Verify system does not have any treatment plan loaded on it.
-3. Verify the new firmware application is loaded successfully.
-4. Verify application enters bootloader mode.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPSIB-4
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FWHVPSIB-9
-TITLE: MCUboot Image Validation - Test Case
-STATEMENT: >>>
-The HVPS interface bootloader firmware shall validate application images using the MCUboot bootutil
-library with EC256 signature verification.
-<<<
-PREREQUISITES: >>>
-* The system is ready to start.
-* A valid application image with correct EC256 signature is available.
-* An invalid application image with incorrect signature is available.
-* An application image with corrupted header is available.
-<<<
-STEPS: >>>
-1. Power cycle the system with valid application image in flash.
-2. Verify bootloader validates and jumps to application.
-3. Power cycle the system with invalid signature image.
-4. Verify bootloader rejects the image and enters bootloader mode.
-5. Power cycle the system with corrupted header image.
-6. Verify bootloader rejects the image and enters bootloader mode.
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Bootloader validates image successfully.
-2. Application jumps and runs normally.
-3. Bootloader validates signature and rejects invalid image.
-4. Bootloader displays appropriate error and waits for commands.
-5. Bootloader validates header and rejects corrupted image.
-6. Bootloader displays appropriate error and enters bootloader mode.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPSIB-5
-  ROLE: Verifies
-
-[TEST_CASE]
 UID: TC-H1FWHVPSIB-10
-TITLE: Stack Pointer Validation - Test Case
+TITLE: Vector Table Validation - Test Case
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall validate that the stack pointer from the application
-vector table is within the valid RAM range.
+Verify the stack-pointer and reset-handler values read from the application vector table before
+application handoff.
 <<<
 PREREQUISITES: >>>
-* The system is ready to start.
-* A valid application image with correct stack pointer is available.
-* A modified application image with stack pointer below valid range (0x20000000) is available.
-* A modified application image with stack pointer above valid range (0x20008000) is available.
+* Signed images sp-min.bin, sp-max.bin, sp-below.bin, and sp-above.bin contain stack pointers
+  0x20000000, 0x20008000, 0x1FFFFFFC, and 0x20008004, respectively.
+* Signed images rh-valid.bin, rh-below.bin, and rh-above.bin contain a valid reset handler, a reset
+  handler in bootloader space, and a reset handler above the application limit, respectively.
+* Each modified image is re-signed with the trusted test-signing key after its vector table changes.
+* mcumgr is installed and the common serial connection is configured.
+* UART3 diagnostics and application-handoff evidence can be observed.
 <<<
 STEPS: >>>
-1. Power cycle with valid stack pointer application.
-2. Verify application jumps and runs normally.
-3. Power cycle with stack pointer below range (e.g., 0x1FFFFFFF).
-4. Verify bootloader rejects the image and displays ERR_SP error.
-5. Power cycle with stack pointer above range (e.g., 0x20009000).
-6. Verify bootloader rejects the image and displays ERR_SP error.
+1. For each test image, place the board in serial recovery mode and upload it, replacing IMAGE.bin
+   with the current filename:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn image upload --image 0 IMAGE.bin
+   ```
+
+2. Reset the board:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn reset
+   ```
+
+3. Test sp-min.bin and sp-max.bin and observe whether application handoff is reached.
+4. Test sp-below.bin and observe the UART diagnostic.
+5. Test sp-above.bin and observe the UART diagnostic.
+6. Test rh-valid.bin and observe application startup.
+7. Test rh-below.bin and observe the UART diagnostic.
+8. Test rh-above.bin and observe the UART diagnostic.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Bootloader reads valid stack pointer from vector table.
-2. Bootloader validates it is within 0x20000000 to 0x20008000 and jumps to application.
-3. Bootloader reads invalid stack pointer.
-4. Bootloader validates and rejects due to out-of-range value, outputs "ERR_SP\n".
-5. Bootloader reads invalid stack pointer.
-6. Bootloader validates and rejects due to out-of-range value, outputs "ERR_SP\n".
+1. mcumgr uploads each image.
+2. The reset command succeeds for each image.
+3. Both inclusive boundary values pass the stack-pointer range check and reach application handoff.
+4. The below-range value is rejected with "ERR_SP\n" and no handoff occurs.
+5. The above-range value is rejected with "ERR_SP\n" and no handoff occurs.
+6. The valid reset handler passes validation and the application starts.
+7. The reset handler in bootloader space is rejected with "ERR_RH\n" and no handoff occurs.
+8. The reset handler above the application limit is rejected with "ERR_RH\n" and no handoff occurs.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-6
   ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FWHVPSIB-11
-TITLE: Reset Handler Validation - Test Case
-STATEMENT: >>>
-The HVPS interface bootloader firmware shall validate that the reset handler address from the
-application vector table is within the valid application code range.
-<<<
-PREREQUISITES: >>>
-* The system is ready to start.
-* A valid application image with correct reset handler is available.
-* A modified application image with reset handler pointing to bootloader space is available.
-* A modified application image with reset handler above application slot limit is available.
-<<<
-STEPS: >>>
-1. Power cycle with valid reset handler application.
-2. Verify application jumps and runs normally.
-3. Power cycle with reset handler in bootloader region (e.g., 0x08000000).
-4. Verify bootloader rejects the image and displays ERR_RH error.
-5. Power cycle with reset handler beyond application limit (e.g., 0x08025000).
-6. Verify bootloader rejects the image and displays ERR_RH error.
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Bootloader reads valid reset handler from vector table.
-2. Bootloader validates it is within application range and jumps to application.
-3. Bootloader reads invalid reset handler in bootloader space.
-4. Bootloader validates and rejects due to out-of-range value, outputs "ERR_RH\n".
-5. Bootloader reads invalid reset handler beyond slot.
-6. Bootloader validates and rejects due to out-of-range value, outputs "ERR_RH\n".
-<<<
-RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-7
   ROLE: Verifies
 
 [TEST_CASE]
-UID: TC-H1FWHVPSIB-12
-TITLE: Image Address Validation - Test Case
+UID: TC-H1FWHVPSIB-15
+TITLE: Invalid Serial Input - Test Case
 STATEMENT: >>>
-The HVPS interface bootloader firmware shall validate that the application image start address is
-within the valid application slot range.
+Verify that the bootloader ignores serial data that is not a valid MCUboot management packet and
+remains available for serial recovery.
 <<<
 PREREQUISITES: >>>
-* The system is ready to start.
-* A valid application image is located at the correct start address.
-* An application image with start address below valid range is available.
-* An application image with start address above valid range is available.
+* mcumgr is installed and the common serial connection is configured.
+* The board remains in serial recovery mode, such as when no valid application is installed.
 <<<
 STEPS: >>>
-1. Power cycle with application at valid start address (0x0800C200).
-2. Verify bootloader validates and jumps to application.
-3. Power cycle with application start address at 0x0800B000 (below valid range).
-4. Verify bootloader rejects the image and displays ERR_ADDR error.
-5. Power cycle with application start address at 0x08025000 (above valid range).
-6. Verify bootloader rejects the image and displays ERR_ADDR error.
+1. Send a plain-text line that is not a valid MCUboot NLIP frame, and then close the port:
+
+   ```powershell
+   $serial = [System.IO.Ports.SerialPort]::new("COM19", 38400)
+   $serial.Open()
+   $serial.WriteLine("INVALID SERIAL DATA")
+   $serial.Close()
+   ```
+
+2. Verify that the bootloader still responds to a valid request:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn echo "recovery-check"
+   ```
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Bootloader calculates image start from MCUboot header.
-2. Bootloader validates address is between 0x0800C200 and 0x08024000 and jumps to application.
-3. Bootloader detects invalid start address below range.
-4. Bootloader outputs "ERR_ADDR\n" and remains in bootloader mode.
-5. Bootloader detects invalid start address above range.
-6. Bootloader outputs "ERR_ADDR\n" and remains in bootloader mode.
+1. The invalid line is ignored; it does not start an application, change the installed image, or
+   cause the bootloader to reset or stop responding.
+2. The mcumgr echo succeeds and displays "recovery-check".
 <<<
 RELATIONS:
 - TYPE: Parent
-  VALUE: RQ-H1FWHVPSIB-8
+  VALUE: RQ-H1FWHVPSIB-11
+  ROLE: Verifies
+
+[TEST_CASE]
+UID: TC-H1FWHVPSIB-16
+TITLE: Interrupted Upload Recovery - Test Case
+STATEMENT: >>>
+Verify that interruption of a single-slot upload leaves the device in serial recovery and permits a
+subsequent valid upload.
+<<<
+PREREQUISITES: >>>
+* A valid signed application image is available as valid-image.bin.
+* mcumgr is installed and the common serial connection is configured.
+* UART output and application-start evidence can be captured.
+<<<
+STEPS: >>>
+1. Begin the upload with mcumgr:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn image upload --image 0 valid-image.bin
+   ```
+
+2. While upload progress is between 1 and 99 percent, press Ctrl+C to stop mcumgr.
+3. Reset or power-cycle the board.
+4. Verify recovery availability:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn echo "recovery-check"
+   ```
+5. Run the upload command again and allow it to reach 100 percent:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn image upload --image 0 valid-image.bin
+   ```
+
+6. Reset the board:
+
+   ```powershell
+   mcumgr --conntype serial --connstring $conn reset
+   ```
+
+7. Observe application startup.
+<<<
+EXPECTED_BEHAVIOR: >>>
+1. mcumgr begins the upload and displays progress.
+2. Ctrl+C stops the upload before completion.
+3. The bootloader does not execute the incomplete application after reset.
+4. The mcumgr echo succeeds in recovery mode.
+5. The subsequent mcumgr upload reaches 100 percent.
+6. The reset command succeeds.
+7. BOOT_GO_OK is reported and the application starts.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-12
   ROLE: Verifies
 
 [[/SECTION]]

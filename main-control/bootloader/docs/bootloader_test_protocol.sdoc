@@ -86,7 +86,12 @@ Verify that:
 
 **Assumptions & Constraints**
 
-None
+The mcumgr examples below use the `main-control-ftdi` connection profile. Configure it once,
+replacing `COM12` with the FTDI adapter's actual port:
+
+```powershell
+mcumgr conn add main-control-ftdi type="serial" connstring="dev=COM12,baud=115200,mtu=124"
+```
 
 **Acceptance Criteria**
 
@@ -101,7 +106,7 @@ TITLE: Test Protocol
 
 [TEST_CASE]
 UID: TC-H1FWMCBOOT-6
-TITLE: Functional1
+TITLE: Primary Image Validation - Test Case
 STATEMENT: >>>
 The main control bootloader firmware shall execute the primary application only when its MCUboot
 header, SHA-256 hash, and ECDSA P-256 signature are valid.
@@ -111,9 +116,23 @@ PREREQUISITES: >>>
 2. A valid signed primary image is present.
 <<<
 STEPS: >>>
-1. Enter serial recovery and upload an intentionally invalid or unsigned image to secondary slot 1.
-2. Verify image list does not report the uploaded image as a valid slot-1 image.
-3. Reset the system.
+1. Enter serial recovery and upload an intentionally invalid or unsigned image to secondary slot 1:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image upload --image 2 ".\invalid-or-unsigned.mcumgr.bin"
+   ```
+
+2. Verify image list does not report the uploaded image as a valid slot-1 image:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image list
+   ```
+
+3. Reset the system:
+
+   ```powershell
+   mcumgr -c main-control-ftdi reset
+   ```
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The invalid image is not accepted for upgrade.
@@ -127,7 +146,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMCBOOT-8
-TITLE: Functional 2
+TITLE: Secondary Image Upload - Test Case
 STATEMENT: >>>
 The main control bootloader firmware shall upload a signed MCUboot image to the secondary image slot.
 <<<
@@ -137,8 +156,17 @@ PREREQUISITES: >>>
 <<<
 STEPS: >>>
 1. Enter serial recovery.
-2. Upload the signed image using mcumgr direct image target 2.
-3. Request image list.
+2. Upload the signed image using mcumgr direct image target 2:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image upload --image 2 ".\valid-signed.mcumgr.bin"
+   ```
+
+3. Request image list:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image list
+   ```
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The mcumgr upload completes successfully.
@@ -152,7 +180,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMCBOOT-9
-TITLE: Functional 3
+TITLE: Interrupted Image Upload Recovery - Test Case
 STATEMENT: >>>
 The main control bootloader firmware shall progressively erase only secondary-slot sectors needed for an image upload.
 <<<
@@ -162,8 +190,17 @@ PREREQUISITES: >>>
 <<<
 STEPS: >>>
 1. Enter serial recovery.
-2. Start a secondary-slot image upload and interrupt it before completion.
-3. Reset the system.
+2. Start a secondary-slot image upload and press Ctrl+C before it completes:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image upload --image 2 ".\valid-signed.mcumgr.bin"
+   ```
+
+3. Reset the system:
+
+   ```powershell
+   mcumgr -c main-control-ftdi reset
+   ```
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The incomplete secondary image is not selected.
@@ -177,7 +214,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMCBOOT-10
-TITLE: PC Communication
+TITLE: PC Communication - Test Case
 STATEMENT: >>>
 The main control bootloader firmware shall respond to an mcumgr echo command while serial recovery is active.
 <<<
@@ -187,9 +224,18 @@ PREREQUISITES: >>>
 <<<
 STEPS: >>>
 1. Send `*BOOTL\n` to the running application at 115200 baud.
-2. Connect mcumgr at 115200 baud.
-3. Send `mcumgr echo ping`.
-4. Reset without sending another bootloader request.
+2. Verify the mcumgr connection at 115200 baud:
+
+   ```powershell
+   mcumgr -c main-control-ftdi echo ping
+   ```
+
+3. Verify that the bootloader replies with `ping`.
+4. Reset without sending another bootloader request:
+
+   ```powershell
+   mcumgr -c main-control-ftdi reset
+   ```
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The application requests serial recovery and resets.
@@ -204,7 +250,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMCBOOT-11
-TITLE: Recovery Entry
+TITLE: Recovery Entry - Test Case
 STATEMENT: >>>
 The main control bootloader firmware shall consume a one-shot request from the main application,
 enter serial recovery for that boot only, and clear the request before the next processor reset.
@@ -215,8 +261,18 @@ PREREQUISITES: >>>
 <<<
 STEPS: >>>
 1. Send `*BOOTL\n` to the running application and observe the processor reset.
-2. Connect mcumgr at 115200 baud and send `mcumgr echo recovery`.
-3. Send `mcumgr reset` without issuing another `*BOOTL\n` request.
+2. Connect mcumgr at 115200 baud and send an echo command:
+
+   ```powershell
+   mcumgr -c main-control-ftdi echo recovery
+   ```
+
+3. Reset without issuing another `*BOOTL\n` request:
+
+   ```powershell
+   mcumgr -c main-control-ftdi reset
+   ```
+
 4. Verify the primary application starts, then reset the processor once more without issuing a
    bootloader request.
 <<<
@@ -234,7 +290,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMCBOOT-12
-TITLE: Image Validation
+TITLE: Image Validation - Test Case
 STATEMENT: >>>
 The main control bootloader firmware shall reject uploaded images with either a corrupted SHA-256
 hash or an ECDSA P-256 signature that does not match the public key embedded in the bootloader.
@@ -248,12 +304,33 @@ PREREQUISITES: >>>
 <<<
 STEPS: >>>
 1. Enter serial recovery and upload the post-signing-modified image using mcumgr direct image target
-   2, then request image list.
-2. Reset the processor and verify that the valid primary application starts.
+   2, then request image list:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image upload --image 2 ".\modified-after-signing.mcumgr.bin"
+   mcumgr -c main-control-ftdi image list
+   ```
+
+2. Reset the processor and verify that the valid primary application starts:
+
+   ```powershell
+   mcumgr -c main-control-ftdi reset
+   ```
+
 3. Re-enter serial recovery and upload the image signed with the non-matching key using direct image
-   target 2, then request image list.
-4. Attempt to confirm the uploaded image by its hash if mcumgr reports a hash, then reset the
-   processor.
+   target 2, then request image list:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image upload --image 2 ".\wrong-key.mcumgr.bin"
+   mcumgr -c main-control-ftdi image list
+   ```
+
+4. If mcumgr reports a hash, attempt to confirm the uploaded image, then reset the processor:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image confirm <slot-1-hash>
+   mcumgr -c main-control-ftdi reset
+   ```
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The post-signing-modified image is not reported as a bootable slot-1 image and cannot be selected
@@ -270,7 +347,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWMCBOOT-13
-TITLE: Image Upgrade
+TITLE: Image Upgrade - Test Case
 STATEMENT: >>>
 The main control bootloader firmware shall permanently upgrade to a confirmed, validated secondary
 image by swapping the primary and secondary slots through the scratch flash area.
@@ -282,16 +359,50 @@ PREREQUISITES: >>>
    without modifying flash contents.
 <<<
 STEPS: >>>
-1. Enter serial recovery, record the slot-0 image hash, and upload the new image using mcumgr direct
-   image target 2.
-2. Request image list and record the new slot-1 image hash.
-3. Confirm the new image using its recorded hash.
-4. Configure the debugger to halt on a write to `0x005C2000`, send `mcumgr reset`, and resume the
-   processor until the write is observed.
-5. Remove the breakpoint, resume execution, and verify that the new application version starts.
-6. Enter serial recovery again and request image list.
-7. Reset the processor without confirming another image and verify that the new application version
-   starts again.
+1. Enter serial recovery and record the slot-0 image hash:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image list
+   ```
+
+2. Upload the new image using mcumgr direct image target 2:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image upload --image 2 ".\new-version.mcumgr.bin"
+   ```
+
+3. Request image list and record the new slot-1 image hash:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image list
+   ```
+
+4. Confirm the new image using its recorded hash:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image confirm <slot-1-hash>
+   ```
+
+5. Configure the debugger to halt on a write to `0x005C2000`, reset the processor, and resume it
+   until the write is observed:
+
+   ```powershell
+   mcumgr -c main-control-ftdi reset
+   ```
+
+6. Remove the breakpoint, resume execution, and verify that the new application version starts.
+7. Enter serial recovery again and request image list:
+
+   ```powershell
+   mcumgr -c main-control-ftdi image list
+   ```
+
+8. Reset the processor without confirming another image and verify that the new application version
+   starts again:
+
+   ```powershell
+   mcumgr -c main-control-ftdi reset
+   ```
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. Image list reports the new image in slot 1 as bootable with its expected hash.

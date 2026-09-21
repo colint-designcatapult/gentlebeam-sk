@@ -64,7 +64,7 @@ TITLE: Overview
 STATEMENT: >>>
 The main control application firmware serves as the main logical control for system operation.
 
-The main control application firmware monitors all the inputs from the various connections on the board hardware. It can also be used to set and control many of the components that the main control board interfaces with. For off the shelf components, the main control application can set/enable the Peltier cooler temperature, can set/enable the motor controller drivers for cooling system pump and fans, and can enable the ion pump controller.
+The main control application firmware monitors all the inputs from the various connections on the board hardware. It can also be used to set and control many of the components that the main control board interfaces with. For off the shelf components, the main control application can set/enable the motor controller drivers for cooling system pump and fans, and can enable the ion pump controller.
 <<<
 
 [[/SECTION]]
@@ -107,7 +107,7 @@ STATEMENT: >>>
 
         Head[Head Board]
         HVPS[HVPS]
-        Peltier[Peltier Cooler]
+        Peltier[Cooler]
 
         Timers[External Timers]
         Cooling[Cooling]
@@ -321,7 +321,7 @@ Interlocks - safety switches that must be engaged for the system to operate prop
 
 Timers - The Main Control has an internal timer and two external timers for redundancy. These timers are engaged during X-Ray emissions and are primarily for safety.
 
-Cooling System Control - The system utilizes cabinet fans, cooling pump, and a Peltier cooler to keep the system temperature from exceeding specified limits. Temperature sensors create feedback loop with fan speed adjustment and the system cooling.
+Cooling System Control - The system utilizes cabinet fans, cooling pump to keep the system temperature from exceeding specified limits. Temperature sensors create feedback loop with fan speed adjustment and the system cooling.
 <<<
 
 [[/SECTION]]
@@ -424,9 +424,6 @@ The two ADS7828 chips each have 8 channels, while the MAX11647 has two channels.
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWMC-54
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-64
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWMC-66
@@ -586,23 +583,6 @@ RELATIONS:
   ROLE: Refines
 
 [DESIGN_ITEM]
-UID: SW-H1FWMC-184
-TITLE: Peltier Cooler Communication
-STATEMENT: >>>
-The firmware communicates with the external Peltier controller via one of the microcontroller's serial UART interfaces. The firmware both receives and transmits data on this UART port. Due to the nature of UART having independent transmit and receive lines, the transmit and receive functionality operate independently. As the UART baud rate is relatively slow compared to the processing speed of the microcontroller, both sending and receiving data is performed with nonblocking interrupt callback functions.
-
-Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag when transmission is initiated, and clears the flag after transmission is finished, to not create transmission conflicts on the transmit line.
-
-Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is available. The parsing of the received byte is done to determine whether a complete data packet has been received from the PC, as according to the communication protocol. Once a completed data packet has been received, the firmware sets a flag for further data processing outside of the parsing inside of the interrupt callback.
-
-The communication protocol is based on the pre-defined protocol defined by the off-the-shelf controller TC-48-20-OEM.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-64
-  ROLE: Refines
-
-[DESIGN_ITEM]
 UID: SW-H1FWMC-185
 TITLE: Fault Handling
 STATEMENT: >>>
@@ -709,7 +689,7 @@ UID: SW-H1FWMC-189
 TITLE: General System Monitoring: System Faults
 STATEMENT: >>>
 The firmware periodically evaluates measured and reported feedback to detect cooling
-faults. Coolant temperature above 35°C, Peltier heatsink temperature above 50°C, and
+faults. Coolant temperature above 35°C and
 cabinet temperature above 40°C produce their corresponding temperature fault reports.
 Coolant pressure and flow limits are evaluated while the pump is operating; pressure
 debounce counters are cleared while it is off so stale samples cannot cause a later fault.
@@ -733,9 +713,6 @@ RELATIONS:
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWMC-62
-  ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWMC-64
   ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWMC-66

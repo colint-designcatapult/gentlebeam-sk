@@ -120,15 +120,17 @@ TITLE: Main Modules
 
 [TEXT]
 STATEMENT: >>>
-HVPS Bootloader Firmware - The firmware is stored at the base memory address on the microcontroller
-and facilitates the loading of new HVPS Interface firmware (.hex) files in the remaining
-flash memory.
+HVPS Bootloader Firmware - The firmware occupies the first 48 KiB of MCU flash. It validates a
+signed MCUboot image in a single 180 KiB primary slot and either transfers execution to the
+application or remains available for serial recovery.
 
-HVPS Bootloader PC Application - This app offers a desktop GUI that loads the HVPS Interface
-firmware at the location in memory specified and managed by the bootloader. The GUI allows the
-selection of a COM port that corresponds to the USB port established by the bootloader.
+Firmware Packaging Tools - The image creation utility converts an application Intel HEX artifact
+into an MCUboot image with a 512-byte header and signs it using ECDSA P-256. The upload utility or
+the standard mcumgr client transfers the packaged image to image 0 over UART3.
 
-Flash Memory - Where the bootloader firmware is stored and new HVPS Interface firmware is flashed.
+Flash Memory - The MCU flash contains a bootloader region beginning at 0x08000000 and a primary
+application slot beginning at 0x0800C000. The application vector table normally begins at
+0x0800C200 after the MCUboot header.
 <<<
 
 [[/SECTION]]
@@ -139,42 +141,40 @@ TITLE: Design Items
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPSIB-11
-TITLE: Application Program Handling
+TITLE: Application Validation and Boot Selection
 STATEMENT: >>>
-At the beginning of bootloader firmware execution, the program parses the predetermined application
-region in flash memory and calculates a CRC over the complete region. The application firmware build
-calculates and stores the programmed CRC over that same region, treating unprogrammed bytes as erased
-flash. The bootloader compares its calculated CRC to the programmed CRC in the designated storage
-location. If the values match, the bootloader considers the application valid and jumps to the
-application firmware for execution.
-
-If the calculated value does not match the stored value, then the firmware will not jump to the
-application for execution but will instead wait for PC communication for commands to update the
-application memory.
+After peripheral initialization, the bootloader opens a three-second MCUboot serial-recovery window
+and then invokes boot_go(). MCUboot validates the primary-slot image header, SHA-256 TLV, and EC256
+signature against the public key compiled into the bootloader. On success the firmware reports
+BOOT_GO_OK and performs the protected application handoff. On failure it reports BOOT_GO_FAIL once
+and repeats the serial-recovery and validation loop without executing the image.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-1
   ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-5
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-9
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-12
+  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPSIB-13
-TITLE: Flash Memory Processing
+TITLE: Primary-Slot Flash Processing
 STATEMENT: >>>
-The firmware can both erase and write to the flash memory of the microcontroller. The physical flash
-erase pages are 2048 bytes in size. When the firmware receives an erase command from the PC, it
-erases 91 physical pages in the region pre-designated for application memory. The firmware derives
-this erase count by dividing the configured application-page limit of 180 by two and adding one.
+The flash-map backend exposes one 180 KiB primary slot beginning at 0x0800C000. MCUboot receives
+image-management upload chunks for image 0 and supplies slot-relative offsets to this backend.
 
-Each PC write command provides a 256-byte payload and an application-relative sub-page index. The
-firmware accepts indices from 0 through 180 and rejects greater indices. It calculates the destination
-from the application start address and the index, then programs the payload word by word as 32-bit
-values.
-
-The flash memory controller for the microcontroller requires that the firmware lock and unlock the
-flash memory for manipulation, as a way to protect against unwanted corruption of the flash
-memory. When performing erase and write procedures, the firmware will appropriately unlock and
-lock the flash memory controller peripheral of the microcontroller.
+Writes are constrained to the primary-slot bounds and require a 4-byte-aligned destination, source,
+and length. The backend unlocks flash, programs 32-bit words, and locks flash after each operation.
+Erasures are constrained to slot bounds and 2048-byte physical-page boundaries. Progressive erase
+is enabled so MCUboot erases the pages required by the upload rather than using the retired explicit
+91-page erase command.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -212,61 +212,47 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPSIB-9
-TITLE: PC Communication Interface
+TITLE: UART3 Transport
 STATEMENT: >>>
-The firmware communicates with the PC via the microcontroller's serial UART interface. The
-firmware both receives and transmits data on this UART port. Due to the nature of UART having
-independent transmit and receive lines, the transmit and receive functionality operate
-independently. As the UART baud rate is relatively slow compared to the processing speed of the
-microcontroller, both sending and receiving data is performed with non-blocking interrupt callback
-functions.
+The serial bootloader uses UART3 at 38400 baud, 8 data bits, no parity, and one stop bit. Reception
+is interrupt-driven one byte at a time into a 1024-byte ring buffer. The MCUboot line reader removes
+bytes from the ring buffer and returns one newline-terminated NLIP line at a time. A full ring buffer
+drops newly received bytes until space becomes available.
 
-Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
-the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
-when transmission is initiated, and clears the flag after transmission is finished, to not create
-transmission conflicts on the transmit line.
+Transmission uses blocking HAL UART transmission. The upload-activity LED pattern is updated while
+a line is being received and returns to the idle pattern after a complete line or receive timeout.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-4
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-9
+  ROLE: Refines
 
-Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
-available. The parsing of the received byte is done to determine whether a complete data packet
-has been received from the PC, as according to the communication protocol. Once a completed
-data packet has been received, the firmware sets a flag for further data processing outside of the
-parsing inside of the interrupt callback.
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-10
+TITLE: MCUboot Serial-Management Processing
+STATEMENT: >>>
+MCUboot serial management uses standard NLIP line framing. Each management packet contains an SMP
+header and CBOR payload, is protected by CRC16-XMODEM, base64 encoded, and divided into newline-
+terminated NLIP lines. The configured maximum received management message is 512 bytes.
+
+The enabled management operations provide echo, image status/listing, image-0 upload, and system
+reset. Upload requests carry an image offset and data chunk. MCUboot validates request sequencing,
+decoding, framing CRC, image bounds, and final image metadata before the image is eligible to boot.
+Malformed packets receive a management error response or are discarded without transferring
+execution to their contents.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-2
   ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H1FWHVPSIB-10
-TITLE: PC Communication Processing
-STATEMENT: >>>
-The communication protocol the firmware employs for communicating with the PC utilizes ASCII
-character bytes. The firmware both sends and receives data packets. Each received data packet
-from the PC begins with a asterisk character ('*') and terminates with a newline character ('\n'). The
-value of the bytes in between these are comprised of a fixed length command, and a variable
-length data payload. Both command and data payload are also represented by ASCII character
-bytes.
-
-There are four different valid commands that the PC can send: ping, erase, write, and verify. Each
-command is represented in the transmitted packet by preset 5-character values. The firmware
-compares the received command to these preset values. There is no associated data payload for
-the ping and erase command. The' write' command has a data payload containing the flash page
-index and the values to be written to said flash page. The verify command has a CRC value as its
-data payload. The data payload for both commands are sent as ASCII characters which are
-formatted as human readable hexadecimal values.
-
-Each transmitted data packet from the firmware to the PC begins with a period character ('.') and
-terminates with a newline character ('\n'). The value of the bytes in between are a fixed length
-response. The fixed length response are 13 ASCII characters which correspond to the specific
-incoming command that is being responded to (e.g. ping, erase, write, and verify).
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPSIB-1
-  ROLE: Refines
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-4
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-11
   ROLE: Refines
 
 [DESIGN_ITEM]
@@ -276,8 +262,9 @@ STATEMENT: >>>
 The firmware integrates the MCUboot bootutil library to provide industry-standard secure boot
 capabilities. The bootutil module provides functions to validate application images stored in flash
 memory, including verification of image headers, cryptographic signature validation, and integrity
-checks. The bootutil library uses a single application slot architecture with primary slot validation
-enabled. The firmware configures MCUboot with the following parameters:
+checks. Image integrity is represented in the MCUboot TLV area rather than the legacy stored
+application CRC. The bootutil library uses a single application slot architecture with primary slot
+validation enabled. The firmware configures MCUboot with the following parameters:
 
 - MCUBOOT_IMAGE_NUMBER = 1: Single application image
 - MCUBOOT_SINGLE_APPLICATION_SLOT = 1: Single slot architecture
@@ -285,8 +272,11 @@ enabled. The firmware configures MCUboot with the following parameters:
 - MCUBOOT_VALIDATE_PRIMARY_SLOT = 1: Validate primary slot on every boot
 - MCUBOOT_SERIAL = 1: Serial bootloader interface enabled
 - MCUBOOT_OVERWRITE_ONLY = 1: Overwrite-only image update mode
+- MCUBOOT_ERASE_PROGRESSIVELY = 1: Erase pages as required during upload
+- MCUBOOT_SERIAL_MAX_RECEIVE_SIZE = 512: Maximum decoded management message size
+- MCUBOOT_FIH_PROFILE_OFF = 1: Fault-injection-hardening profile disabled
 
-The bootutil library processes the application image header and footer to verify the image
+The bootutil library processes the application image header and TLV area to verify the image
 integrity and authenticity before allowing the bootloader to jump to the application code.
 <<<
 RELATIONS:
@@ -296,24 +286,19 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPSIB-15
-TITLE: Image Address and Vector Table Validation
+TITLE: Vector Table Validation
 STATEMENT: >>>
-Before jumping to the application, the firmware performs comprehensive validation of the
-application image to ensure it is located in valid address ranges and has valid vector table entries.
+Before jumping to the application, the firmware reads the stack pointer and reset handler addresses
+from the application image vector table. The firmware then validates:
 
-The firmware reads the stack pointer and reset handler addresses from the application image vector
-table, which is located at the start of the application code region. The firmware then validates:
-
-1. Image Start Address: Ensures the image start address falls within the valid range 0x0800C200
-   to 0x08024000, which represents the designated application slot.
-2. Stack Pointer: Validates that the stack pointer is within the valid RAM range 0x20000000
-   to 0x20008000.
-3. Reset Handler: Ensures the reset handler address is within the valid application code range,
+1. Stack Pointer: Validates that the stack pointer is within the inclusive RAM range 0x20000000
+   through 0x20008000.
+2. Reset Handler: Ensures the reset handler address is within the valid application code range,
    which must be greater than or equal to the image start address and less than the end of the
-   application slot (0x08024000).
+   current executable-image bound (0x08024000).
 
-If any validation fails, the firmware outputs an appropriate error message (ERR_ADDR, ERR_SP,
-or ERR_RH) and returns control to the bootloader instead of jumping to the application.
+If either validation fails, the firmware outputs ERR_SP or ERR_RH and returns control to the
+bootloader instead of jumping to the application.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -322,30 +307,89 @@ RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-7
   ROLE: Refines
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPSIB-8
-  ROLE: Refines
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPSIB-17
 TITLE: Serial Bootloader Interface
 STATEMENT: >>>
 The firmware implements a serial bootloader interface using the UART3 peripheral to allow
-firmware updates via a serial protocol. The serial interface supports the MCUboot management
-group commands for updating application images over a serial link.
+firmware updates via the MCUboot management protocol. After initialization and before each image
+validation attempt, boot_serial_check_start() provides a three-second recovery interval.
 
 The serial bootloader supports the following operations:
-- Image upload and verification
-- Image validation status reporting
-- Erase of application flash memory
-- Programming of application flash memory
+- Management echo for bootloader-presence detection
+- Image status/listing
+- Image-0 upload, including progressive erase and programming of application flash
+- System reset
 
-The serial interface operates in interrupt-driven mode for both transmission and reception to
-provide non-blocking operation with the application validation and jump procedures.
+If validation fails, the main loop repeats the recovery interval indefinitely. If validation
+succeeds and no recovery operation prevents boot, the firmware transfers execution to the image.
 <<<
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPSIB-4
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-9
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-12
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-18
+TITLE: Application Handoff
+STATEMENT: >>>
+After all image and vector-table checks succeed, the bootloader disables interrupts, stops and
+clears SysTick, disables and clears NVIC interrupt state, and writes the application vector-table
+address to VTOR. It issues data and instruction synchronization barriers, re-enables interrupts,
+loads MSP from the first vector-table word, and branches directly to the reset handler from the
+second vector-table word without retaining a C call frame on the new stack.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-10
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-19
+TITLE: Firmware Image Packaging and Trust
+STATEMENT: >>>
+The application is linked to begin at 0x0800C200. The image-generation tooling places a 512-byte
+MCUboot header at the primary-slot base, adds SHA-256 metadata in the TLV area, and signs release
+images using ECDSA with the NIST P-256 curve. The bootloader contains only the matching public key.
+
+Production private keys shall be maintained outside source control in an access-controlled signing
+environment. Any private key stored with development tooling shall be identified as a non-production
+test key and shall not be used to authorize production firmware.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-1
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-5
+  ROLE: Refines
+
+[DESIGN_ITEM]
+UID: SW-H1FWHVPSIB-20
+TITLE: Interrupted Upload Behavior
+STATEMENT: >>>
+The single-slot upload writes directly into the primary slot and progressively erases affected flash
+pages. Until the upload contains a complete image with valid MCUboot metadata and signature,
+boot_go() rejects the slot. The bootloader then remains in its recovery loop so the PC can restart or
+resume a valid upload. The design does not provide rollback to the previously installed image because
+there is no secondary slot.
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-2
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-3
+  ROLE: Refines
+- TYPE: Parent
+  VALUE: RQ-H1FWHVPSIB-12
   ROLE: Refines
 
 [[/SECTION]]

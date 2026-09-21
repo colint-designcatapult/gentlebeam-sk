@@ -151,8 +151,6 @@ handled and responded to such as changing the output state of the LED Ring.
 
 Buttons - The Head Interface reads 5 GPIO buttons that can change the function for the user.
 
-Lasers - GPIO output controls low power positioning lasers.
-
 Indicator LED Ring - 51 DotStar RGB LEDs controlled through SPI. Commands received from the main
 control firmware select a non-blocking color effect that is advanced by the processing loop.
 

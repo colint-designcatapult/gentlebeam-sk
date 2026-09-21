@@ -250,13 +250,4 @@ STATEMENT: >>>
 The firmware shall report its release version when requested by the main control board.
 <<<
 
-[REQUIREMENT]
-UID: RQ-H1FWHVPS-21
-TYPE: Functional
-TITLE: Development-build boot validation bypass
-STATEMENT: >>>
-Development firmware shall support a boot-validation bypass that is not enabled in release
-firmware.
-<<<
-
 [[/SECTION]]

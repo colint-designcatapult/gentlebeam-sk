@@ -60,41 +60,6 @@ STATEMENT: >>>
 +-------------------+---------------------------------------------+
 <<<
 
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: Overview
-
-[TEXT]
-STATEMENT: >>>
-The main control application firmware serves as the main logical control for system operation.
-
-The main control application firmware monitors all the inputs from the various connections on the board
-hardware. It can also be used to set and control many of the components that the main control board
-interfaces with. For off the shelf components, the main control application can set/enable the motor controller drivers for cooling system pump and fans, and
-can enable the ion pump controller.
-
-The main control application firmware runs on the main control MCU of the main control board.
-<<<
-
-[[/SECTION]]
-
-[[SECTION]]
-TITLE: References
-
-[TEXT]
-STATEMENT: >>>
-+--------------------------------+-------------------------------------------+
-| Document ID / Reference Number | Document Title                            |
-+================================+===========================================+
-| DHF-GBSK-0001, Rev.1           | GBSK Software Development Plan (SDP)      |
-+--------------------------------+-------------------------------------------+
-| DHF-GBSK-0003, Rev.1           | GBSK Software Verification Plan (SVP)     |
-+--------------------------------+-------------------------------------------+
-<<<
-
-[[/SECTION]]
-
 [[SECTION]]
 PREFIX: RQ-H1FWMC-
 TITLE: Requirements
@@ -102,7 +67,7 @@ TITLE: Requirements
 [REQUIREMENT]
 UID: RQ-H1FWMC-1
 TYPE: Functional
-TITLE: Operation 11: Termination
+TITLE: Operation 11: Termination - PC Stop Command
 STATEMENT: >>>
 The firmware shall terminate an ongoing emission upon receipt of a stop command from
 the PC
@@ -111,7 +76,7 @@ the PC
 [REQUIREMENT]
 UID: RQ-H1FWMC-2
 TYPE: Functional
-TITLE: Head Interface
+TITLE: Head Interface - IO Feedback
 STATEMENT: >>>
 The firmware shall be able to receive IO feedback values from the head interface board
 including button press toggles
@@ -120,7 +85,7 @@ including button press toggles
 [REQUIREMENT]
 UID: RQ-H1FWMC-3
 TYPE: Functional
-TITLE: Head Interface
+TITLE: Head Interface - Communication Monitoring
 STATEMENT: >>>
 The firmware shall monitor communication with the head interface board and report a
 fault if no valid communication is received within 0.5 seconds
@@ -129,7 +94,7 @@ fault if no valid communication is received within 0.5 seconds
 [REQUIREMENT]
 UID: RQ-H1FWMC-6
 TYPE: Functional
-TITLE: Fault information
+TITLE: Fault information - Active Fault Reporting
 STATEMENT: >>>
 The firmware shall retain and report up to four simultaneously active fault records. In
 response to an indexed fault-information request from the PC, the firmware shall report:
@@ -174,13 +139,12 @@ emergency-stop interlock is open and shall report an interlock fault. Interlocks
 - Backup timer 1, backup timer 2, and watchdog readiness
 - Remote key and base key
 - MCU fault, spare interlocks 1 and 2, and buffered master-fault diagnostic inputs
-
 <<<
 
 [REQUIREMENT]
 UID: RQ-H1FWMC-9
 TYPE: Safety
-TITLE: Coils
+TITLE: Coils - Focus Coil Feedback Monitoring
 STATEMENT: >>>
 The firmware shall monitor the focus coil feedback current values and report a fault for
 values that are more than 150 mA out of tolerance.
@@ -189,7 +153,7 @@ values that are more than 150 mA out of tolerance.
 [REQUIREMENT]
 UID: RQ-H1FWMC-10
 TYPE: Safety
-TITLE: Backup Timer
+TITLE: Backup Timer Communication Integrity
 STATEMENT: >>>
 The firmware shall monitor the backup timer communication and report a fault if the
 communication has been corrupted
@@ -198,7 +162,7 @@ communication has been corrupted
 [REQUIREMENT]
 UID: RQ-H1FWMC-11
 TYPE: Safety
-TITLE: Backup Timer
+TITLE: Backup Timer Response Monitoring
 STATEMENT: >>>
 The firmware shall monitor communication with the backup timers and report a fault if
 the timers do not respond
@@ -207,7 +171,7 @@ the timers do not respond
 [REQUIREMENT]
 UID: RQ-H1FWMC-12
 TYPE: Functional
-TITLE: Operation 01: Filament conditioning
+TITLE: Operation 01: Filament conditioning - Target Timeout
 STATEMENT: >>>
 The firmware shall report a fault if the HVPS has not reached the target filament current
 setpoint during the conditioning procedure within a timeout period of 360 seconds
@@ -216,7 +180,7 @@ setpoint during the conditioning procedure within a timeout period of 360 second
 [REQUIREMENT]
 UID: RQ-H1FWMC-13
 TYPE: Functional
-TITLE: Operation 02: Warmup procedure
+TITLE: Operation 02: Warmup procedure - Target Timeout
 STATEMENT: >>>
 The firmware shall report a fault if the HVPS has not reached the target filament setpoint
 during the warmup procedure within a timeout period of 180 seconds
@@ -225,7 +189,7 @@ during the warmup procedure within a timeout period of 180 seconds
 [REQUIREMENT]
 UID: RQ-H1FWMC-14
 TYPE: Functional
-TITLE: Operation 07: Operational point setup
+TITLE: Operation 07: Operational point setup - Target kV Timeout
 STATEMENT: >>>
 The firmware shall report a fault if the HVPS has not reached the target kV setpoint during
 the operational point setup processes within a timeout period of 90 seconds
@@ -234,7 +198,7 @@ the operational point setup processes within a timeout period of 90 seconds
 [REQUIREMENT]
 UID: RQ-H1FWMC-15
 TYPE: Safety
-TITLE: Operation 10 - Emission
+TITLE: Operation 10 - Emission - High-Voltage Monitoring
 STATEMENT: >>>
 During an emission, the firmware shall monitor the high voltage feedback from the HVPS
 and report a fault if it deviates by more than 5% from the desired target specified in the
@@ -244,7 +208,7 @@ treatment plan.
 [REQUIREMENT]
 UID: RQ-H1FWMC-16
 TYPE: Functional
-TITLE: Operation 09: Initiation
+TITLE: Operation 09: Initiation - Filament Current Ramp
 STATEMENT: >>>
 On the initiation of an operational point emission execution, the firmware shall direct the
 HV interface board to ramp up the filament current to the specified setpoint in the
@@ -254,7 +218,7 @@ treatment plan prior to allowing emission (dropping the grid).
 [REQUIREMENT]
 UID: RQ-H1FWMC-17
 TYPE: Functional
-TITLE: Operation 08: Ready
+TITLE: Operation 08: Ready - Explicit Emission Release
 STATEMENT: >>>
 Whenever the firmware enters the ready state for an initial or resumed emission, it shall
 remain non-emitting until the PC sends an explicit point-scope release command. The
@@ -264,7 +228,7 @@ firmware shall not automatically release an emission.
 [REQUIREMENT]
 UID: RQ-H1FWMC-18
 TYPE: Functional
-TITLE: Operation 08: Ready
+TITLE: Operation 08: Ready - Single-Point Session Completion
 STATEMENT: >>>
 Each treatment session shall contain one operational point. Completion of that point shall
 end the session through discharge; the firmware shall not prepare another point within the
@@ -274,7 +238,7 @@ same session.
 [REQUIREMENT]
 UID: RQ-H1FWMC-19
 TYPE: Functional
-TITLE: Operation 07: Operational point setup
+TITLE: Operation 07: Operational point setup - Target kV Verification
 STATEMENT: >>>
 Prior to the execution of an operational point emission, the firmware shall verify that the
 HV ramping of the HVPS has terminated and the target kV has been reached
@@ -283,7 +247,7 @@ HV ramping of the HVPS has terminated and the target kV has been reached
 [REQUIREMENT]
 UID: RQ-H1FWMC-20
 TYPE: Functional
-TITLE: Operation 07: Operational point setup
+TITLE: Operation 07: Operational point setup - Target kV Command
 STATEMENT: >>>
 Prior to the execution of a treatment plan operational point emission, the firmware shall
 direct the HV interface board to the targeted kV setpoint
@@ -301,7 +265,7 @@ interlocks and notify the HV interface board
 [REQUIREMENT]
 UID: RQ-H1FWMC-22
 TYPE: Functional
-TITLE: Operation 02: Warmup procedure
+TITLE: Operation 02: Warmup procedure - Invalid Request Format
 STATEMENT: >>>
 The firmware shall respond to an invalid warmup procedure request from the PC with an
 error reply indicating invalid values have been received. Invalid parameters are those
@@ -311,7 +275,7 @@ which cannot be processed or are formatted improperly
 [REQUIREMENT]
 UID: RQ-H1FWMC-23
 TYPE: Functional
-TITLE: Treatment plan reporting
+TITLE: Treatment plan reporting - Indexless Query
 STATEMENT: >>>
 The firmware shall return the scalar operational point parameters for an indexless query.
 Indexed operational-point query payloads shall be rejected by strict packet-length
@@ -321,7 +285,7 @@ validation.
 [REQUIREMENT]
 UID: RQ-H1FWMC-24
 TYPE: Functional
-TITLE: Operation 04: Treatment plan confirmation
+TITLE: Operation 04: Treatment plan confirmation - Uninterrupted Parameter Match
 STATEMENT: >>>
 The firmware shall not consider a treatment plan confirmed until its singular operational
 point is confirmed without interruption by a standby timeout or system fault. The point is
@@ -331,7 +295,7 @@ confirmed only when the received scalar parameters match the staged parameters.
 [REQUIREMENT]
 UID: RQ-H1FWMC-25
 TYPE: Functional
-TITLE: Operation 05: Treatment plan release
+TITLE: Operation 05: Treatment plan release - Interlock Readiness
 STATEMENT: >>>
 The firmware shall not proceed with the release of a treatment plan for execution if all
 interlocks are not ready for emission
@@ -340,7 +304,7 @@ interlocks are not ready for emission
 [REQUIREMENT]
 UID: RQ-H1FWMC-26
 TYPE: Functional
-TITLE: Operation 05: Treatment plan release
+TITLE: Operation 05: Treatment plan release - Request State Validation
 STATEMENT: >>>
 The firmware shall respond to invalid treatment plan release request from the PC with an
 error reply indicating an invalid request. A treatment plan release request will be
@@ -350,7 +314,7 @@ considered invalid if the system is not in the staged state with a confirmed tre
 [REQUIREMENT]
 UID: RQ-H1FWMC-27
 TYPE: Functional
-TITLE: Operation 04: Treatment plan confirmation
+TITLE: Operation 04: Treatment plan confirmation - Incorrect Parameter Values
 STATEMENT: >>>
 The firmware shall respond to incorrect treatment plan operational point confirmation
 parameters from the PC with an error reply indicating incorrect values have been received.
@@ -360,7 +324,7 @@ Incorrect parameters are values which do not match staged parameters
 [REQUIREMENT]
 UID: RQ-H1FWMC-28
 TYPE: Functional
-TITLE: Operation 04: Treatment plan confirmation
+TITLE: Operation 04: Treatment plan confirmation - Invalid Parameter Format
 STATEMENT: >>>
 The firmware shall respond to invalid treatment plan operational point confirmation
 parameters from the PC with an error reply indicating invalid values have been received.
@@ -370,7 +334,7 @@ Invalid parameters are those which cannot be processed or are formatted improper
 [REQUIREMENT]
 UID: RQ-H1FWMC-29
 TYPE: Functional
-TITLE: Operation 04: Treatment plan confirmation
+TITLE: Operation 04: Treatment plan confirmation - Parameter Range Validation
 STATEMENT: >>>
 The firmware shall reject treatment parameters that fall outside the configured acceptable
 operating ranges.
@@ -379,7 +343,7 @@ operating ranges.
 [REQUIREMENT]
 UID: RQ-H1FWMC-30
 TYPE: Functional
-TITLE: Operation 04: Treatment plan confirmation
+TITLE: Operation 04: Treatment plan confirmation - Valid Parameter Acknowledgment
 STATEMENT: >>>
 The firmware shall acknowledge valid treatment parameters received from the PC. A valid
 request shall contain the supported acceleration-potential, emission-current, delivery-time,
@@ -389,7 +353,7 @@ beam-optics, and filament-current parameters within their configured operating r
 [REQUIREMENT]
 UID: RQ-H1FWMC-31
 TYPE: Functional
-TITLE: Operation 04: Treatment plan confirmation
+TITLE: Operation 04: Treatment plan confirmation - Confirmation Timing
 STATEMENT: >>>
 The firmware shall accept confirmation of the singular scalar operational point after
 staging completes and shall return an error if confirmation is attempted outside that
@@ -399,7 +363,7 @@ process.
 [REQUIREMENT]
 UID: RQ-H1FWMC-32
 TYPE: Functional
-TITLE: Operation 03.1: Treatment staging - new session commencement
+TITLE: Operation 03.1: Treatment staging - new session commencement - Session Creation
 STATEMENT: >>>
 The firmware shall accept an argument-free new-session command while in the primed state,
 create storage for exactly one scalar operational point, and return a generated session ID
@@ -409,7 +373,7 @@ to the PC.
 [REQUIREMENT]
 UID: RQ-H1FWMC-33
 TYPE: Functional
-TITLE: Operation 01: Filament conditioning
+TITLE: Operation 01: Filament conditioning - Cold-State Restriction
 STATEMENT: >>>
 The firmware shall only be able to perform filament conditioning from a 'cold' state
 where there is no filament current present, and shall reply to filament condition requests
@@ -419,7 +383,7 @@ outside of this cold state with an error response
 [REQUIREMENT]
 UID: RQ-H1FWMC-34
 TYPE: Functional
-TITLE: Operation 01: Filament conditioning
+TITLE: Operation 01: Filament conditioning - Invalid Target Format
 STATEMENT: >>>
 The firmware shall respond to an invalid filament target value in a filament conditioning
 request from the PC with an invalid value response. Invalid parameters are those which
@@ -429,7 +393,7 @@ cannot be processed or are formatted improperly.
 [REQUIREMENT]
 UID: RQ-H1FWMC-35
 TYPE: Functional
-TITLE: Operation 01: Filament conditioning
+TITLE: Operation 01: Filament conditioning - Target Range Validation
 STATEMENT: >>>
 The firmware shall reject a filament-conditioning target outside the configured acceptable
 range.
@@ -438,7 +402,7 @@ range.
 [REQUIREMENT]
 UID: RQ-H1FWMC-36
 TYPE: Functional
-TITLE: Operation 01: Filament conditioning
+TITLE: Operation 01: Filament conditioning - PC-Requested Conditioning
 STATEMENT: >>>
 The firmware shall be able to perform the filament conditioning as a response to a PC
 request, which specifies the target filament current
@@ -447,7 +411,7 @@ request, which specifies the target filament current
 [REQUIREMENT]
 UID: RQ-H1FWMC-37
 TYPE: Functional
-TITLE: Operation 01: Filament conditioning
+TITLE: Operation 01: Filament conditioning - Target Ramp and Hold
 STATEMENT: >>>
 The firmware shall ramp the filament current to the requested conditioning target and
 maintain the stable target for a prescribed conditioning period before completing the
@@ -457,7 +421,7 @@ procedure.
 [REQUIREMENT]
 UID: RQ-H1FWMC-38
 TYPE: Functional
-TITLE: Operation 00: Startup
+TITLE: Operation 00: Startup - Initialization Transition
 STATEMENT: >>>
 The firmware shall transition out of the startup state once it receives an initialize
 command from the PC, and enter the cold state
@@ -466,7 +430,7 @@ command from the PC, and enter the cold state
 [REQUIREMENT]
 UID: RQ-H1FWMC-39
 TYPE: Functional
-TITLE: Operation 00: Startup
+TITLE: Operation 00: Startup - Power-On State
 STATEMENT: >>>
 The firmware shall begin in a startup state on board power on
 <<<
@@ -474,7 +438,7 @@ The firmware shall begin in a startup state on board power on
 [REQUIREMENT]
 UID: RQ-H1FWMC-40
 TYPE: Functional
-TITLE: Operation 03.1: Treatment staging - new session commencement
+TITLE: Operation 03.1: Treatment staging - new session commencement - Request Validation
 STATEMENT: >>>
 The firmware shall reject malformed or unsupported staging-session requests.
 <<<
@@ -482,7 +446,7 @@ The firmware shall reject malformed or unsupported staging-session requests.
 [REQUIREMENT]
 UID: RQ-H1FWMC-41
 TYPE: Functional
-TITLE: Operation 02: Warmup procedure
+TITLE: Operation 02: Warmup procedure - Target Range Validation
 STATEMENT: >>>
 The firmware shall reject a warmup target outside the configured acceptable range.
 <<<
@@ -490,7 +454,7 @@ The firmware shall reject a warmup target outside the configured acceptable rang
 [REQUIREMENT]
 UID: RQ-H1FWMC-42
 TYPE: Functional
-TITLE: Operation 03.1: Treatment staging - new session commencement
+TITLE: Operation 03.1: Treatment staging - new session commencement - Primed-State Restriction
 STATEMENT: >>>
 The firmware shall be able to begin treatment plan staging only from the primed state,
 responding with an error message if establishment of a new staging session is attempted outside of this state
@@ -499,7 +463,7 @@ responding with an error message if establishment of a new staging session is at
 [REQUIREMENT]
 UID: RQ-H1FWMC-43
 TYPE: Functional
-TITLE: Operation 03.2: Treatment staging
+TITLE: Operation 03.2: Treatment staging - Staging Process Restriction
 STATEMENT: >>>
 The firmware shall only accept the loading of a treatment plan from the PC during a
 designated staging process, responding to the GUI with an error value if the treatment
@@ -509,7 +473,7 @@ plan loading is attempted outside of this staging process
 [REQUIREMENT]
 UID: RQ-H1FWMC-44
 TYPE: Functional
-TITLE: Operation 03.2: Treatment staging
+TITLE: Operation 03.2: Treatment staging - Invalid Parameter Format
 STATEMENT: >>>
 The firmware shall respond to invalid treatment plan staging parameters from the PC with an error reply indicating invalid values have been received. Invalid values are values which cannot be processed, or which are formatted incorrectly
 <<<
@@ -517,7 +481,7 @@ The firmware shall respond to invalid treatment plan staging parameters from the
 [REQUIREMENT]
 UID: RQ-H1FWMC-45
 TYPE: Functional
-TITLE: Operation 03.2: Treatment staging
+TITLE: Operation 03.2: Treatment staging - Parameter Range Validation
 STATEMENT: >>>
 The firmware shall respond to out of bounds treatment plan staging parameters from the
 PC with an error reply indicating out of bounds values have been received. An out of
@@ -527,7 +491,7 @@ bounds parameter is outside of the range of acceptable values
 [REQUIREMENT]
 UID: RQ-H1FWMC-46
 TYPE: Functional
-TITLE: PC Ethernet commands
+TITLE: PC Ethernet commands - Unrecognized Command Handling
 STATEMENT: >>>
 The firmware shall respond with an 'unrecognized message' response when it receives a
 command which is either not formatted properly or not recognized.
@@ -536,7 +500,7 @@ command which is either not formatted properly or not recognized.
 [REQUIREMENT]
 UID: RQ-H1FWMC-47
 TYPE: Functional
-TITLE: USB
+TITLE: USB - CRC Flash Erase
 STATEMENT: >>>
 The firmware shall be able to erase a predetermined area of flash memory, corresponding to application CRC verification area when requested by the PC over USB.
 <<<
@@ -544,7 +508,7 @@ The firmware shall be able to erase a predetermined area of flash memory, corres
 [REQUIREMENT]
 UID: RQ-H1FWMC-48
 TYPE: Functional
-TITLE: USB
+TITLE: USB - Bootloader Entry
 STATEMENT: >>>
 The firmware shall be able to jump to execution of the bootloader application when
 requested by the PC over USB.
@@ -553,7 +517,7 @@ requested by the PC over USB.
 [REQUIREMENT]
 UID: RQ-H1FWMC-49
 TYPE: Functional
-TITLE: USB
+TITLE: USB - PC Command Processing
 STATEMENT: >>>
 The main control application firmware shall be able to receive and process commands
 from PC via the board's USB connection.
@@ -562,7 +526,7 @@ from PC via the board's USB connection.
 [REQUIREMENT]
 UID: RQ-H1FWMC-52
 TYPE: Functional
-TITLE: Backup Timer
+TITLE: Backup Timer - Countdown Reporting
 STATEMENT: >>>
 The firmware shall have the ability to read and report the current backup timer countdown value.
 <<<
@@ -570,7 +534,7 @@ The firmware shall have the ability to read and report the current backup timer 
 [REQUIREMENT]
 UID: RQ-H1FWMC-53
 TYPE: Functional
-TITLE: Backup Timer
+TITLE: Backup Timer - Initialization
 STATEMENT: >>>
 The firmware shall have the ability to set and initialize the backup timer ICs.
 <<<
@@ -578,7 +542,7 @@ The firmware shall have the ability to set and initialize the backup timer ICs.
 [REQUIREMENT]
 UID: RQ-H1FWMC-54
 TYPE: Safety
-TITLE: Coils
+TITLE: Coils - Deflection Coil Feedback Monitoring
 STATEMENT: >>>
 The firmware shall monitor the deflection coil feedback current values and report a fault
 for values that are more than 50 mA out of tolerance from the expected setpoint output
@@ -587,7 +551,7 @@ for values that are more than 50 mA out of tolerance from the expected setpoint 
 [REQUIREMENT]
 UID: RQ-H1FWMC-55
 TYPE: Functional
-TITLE: Coils
+TITLE: Coils - Setpoint Control
 STATEMENT: >>>
 The firmware shall be able to set the deflection and focus coil setpoint control signals.
 <<<
@@ -595,7 +559,7 @@ The firmware shall be able to set the deflection and focus coil setpoint control
 [REQUIREMENT]
 UID: RQ-H1FWMC-60
 TYPE: Safety
-TITLE: Coolant monitoring
+TITLE: Coolant monitoring - Temperature
 STATEMENT: >>>
 The firmware shall monitor the reported coolant temperature and report a fault if the
 temperature is above 35C
@@ -604,7 +568,7 @@ temperature is above 35C
 [REQUIREMENT]
 UID: RQ-H1FWMC-61
 TYPE: Safety
-TITLE: Coolant monitoring
+TITLE: Coolant monitoring - Flow Rate
 STATEMENT: >>>
 The firmware shall monitor the reported coolant system flow rate and report a fault if the
 rate is below 2 LPM or above 6 LPM when the coolant pump is enabled.
@@ -622,19 +586,10 @@ interface board.
 [REQUIREMENT]
 UID: RQ-H1FWMC-63
 TYPE: Functional
-TITLE: Temperature monitoring
+TITLE: Temperature monitoring - Heatsink Fan Control
 STATEMENT: >>>
 The firmware shall adjust the heatsink fan speed based on the heatsink temperature
 feedback in order to provide additional cooling when temperatures increase.
-<<<
-
-[REQUIREMENT]
-UID: RQ-H1FWMC-64
-TYPE: Safety
-TITLE: Temperature monitoring
-STATEMENT: >>>
-The firmware shall report a fault when the Peltier heatsink temperature exceeds the
-configured high-temperature safety limit.
 <<<
 
 [REQUIREMENT]
@@ -650,7 +605,7 @@ measurements when evaluating cooling faults.
 [REQUIREMENT]
 UID: RQ-H1FWMC-66
 TYPE: Safety
-TITLE: Temperature monitoring
+TITLE: Temperature monitoring - Cabinet Temperature Limit
 STATEMENT: >>>
 The firmware shall report a fault when the system cabinet temperature exceeds the
 configured high-temperature safety limit.
@@ -668,7 +623,7 @@ communication is lost, and provide a visual indication of communication activity
 [REQUIREMENT]
 UID: RQ-H1FWMC-69
 TYPE: Functional
-TITLE: Operation 12: Discharge
+TITLE: Operation 12: Discharge - Primed-State Timeout
 STATEMENT: >>>
 The firmware shall return the system into a cold state if the system has been idle in primed
 state for a period of 5 minutes.
@@ -677,7 +632,7 @@ state for a period of 5 minutes.
 [REQUIREMENT]
 UID: RQ-H1FWMC-70
 TYPE: Functional
-TITLE: Operation 09: Initiation
+TITLE: Operation 09: Initiation - Coil Setpoints
 STATEMENT: >>>
 The firmware shall set the deflection coil and focus coil outputs to the target setpoint
 values from the treatment plan, prior to the start of each operational point emission
@@ -695,7 +650,7 @@ if the value is above 0.2 mA when the system is not in 'Emission' state
 [REQUIREMENT]
 UID: RQ-H1FWMC-72
 TYPE: Functional
-TITLE: Operation 10 - Emission
+TITLE: Operation 10 - Emission - Backup Timer Start
 STATEMENT: >>>
 When an emission begins, the firmware shall transmit a starting condition to the two
 backup timers.
@@ -704,7 +659,7 @@ backup timers.
 [REQUIREMENT]
 UID: RQ-H1FWMC-73
 TYPE: Functional
-TITLE: Operation 10 - Emission
+TITLE: Operation 10 - Emission - Delivery Timer Start
 STATEMENT: >>>
 When an emission begins, the firmware shall begin an internal timer to serve as the
 treatment point delivery duration.
@@ -713,7 +668,7 @@ treatment point delivery duration.
 [REQUIREMENT]
 UID: RQ-H1FWMC-74
 TYPE: Functional
-TITLE: Operation 05: Treatment plan release
+TITLE: Operation 05: Treatment plan release - Confirmed Plan Release
 STATEMENT: >>>
 The firmware shall, on request from the PC, release a treatment plan from the staged
 state for execution, if a treatment plan has been successfully staged and confirmed
@@ -722,7 +677,7 @@ state for execution, if a treatment plan has been successfully staged and confir
 [REQUIREMENT]
 UID: RQ-H1FWMC-75
 TYPE: Safety
-TITLE: Operation 10 - Emission
+TITLE: Operation 10 - Emission - Cathode Current Monitoring
 STATEMENT: >>>
 During an emission, the firmware shall monitor the cathode current feedback from the
 HVPS and report a fault if it deviates by more than 5% from the desired target specified in
@@ -732,7 +687,7 @@ the treatment plan.
 [REQUIREMENT]
 UID: RQ-H1FWMC-76
 TYPE: Functional
-TITLE: Operation 02: Warmup procedure
+TITLE: Operation 02: Warmup procedure - Initiation Conditions
 STATEMENT: >>>
 The firmware shall start warmup from COLD only when the PC supplies a configured valid
 target and all required safety interlocks permit operation.
@@ -741,7 +696,7 @@ target and all required safety interlocks permit operation.
 [REQUIREMENT]
 UID: RQ-H1FWMC-77
 TYPE: Safety
-TITLE: Fault mode
+TITLE: Fault mode - Emission Termination and Safe Discharge
 STATEMENT: >>>
 The firmware shall terminate any ongoing emission when a fault is detected, command
 energized outputs to a safe condition, and complete the required discharge before entering
@@ -751,7 +706,7 @@ the latched fault state.
 [REQUIREMENT]
 UID: RQ-H1FWMC-78
 TYPE: Functional
-TITLE: Fault information
+TITLE: Fault information - Fault Clearing
 STATEMENT: >>>
 When the firmware accepts a PC clear-fault directive, it shall request that the HVPS clear
 its faults, clear the main-control latched fault information, and report the result to the
@@ -761,7 +716,7 @@ PC.
 [REQUIREMENT]
 UID: RQ-H1FWMC-79
 TYPE: Functional
-TITLE: Fault information
+TITLE: Fault information - Fault Latching
 STATEMENT: >>>
 The firmware shall latch fault category flags and detailed fault records until they are
 cleared by the PC, even when the condition that caused a record is no longer present.
@@ -770,7 +725,7 @@ cleared by the PC, even when the condition that caused a record is no longer pre
 [REQUIREMENT]
 UID: RQ-H1FWMC-80
 TYPE: Functional
-TITLE: Fault mode
+TITLE: Fault mode - Safe State Handling
 STATEMENT: >>>
 The firmware shall enter safe fault handling when a fault or internal control-processing
 failure is detected and shall prevent unsafe state progression.
@@ -779,7 +734,7 @@ failure is detected and shall prevent unsafe state progression.
 [REQUIREMENT]
 UID: RQ-H1FWMC-81
 TYPE: Functional
-TITLE: Treatment plan reporting
+TITLE: Treatment plan reporting - Programmed Parameter Query
 STATEMENT: >>>
 The firmware shall return the currently programmed scalar treatment parameters in response
 to a valid PC query.
@@ -788,7 +743,7 @@ to a valid PC query.
 [REQUIREMENT]
 UID: RQ-H1FWMC-82
 TYPE: Functional
-TITLE: Operation 03.2: Treatment staging
+TITLE: Operation 03.2: Treatment staging - Scalar Treatment Point Loading
 STATEMENT: >>>
 The firmware shall accept one scalar treatment point containing the supported
 acceleration-potential, emission-current, delivery-time, beam-optics, and filament-current
@@ -810,13 +765,12 @@ categories:
 - Internal and backup timer states and values
 - Applicator, button, coolant, magnetometer, coil, ion-pump, and temperature values
 - HVPS runtime, I/O and status flags, setpoints, feedback values, and power limits
-
 <<<
 
 [REQUIREMENT]
 UID: RQ-H1FWMC-84
 TYPE: Functional
-TITLE: PC Ethernet commands
+TITLE: PC Ethernet commands - Command Response
 STATEMENT: >>>
 The firmware shall be able to respond to commands received from a PC over Ethernet.
 <<<
@@ -824,7 +778,7 @@ The firmware shall be able to respond to commands received from a PC over Ethern
 [REQUIREMENT]
 UID: RQ-H1FWMC-85
 TYPE: Functional
-TITLE: Operation 11: Termination
+TITLE: Operation 11: Termination - Return to Staged State
 STATEMENT: >>>
 The firmware shall revert to the staged state after the cessation of a treatment plan.
 <<<
@@ -832,7 +786,7 @@ The firmware shall revert to the staged state after the cessation of a treatment
 [REQUIREMENT]
 UID: RQ-H1FWMC-86
 TYPE: Functional
-TITLE: Operation 12: Discharge
+TITLE: Operation 12: Discharge - Ready-State Timeout
 STATEMENT: >>>
 The firmware shall return the system into a cold state if the system has been idle in the
 ready state for a period of 2 minutes.
@@ -841,7 +795,7 @@ ready state for a period of 2 minutes.
 [REQUIREMENT]
 UID: RQ-H1FWMC-87
 TYPE: Functional
-TITLE: Operation 12: Discharge
+TITLE: Operation 12: Discharge - Staged-State Timeout
 STATEMENT: >>>
 The firmware shall return the system into a cold state if the system has been idle in staged
 state for a period of 5 minutes.
@@ -878,6 +832,41 @@ readings are unavailable. During emission, the firmware shall report a magnetome
 if any axis deviates from its baseline by more than 10%, with a minimum threshold of 1.0 uT,
 for three consecutive packets, or if any reading is non-finite. A magnetometer fault shall
 request a transition to the fault state.
+<<<
+
+[[/SECTION]]
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The main control application firmware serves as the main logical control for system operation.
+
+The main control application firmware monitors all the inputs from the various connections on the board
+hardware. It can also be used to set and control many of the components that the main control board
+interfaces with. For off the shelf components, the main control application can set/enable the motor controller drivers for cooling system pump and fans, and
+can enable the ion pump controller.
+
+The main control application firmware runs on the main control MCU of the main control board.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
++--------------------------------+-------------------------------------------+
+| Document ID / Reference Number | Document Title                            |
++================================+===========================================+
+| DHF-GBSK-0001, Rev.1           | GBSK Software Development Plan (SDP)      |
++--------------------------------+-------------------------------------------+
+| DHF-GBSK-0003, Rev.1           | GBSK Software Verification Plan (SVP)     |
++--------------------------------+-------------------------------------------+
 <<<
 
 [[/SECTION]]

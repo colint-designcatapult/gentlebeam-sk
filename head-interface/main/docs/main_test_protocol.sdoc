@@ -286,7 +286,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FHI-19
-TITLE: Cooling System Temperature
+TITLE: Cooling System Temperature - Test Case
 STATEMENT: >>>
 When a service user power on the system without loading any treatment plan, he/she be able to see the water temperature on GUI.
 <<<
@@ -310,7 +310,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FHI-21
-TITLE: Main Board Communication
+TITLE: Main Board Communication - Test Case
 STATEMENT: >>>
 Verify that the head interface receives a complete control packet transmitted contiguously at the
 configured UART baud rate and reports values to the main control board at a rate greater than 1 Hz.
@@ -342,7 +342,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FHI-22
-TITLE: Collimator
+TITLE: Collimator - Test Case
 STATEMENT: >>>
 The service user should be able to check the reported ID of the attached collimator and, if it’s disconnected, the reported ID should be 0.
 <<<
@@ -372,7 +372,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FHI-23
-TITLE: Magnetometers readings
+TITLE: Magnetometers readings - Test Case
 STATEMENT: >>>
 The service user can view each magnetometer feedback reporting data in the service screen, which has to be non-zero values.
 <<<
@@ -400,7 +400,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FHI-24
-TITLE: Membrane key switches
+TITLE: Membrane key switches - Test Case
 STATEMENT: >>>
 Verify that a service user can view the state of each of the 5 membrane key switches and that input
 transitions are subject to the 30 msec debounce interval.
@@ -436,7 +436,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FHI-25
-TITLE: Cooling system flow
+TITLE: Cooling system flow - Test Case
 STATEMENT: >>>
 The service user should be able to view system flow values in the
 services screen.
@@ -497,7 +497,7 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FHI-56
-TITLE: Robot Hand Guidance Button Test
+TITLE: Robot Hand Guidance Button Test - Test Case
 STATEMENT: >>>
 Service user should verify that the robot arm moves in manually guided positions when the button is pressed down and holds its position
 upon release.

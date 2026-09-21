@@ -150,35 +150,15 @@ TITLE: Design Items
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPS-106
-TITLE: Bootloader Communication
+TITLE: FTDI UART Frame Handling and Bootloader Command
 STATEMENT: >>>
-The firmware communicates with the PC via one of the microcontrollers' serial UART interface. The
-firmware both receives and transmits data on this UART port. Due to the nature of UART having
-independent transmit and receive lines, the transmit and receive functionality operate
-independently. As the UART baud rate is relatively slow compared to the processing speed of the
-microcontroller, both sending and receiving data is performed with non-blocking interrupt callback
-functions.
+The firmware uses interrupt-driven UART communication to exchange framed data with the PC. It sends
+one complete buffer at a time, receives data one byte at a time, and processes complete frames outside
+the interrupt callback.
 
-Transmitted data is sent as a buffer of bytes, representing a singular data packet to the PC, with
-the interrupt callback occurring once all data bytes have been transmitted. The firmware sets a flag
-when transmission is initiated, and clears the flag after transmission is finished, to not create
-transmission conflicts on the transmit line.
-
-Reception is performed one byte at a time, with the interrupt callback occurring once a data byte is
-available. The parsing of the received byte is done to determine whether a complete data packet has
-been received from the PC, as according to the communication protocol. Once a completed data packet
-has been received, the firmware sets a flag for further data processing outside of the parsing
-inside of the interrupt callback.
-
-Each recognized command has a fixed expected frame length. After the five-character command header
-is received, the callback uses that command's byte count to delimit the frame rather than treating a
-newline-valued byte in a binary payload as an early terminator. An unrecognized header or a receive
-buffer limit resets the parser. The callback always re-arms one-byte interrupt reception, including
-while a complete frame awaits deferred processing; bytes received while processing is pending are
-discarded, and reception remains available for a subsequent valid frame.
-
-When deferred processing accepts the seven-byte `*B00TL\n` frame, it erases the single application
-CRC flash page at `CRC_ADDR_START` and invokes a system reset so execution enters the bootloader.
+Each recognized command has a fixed frame length. Invalid or oversized frames reset the parser, and
+reception remains available for the next valid frame. The exact seven-byte `*B00TL\n` frame causes a
+system reset into the bootloader.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -691,7 +671,7 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPS-124
-TITLE: GET and SET Configurations Command Processing
+TITLE: FTDI Configuration GET and SET Commands
 STATEMENT: >>>
 The firmware recognizes an 11-byte GET frame consisting of the `*GET..` command, a little-endian
 16-bit parameter-category identifier, a little-endian 16-bit parameter index, and a newline
@@ -711,7 +691,7 @@ RELATIONS:
 
 [DESIGN_ITEM]
 UID: SW-H1FWHVPS-125
-TITLE: All-Values Bulk Read Command Processing
+TITLE: FTDI Bulk-Read Commands
 STATEMENT: >>>
 The firmware recognizes the seven-byte `*ACFGS\n`, `*ASPTS\n`, and `*AFBVS\n` bulk-read requests
 by their five-character command and expected frame length. In one response, the firmware echoes
@@ -739,20 +719,6 @@ ahead of the next periodic telemetry frame.
 RELATIONS:
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-20
-  ROLE: Refines
-
-[DESIGN_ITEM]
-UID: SW-H1FWHVPS-127
-TITLE: Development-build boot validation marker
-STATEMENT: >>>
-During FTDI setup in builds where ``RELEASE`` is not defined, the firmware reads the application CRC
-location. If it already contains ``0xDEADBEEF``, no flash operation is performed. Otherwise, the
-firmware erases the CRC flash page when the location is not erased, programs ``0xDEADBEEF``, and
-verifies the programmed value. Builds where ``RELEASE`` is defined skip this operation.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-21
   ROLE: Refines
 
 [[/SECTION]]
