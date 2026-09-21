@@ -104,7 +104,6 @@ public sealed class PlanServiceImpl : PlanService.PlanServiceBase
         var updated = await _repo.UpdateAsync(plan.Id, plan);
         BroadcastPlanEvent(updated);
 
-        _loadForTreatmentEvents.Publish(new LoadForTreatmentEventsResponse { Plan = updated });
         return new UnloadFromTreatmentResponse();
     }
 

@@ -375,13 +375,16 @@ namespace Heracles.External.ViewModels
         //    ApproveRequired = approvedConfig is null;
         //}
 
+        private bool _planUnloadPending;
+
         protected override bool CanPrepare()
         {
             bool userHasPermission =
                 AuthorizedUserStore.AuthorizedUser is not null &&
                 AuthorizedUserStore.AuthorizedUser.Role.Permissions.Treatment;
 
-            return PlanModel.Plan != null
+            return !_planUnloadPending
+                   && PlanModel.Plan != null
                    && TreatmentPlanFieldRules.IsValid(PlanModel.TreatmentFields)
                    && userHasPermission
                    && base.CanPrepare();
@@ -422,34 +425,49 @@ namespace Heracles.External.ViewModels
             }
         }
 
-        protected override Task SetPlanUnloadTaskAsync()
-        {
-            // TODO: we need to unload the plan from treatment only if it was the current one on the board.
-            // Now we unload it unconditionally, this is wrong behavior for the Preparation state
-            //if (UIStateMachine.State != UIMacroState.Preparation)
-            CurrentTaskCommand = new(() =>
-            {
-                _safeTaskExecutor.ScheduleSafeTask(() =>
-                { 
-                    return System.Windows.Application.Current.Dispatcher.Invoke(async () => {
-                        var unloadPlanTask = UnloadPlanFromTreatment();
-                        CurrentTask = new ObservableTask(
-                            unloadPlanTask,
-                            Application.Common.StringConstants.TreatmentConsole.UnloadPlanErrorMessage);
-                        try
-                        {
-                            await unloadPlanTask;
-                        }
-                        catch
-                        {
-                            // we don't want the exception to be logged second time from the executor
-                        }
-                    });
-                });
-            });
-            CurrentTaskCommand.Execute();
+        protected override Task SetPlanUnloadTaskAsync() =>
+            SetPlanUnloadTaskAsync(alreadyInTaskQueue: false);
 
-            return Task.CompletedTask;
+        private Task SetPlanUnloadTaskAsync(bool alreadyInTaskQueue)
+        {
+            CurrentTaskCommand = new(() =>
+                _ = WaitAndIgnoreTaskExceptionsAsync(StartPlanUnloadAsync(alreadyInTaskQueue: false)));
+            return StartPlanUnloadAsync(alreadyInTaskQueue);
+        }
+
+        private Task StartPlanUnloadAsync(bool alreadyInTaskQueue)
+        {
+            _planUnloadPending = true;
+            ValidateCanExecuteCommands();
+
+            async Task UnloadAsync()
+            {
+                var unloadTask = UnloadPlanFromTreatment();
+                CurrentTask = new ObservableTask(
+                    unloadTask,
+                    Application.Common.StringConstants.TreatmentConsole.UnloadPlanErrorMessage);
+                await unloadTask;
+            }
+
+            // Recovery already runs in this queue; enqueueing and awaiting there would deadlock.
+            if (alreadyInTaskQueue)
+                return UnloadAsync();
+
+            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            _safeTaskExecutor.ScheduleSafeTask(() =>
+                System.Windows.Application.Current.Dispatcher.Invoke(async () =>
+                {
+                    try
+                    {
+                        await UnloadAsync();
+                        completion.SetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        completion.SetException(ex);
+                    }
+                }));
+            return completion.Task;
         }
 
         protected override async Task OnBeamOnClicked()
@@ -769,7 +787,7 @@ namespace Heracles.External.ViewModels
             base.LogUserRequest(actionMessage);
         }
 
-        private async Task FinalizePlanOnUserConfirmation()
+        private async Task FinalizePlanOnUserConfirmation(bool alreadyInTaskQueue = false)
         {
             if (GetUserCleanupConfirmation(
                 StringConstants.TreatmentConsole.TreatmentPlanCompletionConfirmationTitle,
@@ -782,7 +800,10 @@ namespace Heracles.External.ViewModels
                 Debug.WriteLine($"Update UI state machine: State={UIStateMachine.State}, LB=({UIStateMachine.LeftButton.State}, {UIStateMachine.LeftButton.IsEnabled})" +
                     $"CB=({UIStateMachine.CentralButton.State}, {UIStateMachine.CentralButton.IsEnabled}), Stop={UIStateMachine.RightButton.IsEnabled}");
 
-                await SetPlanUnloadTaskAsync();
+                if (alreadyInTaskQueue)
+                    await SetPlanUnloadTaskAsync(alreadyInTaskQueue: true);
+                else
+                    await SetPlanUnloadTaskAsync();
             }
         }
 
@@ -925,7 +946,7 @@ namespace Heracles.External.ViewModels
                             UIStateMachine.RequestStateSwitch(UIMacroState.Preparation);
                             UIStateMachine.RequestStateSwitch(UIMacroState.Emission);
 
-                            await FinalizePlanOnUserConfirmation();
+                            await FinalizePlanOnUserConfirmation(alreadyInTaskQueue: true);
                         }
                         else
                         {
@@ -1017,14 +1038,15 @@ namespace Heracles.External.ViewModels
         {
             try
             {
-                UIStateMachine.IsPlanLoadedForTreatment = false;
-
                 if (await PlanModel.UnloadFromTreatmentAsync())
                 {
-                    await SetPlanAsync(null); //PlanModel.SetPlanAsync(null);
+                    await SetPlanAsync(null);
                     IsPreparing = false;
                     TreatmentModel.CloseTreatment();
                 }
+                UIStateMachine.IsPlanLoadedForTreatment = false;
+                _planUnloadPending = false;
+                ValidateCanExecuteCommands();
             }
             catch (Exception ex)
             {
@@ -1057,16 +1079,25 @@ namespace Heracles.External.ViewModels
 
         private void OnLoadForTreatmentEvent(LoadForTreatmentEventsStreamArgs args)
         {
+            if (args?.Plan?.TreatmentLoadingState is not
+                (TreatmentLoadingState.PendingLoad or TreatmentLoadingState.PartialPendingLoad))
+            {
+                return;
+            }
+
             try
             {
                 _safeTaskExecutor.ScheduleSafeTask(() =>
                 {
                     return System.Windows.Application.Current.Dispatcher.Invoke(async () =>
                     {
+                        if (_planUnloadPending)
+                            return;
+
                         if (PlanModel.Plan == null || PlanModel.Plan.TreatmentLoadingState != TreatmentLoadingState.Loaded)
                         {
                             // plan is not loaded yet, so we can replace it with a new one
-                            await SetPlanAsync(args?.Plan);
+                            await SetPlanAsync(args.Plan);
                         }
                         else
                         {

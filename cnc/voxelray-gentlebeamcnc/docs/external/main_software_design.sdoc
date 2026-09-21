@@ -1149,6 +1149,20 @@ Before preparation, the treatment-plan validation requires one valid treatment f
 missing, additional, or invalid field is rejected before any firmware-session command is
 sent.
 
+When the operator confirms completed delivery, External resets the timers, clears the
+board plan, and awaits the EMR unload and local treatment clearing. Prepare remains
+disabled while unloading and after an unload failure; a successful retry clears the
+local plan and treatment before a new pending plan can be prepared.
+
+The SQLite server publishes unloading only on the general PlanEvents stream. It does
+not publish an unloaded plan as a LoadForTreatmentEvents request. External accepts
+load-for-treatment notifications only for PendingLoad or PartialPendingLoad plans;
+Loaded and Unloaded notifications cannot repopulate the treatment console.
+
+Unloading and incoming plan events are serialized by the treatment task queue.
+Completed-treatment recovery already runs in that queue and performs its awaited
+unload inline, avoiding a wait on work queued behind itself.
+
 .. raw:: html
 
    <pre class="mermaid">
