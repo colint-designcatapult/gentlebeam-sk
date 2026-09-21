@@ -59,7 +59,7 @@
 #define DEFAULT_KV_TOL			5
 #define DEFAULT_MA_TOL			5
 
-#define DEFAULT_MA_THRESH		0.25
+#define DEFAULT_MA_THRESH		0.3
 
 #else
 
@@ -77,7 +77,7 @@
 #define DEFAULT_CAB_LOW			20
 #define DEFAULT_CAB_HYS			2
 
-#define DEFAULT_WTR_P_HI_ERR	6
+#define DEFAULT_WTR_P_HI_ERR	8
 #define DEFAULT_WTR_P_HI_TH		5
 #define DEFAULT_WTR_P_LO_TH		3
 #define DEFAULT_WTR_P_LO_ERR	2
@@ -114,7 +114,7 @@
 
 #define DEFAULT_PWR_SP		300
 
-#define DEFAULT_MA_THRESH	0.25
+#define DEFAULT_MA_THRESH	0.3
 
 #endif
 
