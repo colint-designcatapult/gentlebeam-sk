@@ -38,13 +38,33 @@ public sealed class PatientServiceImpl : PatientService.PatientServiceBase
 
     public override async Task<CreatePatientResponse> CreatePatient(CreatePatientRequest request, ServerCallContext context)
     {
-        var created = await _repo.CreateAsync(request.Patient);
+        var created = await _repo.CreateIfNoMatchAsync(request.Patient, existing =>
+            SameIdentity(existing, request.Patient));
+
+        if (created is null)
+        {
+            throw new RpcException(new Status(
+                StatusCode.AlreadyExists,
+                "A patient with the same identifying information already exists"));
+        }
+
         return new CreatePatientResponse { Patient = created };
     }
 
     public override async Task<UpdatePatientResponse> UpdatePatient(UpdatePatientRequest request, ServerCallContext context)
     {
-        var updated = await _repo.UpdateAsync(request.Patient.Id, request.Patient);
+        var updated = await _repo.UpdateIfNoMatchAsync(
+            request.Patient.Id,
+            request.Patient,
+            existing => SameIdentity(existing, request.Patient));
+
+        if (updated is null)
+        {
+            throw new RpcException(new Status(
+                StatusCode.AlreadyExists,
+                "A patient with the same identifying information already exists"));
+        }
+
         return new UpdatePatientResponse { Patient = updated };
     }
 
@@ -52,5 +72,29 @@ public sealed class PatientServiceImpl : PatientService.PatientServiceBase
     {
         await _repo.DeleteAsync(request.Id);
         return new DeletePatientResponse();
+    }
+
+    private static bool SameIdentity(Patient existing, Patient candidate)
+    {
+        return SameRequiredText(existing.FirstName, candidate.FirstName) &&
+            SameRequiredText(existing.LastName, candidate.LastName) &&
+            existing.HasSex == candidate.HasSex &&
+            (!existing.HasSex || existing.Sex == candidate.Sex) &&
+            SameDateOfBirth(existing, candidate) &&
+            SameRequiredText(existing.Mrn, candidate.Mrn);
+    }
+
+    private static bool SameRequiredText(string existing, string candidate) =>
+        string.Equals(existing, candidate, StringComparison.Ordinal);
+
+    private static bool SameDateOfBirth(Patient existing, Patient candidate)
+    {
+        var existingDob = existing.Dob;
+        var candidateDob = candidate.Dob;
+        if ((existingDob is null) != (candidateDob is null))
+            return false;
+
+        return existingDob is null ||
+            existingDob.ToDateTime().Date == candidateDob!.ToDateTime().Date;
     }
 }

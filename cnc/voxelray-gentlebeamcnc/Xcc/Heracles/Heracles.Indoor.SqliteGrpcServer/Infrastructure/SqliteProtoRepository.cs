@@ -157,6 +157,36 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
         return updated;
     }
 
+    internal async Task<T?> CreateIfNoMatchAsync(
+        T message,
+        Func<T, bool> matches,
+        long parentId = 0)
+    {
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
+        using var transaction = conn.BeginTransaction(deferred: false);
+
+        using (var read = conn.CreateCommand())
+        {
+            read.Transaction = transaction;
+            read.CommandText = $"SELECT data FROM {_tableName}";
+            await using var reader = await read.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var candidate = Parser.Parse<T>(reader.GetString(0));
+                if (matches(candidate))
+                {
+                    transaction.Commit();
+                    return null;
+                }
+            }
+        }
+
+        var created = await CreateAsync(message, transaction, parentId);
+        transaction.Commit();
+        return created;
+    }
+
     public async Task<T?> ReadAsync(long id)
     {
         await using var lease = await _connections.RentAsync();
@@ -290,6 +320,37 @@ public sealed class SqliteProtoRepository<T> where T : class, IMessage<T>, new()
         cmd.Parameters.AddWithValue("@d", Formatter.Format(updated));
         cmd.Parameters.AddWithValue("@id", id);
         await cmd.ExecuteNonQueryAsync();
+        return updated;
+    }
+
+    internal async Task<T?> UpdateIfNoMatchAsync(
+        long id,
+        T message,
+        Func<T, bool> matches,
+        bool preserveOutputOnly = true)
+    {
+        await using var lease = await _connections.RentAsync();
+        var conn = lease.Connection;
+        using var transaction = conn.BeginTransaction(deferred: false);
+
+        using (var read = conn.CreateCommand())
+        {
+            read.Transaction = transaction;
+            read.CommandText = $"SELECT id, data FROM {_tableName}";
+            await using var reader = await read.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var candidateId = reader.GetInt64(0);
+                if (candidateId != id && matches(Parser.Parse<T>(reader.GetString(1))))
+                {
+                    transaction.Commit();
+                    return null;
+                }
+            }
+        }
+
+        var updated = await UpdateAsync(id, message, transaction, preserveOutputOnly);
+        transaction.Commit();
         return updated;
     }
 

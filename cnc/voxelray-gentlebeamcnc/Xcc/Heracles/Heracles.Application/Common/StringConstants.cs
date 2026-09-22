@@ -110,7 +110,7 @@ namespace Heracles.Application.Common
             public const string PatientListFetchError = "Failed to load the patient list.";
 
             public const string PatientAlreadyExistsErrorTitle = "Patient Already Exists";
-            public const string PatientAlreadyExistsErrorMessage = "There is a patient with the same first name, last name, sex, and DOB in the database";
+            public const string PatientAlreadyExistsErrorMessage = "There is a patient with the same first name, last name, sex, DOB, and MRN in the database";
 
             public const string PatientSaveErrorMessage = "Failed to save the patient.";
 
