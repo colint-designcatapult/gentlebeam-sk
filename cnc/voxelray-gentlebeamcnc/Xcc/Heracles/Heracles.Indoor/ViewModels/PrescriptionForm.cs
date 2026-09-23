@@ -60,7 +60,7 @@ namespace Heracles.Indoor.ViewModels
         private EnumFormField<TDF> _tdf = new(prescription.Tdf);
         private FormField<double> _dailyDose = new(prescription.IsBlank ? null : prescription.DailyDose);
         private FormField<int> _numberOfFxs = new(prescription.IsBlank ? null : prescription.NumberOfFxs);
-        private EnumFormField<Energy> _energy = new(prescription.IsBlank ? null : prescription.Energy);
+        private EnumFormField<Energy> _energy = new(Enum.IsDefined(prescription.Energy) ? prescription.Energy : null);
 
         private EnumFormField<TDF> _minTdf = new(TDF.Tdf_94);
         private FormField<double> _duration = new(prescription.IsBlank ? null : prescription.DwellTime);
