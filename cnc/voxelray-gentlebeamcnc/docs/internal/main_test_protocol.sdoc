@@ -5712,19 +5712,27 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H10SG-313
-TITLE: Calibration - Heater current configuration - (UI) Test Case
+TITLE: Physics - Heater current configuration - (UI) Test Case
 STATEMENT: >>>
 This test case verifies system calibration procedures and parameters. It validates that calibration values are correctly stored and applied.
 <<<
 STEPS: >>>
-1. Click the Calibration tab (on the left panel) 
+1. Click the Physics tab in the application navigation menu. 
 
-2. Select collimator type and Energy level. 
+2. Verify that the Physics configuration interface is displayed. 
 
-3 . Click the Heater Current Configuration
+3. Select an applicator type and energy level [kV]. 
+
+4. In the Heater current section, enter a valid heater-current value [mA]. 
+
+5. Click the Save button. 
+
+6. Navigate away from the Physics tab and return to it. 
+
+7. Re-select the same applicator type and energy level if necessary.
 <<<
 EXPECTED_BEHAVIOR: >>>
-The user interface shall allow users to configure the DAC value for the filament-preheat level, one for each kV.
+The Physics tab shall allow the user to configure and save the heater-current value [mA] for the selected applicator type and energy level [kV]. The saved heater-current value shall remain displayed after navigating away from and returning to the Physics tab.
 <<<
 RELATIONS:
 - TYPE: Parent
