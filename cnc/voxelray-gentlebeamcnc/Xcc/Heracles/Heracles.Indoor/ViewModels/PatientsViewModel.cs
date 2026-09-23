@@ -16,8 +16,10 @@ using Prism.Services.Dialogs;
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Data;
+using System.Text;
 
 using Xcc.Application.AppLayer.Model;
 using Xcc.Application.AppLayer.Service;
@@ -483,10 +485,6 @@ namespace Heracles.Indoor.ViewModels
             if (string.IsNullOrWhiteSpace(searchPhrase))
                 return true;
 
-            char whitespace = ' ';
-
-            var searchPhraseTerms = searchPhrase.Split(whitespace, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
             string patientAsString =
                 patient.MRN + Environment.NewLine +
                 patient.FirstName + Environment.NewLine +
@@ -495,18 +493,40 @@ namespace Heracles.Indoor.ViewModels
                 patient.DOB + Environment.NewLine +
                 patient.Sex;
 
-            var firstNameLastName = patient.FirstName.Trim() + whitespace + patient.LastName.Trim();
-            var lastNameFirstName = patient.LastName.Trim() + whitespace + patient.FirstName.Trim();
+            var normalizedSearchPhrase = NormalizeName(searchPhrase);
+            if (!string.IsNullOrEmpty(normalizedSearchPhrase))
+            {
+                var firstName = NormalizeName(patient.FirstName);
+                var middleName = NormalizeName(patient.MiddleName);
+                var lastName = NormalizeName(patient.LastName);
+                var nameVariants = new[]
+                {
+                    firstName + lastName,
+                    lastName + firstName,
+                    firstName + middleName + lastName,
+                    lastName + middleName + firstName
+                };
 
-           string possibleFullNamePhrase = string.Join(whitespace, searchPhraseTerms);
-
-            if(firstNameLastName.Contains(possibleFullNamePhrase, StringComparison.OrdinalIgnoreCase)) 
-                return true;
-
-            if(lastNameFirstName.Contains(possibleFullNamePhrase, StringComparison.OrdinalIgnoreCase)) 
-                return true;
+                if (nameVariants.Any(name => name.Contains(normalizedSearchPhrase, StringComparison.Ordinal)))
+                    return true;
+            }
 
             return patientAsString.Contains(searchPhrase, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeName(string? value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return string.Empty;
+
+            var normalized = new StringBuilder(value.Length);
+            foreach (var character in value)
+            {
+                if (char.IsLetterOrDigit(character))
+                    normalized.Append(char.ToLowerInvariant(character));
+            }
+
+            return normalized.ToString();
         }
 
         private async Task SavePatientAsync()
