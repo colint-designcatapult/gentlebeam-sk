@@ -272,6 +272,19 @@ namespace Heracles.Indoor.ViewModels
 
         private void PrescriptionOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(PrescriptionForm.Energy) &&
+                sender is PrescriptionForm form &&
+                form.Energy is not null &&
+                TreatmentInfoStore.Prescription is not null &&
+                form.Energy != TreatmentInfoStore.Prescription.Energy &&
+                PlanModel.Plan?.Status != PlanStatus.APPROVED &&
+                PlanModel.TreatmentFields.Count > 0)
+            {
+                PopUpService.LogAndShowError(
+                    StringConstants.EMR.PlanValidationErrorTitle,
+                    StringConstants.EMR.PrescriptionEnergyChangedPlanInvalidMessage);
+            }
+
             EventAggregator.GetEvent<PrescriptionFormChanged>().Publish(PrescriptionForm);
         }
 

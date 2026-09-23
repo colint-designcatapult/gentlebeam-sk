@@ -179,7 +179,8 @@ namespace Heracles.Application.Common
             public const string UnapprovePrescriptionTitle = "Unapprove Prescription"; 
             public const string PrescriptionErrorTitle = "Prescription Error"; 
             public const string PrescriptionRepositoryPrescriptionCantBeNull = "Prescription repository error: prescription can't be null"; 
-            public static readonly string PrescriptionValidationErrorMessage = $"The prescription contains values, that do not match the configuration.{Environment.NewLine}They were calculated using other emission power or dose rate.";
+            public static readonly string PrescriptionValidationErrorMessage = $"The prescription contains values that do not match the configuration.{Environment.NewLine}They were calculated using other emission power or dose rate.";
+            public static readonly string PrescriptionEnergyChangedPlanInvalidMessage = $"The prescription energy level has been changed.{Environment.NewLine}The current treatment plan values were calculated using the previous energy level.";
             public static readonly string PrescriptionValidationErrorConfirmation = $"{PrescriptionValidationErrorMessage}{Environment.NewLine}Do you want to recalculate them?";
             public static readonly string PrescriptionValidationErrorUnapproveConfirmation = $"{PrescriptionValidationErrorMessage}{Environment.NewLine}Do you want to unapprove the plan and recalculate them?";
 
