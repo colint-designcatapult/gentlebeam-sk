@@ -42,6 +42,7 @@ using Xcc.Application.AppLayer.Service;
 using Xcc.Application.AppLayer.UserSessions;
 using Xcc.Application.Commands;
 using Xcc.Application.Common;
+using Xcc.Application.Domain.GryphonBoard;
 using Xcc.Application.Domain.GryphonBoard.Model;
 using Xcc.Application.Models;
 using Xcc.Core.Domain.DataManagement.Common.Users.DataAccess;
@@ -121,6 +122,13 @@ namespace Heracles.Indoor
             var heraclesMainSettings = Container.Resolve<HeraclesMainSettings>();
 
             // Shared data stores
+            if (heraclesMainSettings.UseDummyServices)
+            {
+                containerRegistry.RegisterSingleton<IGcbCommunicationService, DummyGcbCommunicationService>();
+                containerRegistry.RegisterManySingleton<GcbCommandInterface>();
+                containerRegistry.RegisterManySingleton<DummyMainBoardModel>();
+                containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
+            }
             containerRegistry.RegisterSingleton<ITreatmentInfoStore, TreatmentInfoStore>();
             containerRegistry.RegisterSingleton<ITreatmentInfoStoreController, TreatmentInfoStoreManager>();
             containerRegistry.RegisterSingleton<IPatientRepository, PatientRepository>();

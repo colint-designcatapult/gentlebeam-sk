@@ -270,9 +270,9 @@ namespace Heracles.Application.Services
 
             var rawFaults = _faultBit == SystemFault.Reserved ? 0u : 1u << (int)_faultBit;
             var activeFaults = _faultBit == SystemFault.Reserved ? 0UL : 1UL << (int)_faultBit;
-            const uint rawInterlocks = 1u << 19;
+            const uint rawInterlocks = (uint)GcbInterlockFlags.All;
             const uint rawRequiredInterlocks = rawInterlocks;
-            const ulong activeInterlocks = 1UL << (int)SystemInterlock.BaseKeyOn;
+            const ulong activeInterlocks = (ulong)GcbInterlockFlags.All;
             const ulong requiredInterlocks = activeInterlocks;
 
             return new SystemNormalTelemetry

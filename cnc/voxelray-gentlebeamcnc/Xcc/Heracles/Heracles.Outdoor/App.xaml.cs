@@ -164,6 +164,7 @@ namespace Heracles.External
                 containerRegistry.RegisterSingleton<IGcbCommunicationService, DummyGcbCommunicationService>();
                 containerRegistry.RegisterManySingleton<GcbCommandInterface>();
                 containerRegistry.RegisterManySingleton<DummyMainBoardModel>();
+                containerRegistry.RegisterSingleton<ISystemTelemetryProcessor, SystemTelemetryProcessor>();
                 containerRegistry.RegisterSingleton<ITelemetryService, DummyTelemetryService>();
                 //containerRegistry.RegisterSingleton<ILogService, TextLogService>();
                 containerRegistry.RegisterSingleton<IQcbService, MockQcbService>();
