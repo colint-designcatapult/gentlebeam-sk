@@ -59,8 +59,9 @@ the ECDSA signature are rejected by the bootloader and are omitted from
 
 The board has one updateable image. With direct serial upload enabled,
 mcumgr target `--image 2` maps to image 0's secondary slot, slot 1. Target
-`--image 0` or omitting the image selector targets primary storage and must
-not be used by update software.
+`--image 0`, `--image 1`, or omitting the image selector is rejected by the
+bootloader before any flash erase or write. Uploaders must explicitly use
+`--image 2`; only the bootloader's internal swap process updates slot 0.
 
 ## Required Upload Workflow
 

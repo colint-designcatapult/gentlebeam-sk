@@ -224,12 +224,10 @@ int flash_area_id_from_multi_image_slot(int image_index, int slot)
 
 int flash_area_id_from_direct_image(int image_id)
 {
-	/* Match MCUboot's direct-upload numbering: IDs 0 and 1 address the
-	 * primary slot of image 0, while ID 2 addresses its secondary slot. */
+	/* Only allow serial uploads to image 0's secondary slot (target 2).
+	 * Reject primary targets 0 (also the default) and 1 before any erase
+	 * or write. Internal bootutil swaps use the separate slot mapping. */
 	switch (image_id) {
-	case 0:
-	case 1:
-		return PRIMARY_ID;
 	case 2:
 		return SECONDARY_ID;
 	default:

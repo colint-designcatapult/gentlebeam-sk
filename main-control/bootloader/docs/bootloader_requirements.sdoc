@@ -91,7 +91,7 @@ TITLE: Requirements
 [REQUIREMENT]
 UID: RQ-H1FWMCBOOT-1
 TYPE: Functional
-TITLE: Functional
+TITLE: Application Image Validation
 STATEMENT: >>>
 The main control bootloader firmware shall jump to execution of the main application if and only
 if the primary-slot MCUboot image has a valid header, SHA-256 image hash, and ECDSA P-256
@@ -101,19 +101,19 @@ signature that matches the public key embedded in the bootloader.
 [REQUIREMENT]
 UID: RQ-H1FWMCBOOT-3
 TYPE: Functional
-TITLE: Functional
+TITLE: Secondary-Only Image Upload
 STATEMENT: >>>
-The main control bootloader firmware shall accept an MCUboot-formatted firmware image from a PC
-using the mcumgr serial-recovery image-upload service and write it only to the secondary image slot.
+The main control bootloader firmware shall allow mcumgr image uploads only to the secondary image
+slot and reject uploads targeting the primary image slot.
 <<<
 
 [REQUIREMENT]
 UID: RQ-H1FWMCBOOT-4
 TYPE: Functional
-TITLE: Functional
+TITLE: Interrupted Image Upload Recovery
 STATEMENT: >>>
-The main control bootloader firmware shall erase only the secondary image slot sectors required to
-receive an uploaded image and shall not erase the bootloader or primary image slot during upload.
+If an image upload is interrupted, the main control bootloader firmware shall not select the
+incomplete image for execution and shall boot the existing valid application after reset.
 <<<
 
 [REQUIREMENT]

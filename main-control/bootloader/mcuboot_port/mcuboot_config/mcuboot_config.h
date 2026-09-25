@@ -30,8 +30,9 @@
 #define MCUBOOT_SERIAL_IMG_GRP_HASH
 #define MCUBOOT_SERIAL_IMG_GRP_IMAGE_STATE
 
-/* Default serial recovery uploads target primary flash. Enable direct upload
- * so `mcumgr image upload --image 2` can select the secondary slot. */
+/* Keep direct upload enabled so the port's target mapping can enforce
+ * secondary-only uploads via `mcumgr image upload --image 2`.
+ * Primary targets (0/default and 1) are rejected by that mapping. */
 #define MCUBOOT_SERIAL_DIRECT_IMAGE_UPLOAD
 
 /* boot_serial.c defaults this to 512, which is too small for a typical
