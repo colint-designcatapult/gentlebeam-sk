@@ -87,33 +87,49 @@ TITLE: Prerequisites
 STATEMENT: >>>
 **Pre-Execution Approval**
 
-A Pre-Execution meeting shall take place, and approved by the project manager and QA/RA.
+A pre-execution meeting shall be held, and test execution shall be approved by the project
+manager and QA/RA.
 
 **Objective(s)**
 
 Verify that:
 
-* All software, firmware, hardware, and test equipment version configurations are identified and listed in the test report prior to execution.
-* Test personnel is assigned and available.
+* Software, firmware, hardware, and test equipment versions and configurations are recorded in
+  the test report before execution.
+* Test personnel are assigned and available.
 
 **Assumptions & Constraints**
 
-The primary bootloader test tool is the mcumgr command-line utility connected to UART3. Unless a
-test case states otherwise, use 38400 baud and an MTU of 128. The examples use COM19; replace it
-with the serial port assigned to the test system.
+The following common prerequisites apply to all test cases, together with the prerequisites
+listed in each case:
 
-Before executing mcumgr commands in PowerShell, define the connection once:
+* The bootloader under test is programmed on the target board.
+* The PC is connected to the board's UART3 interface. Serial communication uses 38400 baud,
+  no parity, 8 data bits, and 1 stop bit unless a test case states otherwise.
+* For cases using mcumgr, the command-line utility is installed and the PowerShell connection
+  below is configured with an MTU of 128.
+* Required image files are available at the paths used in the commands. A valid signed image
+  is signed with a key trusted by the bootloader under test.
+* Tools are available to record the command output, UART3 diagnostics, and application startup
+  evidence required by each case. Only one tool has the serial port open at a time.
 
-```powershell
-$conn = "dev=COM19,baud=38400,mtu=128"
-```
+The examples use COM3; replace it with the serial port assigned to the test system in every
+command that names the port.
 
-The debugger and purpose-built malformed-packet generator are supplementary tools used only for
-checks that mcumgr cannot perform.
+Before executing mcumgr commands, define the connection in the PowerShell session used for
+the test:
+
+.. code-block:: powershell
+
+   $conn = "dev=COM3,baud=38400,mtu=128"
+
+J-Link and Ozone are required for the debugger-assisted case. PowerShell serial-port commands
+are used where a case requires direct serial input.
 
 **Acceptance Criteria**
 
-All objectives met; test execution can start.
+Test execution can start when approval is recorded and all common and case-specific
+prerequisites are met.
 <<<
 
 [[/SECTION]]
@@ -130,47 +146,64 @@ Verify authenticated application boot, normal application startup, MCUboot seria
 and recovery after an invalid image is rejected.
 <<<
 PREREQUISITES: >>>
-* The bootloader is programmed on the target board.
-* A known application is available as valid-signed.bin, unsigned.bin, wrong-key.bin, and
-  corrupt-header.bin.
-* mcumgr is installed and the common serial connection is configured.
-* UART3 output and application-start evidence can be captured.
+* The same known application is available in four forms: valid-signed.bin (valid signature),
+  unsigned.bin (no signature), wrong-key.bin (signed with an untrusted key), and
+  corrupt-header.bin (invalid MCUboot header).
+* The expected version and hash of valid-signed.bin are recorded for comparison with the image list.
+* Normal startup of the known application can be identified and recorded.
 <<<
 STEPS: >>>
-1. Place the board in serial recovery mode and upload the correctly signed image:
+1. Reset the board and, during the recovery interval before application startup, run:
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn image upload --image 0 valid-signed.bin
-   ```
+   .. code-block:: powershell
 
-2. Reset the board:
+      mcumgr --conntype serial --connstring $conn echo "recovery-window"
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn reset
-   ```
+2. Place the board in serial recovery mode and record the image list before uploading:
 
-3. During the recovery interval before the application starts, run:
+   .. code-block:: powershell
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn echo "recovery-window"
-   ```
+      mcumgr --conntype serial --connstring $conn image list
 
-4. Confirm that the valid application starts normally.
-5. Repeat the upload command and then the reset command separately for unsigned.bin, wrong-key.bin,
-   and corrupt-header.bin.
-6. After each invalid-image reset, run:
+3. Upload the correctly signed image:
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn echo "recovery-check"
-   ```
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn image upload valid-signed.bin
+
+4. Record the image list after uploading, before resetting the board:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn image list
+
+5. Reset the board:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn reset
+
+6. Confirm that the valid application starts normally.
+7. Repeat steps 2 through 5 separately for unsigned.bin, wrong-key.bin, and corrupt-header.bin,
+   replacing valid-signed.bin in the upload command. Save the image-list output before and after
+   each upload, including an empty list if the image is not reported.
+8. After each invalid-image reset, run:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn echo "recovery-check"
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. mcumgr completes the valid-image upload.
-2. The reset command succeeds.
-3. The echo succeeds and displays "recovery-window" before application startup.
-4. The bootloader reports BOOT_GO_OK and the valid application starts normally.
-5. The bootloader rejects each invalid image after reset, and none of them starts.
-6. After each rejection, the echo succeeds and displays "recovery-check".
+1. The echo succeeds and displays "recovery-window" during the recovery interval.
+2. The image-list request succeeds and its result is recorded before uploading.
+3. mcumgr completes the valid-image upload.
+4. The image-list request succeeds and reports the uploaded valid image's version and hash.
+5. The reset command succeeds.
+6. The bootloader reports BOOT_GO_OK and the valid application starts normally.
+7. Before/after image-list results are recorded for each invalid-image upload. After reset,
+   the bootloader rejects each invalid image, and none of them starts. An image-list entry
+   alone is not evidence that an image passed boot validation.
+8. After each rejection, the echo succeeds and displays "recovery-check".
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -197,22 +230,32 @@ Verify that the bootloader rejects an application image larger than the 180 KiB 
 <<<
 PREREQUISITES: >>>
 * The board is in serial recovery mode.
-* An MCUboot image larger than 180 KiB is available.
-* The mcumgr command-line utility is installed and connected to UART3.
+* An MCUboot image larger than the 180 KiB primary slot is available as oversized.bin.
 <<<
 STEPS: >>>
-1. Use mcumgr to upload the oversized image to image 0:
+1. Read and save the image list before the upload attempt:
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn image upload --image 0 oversized.bin
-   ```
+   .. code-block:: powershell
 
-2. Observe the live mcumgr output in the terminal.
+      mcumgr --conntype serial --connstring $conn image list
+
+2. Use mcumgr to upload the oversized image to image 0 and observe the result:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn image upload oversized.bin
+
+3. Read the image list again and compare it with the saved result:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn image list
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. mcumgr sends the upload request to the bootloader.
-2. The terminal displays "Error: 3", indicating that the bootloader rejected the oversized image
-   and did not begin the upload.
+1. The image-list request succeeds and its result is recorded.
+2. The bootloader rejects the oversized image before programming it; the upload does not complete.
+3. The image-list request still succeeds. The reported image entries, including any versions and
+   hashes, match the result recorded before the upload attempt.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -231,51 +274,73 @@ one valid application image with another.
 <<<
 PREREQUISITES: >>>
 * Two different valid signed application images are available as image-A.bin and image-B.bin.
-* Application A reports version A, and application B reports version B through the normal system
-  version display or interface.
-* The mcumgr command-line utility is installed and connected to UART3.
-* The common serial connection is configured.
+* The MCUboot image headers contain distinct, known versions A and B, respectively.
+* Normal startup of applications A and B can be identified and recorded.
 <<<
 STEPS: >>>
 1. Place the board in serial recovery mode.
 2. Upload image A:
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn image upload --image 0 image-A.bin
-   ```
+   .. code-block:: powershell
 
-3. Reset the board:
+      mcumgr --conntype serial --connstring $conn image upload image-A.bin
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn reset
-   ```
+3. While still in serial recovery mode, read and record image A's version:
 
-4. Wait for application startup and read the reported application version.
-5. Place the board in serial recovery mode again.
-6. Upload image B:
+   .. code-block:: powershell
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn image upload --image 0 image-B.bin
-   ```
+      mcumgr --conntype serial --connstring $conn image list
 
-7. Reset the board:
+4. Reset the board:
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn reset
-   ```
+   .. code-block:: powershell
 
-8. Wait for application startup and read the reported application version.
+      mcumgr --conntype serial --connstring $conn reset
+
+5. Confirm that application A starts normally.
+6. Place the board in serial recovery mode again and read the image list. Replace COM3 with
+   the board's serial port and ensure $conn uses the same port:
+
+   .. code-block:: powershell
+
+      $port = New-Object System.IO.Ports.SerialPort COM3,38400,None,8,one
+      $port.Open()
+      $port.Write("*B00TL`n")
+      $port.Close()
+      mcumgr --conntype serial --connstring $conn image list
+
+7. Upload image B:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn image upload image-B.bin
+
+8. While still in serial recovery mode, read and record image B's version:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn image list
+
+9. Reset the board:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn reset
+
+10. Confirm that application B starts normally.
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The board enters serial recovery mode and responds to mcumgr.
 2. The image-A.bin upload reaches 100 percent.
-3. The reset command succeeds.
-4. The bootloader validates image A, application A starts, and the system reports version A.
-5. The board re-enters serial recovery mode and responds to mcumgr.
-6. The image-B.bin upload reaches 100 percent. Completing this upload
+3. The image list reports version A in the primary slot.
+4. The reset command succeeds.
+5. The bootloader validates image A, and application A starts normally.
+6. The board re-enters serial recovery mode, and the image list reports version A in the primary slot.
+7. The image-B.bin upload reaches 100 percent. Completing this upload
    requires the bootloader to erase and reprogram the affected primary-slot flash pages.
-7. The reset command succeeds.
-8. The bootloader validates image B, application B starts, and the system reports version B.
+8. The image list reports version B in the primary slot, replacing version A.
+9. The reset command succeeds.
+10. The bootloader validates image B, and application B starts normally.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -289,48 +354,52 @@ RELATIONS:
 UID: TC-H1FWHVPSIB-10
 TITLE: Vector Table Validation - Test Case
 STATEMENT: >>>
-Verify the stack-pointer and reset-handler values read from the application vector table before
-application handoff.
+Verify that the bootloader accepts valid stack-pointer (SP) and reset-handler (RH) values and
+rejects out-of-range values before application handoff.
 <<<
 PREREQUISITES: >>>
-* Signed images sp-min.bin, sp-max.bin, sp-below.bin, and sp-above.bin contain stack pointers
-  0x20000000, 0x20008000, 0x1FFFFFFC, and 0x20008004, respectively.
-* Signed images rh-valid.bin, rh-below.bin, and rh-above.bin contain a valid reset handler, a reset
-  handler in bootloader space, and a reset handler above the application limit, respectively.
-* Each modified image is re-signed with the trusted test-signing key after its vector table changes.
-* mcumgr is installed and the common serial connection is configured.
-* UART3 diagnostics and application-handoff evidence can be observed.
+* A known valid signed application is installed on the target board.
+* J-Link is connected to the board over SWD, and Ozone is configured for the target MCU.
+* Ozone has loaded the ELF, debug symbols, and source matching the programmed bootloader.
 <<<
 STEPS: >>>
-1. For each test image, place the board in serial recovery mode and upload it, replacing IMAGE.bin
-   with the current filename:
+1. In Ozone, open jump_to_image() in Src/main.c. Using Disassembly, set hardware breakpoints
+   after each vector value is loaded but before its range check, and at __disable_irq()
+   before that instruction executes. The last breakpoint is the acceptance point.
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn image upload --image 0 IMAGE.bin
-   ```
+2. Reset and run the bootloader without changing any values. Confirm BOOT_GO_OK on UART3 and
+   that both checks pass to the acceptance point.
 
-2. Reset the board:
+3. Reset for each run below. At the relevant breakpoint, edit only stack_ptr_val or
+   image_reset_handler in Ozone's variable window, keeping the other value valid:
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn reset
-   ```
+   * SP-MIN: stack_ptr_val = 0x20000000; expect acceptance.
+   * SP-MAX: stack_ptr_val = 0x20008000; expect acceptance.
+   * SP-BELOW: stack_ptr_val = 0x1FFFFFFC; expect ERR_SP and return without handoff.
+   * SP-ABOVE: stack_ptr_val = 0x20008004; expect ERR_SP and return without handoff.
+   * RH-BELOW: image_reset_handler = 0x08000001; expect ERR_RH and return without handoff.
+   * RH-ABOVE: image_reset_handler = 0x08024001; expect ERR_RH and return without handoff.
 
-3. Test sp-min.bin and sp-max.bin and observe whether application handoff is reached.
-4. Test sp-below.bin and observe the UART diagnostic.
-5. Test sp-above.bin and observe the UART diagnostic.
-6. Test rh-valid.bin and observe application startup.
-7. Test rh-below.bin and observe the UART diagnostic.
-8. Test rh-above.bin and observe the UART diagnostic.
+   Change the loaded value, not flash or the active MSP. For optimized code, use Disassembly
+   to identify its register or RAM location; inject before range-check arithmetic and confirm
+   the value is not overwritten before comparison. If this cannot be confirmed, record the
+   run as not executed.
+
+4. Step through the check and record the injected value, result, and UART output. For accepted
+   values, stop at the acceptance point and reset without continuing into the application.
+   SP-MIN tests range acceptance only; it does not provide usable stack space below that address.
+   For rejected values, stop when jump_to_image() returns to its caller, before another boot
+   attempt reloads the valid values. Confirm no handoff or application VTOR/MSP setup occurred.
+
+5. Remove the breakpoints, reset without injection, and confirm normal application startup.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. mcumgr uploads each image.
-2. The reset command succeeds for each image.
-3. Both inclusive boundary values pass the stack-pointer range check and reach application handoff.
-4. The below-range value is rejected with "ERR_SP\n" and no handoff occurs.
-5. The above-range value is rejected with "ERR_SP\n" and no handoff occurs.
-6. The valid reset handler passes validation and the application starts.
-7. The reset handler in bootloader space is rejected with "ERR_RH\n" and no handoff occurs.
-8. The reset handler above the application limit is rejected with "ERR_RH\n" and no handoff occurs.
+* The unchanged baseline passes both checks.
+* Both SP boundary values reach the acceptance point.
+* The two invalid SP values produce ERR_SP; the two invalid RH values produce ERR_RH.
+  Each rejected run returns without application handoff.
+* Evidence is recorded for the baseline and all six injected runs, with results matching step 3.
+* The valid application starts normally after the final reset.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -348,29 +417,51 @@ Verify that the bootloader ignores serial data that is not a valid MCUboot manag
 remains available for serial recovery.
 <<<
 PREREQUISITES: >>>
-* mcumgr is installed and the common serial connection is configured.
-* The board remains in serial recovery mode, such as when no valid application is installed.
+* The board is configured to remain in serial recovery mode throughout the test, for example
+  by having no valid application installed.
 <<<
 STEPS: >>>
-1. Send a plain-text line that is not a valid MCUboot NLIP frame, and then close the port:
+1. Set the serial port (replace COM3 as needed), confirm communication, and record the image list.
+   Run all steps in the same PowerShell session:
 
-   ```powershell
-   $serial = [System.IO.Ports.SerialPort]::new("COM19", 38400)
-   $serial.Open()
-   $serial.WriteLine("INVALID SERIAL DATA")
-   $serial.Close()
-   ```
+   .. code-block:: powershell
 
-2. Verify that the bootloader still responds to a valid request:
+      $conn = "dev=COM3,baud=38400,mtu=128"
+      mcumgr --conntype serial --connstring $conn echo "before-invalid-input"
+      mcumgr --conntype serial --connstring $conn image list
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn echo "recovery-check"
-   ```
+2. Send a plain-text line that is not a valid MCUboot NLIP frame, then close the port:
+
+   .. code-block:: powershell
+
+      $port = [System.IO.Ports.SerialPort]::new("COM3", 38400)
+      try {
+          $port.Open()
+          $port.Write("INVALID SERIAL DATA`n")
+      } finally {
+          $port.Close()
+          $port.Dispose()
+      }
+
+3. Without resetting the board, confirm that serial recovery still responds:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn echo "recovery-check"
+
+4. Read the image list again and compare it with step 1:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn image list
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The invalid line is ignored; it does not start an application, change the installed image, or
+1. The echo displays "before-invalid-input", and the image-list request succeeds. Record its
+   result, including an empty list if no image is reported.
+2. The invalid line is ignored; it does not start an application, change the installed image, or
    cause the bootloader to reset or stop responding.
-2. The mcumgr echo succeeds and displays "recovery-check".
+3. The mcumgr echo succeeds and displays "recovery-check" without a manual reset.
+4. The image-list request succeeds, and the reported entries, versions, and hashes match step 1.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -386,45 +477,68 @@ subsequent valid upload.
 <<<
 PREREQUISITES: >>>
 * A valid signed application image is available as valid-image.bin.
-* mcumgr is installed and the common serial connection is configured.
-* UART output and application-start evidence can be captured.
+* The expected version and hash of valid-image.bin are recorded for comparison with the image list.
+* Normal startup of the application can be identified and recorded.
 <<<
 STEPS: >>>
-1. Begin the upload with mcumgr:
+1. Place the board in serial recovery mode and record the image list before uploading:
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn image upload --image 0 valid-image.bin
-   ```
+   .. code-block:: powershell
 
-2. While upload progress is between 1 and 99 percent, press Ctrl+C to stop mcumgr.
-3. Reset or power-cycle the board.
-4. Verify recovery availability:
+      mcumgr --conntype serial --connstring $conn image list
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn echo "recovery-check"
-   ```
-5. Run the upload command again and allow it to reach 100 percent:
+2. Begin the upload with mcumgr:
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn image upload --image 0 valid-image.bin
-   ```
+   .. code-block:: powershell
 
-6. Reset the board:
+      mcumgr --conntype serial --connstring $conn image upload valid-image.bin
 
-   ```powershell
-   mcumgr --conntype serial --connstring $conn reset
-   ```
+3. While upload progress is between 1 and 99 percent, press Ctrl+C to stop mcumgr.
+4. Record the image list after the interrupted upload:
 
-7. Observe application startup.
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn image list
+
+5. Reset or power-cycle the board.
+6. Verify recovery availability:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn echo "recovery-check"
+
+7. Run the upload command again and allow it to reach 100 percent:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn image upload valid-image.bin
+
+8. Record the image list after the completed upload, before resetting:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn image list
+
+9. Reset the board:
+
+   .. code-block:: powershell
+
+      mcumgr --conntype serial --connstring $conn reset
+
+10. Observe application startup.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. mcumgr begins the upload and displays progress.
-2. Ctrl+C stops the upload before completion.
-3. The bootloader does not execute the incomplete application after reset.
-4. The mcumgr echo succeeds in recovery mode.
-5. The subsequent mcumgr upload reaches 100 percent.
-6. The reset command succeeds.
-7. BOOT_GO_OK is reported and the application starts.
+1. The image-list request succeeds and its result is recorded.
+2. mcumgr begins the upload and displays progress.
+3. Ctrl+C stops the upload before completion.
+4. The image-list request succeeds and its result is recorded, including an empty list if no
+   image is reported. A listed entry alone does not prove the incomplete image is bootable.
+5. The bootloader does not execute the incomplete application after reset.
+6. The mcumgr echo succeeds in recovery mode.
+7. The subsequent mcumgr upload reaches 100 percent.
+8. The image list reports the completed image's version and hash.
+9. The reset command succeeds.
+10. BOOT_GO_OK is reported and the application starts.
 <<<
 RELATIONS:
 - TYPE: Parent
