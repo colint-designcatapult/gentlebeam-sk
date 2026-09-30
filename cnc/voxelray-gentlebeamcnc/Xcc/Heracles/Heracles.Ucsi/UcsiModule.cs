@@ -29,17 +29,12 @@ public static class UcsiRegistration
         
         // Direct HVPS UART communication interface for system configuration
         // Read COM port from configuration: Ucsi:Hardware:HvpsUartPort (default: COM1)
-        // Initialize eagerly on startup (not lazy) to fetch system config values from HVPS on launch
         containerRegistry.RegisterSingleton<IUcsiHvpsUartCommandInterface>(container =>
         {
             var config = container.Resolve<IConfiguration>();
             var logWriter = container.Resolve<ILogWriter>();
             string portName = config.GetValue<string>("Ucsi:Hardware:HvpsUartPort") ?? "COM1";
-            var interface_ = new UcsiHvpsUartCommandInterface(portName, logWriter);
-            // Fire and forget - start initialization in background like UDP's Start()
-            // Factory returns immediately without waiting, but initialization task runs on thread pool
-            _ = interface_.InitializeAsync();
-            return interface_;
+            return new UcsiHvpsUartCommandInterface(portName, logWriter);
         });
         
         // GCB command interface infrastructure for HVPS calibration
@@ -50,13 +45,11 @@ public static class UcsiRegistration
         containerRegistry.RegisterSingleton<ILogWriter>(c => c.Resolve<UcsiLogBuffer>());
         // Register the connection factory for real UDP communication to bench
         containerRegistry.RegisterSingleton<IGcbCommandConnectionFactory, UcsiGcbCommandConnectionFactory>();
-        // Use UCSI-specific communication service with independent cancellation
-        // Start the receive task immediately in the factory so it runs before any commands are sent
+        // Use UCSI-specific communication service with independent cancellation.
+        // Its receive loop is started explicitly by the owning application lifecycle.
         containerRegistry.RegisterSingleton<IGcbCommunicationService>(container =>
         {
-            var service = container.Resolve<UcsiGcbCommunicationService>();
-            (service as IRawUdpClient)?.Start();
-            return service;
+            return container.Resolve<UcsiGcbCommunicationService>();
         });
         // Register the command interface (uses GcbCommandInterface which requires logWriter and communication service)
         containerRegistry.RegisterSingleton<IGcbCommandInterface, GcbCommandInterface>();

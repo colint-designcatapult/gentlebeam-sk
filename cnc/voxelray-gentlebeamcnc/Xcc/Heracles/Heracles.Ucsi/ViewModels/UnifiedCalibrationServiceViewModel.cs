@@ -250,6 +250,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     private readonly IUcsiHvpsUartCommandInterface _hvpsUartInterface;
     private readonly SessionDataExportService _exportService;
     private readonly IActionAuditService _actionAuditService;
+    private bool _isTabActive;
     private sealed class PendingConfigChange(int firmwareIndex, float previousValue, float requestedValue)
     {
         public int FirmwareIndex { get; } = firmwareIndex;
@@ -375,7 +376,6 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         ISystemTelemetryProcessor telemetryProcessor,
         IUcsiHvpsUartCommandInterface hvpsUartInterface,
         SessionDataExportService exportService,
-        IUcsiKeepaliveService keepaliveService,
         IActionAuditService actionAuditService)
     {
         _coordinator = coordinator;
@@ -387,7 +387,6 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         _hvpsUartInterface = hvpsUartInterface;
         _exportService = exportService;
         _actionAuditService = actionAuditService;
-        keepaliveService.Start();
 
         ParameterOptions = new ObservableCollection<CheckableParameterViewModel>(
             catalog.All.Select(descriptor => new CheckableParameterViewModel(descriptor)));
@@ -530,6 +529,20 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         {
             CncSoftwareVersion = "Unknown";
         }
+    }
+
+    public void Activate()
+    {
+        if (_isTabActive) return;
+        _isTabActive = true;
+        _ = Task.Run(() => _hvpsUartInterface.InitializeAsync());
+        _ = FetchVersionInfoAsync();
+    }
+
+    public void Deactivate()
+    {
+        if (!_isTabActive) return;
+        _isTabActive = false;
     }
 
     public ObservableCollection<CheckableParameterViewModel> ParameterOptions { get; }
@@ -1344,12 +1357,6 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             _updatingTimeline = false;
             RaisePropertyChanged(nameof(TimelineText));
             
-            // Fetch firmware versions if we haven't already and are connected
-            if (!_versionInfoFetched && sample != null)
-            {
-                _ = FetchVersionInfoAsync();
-            }
-
             RaiseStateProperties();
         }
         finally
@@ -1367,30 +1374,38 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         if (_versionInfoFetched)
             return;
 
-        _versionInfoFetched = true;
+        Exception? lastException = null;
+        for (int attempt = 1; attempt <= 5; attempt++)
+        {
+            try
+            {
+                var versionInfo = await _commandInterface.GetVersionInfo();
+                _versionInfoFetched = true;
+                GcbFirmwareVersion = string.IsNullOrEmpty(versionInfo.FirmwareVersion)
+                    ? "Unknown"
+                    : versionInfo.FirmwareVersion;
+                HvpsFirmwareVersion = string.IsNullOrEmpty(versionInfo.HvpsFirmwareVersion)
+                    ? "Unknown"
+                    : versionInfo.HvpsFirmwareVersion;
 
-        try
-        {
-            var versionInfo = await _commandInterface.GetVersionInfo();
-            GcbFirmwareVersion = string.IsNullOrEmpty(versionInfo.FirmwareVersion) 
-                ? "Unknown" 
-                : versionInfo.FirmwareVersion;
-            HvpsFirmwareVersion = string.IsNullOrEmpty(versionInfo.HvpsFirmwareVersion) 
-                ? "Unknown" 
-                : versionInfo.HvpsFirmwareVersion;
-            
-            _logBuffer.Log(
-                $"Firmware versions retrieved - GCB: {GcbFirmwareVersion}, HVPS: {HvpsFirmwareVersion}",
-                LogRecordSeverity.Info,
-                LogRecordType.System);
+                _logBuffer.Log(
+                    $"Firmware versions retrieved - GCB: {GcbFirmwareVersion}, HVPS: {HvpsFirmwareVersion}",
+                    LogRecordSeverity.Info,
+                    LogRecordType.System);
+                return;
+            }
+            catch (Exception ex)
+            {
+                lastException = ex;
+                if (attempt < 5)
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+            }
         }
-        catch (Exception ex)
-        {
-            _logBuffer.Log(
-                $"Failed to retrieve firmware versions: {ex.Message}",
-                LogRecordSeverity.Warn,
-                LogRecordType.System);
-        }
+
+        _logBuffer.Log(
+            $"Failed to retrieve firmware versions after 5 attempts: {lastException?.Message}",
+            LogRecordSeverity.Warn,
+            LogRecordType.System);
     }
 
     private async Task ToggleRecordingAsync()

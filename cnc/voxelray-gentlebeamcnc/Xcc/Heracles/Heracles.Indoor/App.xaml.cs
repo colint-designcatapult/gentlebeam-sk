@@ -175,6 +175,7 @@ namespace Heracles.Indoor
             // Override UCSI host commands for embedded mode - disable Clear Faults for safety
             containerRegistry.RegisterSingleton<IUcsiHostCommands, IndoorUcsiHostCommands>();
             containerRegistry.RegisterManySingleton<NetworkConnectionSupervisor>();
+            containerRegistry.RegisterSingleton<IGcbCommandConnectionFactory, NetworkConnectionSupervisor>();
 
             // Services
             containerRegistry.RegisterSingleton<IPopUpService, PopUpService>();
@@ -417,6 +418,7 @@ namespace Heracles.Indoor
                 TryRelease(() => _planEvents?.Stop());
                 TryRelease(() => _telemetryCoordinator?.DisposeAsync().AsTask().GetAwaiter().GetResult());
                 TryRelease(() => (_telemetryService as IDisposable)?.Dispose());
+                TryRelease(() => Container.Resolve<IGcbCommunicationService>().Dispose());
                 if (_dataManagement?.IsShuttingDown != true)
                     TryRelease(() => _sqliteHost?.DisposeAsync().AsTask().GetAwaiter().GetResult());
                 TryRelease(() => ShutdownChannelAsync().GetAwaiter().GetResult());

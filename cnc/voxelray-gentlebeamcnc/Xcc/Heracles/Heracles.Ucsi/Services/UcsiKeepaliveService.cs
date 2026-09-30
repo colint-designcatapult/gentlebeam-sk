@@ -5,7 +5,7 @@ using Xcc.Core.Models;
 
 namespace Heracles.Ucsi.Services;
 
-public interface IUcsiKeepaliveService
+public interface IUcsiKeepaliveService : IAsyncDisposable
 {
     void Start();
 }
@@ -20,29 +20,35 @@ public sealed class UcsiKeepaliveService(
     private readonly object _gate = new();
     private CancellationTokenSource? _cancellation;
     private Task? _loopTask;
+    private PeriodicTimer? _periodicTimer;
+    private bool _isStarted = false;
 
     public void Start()
     {
         lock(_gate)
         {
-            if(_loopTask is not null)
+            if(_isStarted)
                 return;
 
+            _isStarted = true;
             _cancellation = CancellationTokenSource.CreateLinkedTokenSource(
                 appGlobals.AppCancellationTokenSource.Token);
+            _periodicTimer = new PeriodicTimer(Interval);
             _loopTask = RunAsync(_cancellation.Token);
         }
     }
 
     private async Task RunAsync(CancellationToken cancellationToken)
     {
-        using var timer = new PeriodicTimer(Interval);
         bool failureLogged = false;
 
         try
         {
-            while(await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+            while (!cancellationToken.IsCancellationRequested)
             {
+                if (!await _periodicTimer!.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+                    continue;
+
                 try
                 {
                     byte[] packet = commandOperator.GenerateVersionInfoRequestCmd();
@@ -75,12 +81,15 @@ public sealed class UcsiKeepaliveService(
     {
         Task? loopTask;
         CancellationTokenSource? cancellation;
+        PeriodicTimer? periodicTimer;
         lock(_gate)
         {
             loopTask = _loopTask;
             cancellation = _cancellation;
+            periodicTimer = _periodicTimer;
             _loopTask = null;
             _cancellation = null;
+            _periodicTimer = null;
         }
 
         if(cancellation is null)
@@ -90,5 +99,6 @@ public sealed class UcsiKeepaliveService(
         if(loopTask is not null)
             await loopTask.ConfigureAwait(false);
         cancellation.Dispose();
+        periodicTimer?.Dispose();
     }
 }

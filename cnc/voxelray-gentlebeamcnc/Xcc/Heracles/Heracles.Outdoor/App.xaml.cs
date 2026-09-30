@@ -341,6 +341,8 @@ namespace Heracles.External
 
         private void DisposeResources()
         {
+            Container.Resolve<IUcsiKeepaliveService>().DisposeAsync().AsTask().GetAwaiter().GetResult();
+
             if (Container.Resolve<IGcbCommunicationService>() is IDisposable disposable)
                 disposable.Dispose();
 

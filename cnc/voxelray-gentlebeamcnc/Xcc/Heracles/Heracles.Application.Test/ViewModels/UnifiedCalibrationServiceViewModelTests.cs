@@ -418,7 +418,6 @@ internal sealed class UnifiedCalibrationServiceViewModelTests
             Mock.Of<ISystemTelemetryProcessor>(),
             hvpsUart ?? Mock.Of<IUcsiHvpsUartCommandInterface>(),
             new SessionDataExportService(catalog),
-            Mock.Of<IUcsiKeepaliveService>(),
             audit ?? Mock.Of<IActionAuditService>());
     }
 

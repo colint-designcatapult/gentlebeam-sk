@@ -8,6 +8,7 @@ using Heracles.Application.UI.Views;
 using Heracles.Core.Models;
 using Heracles.External.Views;
 using Heracles.External.Views.QualityCheck;
+using Heracles.Ucsi.Services;
 using Prism.Ioc;
 using Prism.Modularity;
 using Prism.Regions;
@@ -198,6 +199,9 @@ namespace Herales.External
 
                 var gcbCommandService = containerProvider.Resolve<IGcbCommunicationService>();
                 gcbCommandService.Start();
+
+                var keepaliveService = containerProvider.Resolve<IUcsiKeepaliveService>();
+                keepaliveService.Start();
             }
             catch (Exception)
             {

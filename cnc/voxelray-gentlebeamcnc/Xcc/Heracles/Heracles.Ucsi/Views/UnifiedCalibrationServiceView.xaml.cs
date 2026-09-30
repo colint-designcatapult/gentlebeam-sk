@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -14,7 +15,9 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
     private readonly DispatcherTimer _refreshTimer;
     private long _lastGraphSequence = -1;
     private bool _refreshing;
+    private bool _isActive;
     private CancellationTokenSource? _refreshCancellation;
+    private TabItem? _hostTabItem;
 
     // Throttle timers for arrow key command sends (250ms minimum between sends)
     private DateTime _lastHvCommandSend = DateTime.MinValue;
@@ -37,8 +40,31 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
 
     private void OnLoaded(object sender, RoutedEventArgs eventArgs)
     {
+        _hostTabItem = FindVisualParent<TabItem>(this);
+        if (_hostTabItem is not null)
+        {
+            Selector.AddSelectedHandler(_hostTabItem, OnHostTabSelected);
+            Selector.AddUnselectedHandler(_hostTabItem, OnHostTabUnselected);
+        }
+
+        if (_hostTabItem is null || _hostTabItem.IsSelected)
+            ActivateView();
+    }
+
+    private void OnHostTabSelected(object sender, RoutedEventArgs eventArgs) => ActivateView();
+
+    private void OnHostTabUnselected(object sender, RoutedEventArgs eventArgs) => DeactivateView();
+
+    private void ActivateView()
+    {
+        if (_isActive)
+            return;
+        _isActive = true;
         if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+        {
+            viewModel.Activate();
             viewModel.Coordinator.Start();
+        }
         _refreshCancellation = new CancellationTokenSource();
         _refreshTimer.Start();
         _ = RefreshAsync();
@@ -46,6 +72,22 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
 
     private void OnUnloaded(object sender, RoutedEventArgs eventArgs)
     {
+        if (_hostTabItem is not null)
+        {
+            Selector.RemoveSelectedHandler(_hostTabItem, OnHostTabSelected);
+            Selector.RemoveUnselectedHandler(_hostTabItem, OnHostTabUnselected);
+            _hostTabItem = null;
+        }
+        DeactivateView();
+    }
+
+    private void DeactivateView()
+    {
+        if (!_isActive)
+            return;
+        _isActive = false;
+        if (DataContext is UnifiedCalibrationServiceViewModel viewModel)
+            viewModel.Deactivate();
         _refreshTimer.Stop();
         _refreshCancellation?.Cancel();
         _refreshCancellation?.Dispose();
@@ -93,6 +135,19 @@ public partial class UnifiedCalibrationServiceView : System.Windows.Controls.Use
             foreach (T descendant in FindVisualChildren<T>(child))
                 yield return descendant;
         }
+    }
+
+    private static T? FindVisualParent<T>(DependencyObject child)
+        where T : DependencyObject
+    {
+        DependencyObject? parent = VisualTreeHelper.GetParent(child);
+        while (parent is not null)
+        {
+            if (parent is T match)
+                return match;
+            parent = VisualTreeHelper.GetParent(parent);
+        }
+        return null;
     }
 
     private void OnCommandTextBoxKeyDown(object sender, System.Windows.Input.KeyEventArgs e)

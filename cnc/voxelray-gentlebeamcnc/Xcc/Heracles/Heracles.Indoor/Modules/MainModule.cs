@@ -14,6 +14,7 @@ using Heracles.Indoor.Views.Settings;
 using Heracles.Indoor.Views;
 using Heracles.Indoor.Views.Dialogs;
 using Heracles.Indoor.Views.Patients.Patient.Treatments;
+using Xcc.Infra.GryphonBoard.Comm;
 using Prism.Events;
 using Prism.Ioc;
 using Prism.Modularity;
@@ -79,6 +80,7 @@ internal class MainModule(IRegionManager regionManager, IDialogService dialogSer
             await CheckDeviceSerialIdAsync(containerProvider);
 
             StartTelemetryService(containerProvider);
+            containerProvider.Resolve<IGcbCommunicationService>().Start();
 
             // Prefetch applicator data to have CollimatorModel ready for use
             await FetchCollimatorDataAsync(containerProvider);
