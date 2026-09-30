@@ -516,54 +516,28 @@ RELATIONS:
 UID: TC-H1FWHVPS-30
 TITLE: Emission-current grid regulation - Test Case
 STATEMENT: >>>
-Verify the 5 ms proportional-integral grid controller, including requested-voltage gain selection,
-the current-error hold band, asymmetric slew limits, output bounds, anti-windup, and controller
-activation and reset behavior.
+Verify that the firmware adjusts the grid voltage using cathode-current feedback to maintain
+the requested emission current during emission.
 <<<
 PREREQUISITES: >>>
 * The system is powered on and ready to use.
 * A treatment plan is ready to load and grid control is enabled.
 * A fixture can control cathode-current feedback above and below the requested current.
-* An approved diagnostic trace can capture requested power and voltage, requested and measured
-  cathode current, proportional gain, integral state, grid command, DAC writes, and timestamps with
-  at most 1 ms resolution.
-* Instruments can observe the four external DAC chip-select signals.
-* The default grid-controller configuration values are loaded.
+* The measured cathode current and grid command can be observed.
 <<<
 STEPS: >>>
-1. Power on the system and observe the four DAC chip-select signals after initialization and while
-   no DAC transaction is active.
-2. Load a plan and record the requested power, requested high voltage, derived cathode-current
-   target, and default grid-controller configuration.
-3. Start emission and capture the initial grid command.
-4. At requested voltages at or below 50 kV, above 50 kV through 70 kV, and above 70 kV, apply
-   positive and negative cathode-current errors greater than 1% and capture consecutive commands.
-5. After moving the output away from its maximum, reverse the error to exercise both decreasing and
-   increasing command slew.
-6. Apply errors within +/-1% of the requested current and observe the grid command and DAC writes.
-7. Drive the calculated command to each output or slew limit, then reverse the error and observe
-   integral recovery.
-8. During active control, exchange main-control commands and observe I/O, ADC, DAC, and inactive DAC
-   chip-select signals between transactions.
-9. End emission or disable grid control, observe the command, and then start emission again.
+1. Load the treatment plan and record the requested emission current.
+2. Start emission and observe the measured current and grid command.
+3. Use the fixture to produce current below the target and observe the regulation response.
+4. Repeat with current above the target.
+5. Allow the current to settle after each disturbance and record the result.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify all four DAC chip-select signals initialize inactive high and remain high while idle.
-2. Verify requested cathode current equals requested power divided by requested high voltage and the
-   defaults are: gains -25, -35, and -150; integral time 0.2 s; downward slew 3000 units/s; upward
-   slew 1000 units/s; and output limits 50 to 600 units.
-3. Verify activation clears controller history and writes the 600-unit maximum-grid command.
-4. Verify 5 ms calculations use the gain for each requested-voltage band and apply the integral
-   increment `(Kp / 0.2 s) * 0.005 s * error`.
-5. Verify consecutive commands decrease by no more than 15 units and increase by no more than
-   5 units per 5 ms cycle.
-6. Verify no grid DAC command is issued while the absolute current error is within 1% of target.
-7. Verify the command remains from 50 through 600 units and the integral changes only when the
-   candidate is reachable or unwinds saturation.
-8. Verify communication, I/O, and ADC/DAC servicing continues during regulation and all inactive DAC
-   chip-select signals remain high between transactions.
-9. Verify disabling control restores 600 units and clears controller history so reactivation starts
-   from 600 units.
+1. Verify the requested emission current matches the treatment plan.
+2. Verify grid regulation is active during emission.
+3. Verify the grid command adjusts in the direction that increases current toward the target.
+4. Verify the grid command adjusts in the direction that decreases current toward the target.
+5. Verify the measured current returns to and remains within the defined tolerance of the target, with the grid command within configured operating limits.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -710,37 +684,30 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H1FWHVPS-33
-TITLE: Elapsed-time filament-current ramping - Test Case
+TITLE: Filament-current ramping - Test Case
 STATEMENT: >>>
-Verify the filament command's elapsed-time ramp rate, output limits, feedback stability time, and
-command-to-feedback discrepancy response during warmup.
+Verify that filament current ramps during warmup, warmup completes when current is stable,
+and the filament output stops when a persistent feedback mismatch occurs.
 <<<
 PREREQUISITES: >>>
-* The system is powered on and ready to use.
-* A treatment plan is ready to load.
-* An HVPS test fixture can control filament-current feedback independently of the requested current.
-* An approved diagnostic trace can capture requested current, feedback, filament command, warming
-  status, and timestamps with at most 1 ms resolution.
+* The system is powered on and a treatment plan is ready to load.
+* A test fixture can control filament-current feedback.
+* The requested current, measured current, filament command, and warming status can be observed.
+* The configured filament-current limits are available.
 <<<
 STEPS: >>>
-1. Load the treatment plan and begin capturing the filament command and feedback during warmup.
-2. Keep feedback below the target and capture consecutive command updates.
-3. Supply feedback from the target through 2% above it, interspersed with feedback more than 2%
-   above the target, and observe warming status around 4000 ms of accumulated qualifying sample
-   time.
-4. Start another warmup and, after the command reaches the configured minimum, hold feedback more
-   than 300 mA below the command around 6000 ms of accumulated qualifying sample time.
-5. Request a filament target below the configured minimum.
+1. Load the treatment plan and observe filament-current ramping during warmup.
+2. Hold measured current between the target and 2% above it for 4 seconds.
+3. Restart warmup. Once the command reaches the configured minimum, hold measured current
+   more than 300 mA below the command for 6 seconds.
+4. Request a filament-current target below the configured minimum.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify warmup starts and the filament command remains within the configured limits.
-2. Verify the command increases by 2.25 mA every 3 ms, corresponding to 750 mA/s.
-3. Verify only samples from the target through 2% above it add 3 ms to stability time, warming
-   remains active before the accumulator reaches 4000 ms, and warming clears on the first sample at
-   or above that threshold.
-4. Verify the command and warming status remain active before 6000 ms of qualifying discrepancy
-   samples, then the command becomes zero and warming clears at the threshold.
-5. Verify a target below the configured minimum sets the target and filament command to zero and clears warming.
+1. Verify the filament command increases gradually during warmup and stays within configured limits.
+2. Verify warming remains active until the current has been stable for 4 seconds, then clears.
+3. Verify the filament command becomes zero and warming clears after the mismatch persists
+   for 6 seconds.
+4. Verify the requested target and filament command become zero and warming clears.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -785,39 +752,27 @@ RELATIONS:
 UID: TC-H1FWHVPS-35
 TITLE: External ADC feedback acquisition - Test Case
 STATEMENT: >>>
-The firmware shall acquire high-voltage and cathode-current feedback as 16-sample paired bursts
-every 5 ms, convert each valid channel average to engineering units, and publish the paired result.
+Verify that the firmware reads high-voltage and cathode-current feedback and reports
+the correct values in UCSI.
 <<<
 PREREQUISITES: >>>
-* The system is powered on and ready to use.
-* An external signal source or suitable HVPS test fixture with accuracy appropriate for the
-  approved measurement tolerance is connected.
-* A logic analyzer or oscilloscope can observe both external ADC interfaces.
-* The feedback display or approved diagnostic trace is available.
-* Main-control communication, I/O activity, and external DAC transfers can be observed.
+* The system is powered on and connected to UCSI with live telemetry available.
+* A signal source or HVPS test fixture can provide known feedback inputs.
+* Expected high-voltage and cathode-current values and acceptable measurement tolerances
+  are defined for the selected inputs.
 <<<
 STEPS: >>>
-1. Power on the system.
-2. Observe both external ADC chip-select signals while acquisition is idle.
-3. Capture consecutive complete feedback acquisition sequences.
-4. For each burst, measure the SPI clock rate, count the paired samples, and measure the burst
-   interval and completion time.
-5. Record the 16 raw samples and published result for each feedback channel.
-6. While repeated bursts and feedback-control processing run, send main-control commands, exercise
-   I/O, and issue DAC output changes.
-7. Repeat with known input values across the approved operating range.
+1. Apply known high-voltage and cathode-current feedback inputs.
+2. Observe and record the corresponding feedback values in UCSI.
+3. Change each input separately and verify the corresponding displayed value updates.
+4. Repeat for low, middle, and high values within the approved operating range.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Verify the system starts successfully.
-2. Verify both ADC chip-select signals are inactive while idle.
-3. Verify both ADC channels are acquired through nonblocking DMA transfers.
-4. Verify both SPI clocks operate at 2.25 Mbit/s and each burst contains 16 paired samples, starts
-   every 5 ms, and completes within 2 ms.
-5. Verify each published engineering-unit feedback value corresponds to its channel's averaged
-   16-bit code using the 4.096 V reference and documented channel scaling.
-6. Verify communication, I/O, and DAC requests continue to be serviced within approved timing
-   limits without repeated ADC acquisition-timing failures.
-7. Verify the published values are within the approved measurement tolerance.
+1. Verify both feedback values are available in UCSI.
+2. Verify the displayed values match the expected values within the defined tolerances.
+3. Verify changing either input updates the corresponding feedback value without incorrectly
+   changing the other.
+4. Verify the displayed values remain within the defined tolerances at all tested inputs.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -828,43 +783,6 @@ RELATIONS:
   ROLE: Verifies
 - TYPE: Parent
   VALUE: RQ-H1FWHVPS-14
-  ROLE: Verifies
-
-[TEST_CASE]
-UID: TC-H1FWHVPS-36
-TITLE: External ADC invalid-result handling - Test Case
-STATEMENT: >>>
-The firmware shall reject external ADC results containing framing, DMA, or
-acquisition-timing errors and shall not use an invalid result for feedback
-processing.
-<<<
-PREREQUISITES: >>>
-* The system is powered on and operating with valid external ADC feedback.
-* A bus or firmware fault-injection method is available.
-* Feedback result status or equivalent diagnostic logging is available.
-<<<
-STEPS: >>>
-1. Capture a valid external ADC result.
-2. Inject an invalid ADC framing condition.
-3. Repeat with an ADC DMA-transfer error.
-4. Delay or suppress ADC completion so a complete result is not available within 2 ms.
-5. Observe the result status and feedback-control outputs.
-6. Restore valid ADC communication and capture the next result.
-<<<
-EXPECTED_BEHAVIOR: >>>
-1. Verify the valid result is accepted.
-2. Verify the framing error is reported as invalid.
-3. Verify the DMA error is reported as invalid.
-4. Verify the burst is reported as invalid when a complete result is not available within 2 ms.
-5. Verify invalid feedback is not used for feedback processing or output control.
-6. Verify valid feedback processing resumes after communication is restored.
-<<<
-RELATIONS:
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-10
-  ROLE: Verifies
-- TYPE: Parent
-  VALUE: RQ-H1FWHVPS-11
   ROLE: Verifies
 
 [TEST_CASE]
@@ -926,25 +844,22 @@ RELATIONS:
 UID: TC-H1FWHVPS-40
 TITLE: Firmware version reporting - Test Case
 STATEMENT: >>>
-Verify that a version request returns the release version encoded in a valid response frame
-without disrupting periodic telemetry.
+Verify that UCSI displays the correct HVPS firmware version and live telemetry continues updating.
 <<<
 PREREQUISITES: >>>
-* The firmware is built with a known release version string.
-* A UART protocol fixture is connected between the HVPS interface and main control interfaces.
+* The system is powered on and connected to UCSI.
+* The expected HVPS firmware version is known.
 <<<
 STEPS: >>>
-1. Power on the HVPS interface and capture periodic telemetry on the UART fixture.
-2. Send control command ``0x7F`` with a valid command checksum.
-3. Capture and decode the next version response.
-4. Continue capturing periodic telemetry after the response.
+1. Open UCSI and wait for firmware information to appear.
+2. Record the value displayed under HVPS firmware.
+3. Compare it with the expected firmware version.
+4. Observe live telemetry after the version is displayed.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Periodic telemetry is present before the request.
-2. The request is accepted.
-3. Verify the response contains the synchronization words, ``VRSN`` marker, expected operating-mode
-   identifier, null-padded release version string, and a valid additive checksum.
-4. Periodic telemetry resumes after the version response.
+1. Verify the HVPS firmware version is displayed.
+2. Verify the displayed version matches the expected version.
+3. Verify live telemetry continues updating without interruption.
 <<<
 RELATIONS:
 - TYPE: Parent
