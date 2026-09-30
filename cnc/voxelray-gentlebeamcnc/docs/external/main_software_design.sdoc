@@ -94,17 +94,17 @@ TITLE: Architecture Overview
 STATEMENT: >>>
 High Level System Architecture
 
-.. image:: _images/sds_arch_1.png
+.. image:: _assets/sds_arch_1.png
 
 Main Modules
 
 The design of the application is based on the MVVM pattern. There are three core components in the MVVM pattern: the model, the view, and the view model. Each serves a distinct purpose. The diagram below shows the relationships between the three components.
 
-.. image:: _images/sds_arch_2.png
+.. image:: _assets/sds_arch_2.png
 
 The MVVN design pattern is implemented in the application as follows: the 4 th layer is the gRPC wrapper for communication with the database services.
 
-.. image:: _images/sds_arch_3.png
+.. image:: _assets/sds_arch_3.png
 <<<
 
 [[/SECTION]]
@@ -465,7 +465,7 @@ TITLE: Emission visible indicator
 STATEMENT: >>>
 A glowing radiation icon with an Amber color will provide a visual indication of X-ray emission.
 
-.. image:: _images/SW-H10TG-266.png
+.. image:: _assets/SW-H10TG-266.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -723,7 +723,7 @@ TITLE: LogService module
 STATEMENT: >>>
 The action audit service records explicit preparation, Beam On, and Stop commands with the acting user and treatment identifiers. Delivery outcome records use measured emission results and distinguish completed, cancelled, and failed delivery from the requested emission. Background telemetry, automatic refreshes, and low-level RPC activity do not create user-action records.
 
-.. image:: _images/SW-H10TG-272.png
+.. image:: _assets/SW-H10TG-272.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -951,7 +951,7 @@ TITLE: Plan Details Layout
 STATEMENT: >>>
 The application shall provide an interface allowing the operator to view the treatment plan details with the following parameters:
 
-.. image:: _images/SW-H10TG-267.png
+.. image:: _assets/SW-H10TG-267.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1768,7 +1768,7 @@ TITLE: Stop Emission
 STATEMENT: >>>
 The flow for stopping an emission should be implemented as described in the following sequence diagram:
 
-.. image:: _images/SW-H10TG-263.png
+.. image:: _assets/SW-H10TG-263.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1826,7 +1826,7 @@ TITLE: Treatment Console - Load plan into GB board Flow
 STATEMENT: >>>
 The plan loading flow:
 
-.. image:: _images/SW-H10TG-19.png
+.. image:: _assets/SW-H10TG-19.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1842,7 +1842,7 @@ TITLE: Treatment Console - Radiation Emission View - State Machine
 STATEMENT: >>>
 The radiation emission should be implemented according to the emission board state machine.
 
-.. image:: _images/SW-H10TG-18.png
+.. image:: _assets/SW-H10TG-18.png
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -1960,7 +1960,7 @@ The layout should include:
 7. Interlocks visualization.
 8. Live Camera to monitor the patient.
 
-.. image:: _images/SW-H10TG-268.png
+.. image:: _assets/SW-H10TG-268.png
 <<<
 RELATIONS:
 - TYPE: Parent

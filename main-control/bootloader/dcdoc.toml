@@ -1,5 +1,4 @@
 [component]
 name = "main-control/bootloader"
 include_docs = [ "docs/*.sdoc" ]
-include_src = [ "Src/*.c" ]
 version = "5.0.0-{HASH}.{BUILD}" # x-release-please-version

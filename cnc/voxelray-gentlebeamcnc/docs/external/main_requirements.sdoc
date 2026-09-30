@@ -91,7 +91,7 @@ TITLE: Quality Assurance - Daily Warmup
 STATEMENT: >>>
 The application shall provide a control that allows an operator to initiate a daily warm-up, which will prepare the system for radiation emission.
 
-.. image:: _images/RQ-H10TG-1.png
+.. image:: _assets/RQ-H10TG-1.png
 <<<
 
 [REQUIREMENT]
@@ -101,7 +101,7 @@ TITLE: Treatment View - Treatment Parameters Emission Progress indicator
 STATEMENT: >>>
 The application shall provide a UI indicator that allows users to monitor the progress of emission treatment parameters.
 
-.. image:: _images/RQ-H10TG-4.png
+.. image:: _assets/RQ-H10TG-4.png
 <<<
 
 [REQUIREMENT]
@@ -150,7 +150,7 @@ TITLE: Treatment View - Emission Progress Indicators
 STATEMENT: >>>
 The application shall provide an interface allowing the operator to monitor the progress of the delivered emission of a treatment plan.
 
-.. image:: _images/RQ-H10TG-10.png
+.. image:: _assets/RQ-H10TG-10.png
 <<<
 
 [REQUIREMENT]
@@ -260,7 +260,7 @@ TITLE: Quality Assurance - Daily Warmup - Progress Monitoring
 STATEMENT: >>>
 The application shall provide an interface that allows the user to monitor the progress of the warm-up process.
 
-.. image:: _images/RQ-H10TG-53.png
+.. image:: _assets/RQ-H10TG-53.png
 <<<
 
 [REQUIREMENT]
@@ -393,7 +393,7 @@ The application should alert the user if the connected applicator is different f
 Each requested physics field shall be prepared and emitted separately, and the operator
 shall perform a distinct Beam On action for every field.
 
-.. image:: _images/RQ-H10TG-280.png
+.. image:: _assets/RQ-H10TG-280.png
 <<<
 
 [REQUIREMENT]
@@ -429,7 +429,7 @@ TITLE: Treatment View - Stop Emission
 STATEMENT: >>>
 The treatment console shall include a stop control that allows the user to immediately terminate radiation emissions.
 
-.. image:: _images/RQ-H10TG-3.png
+.. image:: _assets/RQ-H10TG-3.png
 <<<
 
 [REQUIREMENT]
@@ -471,7 +471,7 @@ Before triggering a QC emission, the operator shall select the energy and one li
 emission. The application shall emit and record only the selected item. Performing another
 QC emission shall require a new operator selection and activation cycle.
 
-.. image:: _images/RQ-H10TG-66.png
+.. image:: _assets/RQ-H10TG-66.png
 <<<
 
 [REQUIREMENT]
@@ -483,7 +483,7 @@ The telemetry controls shall show a clear no-communication indication when no va
 telemetry has been received from the GCB for 1.5 seconds. Stale telemetry values shall no
 longer be presented as current; affected values shall be shown as unavailable.
 
-.. image:: _images/RQ-H10TG-82.png
+.. image:: _assets/RQ-H10TG-82.png
 <<<
 
 [REQUIREMENT]
@@ -505,7 +505,7 @@ The patient details shall include the following:
 * Devices
 * Setup Notes (Simulation notes)
 
-.. image:: _images/RQ-H10TG-85.png
+.. image:: _assets/RQ-H10TG-85.png
 <<<
 
 [REQUIREMENT]
@@ -517,7 +517,7 @@ The treatment console shall display a live view of the treated patient for monit
 
 The live monitoring will enable the user to stop the emission in case of a patient crisis or movement.
 
-.. image:: _images/RQ-H10TG-86.png
+.. image:: _assets/RQ-H10TG-86.png
 <<<
 
 [REQUIREMENT]
@@ -549,7 +549,7 @@ The operator will have the controls to prepare and activate the system for radia
 
 For each test, the user will toggle the corresponding success/failure button.
 
-.. image:: _images/RQ-H10TG-91.png
+.. image:: _assets/RQ-H10TG-91.png
 <<<
 
 [REQUIREMENT]
@@ -559,8 +559,8 @@ TITLE: Quality Assurance - System Safety Checks Reports
 STATEMENT: >>>
 The application shall provide the operator with an interface to display the history of test results which includes the following system safety features: X-Ray light, X-Ray sound, door interlock, estop, normal stop, live video stream, and live audio stream between the patient and operator.
 
-.. image:: _images/RQ-H10TG-92-1.png
-.. image:: _images/RQ-H10TG-92-2.png
+.. image:: _assets/RQ-H10TG-92-1.png
+.. image:: _assets/RQ-H10TG-92-2.png
 <<<
 
 [REQUIREMENT]
@@ -578,7 +578,7 @@ Each saved QC result shall remain associated with its creation information, oper
 applicator and energy configuration, and measured values. The application shall retrieve
 results for the selected configuration.
 
-.. image:: _images/RQ-H10TG-93.png
+.. image:: _assets/RQ-H10TG-93.png
 <<<
 
 [REQUIREMENT]
@@ -628,7 +628,7 @@ TITLE: Quality Assurance - Perform System Safety Checks - Save Results
 STATEMENT: >>>
 The application shall provide a control enabling the user to save the safety test results in the database.
 
-.. image:: _images/RQ-H10TG-106.png
+.. image:: _assets/RQ-H10TG-106.png
 <<<
 
 [REQUIREMENT]
@@ -752,7 +752,7 @@ The layout should include:
 7. Live Camera to monitor the patient.
 8. System readiness indicators
 
-.. image:: _images/RQ-H10TG-13.png
+.. image:: _assets/RQ-H10TG-13.png
 <<<
 
 [REQUIREMENT]
