@@ -89,9 +89,13 @@ Verify that:
 The mcumgr examples below use the `main-control-ftdi` connection profile. Configure it once,
 replacing `COM12` with the FTDI adapter's actual port:
 
-```powershell
-mcumgr conn add main-control-ftdi type="serial" connstring="dev=COM12,baud=115200,mtu=124"
-```
+.. code-block:: powershell
+
+   mcumgr conn add main-control-ftdi type="serial" connstring="dev=COM12,baud=115200,mtu=124"
+
+Use the same port in the direct serial commands below. Close any other tool using the port
+before running a command. When a step calls for entering serial recovery from the running
+application, use the PowerShell sequence in TC-H1FWMCBOOT-10, step 1.
 
 **Acceptance Criteria**
 
@@ -116,28 +120,36 @@ PREREQUISITES: >>>
 3. An invalid or unsigned `.mcumgr.bin` image is available.
 <<<
 STEPS: >>>
-1. Enter serial recovery and upload the invalid or unsigned image to slot 1:
+1. Enter serial recovery and record the image list before uploading:
 
-   ```powershell
-   mcumgr -c main-control-ftdi image upload --image 2 ".\invalid-or-unsigned.mcumgr.bin"
-   ```
+   .. code-block:: powershell
 
-2. Request the image list:
+      mcumgr -c main-control-ftdi image list
 
-   ```powershell
-   mcumgr -c main-control-ftdi image list
-   ```
+2. Upload the invalid or unsigned image to slot 1:
 
-3. Reset the system:
+   .. code-block:: powershell
 
-   ```powershell
-   mcumgr -c main-control-ftdi reset
-   ```
+      mcumgr -c main-control-ftdi image upload --image 2 ".\invalid-or-unsigned.mcumgr.bin"
+
+3. Request the image list after uploading:
+
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi image list
+
+4. Reset the system:
+
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi reset
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The invalid image is not accepted for upgrade.
-2. Image list does not show the uploaded image as a valid image in slot 1.
-3. After reset, the system boots the existing application in slot 0.
+1. The image-list request succeeds, and the existing slot-0 image's version and hash are recorded.
+2. The invalid image is not accepted for upgrade.
+3. Image list does not show the uploaded image as a valid image in slot 1. The slot-0 version
+   and hash match the values recorded before uploading.
+4. After reset, the system boots the existing application in slot 0.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -153,36 +165,45 @@ The main control bootloader firmware shall upload a signed MCUboot image to the 
 PREREQUISITES: >>>
 1. The system is ready to start.
 2. A valid signed `.mcumgr.bin` image is available.
+3. A valid signed application is installed in slot 0
 <<<
 STEPS: >>>
-1. Enter serial recovery.
-   Before uploading to the secondary slot, record the primary slot contents with a debugger.
-   Attempt each of the following uploads:
+1. Enter serial recovery. Attempt each of the following uploads, recording the image list
+   before and after each attempt:
 
-   ```powershell
-   mcumgr -c main-control-ftdi image upload ".\valid-signed.mcumgr.bin"
-   mcumgr -c main-control-ftdi image upload --image 0 ".\valid-signed.mcumgr.bin"
-   mcumgr -c main-control-ftdi image upload --image 1 ".\valid-signed.mcumgr.bin"
-   ```
+   .. code-block:: powershell
 
-   Verify each attempt returns an error and the primary slot contents remain unchanged.
-2. Upload the signed image using mcumgr direct image target 2:
+      mcumgr -c main-control-ftdi image list
+      mcumgr -c main-control-ftdi image upload ".\valid-signed.mcumgr.bin"
+      mcumgr -c main-control-ftdi image list
 
-   ```powershell
-   mcumgr -c main-control-ftdi image upload --image 2 ".\valid-signed.mcumgr.bin"
-   ```
+      mcumgr -c main-control-ftdi image upload --image 0 ".\valid-signed.mcumgr.bin"
+      mcumgr -c main-control-ftdi image list
 
-3. Request image list:
+      mcumgr -c main-control-ftdi image upload --image 1 ".\valid-signed.mcumgr.bin"
+      mcumgr -c main-control-ftdi image list
 
-   ```powershell
-   mcumgr -c main-control-ftdi image list
-   ```
+   Verify each attempt returns an error and the reported image entries, versions, and hashes
+   remain unchanged.
+2. Record the image list, then upload the signed image using mcumgr direct image target 2:
+
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi image list
+      mcumgr -c main-control-ftdi image upload --image 2 ".\valid-signed.mcumgr.bin"
+
+3. Record the image list after the upload:
+
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi image list
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Uploads without an image selector or with `--image 0` or `--image 1` are rejected without changing flash.
+1. Uploads without an image selector or with `--image 0` or `--image 1` are rejected. The image
+   entries, versions, and hashes reported before and after each rejected attempt match.
 2. Upload with `--image 2` succeeds and stores the image in slot 1.
 3. Image list shows the image in slot 1 with `bootable: true` and a hash.
-4. Slot 0 remains unchanged after all upload attempts.
+4. The reported slot-0 image version and hash remain unchanged after all upload attempts.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -201,18 +222,31 @@ PREREQUISITES: >>>
 3. A valid signed application is installed in slot 0.
 <<<
 STEPS: >>>
-1. Enter serial recovery.
+1. If the board is already in serial recovery mode, proceed to step 2. Otherwise, send
+   ``*BOOTL`` followed by a newline to the running application at 115200 baud:
+
+   .. code-block:: powershell
+
+      $port = [System.IO.Ports.SerialPort]::new("COM12", 115200)
+      try {
+          $port.Open()
+          $port.Write("*BOOTL`n")
+      } finally {
+          $port.Close()
+          $port.Dispose()
+      }
+
 2. Start a secondary-slot image upload and press Ctrl+C before it completes:
 
-   ```powershell
-   mcumgr -c main-control-ftdi image upload --image 2 ".\valid-signed.mcumgr.bin"
-   ```
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi image upload --image 2 ".\valid-signed.mcumgr.bin"
 
 3. Reset the system:
 
-   ```powershell
-   mcumgr -c main-control-ftdi reset
-   ```
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi reset
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The incomplete secondary image is not selected.
@@ -236,24 +270,34 @@ PREREQUISITES: >>>
 <<<
 STEPS: >>>
 1. Send `*BOOTL\n` to the running application at 115200 baud.
+
+   .. code-block:: powershell
+
+      $port = [System.IO.Ports.SerialPort]::new("COM12", 115200)
+      try {
+          $port.Open()
+          $port.Write("*BOOTL`n")
+      } finally {
+          $port.Close()
+          $port.Dispose()
+      }
+
 2. Verify the mcumgr connection at 115200 baud:
 
-   ```powershell
-   mcumgr -c main-control-ftdi echo ping
-   ```
+   .. code-block:: powershell
 
-3. Verify that the bootloader replies with `ping`.
-4. Reset without sending another bootloader request:
+      mcumgr -c main-control-ftdi echo ping
 
-   ```powershell
-   mcumgr -c main-control-ftdi reset
-   ```
+3. While in serial recovery mode, reset the processor using the command below:
+
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi reset
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The application requests serial recovery and resets.
-2. mcumgr communication is established.
-3. The bootloader replies with `ping`.
-4. The next reset boots the primary application normally.
+2. The bootloader replies with `ping`.
+3. The next reset boots the primary application normally.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -273,27 +317,43 @@ PREREQUISITES: >>>
 <<<
 STEPS: >>>
 1. Send `*BOOTL\n` to the running application and observe the processor reset.
+
+   .. code-block:: powershell
+
+      $port = [System.IO.Ports.SerialPort]::new("COM12", 115200)
+      try {
+          $port.Open()
+          $port.Write("*BOOTL`n")
+      } finally {
+          $port.Close()
+          $port.Dispose()
+      }
+
 2. Connect mcumgr at 115200 baud and send an echo command:
 
-   ```powershell
-   mcumgr -c main-control-ftdi echo recovery
-   ```
+   .. code-block:: powershell
 
-3. Reset without issuing another `*BOOTL\n` request:
+      mcumgr -c main-control-ftdi echo recovery
 
-   ```powershell
-   mcumgr -c main-control-ftdi reset
-   ```
+3. While in serial recovery mode, reset the processor using the command below:
+
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi reset
 
 4. Verify the primary application starts, then reset the processor once more without issuing a
    bootloader request.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The application writes the one-shot request and resets the processor.
-2. The bootloader consumes the request, enters serial recovery, and replies with `recovery`.
-3. The next reset does not re-enter serial recovery; the valid primary application starts.
-4. The additional reset also starts the primary application, confirming that the request was
-   cleared and does not persist across resets.
+1. The running application accepts the bootloader-entry command and resets the processor.
+   The board enters serial recovery mode for this boot.
+2. The mcumgr echo command succeeds at 115200 baud and displays ``recovery``, confirming that
+   serial recovery is active.
+3. The mcumgr reset command succeeds. The valid primary application in slot 0 starts normally
+   instead of remaining in the requested serial recovery mode.
+4. After the additional processor reset without a new bootloader-entry request, the same primary
+   application starts normally again. The original request does not cause another recovery boot,
+   demonstrating that it is used only once.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -315,41 +375,44 @@ PREREQUISITES: >>>
    private key from the one corresponding to the bootloader's embedded public key.
 <<<
 STEPS: >>>
-1. Enter serial recovery and upload the post-signing-modified image using mcumgr direct image target
-   2, then request image list:
+1. Enter serial recovery and record the image list. Upload the post-signing-modified image using
+   mcumgr direct image target 2, then record the image list again:
 
-   ```powershell
-   mcumgr -c main-control-ftdi image upload --image 2 ".\modified-after-signing.mcumgr.bin"
-   mcumgr -c main-control-ftdi image list
-   ```
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi image list
+      mcumgr -c main-control-ftdi image upload --image 2 ".\modified-after-signing.mcumgr.bin"
+      mcumgr -c main-control-ftdi image list
 
 2. Reset the processor and verify that the valid primary application starts:
 
-   ```powershell
-   mcumgr -c main-control-ftdi reset
-   ```
+   .. code-block:: powershell
 
-3. Re-enter serial recovery and upload the image signed with the non-matching key using direct image
-   target 2, then request image list:
+      mcumgr -c main-control-ftdi reset
 
-   ```powershell
-   mcumgr -c main-control-ftdi image upload --image 2 ".\wrong-key.mcumgr.bin"
-   mcumgr -c main-control-ftdi image list
-   ```
+3. Re-enter serial recovery and record the image list. Upload the image signed with the
+   non-matching key using direct image target 2, then record the image list again:
+
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi image list
+      mcumgr -c main-control-ftdi image upload --image 2 ".\wrong-key.mcumgr.bin"
+      mcumgr -c main-control-ftdi image list
 
 4. If mcumgr reports a hash, attempt to confirm the uploaded image, then reset the processor:
 
-   ```powershell
-   mcumgr -c main-control-ftdi image confirm <slot-1-hash>
-   mcumgr -c main-control-ftdi reset
-   ```
+   .. code-block:: powershell
+
+      $slot1Hash = Read-Host "Enter the slot-1 image hash reported by mcumgr"
+      mcumgr -c main-control-ftdi image confirm $slot1Hash
+      mcumgr -c main-control-ftdi reset
 <<<
 EXPECTED_BEHAVIOR: >>>
 1. The post-signing-modified image is not reported as a bootable slot-1 image and cannot be selected
-   for upgrade.
+   for upgrade. The slot-0 version and hash match the values recorded before uploading.
 2. The valid primary application remains selected and starts after reset.
 3. The image signed with the non-matching key is not reported as a bootable slot-1 image and cannot
-   be confirmed for upgrade.
+   be confirmed for upgrade. The slot-0 version and hash match the values recorded before uploading.
 4. The valid primary application remains selected and starts after the final reset.
 <<<
 RELATIONS:
@@ -361,68 +424,85 @@ RELATIONS:
 UID: TC-H1FWMCBOOT-13
 TITLE: Image Upgrade - Test Case
 STATEMENT: >>>
-The main control bootloader firmware shall permanently upgrade to a confirmed, validated secondary
-image by swapping the primary and secondary slots through the scratch flash area.
+Verify that the main control bootloader permanently upgrades to a confirmed, validated secondary
+image and exchanges the images in the primary and secondary slots.
 <<<
 PREREQUISITES: >>>
-1. The system is running a valid signed primary image with an identifiable version and hash.
+1. The system is running a valid signed primary image in slot 0 with an identifiable version and hash.
 2. A valid signed `.mcumgr.bin` image with a different identifiable version and hash is available.
-3. A debugger capable of observing writes to the scratch flash area at `0x005C2000` is connected
-   without modifying flash contents.
+3. Use the following command when a step requires entering serial recovery from the running
+   application. Replace COM12 with the port configured for main-control-ftdi:
+
+   .. code-block:: powershell
+
+      $port = [System.IO.Ports.SerialPort]::new("COM12", 115200)
+      try {
+          $port.Open()
+          $port.Write("*BOOTL`n")
+      } finally {
+          $port.Close()
+          $port.Dispose()
+      }
 <<<
 STEPS: >>>
-1. Enter serial recovery and record the slot-0 image hash:
+1. Enter serial recovery using the command in prerequisite 3, then record the slot-0 image hash:
 
-   ```powershell
-   mcumgr -c main-control-ftdi image list
-   ```
+   .. code-block:: powershell
 
-2. Upload the new image using mcumgr direct image target 2:
+      mcumgr -c main-control-ftdi image list
 
-   ```powershell
-   mcumgr -c main-control-ftdi image upload --image 2 ".\new-version.mcumgr.bin"
-   ```
+2. Upload the new image to slot 1 (the secondary slot) using mcumgr direct image target 2:
+
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi image upload --image 2 ".\new-version.mcumgr.bin"
 
 3. Request image list and record the new slot-1 image hash:
 
-   ```powershell
-   mcumgr -c main-control-ftdi image list
-   ```
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi image list
 
 4. Confirm the new image using its recorded hash:
 
-   ```powershell
-   mcumgr -c main-control-ftdi image confirm <slot-1-hash>
-   ```
+   .. code-block:: powershell
 
-5. Configure the debugger to halt on a write to `0x005C2000`, reset the processor, and resume it
-   until the write is observed:
+      $slot1Hash = Read-Host "Enter the slot-1 image hash reported by mcumgr"
+      mcumgr -c main-control-ftdi image confirm $slot1Hash
 
-   ```powershell
-   mcumgr -c main-control-ftdi reset
-   ```
+5. Reset the processor to apply the upgrade:
 
-6. Remove the breakpoint, resume execution, and verify that the new application version starts.
-7. Enter serial recovery again and request image list:
+   .. code-block:: powershell
 
-   ```powershell
-   mcumgr -c main-control-ftdi image list
-   ```
+      mcumgr -c main-control-ftdi reset
+
+6. Verify that the new application version starts.
+7. Enter serial recovery, then request the image list:
+
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi image list
 
 8. Reset the processor without confirming another image and verify that the new application version
    starts again:
 
-   ```powershell
-   mcumgr -c main-control-ftdi reset
-   ```
+   .. code-block:: powershell
+
+      mcumgr -c main-control-ftdi reset
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. Image list reports the new image in slot 1 as bootable with its expected hash.
-2. The image-confirm command succeeds for the new slot-1 hash.
-3. The debugger observes a write in the scratch flash area while MCUboot performs the swap.
-4. After the swap, the new image hash is in slot 0 and the original primary image hash is in slot 1.
-5. The new application starts after the upgrade and again after the subsequent reset, demonstrating
-   that the upgrade is permanent.
+1. The board enters serial recovery, and the image list reports the existing primary image in
+   slot 0 with its version and hash. The original slot-0 hash is recorded.
+2. The upload completes successfully and stores the new image in slot 1 (the secondary slot).
+3. The image list reports the new image in slot 1 as bootable, with the expected version and hash.
+   The new slot-1 hash is recorded, and the original image remains in slot 0 with its original hash.
+4. The image-confirm command succeeds for the recorded slot-1 hash.
+5. The reset command succeeds, and the bootloader applies the confirmed upgrade.
+6. The new application starts normally and reports the expected new version.
+7. The board re-enters serial recovery. The image list reports the new image in slot 0 with the
+   hash recorded in step 3, and the original image in slot 1 with the hash recorded in step 1.
+8. After another reset without confirming another image, the new application starts again and
+   reports the expected new version. The system does not revert to the original application.
 <<<
 RELATIONS:
 - TYPE: Parent
