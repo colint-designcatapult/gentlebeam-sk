@@ -18,6 +18,7 @@ namespace Heracles.Ucsi.ViewModels;
 public interface IUcsiHostCommands
 {
     bool CanClearFaults { get; }
+    bool CanStartEmission { get; }
     string ClearFaultsUnavailableReason { get; }
     Task ClearFaultsAsync();
 }
@@ -29,6 +30,7 @@ public interface IUcsiHostCommands
 public sealed class UnavailableUcsiHostCommands : IUcsiHostCommands
 {
     public bool CanClearFaults => false;
+    public bool CanStartEmission => false;
     public string ClearFaultsUnavailableReason => "Clear Faults is unavailable in this host.";
     public Task ClearFaultsAsync() => Task.CompletedTask;
 }
@@ -41,6 +43,7 @@ public sealed class StandaloneUcsiHostCommands(
     IGcbCommandInterface gcbCommandInterface) : IUcsiHostCommands
 {
     public bool CanClearFaults => true;
+    public bool CanStartEmission => true;
     public string ClearFaultsUnavailableReason => string.Empty;
     public Task ClearFaultsAsync() => gcbCommandInterface.ClearFaults();
 }
@@ -481,7 +484,9 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         SaveLogsCommand = new DelegateCommand(async () => await SaveLogsAsync());
         EmissionRunStopCommand = new DelegateCommand(
             async () => await RunOrStopEmissionAsync(),
-            () => IsEmissionTabAvailable && !_emissionStopInProgress);
+            () => (_emissionSequenceActive || IsNormalActiveState(CurrentSample?.Telemetry.ControlBoardState)
+                || (_hostCommands.CanStartEmission && IsEmissionTabAvailable))
+                && !_emissionStopInProgress);
         StopCalibrationCommand = new DelegateCommand(
             async () => await StopCalibrationAsync(),
             () => CanStopCalibration);
@@ -808,8 +813,8 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
             ? new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 46, 143, 68)) // Green (same as interlock indicators)
             : new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 43, 43, 43)); // Dark grey #292b2b
 
-    // Emission button is always clickable
-    public bool CanClickEmission => true;
+    // Keep the stop action available in embedded mode, but prevent starting emission.
+    public bool CanClickEmission => _emissionOn || _hostCommands.CanStartEmission;
 
     // TextBox border brush - red if invalid, transparent if valid
     public SolidColorBrush EmissionTextBoxBorder =>
@@ -1747,6 +1752,7 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         RaisePropertyChanged(nameof(EmissionFeedbackElapsedSeconds));
         RaisePropertyChanged(nameof(IsEmissionValid));
         RaisePropertyChanged(nameof(EmissionTextBoxBorder));
+        RaisePropertyChanged(nameof(CanClickEmission));
         RaisePropertyChanged(nameof(CoolingWaterPumpText));
         RaisePropertyChanged(nameof(CoolingRadiatorFanText));
         RaisePropertyChanged(nameof(CoolingWaterPumpColor));
@@ -1810,6 +1816,12 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
         if(_emissionSequenceActive || IsNormalActiveState(currentState))
         {
             await StopNormalEmissionAsync();
+            return;
+        }
+
+        if(!_hostCommands.CanStartEmission)
+        {
+            SetCommandError("Emission start is disabled in this host.", LogRecordSeverity.Warn);
             return;
         }
 
@@ -2214,6 +2226,12 @@ public sealed class UnifiedCalibrationServiceViewModel : BindableBase
     {
         if(!EnsureCalibrationControlsAvailable())
             return;
+
+        if(!_emissionOn && !_hostCommands.CanStartEmission)
+        {
+            SetCommandError("Emission start is disabled in this host.", LogRecordSeverity.Warn);
+            return;
+        }
 
         try
         {

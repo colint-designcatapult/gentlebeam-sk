@@ -408,6 +408,7 @@ internal sealed class UnifiedCalibrationServiceViewModelTests
         var catalog = new TelemetryParameterCatalog();
         var hostCommands = new Mock<IUcsiHostCommands>();
         hostCommands.SetupGet(value => value.ClearFaultsUnavailableReason).Returns("Unavailable");
+        hostCommands.SetupGet(value => value.CanStartEmission).Returns(true);
 
         return new UnifiedCalibrationServiceViewModel(
             coordinator.Object,

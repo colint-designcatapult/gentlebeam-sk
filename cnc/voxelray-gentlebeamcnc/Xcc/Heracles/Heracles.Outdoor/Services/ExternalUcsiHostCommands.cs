@@ -7,6 +7,7 @@ public sealed class ExternalUcsiHostCommands(
     IMainBoardAPI mainBoardApi) : IUcsiHostCommands
 {
     public bool CanClearFaults => true;
+    public bool CanStartEmission => true;
     public string ClearFaultsUnavailableReason => string.Empty;
     public Task ClearFaultsAsync() => mainBoardApi.ClearFaults();
 }

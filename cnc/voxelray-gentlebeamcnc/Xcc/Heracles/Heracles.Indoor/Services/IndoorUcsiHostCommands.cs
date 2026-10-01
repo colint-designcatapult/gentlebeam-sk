@@ -11,6 +11,7 @@ namespace Heracles.Indoor.Services;
 public sealed class IndoorUcsiHostCommands : IUcsiHostCommands
 {
     public bool CanClearFaults => false;
+    public bool CanStartEmission => false;
     public string ClearFaultsUnavailableReason => "Clear Faults is disabled in embedded mode for safety.";
     public Task ClearFaultsAsync() => Task.CompletedTask;
 }
