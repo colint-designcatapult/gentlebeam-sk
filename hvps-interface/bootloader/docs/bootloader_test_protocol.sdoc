@@ -149,17 +149,21 @@ PREREQUISITES: >>>
 * The same known application is available in four forms: valid-signed.bin (valid signature),
   unsigned.bin (no signature), wrong-key.bin (signed with an untrusted key), and
   corrupt-header.bin (invalid MCUboot header).
-* The expected version and hash of valid-signed.bin are recorded for comparison with the image list.
 * Normal startup of the known application can be identified and recorded.
 <<<
 STEPS: >>>
-1. Reset the board and, during the recovery interval before application startup, run:
+1. Place the board in serial recovery mode and read the image list. Replace COM3 with
+   the board's serial port and ensure $conn uses the same port:
 
    .. code-block:: powershell
 
-      mcumgr --conntype serial --connstring $conn echo "recovery-window"
+      $port = New-Object System.IO.Ports.SerialPort COM3,38400,None,8,one
+      $port.Open()
+      $port.Write("*B00TL`n")
+      $port.Close()
+      mcumgr --conntype serial --connstring $conn echo "recovery-check"
 
-2. Place the board in serial recovery mode and record the image list before uploading:
+2. Record the image list before uploading:
 
    .. code-block:: powershell
 
@@ -183,27 +187,27 @@ STEPS: >>>
 
       mcumgr --conntype serial --connstring $conn reset
 
-6. Confirm that the valid application starts normally.
-7. Repeat steps 2 through 5 separately for unsigned.bin, wrong-key.bin, and corrupt-header.bin,
-   replacing valid-signed.bin in the upload command. Save the image-list output before and after
-   each upload, including an empty list if the image is not reported.
-8. After each invalid-image reset, run:
+6. After each reset, run:
 
    .. code-block:: powershell
 
       mcumgr --conntype serial --connstring $conn echo "recovery-check"
+
+7. Repeat steps 2 through 6 separately for unsigned.bin, wrong-key.bin, and corrupt-header.bin,
+   replacing valid-signed.bin in the upload command. Save the image-list output before and after
+   each upload, including an empty list if the image is not reported.
 <<<
 EXPECTED_BEHAVIOR: >>>
-1. The echo succeeds and displays "recovery-window" during the recovery interval.
+1. The echo succeeds and displays "recovery-check" during the recovery interval.
 2. The image-list request succeeds and its result is recorded before uploading.
 3. mcumgr completes the valid-image upload.
-4. The image-list request succeeds and reports the uploaded valid image's version and hash.
-5. The reset command succeeds.
-6. The bootloader reports BOOT_GO_OK and the valid application starts normally.
-7. Before/after image-list results are recorded for each invalid-image upload. After reset,
-   the bootloader rejects each invalid image, and none of them starts. An image-list entry
-   alone is not evidence that an image passed boot validation.
-8. After each rejection, the echo succeeds and displays "recovery-check".
+4. The image-list request succeeds and reports the uploaded valid image's version and hash. 
+5. The reset command succeeds. The valid application starts normally.
+6. After valid-image upload and reset, the echo does not succeed and display "recovery-check".
+   After each invalid-image upload and reset, the echo succeeds and displays "recovery-check".
+7. Before/after image-list results are recorded for each invalid-image upload. 
+   After each invalid-image upload, the imgage-list will show an empty list. After reset, 
+   the bootloader rejects each invalid image, and none of them starts.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -278,7 +282,17 @@ PREREQUISITES: >>>
 * Normal startup of applications A and B can be identified and recorded.
 <<<
 STEPS: >>>
-1. Place the board in serial recovery mode.
+1. Place the board in serial recovery mode and read the image list. Replace COM3 with
+   the board's serial port and ensure $conn uses the same port:
+
+   .. code-block:: powershell
+
+      $port = New-Object System.IO.Ports.SerialPort COM3,38400,None,8,one
+      $port.Open()
+      $port.Write("*B00TL`n")
+      $port.Close()
+      mcumgr --conntype serial --connstring $conn image list
+
 2. Upload image A:
 
    .. code-block:: powershell
@@ -298,16 +312,7 @@ STEPS: >>>
       mcumgr --conntype serial --connstring $conn reset
 
 5. Confirm that application A starts normally.
-6. Place the board in serial recovery mode again and read the image list. Replace COM3 with
-   the board's serial port and ensure $conn uses the same port:
-
-   .. code-block:: powershell
-
-      $port = New-Object System.IO.Ports.SerialPort COM3,38400,None,8,one
-      $port.Open()
-      $port.Write("*B00TL`n")
-      $port.Close()
-      mcumgr --conntype serial --connstring $conn image list
+6. Place the board in serial recovery mode again.
 
 7. Upload image B:
 
@@ -394,12 +399,18 @@ STEPS: >>>
 5. Remove the breakpoints, reset without injection, and confirm normal application startup.
 <<<
 EXPECTED_BEHAVIOR: >>>
-* The unchanged baseline passes both checks.
-* Both SP boundary values reach the acceptance point.
-* The two invalid SP values produce ERR_SP; the two invalid RH values produce ERR_RH.
+1. The unchanged baseline passes both checks.
+
+2. Both SP boundary values reach the acceptance point.
+
+3. The two invalid SP values produce ERR_SP; the two invalid RH values produce ERR_RH.
+
   Each rejected run returns without application handoff.
-* Evidence is recorded for the baseline and all six injected runs, with results matching step 3.
-* The valid application starts normally after the final reset.
+
+4. Evidence is recorded for the baseline and all six injected runs, with results matching step 3.
+
+5. The valid application starts normally after the final reset.
+
 <<<
 RELATIONS:
 - TYPE: Parent
