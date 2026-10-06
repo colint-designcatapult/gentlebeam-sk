@@ -440,35 +440,43 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H10SG-303
-TITLE: System Setting View - Targets (Collimators) Management - Layout - (Edit Target) Test Case
+TITLE: System Setting View - Applicator Management - Layout - (Edit Applicator) Test Case
 STATEMENT: >>>
 This test case verifies the layout and user interface components of the System Setting View. It validates that all UI elements are properly displayed and arranged according to specifications.
 <<<
 STEPS: >>>
-1Launch and login GBSK internal 
+1. Launch and login GBSK internal 
 
-2.Click the Setting tab 
+2. Click the Settings tab. 
 
-3.Click the Target Management tab 
+3. Click the Applicator Management tab. 
 
-4.Click new Target. 
+4. Click New Applicator. 
 
-5.Inside the opened window fill in the following: 
+5. In the opened form, enter the following: 
 
-Type: 50MM_SSD_13_FIELDS (choose from the drop-down menu) 
+Type: 1.5 cm (choose from the drop-down menu) 
 
-Active: mark as active 
+Active: mark as active. 
 
-1. Click the save button. 
+6. Click Save. 
 
-7.Click the new created target in the Targets Management list view 
+7. Click the Physics tab. 
 
-8.Click the Edit Target button 
+8. Verify that the Applicator Type list includes 1.5 cm and select 1.5 cm. 
 
-9.Update the type to 30MM_SSD_7_FIELDS
+9. Return to the Applicator Management tab and select the 2 cm applicator. 
+
+10. Click Edit Applicator. 
+
+11. Update the type to QC applicator and click Save. 
+
+12. Click the Physics tab and select QC applicator from the Applicator Type list.
 <<<
 EXPECTED_BEHAVIOR: >>>
-The updated target should appear with Type 30MM_SSD_7_FIELDS cells in the Targets Management list view.
+The Applicator Management list should display the updated applicator with type QC applicator.
+
+The Physics tab should display 1.5 cm as the selected Applicator Type.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -605,21 +613,26 @@ STATEMENT: >>>
 This test case is designed to verify that the application provides a user interface that enables the user to view images captured by the device camara, filtered by the visit during which they were captured.
 <<<
 PREREQUISITES: >>>
-This test case requires the pre-creation of a patient and the generation of images captured by the device camara, 
-filtered by the visit during which they were captured.
+This test case requires a pre-created patient with dummy photo data associated with a diagnosis and visit.
 <<<
 STEPS: >>>
 Test Steps: 
 
-1.Launch and login GBSK Internal 
+1. Launch and log in to GBSK Internal.
 
-2.In the patients’ tab click the pre-created patient with the pre-captured images. 
+2. In the Patients view, open the pre-created patient with the dummy photo data.
 
-3.Click the Images tab
+3. Open the patient’s Simulation view.
+
+4. Select the simulation associated with the diagnosis and visit containing the dummy photos.
+
+5. Locate the Photos section and verify that the photos are displayed.
+
+6. Select a photo and verify that it opens in the photo viewer.
 <<<
 EXPECTED_BEHAVIOR: >>>
-The user interface should enable the user to view the images captured by the device camara, filtered by the visit during which they were 
-captured.
+The Simulation view shall display the photos associated with the selected diagnosis and visit in the Photos section. The user shall be able 
+to select a photo and view it in the photo viewer.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -966,43 +979,51 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H10SG-312
-TITLE: Calibration - Magnetometer correction parameters - Test Case
+TITLE: Physics - Magnetometer correction parameters - Test Case
 STATEMENT: >>>
 This test case verifies system calibration procedures and parameters. It validates that calibration values are correctly stored and applied.
 <<<
 STEPS: >>>
 1. Launch and login GBSK internal 
 
-2.Click the Setting tab 
+2. Click the Settings tab. 
 
-3.Click the Target Management tab 
+3. Click the Applicator Management tab. 
 
-4.Click new Target. 
+4. Click New Applicator. 
 
-5.Inside the opened window fill in the following: 
+5. In the opened form, enter the following: 
 
-Serial:1111 
+Serial: 1111 
 
-Type: 13 Cells (choose form the drop-down menu) 
+Type: 2 cm (choose from the drop-down menu) 
 
-Does Rate: 200 
+Energy: 50 kV (choose from the drop-down menu) 
 
-Energy: 50 (choose from the drop-down menu) 
+Active: mark as active. 
 
-Active : mark as active 
+6. Click Save. 
 
-6. Click the save button. 
+7. Click the Physics tab. 
 
-7.Click the Calibration tab (on the left panel) 
+8. Select Applicator Type: 2 cm. 
 
-8.Click the Serial field and select 1111 from the drop-down menu. 
+9. Select Energy Level: 50 kV. 
 
-9.Click the Magnetometer Configuration
+10. In the Magnetometer Corrections section, verify that Correction Matrix controls are available for the Back and Front magnetometers. 
+
+11. Verify that Reference Field controls are available for the Back and Front magnetometers. 
+
+12. Enter valid correction matrix and reference field values for the selected 2 cm applicator and 50 kV energy. 
+
+13. Click Save, then click Approve.
 <<<
 EXPECTED_BEHAVIOR: >>>
-The user interface shall allow users to configure the magnetometer parameters before installation for each energy level. 
+The Physics tab shall allow users to configure magnetometer parameters for the selected applicator and energy level before installation. 
 
-The parameters include the Correction Matrix and the Reference Fields for the back and front magnetometer.
+The parameters shall include a Correction Matrix and Reference Field for both the Back and Front magnetometers.
+
+The configured values shall be saved and approved for the selected 2 cm applicator at 50 kV.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2074,25 +2095,27 @@ In the left panel, click on a simulation entry
 
 14. Verify that the system rejects negative values 
 
-15. Enter "0" in the Dose Per Fx [cGy] field 
+15. Attempt to enter "0" in the Dose Per Fx [cGy] field. 
 
-16. Enter "10" in the Number of Fx field 
+16. Verify that the system rejects the zero value and displays the non-zero validation error. 
 
-17. Verify that Total Dose calculates as "0.0" cGy 
+17. Enter "25.5" in the Dose Per Fx [cGy] field and "10" in the Number of Fx field. 
 
-18. Attempt to manually edit the Total Dose [cGy] field 
+18. Verify that Total Dose calculates as "255.00" cGy using Dose Per Fx multiplied by Number of Fx. 
 
-19. Verify that the field is non-editable (read-only/disabled) 
+19. Attempt to manually edit the Total Dose [cGy] field 
 
-20. Fill in only some fields (e.g., only Energy and Dose Per Fx) and click Save 
+20. Verify that the field is non-editable (read-only/disabled) 
 
-21. Verify that the system indicates which required fields are missing 
+21. Fill in only some fields (e.g., only Energy and Dose Per Fx) and click Save 
 
-22. Verify that the Fx per week dropdown only displays values 1-7 
+22. Verify that the system indicates which required fields are missing 
 
-23. Enter valid data in all fields and click Save 
+23. Verify that the Fx per week dropdown only displays values 1-7 
 
-24. Verify that the prescription is saved successfully
+24. Enter valid data in all fields, including Dose Per Fx 25.5 cGy and Number of Fx 10, and click Save 
+
+25. Verify that the prescription is saved successfully with Total Dose 255.00 cGy
 <<<
 EXPECTED_BEHAVIOR: >>>
 • Dose Per Fx field accepts only numeric values (integers and decimals) 
@@ -2105,17 +2128,15 @@ EXPECTED_BEHAVIOR: >>>
 
 • Negative values are rejected in Dose Per Fx and Number of Fx fields 
 
+• A zero value is rejected in the Dose Per Fx field 
+
 • Fx per week dropdown displays only values 1-7 
 
 • Values outside acceptable ranges are rejected 
 
+• Total Dose is calculated as Dose Per Fx × Number of Fx; 25.5 cGy × 10 = 255.00 cGy 
+
 • Save button is disabled or validation prevents saving incomplete data 
-
-Observed behavior 
-
-As expected. 
-
-Need a better message when entering a non-numeric number. (instead of e could not converted)
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2525,32 +2546,35 @@ RELATIONS:
 
 [TEST_CASE]
 UID: TC-H10SG-304
-TITLE: System Setting View - Targets (Collimators) Management - Layout - (Deactivate Target) Test Case
+TITLE: System Setting View - Applicator Management - Layout - (Deactivate Applicator) Test Case
 STATEMENT: >>>
 This test case verifies the layout and user interface components of the System Setting View. It validates that all UI elements are properly displayed and arranged according to specifications.
 <<<
 STEPS: >>>
-1. Click the Setting tab 
+1. Click the Settings tab. 
 
-3. Click the Target Management tab 
+2. Click the Applicator Management tab. 
 
-4. Click new Target. 
+3. Click New Applicator. 
 
-5. Inside the opened window fill in the following: 
+4. In the opened form, select the following type: 
 
-Type: 50MM_SSD_13_FIELDS(choose form the drop-down menu) 
+Type: 1.5 cm (choose from the drop-down menu) 
 
-Active : mark as active 
+Active: mark as active. 
 
-2. Click the save button. 
+5. Click Save. 
 
-7.Click the new created target in the Targets Management list view 
+6. Select the newly created 1.5 cm applicator in the Applicator Management list. 
 
-8.Click the checkbox in the same row in the Active column to deactivate the Tagert
+7. Click Edit Applicator. 
+
+8. Clear the Active checkbox and click Save. 
+
+9. Close and reopen the Applicator Management tab.
 <<<
 EXPECTED_BEHAVIOR: >>>
-The target should have a checkmark in the "Active" checkbox within the Targets Management list view, and it should not be displayed in the 
-collimator list in the Calibration tab
+The 1.5 cm applicator should have an unchecked Active checkbox in the Applicator Management list after the tab is reopened.
 <<<
 RELATIONS:
 - TYPE: Parent
@@ -2573,7 +2597,7 @@ STEPS: >>>
 
 3. Create a new simulation without saving the data. 
 
-4. Pless the Scan button.
+4. Press the Back button.
 <<<
 EXPECTED_BEHAVIOR: >>>
 4—An alert message should be displayed informing the user that unsaved data will be lost if he opens a view without saving data first.
@@ -2664,35 +2688,23 @@ This test case verifies the creation and addition of new items in the system. It
 STEPS: >>>
 1.Launch and login GBSK internal 
 
-2.Click the Setting tab 
+2.Click the Settings tab. 
 
-3.Click the Target Management tab 
+3.Click the Applicator Management tab. 
 
-4.Click new Target. 
+4.Create or select an applicator with and ensure it is active. 
 
-5.Inside the opened window fill in the following: 
+5.Click Save. 
 
-Type: 50MM_SSD_13_FIELDS(choose from the drop-down menu) 
+6.Click the Physics tab. 
 
-Active: mark as active 
+7.Select applicator type same applicator type as from step 4 and the energy level used by the plan. 
 
-1. Click the save button. 
+8.Set Dose Rate to 200 cGy/min and click Save. 
 
-7.Click the Calibration tab (on the left panel) 
+9.Navigate to the Patients tab. 
 
-8.Click the Collimator Type and select 50MM_SSD_13_FIELDSfrom the drop-down menu. 
-
-9.Click the Output Factor Configuration 
-
-10.In the collimator view click 13 
-
-11.In the highlighted 13 row click the row under Factor column 
-
-12.Enter 1.05 to set output Factor 
-
-13.Navigate to the patients tab 
-
-14. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing 
+10. Verify that a patient with the following details exists in the system or create a new patient by pressing "New patient" and filing 
 the following details: 
 
 • First Name: FirstNameTest 
@@ -2707,23 +2719,23 @@ the following details:
 
 • MRN:12345 
 
-15. Click the "Save Patient" button at the bottom of the registration form. 
+11. Click the "Save Patient" button at the bottom of the registration form. 
 
-16. In the patients list view, click twice on the newly created patient. 
+12. In the patients list view, click twice on the newly created patient. 
 
-17.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
+13.Navigate to "Plan" tab and click the "Add" button at the bottom of the plan tab on the bottom left corner of the screen. 
 
-18. Fill in the following details: 
+14. Fill in the following details: 
 
 • Site Name: testSite 
 
 • Pathology: testPathology 
 
-19. Click the "Save" button. 
+15. Click the "Save" button. 
 
-20. In the same plan tab under "Simulation" click the "Add" button. 
+16. In the same plan tab under "Simulation" click the "Add" button. 
 
-21.Fill in the following details for "Simulation": 
+17.Fill in the following details for "Simulation": 
 
 \*Lesion Size[cm]:1.00 x 1.00 
 
@@ -2737,11 +2749,11 @@ the following details:
 
 \*Device :HeadHolder (select HeadHolder from the drop-down menu) 
 
-22.Click the "Save" button under "Simulation". 
+18.Click the "Save" button under "Simulation". 
 
-23.In the same plan tab, click the "Add" button under "Prescription". 
+19.In the same plan tab, click the "Add" button under "Prescription". 
 
-24. File in the following details: 
+20. File in the following details: 
 
 Dose Pre Fx [cGy]: 200 
 
@@ -2753,17 +2765,14 @@ Number of Fx: 1
 
 Energy [kV]: 50 (Select from the drop-down menu) 
 
-25. At the bottom of the same screen, select treatment field 13 in the visual control representing the connected collimator and select 
-Duration 60. 
-
-26. Click add, to add treatment fields.
+21. Click save, to save treatment fields.
 <<<
 EXPECTED_BEHAVIOR: >>>
-The Actual Dose should be auto-calculate from the duration using the following function: 
+The Actual Dose should be auto-calculated from the configured dose rate and duration. Output-factor configuration is not part of the current user flow and is not applied to this calculation: 
 
-[Field Output factor] * [Dose Rate cGy/min] * Duration / 60 
+Actual Dose [cGy] = Dose Rate [cGy/min] * Duration [s] / 60 
 
-i.e. 1.05 * 200* 60/ 60 = 210 
+i.e. 200 * 60 / 60 = 200 cGy 
 
 The Actual dose should appear under Actual Dose column for the relevant treatment field.
 <<<

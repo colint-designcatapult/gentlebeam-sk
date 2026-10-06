@@ -14,7 +14,8 @@ namespace Heracles.Indoor.Converters
             {
                 if (value is string filePath && !string.IsNullOrEmpty(filePath))
                 {
-                    if (!File.Exists(filePath))
+                    bool isPackUri = filePath.StartsWith("pack://", StringComparison.OrdinalIgnoreCase);
+                    if (!isPackUri && !File.Exists(filePath))
                     {
                         return null;
                     }
