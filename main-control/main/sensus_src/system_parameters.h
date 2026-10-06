@@ -106,7 +106,7 @@ enum systemStatusFields
 	SS_WATER_FLOW_RATE,
 	SS_WATER_TEMP,
 	SS_HEATSINK_TEMP,
-	SS_PELTIER_TEMP,
+	SS_CONDITION_DECI_SECONDS,
 	SS_CABINET_TEMP,
 	SS_3P3V, //SS_3V3_SUPPLY
 	SS_5V, //SS_5V_SUPPLY
@@ -187,7 +187,7 @@ enum systemStatusFields
 	SS_WATER_FLOW_RATE,
 	SS_WATER_TEMP,
 	SS_HEATSINK_TEMP,
-	SS_PELTIER_TEMP,
+	SS_CONDITION_DECI_SECONDS,
 	SS_CABINET_TEMP,
 	SS_MAG_X,
 	SS_MAG_Y,
@@ -301,7 +301,7 @@ void clear_treatment_plan();
 
 void report_hb_data(uint32_t hb_idx, float data);
 void report_ext_timer_values(uint32_t state, uint32_t ticks, bool primary);
-void report_peltier_temp(float temperature);
+void report_condition_deci_seconds(int seconds);
 void report_hvps_data(VariableValue *hvps_data);
 
 bool verify_keys_ok();

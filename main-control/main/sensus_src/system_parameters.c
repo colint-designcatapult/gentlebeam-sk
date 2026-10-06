@@ -507,9 +507,9 @@ void report_hb_data(uint32_t hb_idx, float data)
 	}
 }
 
-void report_peltier_temp(float temperature)
+void report_condition_deci_seconds(int seconds)
 {
-	system_status[SS_PELTIER_TEMP].f = temperature;
+	system_status[SS_CONDITION_DECI_SECONDS].i = seconds;
 }
 
 #if !defined(CALIBRATION_MODE)

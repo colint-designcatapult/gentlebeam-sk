@@ -57,7 +57,7 @@ internal sealed class RecordedSystemTelemetry : ISystemTelemetry
     public float WaterFlowRate => Get<float>("system.WaterFlowRate");
     public float WaterTemperature => Get<float>("system.WaterTemperature");
     public float HeatSinkTemperature => Get<float>("system.HeatSinkTemperature");
-    public float PeltierTemperature => Get<float>("system.PeltierTemperature");
+    public int ConditionRemainingDeciseconds => Get<int>("system.ConditionRemainingDeciseconds");
     public float CabinetTemperature => Get<float>("system.CabinetTemperature");
     public TelemetryVector3? Mag1 { get; }
     public TelemetryVector3? Mag2 { get; }

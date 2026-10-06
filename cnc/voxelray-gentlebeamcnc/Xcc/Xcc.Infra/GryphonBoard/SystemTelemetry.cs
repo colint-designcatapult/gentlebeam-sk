@@ -46,7 +46,7 @@ public sealed class SystemNormalTelemetry : ISystemTelemetry
     public float WaterFlowRate { get; init; }
     public float WaterTemperature { get; init; }
     public float HeatSinkTemperature { get; init; }
-    public float PeltierTemperature { get; init; }
+    public int ConditionRemainingDeciseconds { get; init; }
     public float CabinetTemperature { get; init; }
     public TelemetryVector3? Mag1 { get; init; }
     public TelemetryVector3? Mag2 { get; init; }
@@ -114,7 +114,7 @@ public sealed class SystemCalibrationTelemetry : ISystemTelemetry
     public float WaterFlowRate { get; init; }
     public float WaterTemperature { get; init; }
     public float HeatSinkTemperature { get; init; }
-    public float PeltierTemperature { get; init; }
+    public int ConditionRemainingDeciseconds { get; init; }
     public float CabinetTemperature { get; init; }
     public TelemetryVector3? Mag1 { get; init; }
     public TelemetryVector3? Mag2 { get; init; }
@@ -217,7 +217,7 @@ internal sealed class NormalTelemetryState
     private float _waterFlowRate;
     private float _waterTemperature;
     private float _heatSinkTemperature;
-    private float _peltierTemperature;
+    private int _conditionRemainingDeciseconds;
     private float _cabinetTemperature;
     private TelemetryVector3 _mag1;
     private TelemetryVector3 _mag2;
@@ -281,7 +281,7 @@ internal sealed class NormalTelemetryState
         _waterFlowRate = packet[(int)NormalTelemetryField.WaterFlow];
         _waterTemperature = packet[(int)NormalTelemetryField.WaterTemp];
         _heatSinkTemperature = packet[(int)NormalTelemetryField.HeatsinkTemp];
-        _peltierTemperature = packet[(int)NormalTelemetryField.PeltierTemp];
+        _conditionRemainingDeciseconds = (int)packet[(int)NormalTelemetryField.ConditionDeciseconds];
         _cabinetTemperature = packet[(int)NormalTelemetryField.CabinetTemp];
         _mag1 = new TelemetryVector3(
             packet[(int)NormalTelemetryField.Mag1X],
@@ -340,7 +340,7 @@ internal sealed class NormalTelemetryState
         WaterFlowRate = _waterFlowRate,
         WaterTemperature = _waterTemperature,
         HeatSinkTemperature = _heatSinkTemperature,
-        PeltierTemperature = _peltierTemperature,
+        ConditionRemainingDeciseconds = _conditionRemainingDeciseconds,
         CabinetTemperature = _cabinetTemperature,
         Mag1 = _mag1,
         Mag2 = _mag2,
@@ -449,7 +449,7 @@ internal sealed class CalibrationTelemetryState
     private float _waterFlowRate;
     private float _waterTemperature;
     private float _heatSinkTemperature;
-    private float _peltierTemperature;
+    private int _conditionRemainingDeciseconds;
     private float _cabinetTemperature;
     private TelemetryVector3 _mag1;
     private TelemetryVector3 _mag2;
@@ -515,7 +515,7 @@ internal sealed class CalibrationTelemetryState
         _waterFlowRate = packet[(int)CalibrationTelemetryField.WaterFlow];
         _waterTemperature = packet[(int)CalibrationTelemetryField.WaterTemp];
         _heatSinkTemperature = packet[(int)CalibrationTelemetryField.HeatsinkTemp];
-        _peltierTemperature = packet[(int)CalibrationTelemetryField.PeltierTemp];
+        _conditionRemainingDeciseconds = (int)packet[(int)CalibrationTelemetryField.ConditionDeciseconds];
         _cabinetTemperature = packet[(int)CalibrationTelemetryField.CabinetTemp];
         _mag1 = new TelemetryVector3(
             packet[(int)CalibrationTelemetryField.Mag1X],
@@ -572,7 +572,7 @@ internal sealed class CalibrationTelemetryState
         WaterFlowRate = _waterFlowRate,
         WaterTemperature = _waterTemperature,
         HeatSinkTemperature = _heatSinkTemperature,
-        PeltierTemperature = _peltierTemperature,
+        ConditionRemainingDeciseconds = _conditionRemainingDeciseconds,
         CabinetTemperature = _cabinetTemperature,
         Mag1 = _mag1,
         Mag2 = _mag2,

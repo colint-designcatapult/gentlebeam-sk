@@ -820,13 +820,13 @@
                             Grid.Row="10"
                             HorizontalAlignment="Right"
                             Style="{StaticResource TelemetryTextBlockLegendStyle}" 
-                            Text="Peltier temperature [˚C]:"/>
+                            Text="Condition remaining [ds]:"/>
 
                         <TextBlock 
                             Grid.Row="10" Grid.Column="2"
                             HorizontalAlignment="Left"
                             Style="{StaticResource ValueTextBlockStyle}" 
-                            Text="{Binding GCBDataStore.SystemTelemetry.PeltierTemperature, FallbackValue={StaticResource NotAvailableText}, StringFormat={}{0:F}}"/>
+                            Text="{Binding GCBDataStore.SystemTelemetry.ConditionRemainingDeciseconds, FallbackValue={StaticResource NotAvailableText}}"/>
 
 
                         <TextBlock 

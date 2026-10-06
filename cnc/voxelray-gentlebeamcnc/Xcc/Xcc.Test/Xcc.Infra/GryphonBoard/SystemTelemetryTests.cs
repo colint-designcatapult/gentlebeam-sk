@@ -44,7 +44,7 @@ internal class SystemTelemetryTests
         packet[(int)NormalTelemetryField.WaterFlow] = 131.5f;
         packet[(int)NormalTelemetryField.WaterTemp] = 132.5f;
         packet[(int)NormalTelemetryField.HeatsinkTemp] = 133.5f;
-        packet[(int)NormalTelemetryField.PeltierTemp] = 134.5f;
+        packet[(int)NormalTelemetryField.ConditionDeciseconds] = 1345;
         packet[(int)NormalTelemetryField.CabinetTemp] = 135.5f;
         packet[(int)NormalTelemetryField.Mag1X] = 136.5f;
         packet[(int)NormalTelemetryField.Mag1Y] = 137.5f;
@@ -118,7 +118,7 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.WaterFlowRate, Is.EqualTo(131.5f));
             Assert.That(telemetry.WaterTemperature, Is.EqualTo(132.5f));
             Assert.That(telemetry.HeatSinkTemperature, Is.EqualTo(133.5f));
-            Assert.That(telemetry.PeltierTemperature, Is.EqualTo(134.5f));
+            Assert.That(telemetry.ConditionRemainingDeciseconds, Is.EqualTo(1345));
             Assert.That(telemetry.CabinetTemperature, Is.EqualTo(135.5f));
             Assert.That(telemetry.Mag1, Is.EqualTo(new TelemetryVector3(136.5f, 137.5f, 138.5f)));
             Assert.That(telemetry.Mag2, Is.EqualTo(new TelemetryVector3(139.5f, 140.5f, 141.5f)));
@@ -194,7 +194,7 @@ internal class SystemTelemetryTests
         packet[(int)CalibrationTelemetryField.WaterFlow] = 139.5f;
         packet[(int)CalibrationTelemetryField.WaterTemp] = 140.5f;
         packet[(int)CalibrationTelemetryField.HeatsinkTemp] = 141.5f;
-        packet[(int)CalibrationTelemetryField.PeltierTemp] = 142.5f;
+        packet[(int)CalibrationTelemetryField.ConditionDeciseconds] = 1425;
         packet[(int)CalibrationTelemetryField.CabinetTemp] = 143.5f;
         packet[(int)CalibrationTelemetryField.RequiredInterlockFlags] =
             0xC3FFFu;
@@ -254,7 +254,7 @@ internal class SystemTelemetryTests
             Assert.That(telemetry.WaterFlowRate, Is.EqualTo(139.5f));
             Assert.That(telemetry.WaterTemperature, Is.EqualTo(140.5f));
             Assert.That(telemetry.HeatSinkTemperature, Is.EqualTo(141.5f));
-            Assert.That(telemetry.PeltierTemperature, Is.EqualTo(142.5f));
+            Assert.That(telemetry.ConditionRemainingDeciseconds, Is.EqualTo(1425));
             Assert.That(telemetry.CabinetTemperature, Is.EqualTo(143.5f));
             Assert.That(telemetry.RingLedState, Is.Null);
             Assert.That(telemetry.BaseLedState, Is.Null);

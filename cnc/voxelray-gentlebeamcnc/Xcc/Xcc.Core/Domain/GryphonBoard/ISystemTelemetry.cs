@@ -40,7 +40,7 @@ public interface ISystemTelemetry
     float WaterFlowRate { get; }
     float WaterTemperature { get; }
     float HeatSinkTemperature { get; }
-    float PeltierTemperature { get; }
+    int ConditionRemainingDeciseconds { get; }
     float CabinetTemperature { get; }
     TelemetryVector3? Mag1 { get; }
     TelemetryVector3? Mag2 { get; }

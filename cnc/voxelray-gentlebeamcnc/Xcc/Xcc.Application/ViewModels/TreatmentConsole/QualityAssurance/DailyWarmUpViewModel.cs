@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows.Data;
+using System.Windows.Threading;
 using Prism.Commands;
 using Prism.Events;
 using Prism.Mvvm;
@@ -182,6 +183,35 @@ namespace Xcc.Application.ViewModels.TreatmentConsole.QualityAssurance
         #region Properties
         private GcbStateNew _previousState = GcbStateNew.NoComm;
         private GcbStateNew _state = GcbStateNew.NoComm;
+        private bool _dailyWarmupCountdownStarted;
+
+        private string _dailyWarmupTimeRemaining = "15:00";
+        public string DailyWarmupTimeRemaining
+        {
+            get => _dailyWarmupTimeRemaining;
+            private set => SetProperty(ref _dailyWarmupTimeRemaining, value);
+        }
+
+        private bool _isDailyWarmupCountdownVisible;
+        public bool IsDailyWarmupCountdownVisible
+        {
+            get => _isDailyWarmupCountdownVisible;
+            private set => SetProperty(ref _isDailyWarmupCountdownVisible, value);
+        }
+
+        private bool _isDailyWarmupCountdownActive;
+        public bool IsDailyWarmupCountdownActive
+        {
+            get => _isDailyWarmupCountdownActive;
+            private set => SetProperty(ref _isDailyWarmupCountdownActive, value);
+        }
+
+        private bool _isDailyWarmupWaiting;
+        public bool IsDailyWarmupWaiting
+        {
+            get => _isDailyWarmupWaiting;
+            private set => SetProperty(ref _isDailyWarmupWaiting, value);
+        }
 
         private bool _isWarmingUp;
         public bool IsWarmingUp { get => _isWarmingUp; set => SetProperty(ref _isWarmingUp, value); }
@@ -270,8 +300,55 @@ namespace Xcc.Application.ViewModels.TreatmentConsole.QualityAssurance
                 UIStateMachine.OnGcbStateChange(_state);
                 _previousState = _state;
             }
+
+            UpdateDailyWarmupCountdown(systemTelemetry);
             
             ValidateCanExecuteCommands();
+        }
+
+        private void UpdateDailyWarmupCountdown(ISystemTelemetry? systemTelemetry)
+        {
+            if (_state != GcbStateNew.DailyWarmup)
+            {
+                StopDailyWarmupCountdown();
+                return;
+            }
+
+            var remainingDeciseconds = systemTelemetry?.ConditionRemainingDeciseconds ?? 0;
+            if (remainingDeciseconds > 0)
+            {
+                _dailyWarmupCountdownStarted = true;
+                IsDailyWarmupCountdownVisible = true;
+                IsDailyWarmupCountdownActive = true;
+                IsDailyWarmupWaiting = false;
+                UpdateDailyWarmupTimeRemaining(remainingDeciseconds);
+                return;
+            }
+
+            if (_dailyWarmupCountdownStarted)
+            {
+                IsDailyWarmupCountdownVisible = true;
+                IsDailyWarmupCountdownActive = false;
+                IsDailyWarmupWaiting = true;
+                DailyWarmupTimeRemaining = "00:00";
+            }
+        }
+
+        private void UpdateDailyWarmupTimeRemaining(int remainingDeciseconds)
+        {
+            var totalSeconds = (remainingDeciseconds + 9) / 10;
+            var minutes = totalSeconds / 60;
+            var seconds = totalSeconds % 60;
+            DailyWarmupTimeRemaining = $"{minutes:00}:{seconds:00}";
+        }
+
+        private void StopDailyWarmupCountdown()
+        {
+            _dailyWarmupCountdownStarted = false;
+            IsDailyWarmupCountdownVisible = false;
+            IsDailyWarmupCountdownActive = false;
+            IsDailyWarmupWaiting = false;
+            DailyWarmupTimeRemaining = "15:00";
         }
 
         private void OnShowAllChanged(object sender, FilterEventArgs e)

@@ -134,16 +134,73 @@
                         </StackPanel>
                     </Button>
                     
-                    <ProgressBar 
-                        Style="{StaticResource ProgressBarXRayStyle}" 
-                        Background="CornflowerBlue"
-                        Maximum="100" Minimum="0"
-                        Value="{Binding GcbIndicators.WarmUpProgress.Value, Mode=OneWay}"
-                        Tag="Warmup"
-                        IsEnabled="{Binding UIStateMachine.LeftButton.IsEnabled}"
-                        Visibility="{Binding UIStateMachine.LeftButton.State, 
-                            Converter={convx:IntToVisibilityVisibleConverter}, 
-                            ConverterParameter={x:Static dailyWarmUpStateMachine:UIButtonState.WarmUpProgress}}"/>
+                    <Grid>
+                        <ProgressBar 
+                            Style="{StaticResource ProgressBarXRayStyle}" 
+                            Background="CornflowerBlue"
+                            Maximum="100" Minimum="0"
+                            Value="{Binding GcbIndicators.WarmUpProgress.Value, Mode=OneWay}"
+                            Tag="Warmup"
+                            IsEnabled="{Binding UIStateMachine.LeftButton.IsEnabled}"
+                            Visibility="{Binding UIStateMachine.LeftButton.State, 
+                                Converter={convx:IntToVisibilityVisibleConverter}, 
+                                ConverterParameter={x:Static dailyWarmUpStateMachine:UIButtonState.WarmUpProgress}}"/>
+
+                        <Border
+                            Background="CornflowerBlue"
+                            CornerRadius="{StaticResource BlockCornerRadius}"
+                            Visibility="{Binding IsDailyWarmupCountdownVisible, Converter={convx:BooleanToVisibilityConverter}}"/>
+
+                        <Grid
+                            Panel.ZIndex="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False"
+                            Visibility="{Binding IsDailyWarmupCountdownActive, Converter={convx:BooleanToVisibilityConverter}}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock
+                                Grid.Row="0"
+                                Text="Daily Warmup"
+                                Foreground="White"
+                                FontWeight="SemiBold"
+                                TextAlignment="Center"/>
+
+                            <Grid
+                                Grid.Row="1"
+                                HorizontalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="58"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Text="Time remaining: "
+                                    Foreground="White"
+                                    FontWeight="SemiBold"/>
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Text="{Binding DailyWarmupTimeRemaining, Mode=OneWay}"
+                                    Foreground="White"
+                                    FontWeight="SemiBold"
+                                    TextAlignment="Center"/>
+                            </Grid>
+                        </Grid>
+
+                        <TextBlock
+                            Panel.ZIndex="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Text="Waiting for system"
+                            Foreground="White"
+                            FontWeight="SemiBold"
+                            IsHitTestVisible="False"
+                            Visibility="{Binding IsDailyWarmupWaiting, Converter={convx:BooleanToVisibilityConverter}}"/>
+                    </Grid>
                 </Grid>
                 
 

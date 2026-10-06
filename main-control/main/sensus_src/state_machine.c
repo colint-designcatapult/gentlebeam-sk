@@ -81,7 +81,7 @@ volatile uint32_t event_q_idx = 0;
 volatile uint32_t event_q_end = 0;
 
 
-volatile int warmup_deci_seconds = 0;
+volatile int condition_deci_seconds = 0;
 
 volatile int deci_seconds_remaining = 0;
 
@@ -141,12 +141,14 @@ static void deci_second_timer(const struct timer_task *const timer_task)
 	switch(*state)
 	{
 		case STATE_CONDITIONING:
-			if(warmup_deci_seconds > 0 && --warmup_deci_seconds == 0)
+			if(condition_deci_seconds > 0 && --condition_deci_seconds == 0)
 			{
 				//Prevent a repeated stability event from restarting the completed hold.
-				warmup_deci_seconds = -1;
+				condition_deci_seconds = -1;
 				queue_sm_event(EVENT_CONDITIONING_HOLD_COMPLETE);
 			}
+			report_condition_deci_seconds(
+				condition_deci_seconds > 0 ? condition_deci_seconds : 0);
 			break;
 		case STATE_EMISSION:
 			//update internal emission timer
@@ -534,7 +536,7 @@ static void goto_conditioning_state()
 		return;
 	}
 	
-	warmup_deci_seconds = 0;
+	condition_deci_seconds = 0;
 	//Set new heater value
 	enable_fast_warmup(false);
 	float htr_val = hvps_config[HVPS_CONF_CONDITION_I];
@@ -561,9 +563,9 @@ static void run_conditioning_state(EventType ev)
 	else if(ev == EVENT_HVPS_SP_REACHED)
 	{
 		//Start the hold only after the heater first reaches and stabilizes at target.
-		if(warmup_deci_seconds == 0)
+		if(condition_deci_seconds == 0)
 		{
-			warmup_deci_seconds = CONDITIONING_HOLD_DECI_SECONDS;
+			condition_deci_seconds = CONDITIONING_HOLD_DECI_SECONDS;
 		}
 	}
 	else if(ev == EVENT_CONDITIONING_HOLD_COMPLETE)
