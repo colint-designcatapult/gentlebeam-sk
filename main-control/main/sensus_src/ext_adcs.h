@@ -70,6 +70,14 @@ enum
 void init_ext_adcs();
 void process_ext_adcs();
 
+/*
+ * Submit one complete hardware scan.  The transport owns acquisition; this
+ * module owns the rolling sample buffers consumed by process_ext_adcs().
+ */
+void ext_adcs_i2c_scan_complete(const uint16_t coil[EXT_ADC_COIL_CNT],
+	const uint16_t sys[EXT_ADC_SYS_CNT],
+	const uint16_t ion_r[EXT_ADC_ION_R_CNT]);
+
 
 
 #endif /* EXT_ADCS_H_ */

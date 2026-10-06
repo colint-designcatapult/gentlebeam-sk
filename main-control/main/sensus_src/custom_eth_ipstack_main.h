@@ -24,12 +24,14 @@ extern "C" {
 
 #include <lwip/init.h>
 
-#include <ethif_mac.h>
+struct netif;
 
 extern struct netif my_LWIP_MACIF_desc;
 
 void my_LWIP_MACIF_init(u8_t hwaddr[6]);
 void use_default_network_settings();
+void eth_ipstack_init(void);
+void eth_ipstack_poll(void);
 
 
 #ifdef __cplusplus

@@ -1,3 +1,11 @@
 [component]
 name = "main-control/main"
 include_docs = [ "docs/*.sdoc" ]
+
+[[component.sources]]
+path = "test/main-control-system-tests/tests"
+include = ["**/test_*.py"]
+
+[component.sources.nodes]
+uid = "DHF-GBSK-0074"
+node_type = "TEST_CASE"

@@ -13,20 +13,19 @@
 #include "faults.h"
 #include "system_parameters.h"
 #include "ext_dac.h"
+#include "ext_dac_spi.h"
 
 float new_coil_dac_voltage[NUM_COIL_DAC_CH] = {-1};
 float new_fan_dac_voltage[NUM_FAN_DAC_CH] = {-1};
 uint8_t dac_tx_buffer[NUM_DAC_CMD_BYTES] = {0};
 volatile bool dac_check_ready = false;
 
-struct io_descriptor *dac_io;
 static struct timer_task VTIMER_dac_spi_start;
 static struct timer_task VTIMER_dac_spi_end;
 
 static void write_dac_channel(uint32_t ch, float v_out);
 static void write_dac(uint8_t cmd, uint16_t param);
 
-static void dac_rx_complete_cb(const struct spi_m_async_descriptor *const io_descr);
 static void start_dac_rx(const struct timer_task *const timer_task);
 static void end_dac_rx(const struct timer_task *const timer_task);
 
@@ -38,10 +37,8 @@ void init_ext_dac()
 	gpio_set_pin_level(IO_FAN_DAC_CLRn, true);
 	gpio_set_pin_level(IO_FAN_DAC_LDACn, true);
 	
-	//Initialize SPI module
-	spi_m_async_get_io_descriptor(&DAC_SPI, &dac_io);
-	spi_m_async_register_callback(&DAC_SPI, SPI_M_ASYNC_CB_XFER, (FUNC_PTR)dac_rx_complete_cb);
-	spi_m_async_enable(&DAC_SPI);
+	//Initialize SPI transport
+	init_ext_dac_spi();
 	
 	//Set up timers for start and end delays
 	VTIMER_dac_spi_start.interval = 1;
@@ -62,11 +59,13 @@ void init_ext_dac()
 	dac_check_ready = false;
 	timer_add_task(&VTIMER, &VTIMER_dac_spi_start);
 	
+#if !defined(GENTLEBEAM_HOST_BUILD) && !GENTLEBEAM_HOST_BUILD
 	//Wait for setup config write to finish
 	while(!dac_check_ready)
 	{
 		//Do nothing, just wait for async process to complete
 	}
+#endif
 	
 	//Write reference config to both DACs
 	gpio_set_pin_level(IO_COIL_DAC_CSn, false);
@@ -220,7 +219,7 @@ static void start_dac_rx(const struct timer_task *const timer_task)
 	gpio_set_pin_level(IO_COIL_DAC_LDACn, true);
 	
 	//Start data write
-	io_write(dac_io, dac_tx_buffer, NUM_DAC_CMD_BYTES);
+	ext_dac_spi_write(dac_tx_buffer, NUM_DAC_CMD_BYTES);
 }
 
 //Callback function, keep short
@@ -233,8 +232,7 @@ static void end_dac_rx(const struct timer_task *const timer_task)
 	gpio_set_pin_level(IO_COIL_DAC_LDACn, true);
 }
 
-//Callback function, keep short
-static void dac_rx_complete_cb(const struct spi_m_async_descriptor *const io_descr)
+void ext_dac_spi_transfer_complete(void)
 {
 	//Clear CS lines
 	gpio_set_pin_level(IO_FAN_DAC_CSn, true);

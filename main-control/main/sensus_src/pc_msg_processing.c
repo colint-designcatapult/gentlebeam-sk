@@ -7,7 +7,6 @@
 *	Description:
 */
 
-#include <atmel_start.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>

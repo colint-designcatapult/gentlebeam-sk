@@ -1,0 +1,25 @@
+[project]
+name = "main-control-system-tests"
+version = "0.1.0"
+description = "Pytest tests for host main-control firmware"
+readme = "README.md"
+requires-python = ">=3.14"
+
+
+[build-system]
+requires = ["uv_build>=0.12.20,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-n 6 --dist worksteal"
+markers = [
+    "strictdoc(*ids): StrictDoc test case and requirement identifiers covered by the test",
+]
+
+[dependency-groups]
+dev = [
+    "filelock>=3.20",
+    "pytest>=9.1.1",
+    "pytest-xdist>=3.8",
+]

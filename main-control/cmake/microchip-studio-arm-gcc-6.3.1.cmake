@@ -21,6 +21,10 @@ if(NOT _microchip_studio_same70_dfp_root)
       "C:/Program Files (x86)/Atmel/Studio/7.0/packs/atmel/SAME70_DFP/2.4.166")
 endif()
 
+set(MICROCHIP_STUDIO_CMSIS_ROOT "${_microchip_studio_cmsis_root}" CACHE PATH "" FORCE)
+set(MICROCHIP_STUDIO_SAME70_DFP_ROOT "${_microchip_studio_same70_dfp_root}" CACHE PATH "" FORCE)
+
+
 set(_microchip_studio_c_compiler "${_microchip_studio_arm_gcc_bin}/arm-none-eabi-gcc.exe")
 set(_microchip_studio_objcopy "${_microchip_studio_arm_gcc_bin}/arm-none-eabi-objcopy.exe")
 set(_microchip_studio_objdump "${_microchip_studio_arm_gcc_bin}/arm-none-eabi-objdump.exe")
@@ -44,5 +48,3 @@ set(CMAKE_C_COMPILER "${_microchip_studio_c_compiler}" CACHE FILEPATH "" FORCE)
 set(CMAKE_OBJCOPY "${_microchip_studio_objcopy}" CACHE FILEPATH "" FORCE)
 set(CMAKE_OBJDUMP "${_microchip_studio_objdump}" CACHE FILEPATH "" FORCE)
 set(CMAKE_SIZE "${_microchip_studio_size}" CACHE FILEPATH "" FORCE)
-set(MICROCHIP_STUDIO_CMSIS_ROOT "${_microchip_studio_cmsis_root}" CACHE PATH "" FORCE)
-set(MICROCHIP_STUDIO_SAME70_DFP_ROOT "${_microchip_studio_same70_dfp_root}" CACHE PATH "" FORCE)

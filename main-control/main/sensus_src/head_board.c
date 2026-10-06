@@ -18,6 +18,25 @@
 #include "head_board.h"
 #include "magnetometer_monitoring.h"
 
+#if defined(PERIPH_RUNTIME_BACKEND) && PERIPH_RUNTIME_BACKEND
+#define HEAD_BOARD_IMPL(name) head_board_real_##name
+#else
+#define HEAD_BOARD_IMPL(name) name
+#endif
+
+void HEAD_BOARD_IMPL(init_head_board)(void);
+void HEAD_BOARD_IMPL(process_hb)(void);
+void HEAD_BOARD_IMPL(set_led_sequence)(int led_idx);
+void HEAD_BOARD_IMPL(set_mag_cal_window)(int samples);
+#if !defined(CALIBRATION_MODE)
+void HEAD_BOARD_IMPL(set_qc_desired_state)(HbQcDesiredState desired_state);
+void HEAD_BOARD_IMPL(qc_session_reset)(void);
+QcSessionStatus HEAD_BOARD_IMPL(qc_session_arm)(void);
+void HEAD_BOARD_IMPL(qc_session_start_for_emission)(void);
+void HEAD_BOARD_IMPL(qc_session_stop)(void);
+QcSessionStatus HEAD_BOARD_IMPL(qc_session_get_status)(void);
+#endif
+
 #define HB_QC_READING_MASK		0x0FFFu
 #define HB_QC_CONNECTED_FLAG	0x8000u
 
@@ -36,7 +55,9 @@ static struct timer_task VTIMER_hb_check;
 volatile int hb_no_comm = 0;
 uint32_t hb_comm_error_count = 0;
 
+#if !defined(PERIPH_RUNTIME_BACKEND) || !PERIPH_RUNTIME_BACKEND
 VariableValue mag_cal_array[HB_NUM_MAG_CAL];
+#endif
 int32_t mag_window_samples = 100;
 #if !defined(CALIBRATION_MODE)
 static HbQcDesiredState hb_qc_desired_state = HB_QC_DESIRED_STOPPED;
@@ -67,7 +88,7 @@ static void hb_uart_rx_cb(const struct usart_async_descriptor *const io_descr);
 static void hb_uart_tx_cb(const struct usart_async_descriptor *const io_descr);
 static void hb_timeout_check(const struct timer_task *const timer_task);
 
-void init_head_board()
+void HEAD_BOARD_IMPL(init_head_board)(void)
 {
 	//Register RX and tx callbacks
 	usart_async_register_callback(&HB_UART, USART_ASYNC_TXC_CB, hb_uart_tx_cb);
@@ -88,8 +109,8 @@ void init_head_board()
 	hb_tx_queue[2] = HB_SYNC_VAL;
 	hb_tx_queue[3] = HB_SYNC_VAL;
 #if !defined(CALIBRATION_MODE)
-	set_led_sequence(LED_SEQ_OFF);
-	set_qc_desired_state(HB_QC_DESIRED_STOPPED);
+	HEAD_BOARD_IMPL(set_led_sequence)(LED_SEQ_OFF);
+	HEAD_BOARD_IMPL(set_qc_desired_state)(HB_QC_DESIRED_STOPPED);
 	qc_command_pending = false;
 	qc_session_status = QC_SESSION_IDLE;
 	update_qc_response(QC_SESSION_IDLE);
@@ -112,7 +133,7 @@ static void hb_timeout_check(const struct timer_task *const timer_task)
 	}
 }
 
-void set_led_sequence(int led_idx)
+void HEAD_BOARD_IMPL(set_led_sequence)(int led_idx)
 {
 	if(led_idx < 0 || led_idx > 255)
 	{
@@ -145,7 +166,7 @@ void set_led_sequence(int led_idx)
 	}
 }
 
-void set_mag_cal_window(int samples)
+void HEAD_BOARD_IMPL(set_mag_cal_window)(int samples)
 {
 	//DEBUG MAG CAL
 	//gpio_toggle_pin_level(IO_LED5);
@@ -178,7 +199,7 @@ static void send_mag_cal_window(int samples)
 	hb_tx_data_available = true;
 }
 #if !defined(CALIBRATION_MODE)
-void set_qc_desired_state(HbQcDesiredState desired_state)
+void HEAD_BOARD_IMPL(set_qc_desired_state)(HbQcDesiredState desired_state)
 {
 	if(desired_state != HB_QC_DESIRED_STOPPED &&
 	   desired_state != HB_QC_DESIRED_ACCUMULATING)
@@ -201,7 +222,7 @@ void set_qc_desired_state(HbQcDesiredState desired_state)
 	}
 }
 
-void qc_session_reset(void)
+void HEAD_BOARD_IMPL(qc_session_reset)(void)
 {
 	qc_command_pending = false;
 	qc_active_edge_seen = false;
@@ -220,10 +241,10 @@ void qc_session_reset(void)
 	qc_reported[QC_RES_CHANNEL_1_SAMPLE_COUNT].u = 0;
 	qc_session_status = QC_SESSION_IDLE;
 	update_qc_response(QC_SESSION_IDLE);
-	set_qc_desired_state(HB_QC_DESIRED_STOPPED);
+	HEAD_BOARD_IMPL(set_qc_desired_state)(HB_QC_DESIRED_STOPPED);
 }
 
-QcSessionStatus qc_session_arm(void)
+QcSessionStatus HEAD_BOARD_IMPL(qc_session_arm)(void)
 {
 	if(qc_session_status == QC_SESSION_ARMED)
 	{
@@ -254,7 +275,7 @@ QcSessionStatus qc_session_arm(void)
 	return QC_SESSION_ARMED;
 }
 
-void qc_session_start_for_emission(void)
+void HEAD_BOARD_IMPL(qc_session_start_for_emission)(void)
 {
 	if(qc_session_status != QC_SESSION_ARMED)
 	{
@@ -266,10 +287,10 @@ void qc_session_start_for_emission(void)
 	qc_cancel_before_emission = false;
 	qc_session_status = QC_SESSION_STARTING;
 	update_qc_response(qc_session_status);
-	set_qc_desired_state(HB_QC_DESIRED_ACCUMULATING);
+	HEAD_BOARD_IMPL(set_qc_desired_state)(HB_QC_DESIRED_ACCUMULATING);
 }
 
-void qc_session_stop(void)
+void HEAD_BOARD_IMPL(qc_session_stop)(void)
 {
 	switch(qc_session_status)
 	{
@@ -286,13 +307,13 @@ void qc_session_stop(void)
 			qc_stop_issued = true;
 			qc_session_status = QC_SESSION_STOPPING;
 			update_qc_response(qc_session_status);
-			set_qc_desired_state(HB_QC_DESIRED_STOPPED);
+			HEAD_BOARD_IMPL(set_qc_desired_state)(HB_QC_DESIRED_STOPPED);
 			break;
 		case QC_SESSION_ACCUMULATING:
 			qc_stop_issued = true;
 			qc_session_status = QC_SESSION_STOPPING;
 			update_qc_response(qc_session_status);
-			set_qc_desired_state(HB_QC_DESIRED_STOPPED);
+			HEAD_BOARD_IMPL(set_qc_desired_state)(HB_QC_DESIRED_STOPPED);
 			break;
 		default:
 			update_qc_response(qc_session_status);
@@ -300,14 +321,14 @@ void qc_session_stop(void)
 	}
 }
 
-QcSessionStatus qc_session_get_status(void)
+QcSessionStatus HEAD_BOARD_IMPL(qc_session_get_status)(void)
 {
 	return qc_session_status;
 }
 #endif
 
 //Function called in main loop, values read/written and checked here
-void process_hb()
+void HEAD_BOARD_IMPL(process_hb)(void)
 {
 	if(hb_rx_ready)
 	{
@@ -503,7 +524,7 @@ static void update_qc_session_from_head(HbQcAcquisitionState head_state)
 			qc_stop_issued = true;
 			qc_session_status = QC_SESSION_STOPPING;
 			update_qc_response(qc_session_status);
-			set_qc_desired_state(HB_QC_DESIRED_STOPPED);
+			HEAD_BOARD_IMPL(set_qc_desired_state)(HB_QC_DESIRED_STOPPED);
 		}
 		else
 		{
@@ -515,7 +536,7 @@ static void update_qc_session_from_head(HbQcAcquisitionState head_state)
 			qc_session_status == QC_SESSION_STOPPING)
 	{
 		qc_active_edge_seen = true;
-		set_qc_desired_state(HB_QC_DESIRED_STOPPED);
+		HEAD_BOARD_IMPL(set_qc_desired_state)(HB_QC_DESIRED_STOPPED);
 		update_qc_response(qc_session_status);
 	}
 	else if(head_state == HB_QC_STATE_STOPPED &&

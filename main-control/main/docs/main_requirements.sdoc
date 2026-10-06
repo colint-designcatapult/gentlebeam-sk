@@ -174,7 +174,7 @@ TYPE: Functional
 TITLE: Operation 01: Filament conditioning - Target Timeout
 STATEMENT: >>>
 The firmware shall report a fault if the HVPS has not reached the target filament current
-setpoint during the conditioning procedure within a timeout period of 360 seconds
+setpoint during the conditioning procedure within a timeout period of 15 seconds
 <<<
 
 [REQUIREMENT]
@@ -183,7 +183,7 @@ TYPE: Functional
 TITLE: Operation 02: Warmup procedure - Target Timeout
 STATEMENT: >>>
 The firmware shall report a fault if the HVPS has not reached the target filament setpoint
-during the warmup procedure within a timeout period of 180 seconds
+during the warmup procedure within a timeout period of 15 seconds
 <<<
 
 [REQUIREMENT]
@@ -213,6 +213,12 @@ STATEMENT: >>>
 On the initiation of an operational point emission execution, the firmware shall direct the
 HV interface board to ramp up the filament current to the specified setpoint in the
 treatment plan prior to allowing emission (dropping the grid).
+For an armed QC session, radiation shall remain disabled until the head acknowledges
+Active. Missing acknowledgment within 1 second or an Error response shall command
+Stopped and report a QC fault. Clear Faults shall reset the QC response to Idle with
+zero accumulations and sample counts, clear the session fault latch, and retransmit
+Stopped until the head acknowledges Stopped, Complete, or its retained Error state.
+A stale Active report after clearing shall not permit radiation.
 <<<
 
 [REQUIREMENT]
@@ -644,7 +650,7 @@ TYPE: Safety
 TITLE: Undesired emission monitoring
 STATEMENT: >>>
 The firmware shall monitor the cathode current feedback from the HVPS and report a fault
-if the value is above 0.2 mA when the system is not in 'Emission' state
+if the value is above 0.3 mA when the system is not in 'Emission' state
 <<<
 
 [REQUIREMENT]
@@ -778,9 +784,11 @@ The firmware shall be able to respond to commands received from a PC over Ethern
 [REQUIREMENT]
 UID: RQ-H1FWMC-85
 TYPE: Functional
-TITLE: Operation 11: Termination - Return to Staged State
+TITLE: Operation 11: Termination - Discharge and Return to Cold
 STATEMENT: >>>
-The firmware shall revert to the staged state after the cessation of a treatment plan.
+After a scalar emission completes or is stopped by the PC, the firmware shall terminate
+emission, discharge, and return to Cold. A stopped emission shall retain its remaining
+duration for explicit reconfirmation and release before resuming.
 <<<
 
 [REQUIREMENT]

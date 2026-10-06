@@ -21,10 +21,6 @@
 #include "sensus_src/qc_well.h"
 #endif
 
-//#include "system_test.h"
-
-#include "examples/driver_examples.h"
-
 
 volatile static u32_t systick_timems;
 volatile static bool  recv_flag = false;
@@ -116,7 +112,11 @@ static void finalize_setup()
 }
 
 
+#if !defined(GENTLEBEAM_HOST_BUILD) && !GENTLEBEAM_HOST_BUILD
 int main(void)
+#else
+int gcb_main(void)
+#endif
 {
 	/* Initializes MCU, drivers and middleware */
 	atmel_start_init();
@@ -149,6 +149,7 @@ int main(void)
 	//Set up communication to PC
 	pc_comm_init();
 	
+#if !defined(GENTLEBEAM_HOST_BUILD) && !GENTLEBEAM_HOST_BUILD
 	//Set up ethernet
 	int32_t ret;
 	do {
@@ -163,7 +164,8 @@ int main(void)
 	netif_set_up(&my_LWIP_MACIF_desc);
 	netif_set_default(&my_LWIP_MACIF_desc);
 	mac_async_enable(&MACIF);
-	
+#endif
+
 	//Set up remaining peripherals
 	init_faults();
 	init_ext_adcs();
@@ -180,11 +182,12 @@ int main(void)
 	
 	//Synchronous loop
 	while (1) {		
-		
+#if !defined(GENTLEBEAM_HOST_BUILD) && !GENTLEBEAM_HOST_BUILD
 		if (recv_flag) {
 			recv_flag = false;
 			ethernetif_mac_input(&my_LWIP_MACIF_desc);
 		}
+#endif
 		sys_check_timeouts();
 		
 		//Get any USB requests
@@ -210,5 +213,6 @@ int main(void)
 		
 		//Send telemetry
 		send_telemetry();
+
 	}
 }

@@ -361,7 +361,7 @@ static void check_hvps_ma()
 			hvps_uncontrolled_counter = 0;
 		}
 	}
-	else if(system_status[SS_STATE].i == STATE_SETUP)
+	else
 	{
 		if(actual > DEFAULT_MA_THRESH)
 		{
@@ -375,21 +375,6 @@ static void check_hvps_ma()
 		{
 			hvps_ma_thresh = 0;
 		}
-	}
-	else if(system_status[SS_STATE].i == STATE_READY)
-	{
-		if(actual > DEFAULT_MA_THRESH)
-		{
-			hvps_ma_thresh++;
-			if(hvps_ma_thresh > MA_UNWANTED_TIME)
-			{
-				report_typed_fault5(FAULT_GRID, "Unexpected mA feedback %f exceeded threshold %f for %u seconds (target: %f, tolerance: %f).", MAKE_ARG(actual), MAKE_ARG(DEFAULT_MA_THRESH), MAKE_ARG(MA_UNWANTED_TIME * HVPS_MONITOR_MS / 1000u), MAKE_ARG(target), MAKE_ARG(tolerance));
-			}
-		}
-	}
-	else
-	{
-		hvps_ma_thresh = 0;
 	}
 }
 

@@ -89,9 +89,9 @@ _Static_assert(sizeof(LogArg_t) == sizeof(uint32_t), "LogArg_t must be one proto
 		uint32_t: (LogArg_t){ .u = (x) }, \
 		default: (LogArg_t){ .i = (int32_t)(x) })
 
+/* Adjacent string concatenation rejects non-literals on both GCC and MSVC. */
 #define FAULT_FORMAT_ASSERT(format) \
-	_Static_assert(__builtin_constant_p(format), "fault format must be a string literal"); \
-	_Static_assert(sizeof(format) <= FAULT_FORMAT_BYTES, "fault format exceeds 127 ASCII bytes")
+	_Static_assert(sizeof("" format) <= FAULT_FORMAT_BYTES, "fault format must be a string literal of at most 127 ASCII bytes")
 
 #define report_typed_fault(type, format) \
 	do { \

@@ -18,61 +18,36 @@ since the write command values to the ADCs are static
 #include "faults.h"
 #include "state_machine.h"
 #include "system_parameters.h"
-#include "ext_timers.h"
+#include "ext_timers_i2c.h"
 
 volatile bool timer_check_ready = true;
 volatile bool timer_bus_stuck = false;
-volatile bool timer_write_cycle = true;
-volatile uint32_t timer_addr = PRIMARY_TIMER_ADDR;
 
-uint8_t primary_timer_rx_buf[TIMER_RX_SIZE] = {0};
-uint8_t secondary_timer_rx_buf[TIMER_RX_SIZE] = {0};
-uint8_t timer_tx_buf[TIMER_TX_SIZE] = {0};
-volatile uint32_t timer_tx_idx = 0;
-volatile uint32_t timer_rx_idx = 0;
 
-volatile uint32_t timer_1_fault_count = 0;
-volatile uint32_t timer_2_fault_count = 0;
 
 uint32_t timer_comm_flags = 0;
 uint32_t new_timer_val = 0;
 uint32_t ext_timer_tick_start = 0;
 
+uint8_t timer_tx_buf[TIMER_TX_SIZE] = {0};
+
 static struct timer_task VTIMER_ext_timer_check;
 
 static void parse_timer_values(bool primary);
 
-static void timer_rx();
-static void save_timer_rx(uint8_t val);
-static void timer_tx();
-static void go_to_next_timer();
-static void timer_transmission_complete();
-static void report_timer_nack();
 
 static void ext_timers_comm_timeout_check(const struct timer_task *const timer_task);
 
 void init_ext_timers()
 {
-	//Initialize I2C peripheral
-	i2c_m_sync_enable(&TIMERS_I2C);
-	
-	//Allows interrupt on NACK
-	hri_twihs_set_IMR_NACK_bit(TIMERS_I2C.device.hw);
-	
-	//Enable interrupt
-	NVIC_EnableIRQ(TWIHS0_IRQn);
+	//Initialize I2C transport
+	init_ext_timers_i2c();
 	
 	//Initialize vtimer task to check external timer bus
 	VTIMER_ext_timer_check.interval = TIMER_COMM_TIMEOUT_MS;
 	VTIMER_ext_timer_check.cb = ext_timers_comm_timeout_check;
 	VTIMER_ext_timer_check.mode = TIMER_TASK_REPEAT;
 	timer_add_task(&VTIMER, &VTIMER_ext_timer_check);
-	
-	//Reset rx buffers
-	memset(primary_timer_rx_buf, 0, TIMER_RX_SIZE);
-	primary_timer_rx_buf[TIMER_RX_CHECK] = 0xFF;	
-	memset(secondary_timer_rx_buf, 0, TIMER_RX_SIZE);
-	secondary_timer_rx_buf[TIMER_RX_CHECK] = 0xFF;
 	
 	//Set timer check ready initially to start up timer writes
 	timer_check_ready = true;
@@ -135,27 +110,15 @@ void process_ext_timers()
 	}
 	timer_tx_buf[TIMER_TX_CHECK] = check_val;
 	
-	//Start next write
-	hri_twihs_write_MMR_reg(TIMERS_I2C.device.hw, TWIHS_MMR_DADR(timer_addr));
-	hri_twihs_set_IMR_reg(TIMERS_I2C.device.hw, TWIHS_IER_TXRDY);
-	timer_write_cycle = true;
+	//Start next I2C transfer
 	timer_check_ready = false;
+	ext_timers_i2c_start_transfer(timer_tx_buf);
 }
 
 static void parse_timer_values(bool primary)
 {
-	uint8_t *time_buf;	
+	uint8_t *time_buf = ext_timers_i2c_get_rx_buffer(primary);
 	uint8_t checksum = 0;
-	
-	//Parse values based on if first or second timer is being read
-	if(primary)
-	{
-		time_buf = primary_timer_rx_buf;
-	}
-	else
-	{
-		time_buf = secondary_timer_rx_buf;
-	}
 	
 	//Check that packet sum equals 0xFF
 	for(int i = 0; i < TIMER_RX_SIZE; i++)
@@ -230,153 +193,9 @@ void clear_ext_timers()
 	timer_comm_flags |= TIMER_CMD_CLEAR;
 }
 
-//This function called within interrupt, keep short
-static void timer_rx()
+void ext_timers_i2c_transfer_complete()
 {
-	//Read and save value
-	uint32_t read_val = hri_twihs_read_RHR_reg(TIMERS_I2C.device.hw);
-	save_timer_rx((uint8_t)read_val);
-	
-	//Increment idx
-	timer_rx_idx++;
-	
-	//If next byte is last, set stop condition
-	if(timer_rx_idx == TIMER_RX_SIZE-1)
-	{
-		hri_twihs_write_CR_reg(TIMERS_I2C.device.hw, TWIHS_CR_STOP);
-	}
-	//If byte is last, begin transmission end
-	else if(timer_rx_idx >= TIMER_RX_SIZE)
-	{
-		timer_rx_idx = 0;
-		hri_twihs_clear_IMR_reg(TIMERS_I2C.device.hw, TWIHS_IDR_RXRDY);
-		hri_twihs_set_IMR_reg(TIMERS_I2C.device.hw, TWIHS_IER_TXCOMP);
-	}
-}
-
-//This function called within interrupt, keep short
-static void save_timer_rx(uint8_t val)
-{
-	//Bounds check
-	if(timer_rx_idx >= TIMER_RX_SIZE)
-	{
-		return;
-	}
-	
-	//Write to buffer depending on which timer is being read
-	if(timer_addr == PRIMARY_TIMER_ADDR)
-	{
-		primary_timer_rx_buf[timer_rx_idx] = val;
-	}
-	else
-	{
-		secondary_timer_rx_buf[timer_rx_idx] = val;
-	}
-}
-
-//This function called within interrupt, keep short
-static void timer_tx()
-{
-	//If bytes are still left to transmit, send next byte out
-	if(timer_tx_idx < TIMER_TX_SIZE)
-	{
-		hri_twihs_write_THR_reg(TIMERS_I2C.device.hw, timer_tx_buf[timer_tx_idx]);
-		timer_tx_idx++;
-	}
-	//Otherwise begin end of transmission
-	else
-	{
-		timer_tx_idx = 0;
-		hri_twihs_clear_IMR_reg(TIMERS_I2C.device.hw, TWIHS_IDR_TXRDY);
-		hri_twihs_set_IMR_reg(TIMERS_I2C.device.hw, TWIHS_IER_TXCOMP);
-		hri_twihs_write_CR_reg(TIMERS_I2C.device.hw, TWIHS_CR_STOP);	
-	}
-}
-
-//This function called within interrupt, keep short
-static void timer_transmission_complete()
-{
-	//If we are done with a write, proceed to read
-	if(timer_write_cycle)
-	{
-		hri_twihs_set_IMR_reg(TIMERS_I2C.device.hw, TWIHS_IER_RXRDY);
-		hri_twihs_write_MMR_reg(TIMERS_I2C.device.hw, TWIHS_MMR_DADR(timer_addr) | TWIHS_MMR_MREAD);
-		hri_twihs_write_CR_reg(TIMERS_I2C.device.hw, TWIHS_CR_START);
-		timer_write_cycle = false;
-	}
-	//Otherwise if we just read, proceed to next timer
-	else
-	{
-		go_to_next_timer();
-	}
-}
-
-//This function called within interrupt, keep short
-static void go_to_next_timer()
-{
-	//Reset indexes
-	timer_tx_idx = 0;
-	timer_rx_idx = 0;
 	timer_bus_stuck = false;
-	
-	if(timer_addr == PRIMARY_TIMER_ADDR)
-	{
-		//If we are moving to secondary timer, just automatically continue next write
-		timer_addr = SECONDARY_TIMER_ADDR;
-		hri_twihs_write_MMR_reg(TIMERS_I2C.device.hw, TWIHS_MMR_DADR(timer_addr));
-		hri_twihs_set_IMR_reg(TIMERS_I2C.device.hw, TWIHS_IER_TXRDY);
-		timer_write_cycle = true;
-	}
-	else
-	{
-		timer_addr = PRIMARY_TIMER_ADDR;
-		timer_check_ready = true;
-	}
+	timer_check_ready = true;
 }
 
-static void report_timer_nack()
-{
-	//Report fault
-	if(timer_addr == PRIMARY_TIMER_ADDR)
-	{
-		report_typed_fault(FAULT_TIMER_COMM, "Primary timer returned NACK.");
-	}
-	else
-	{
-		report_typed_fault(FAULT_TIMER_COMM, "Secondary timer returned NACK.");
-	}
-}
-
-//Interrupt handler, keep short
-void TWIHS0_Handler()
-{
-	uint32_t sr = hri_twihs_read_SR_reg(TIMERS_I2C.device.hw) & hri_twihs_read_IMR_reg(TIMERS_I2C.device.hw);
-	
-	//Check for NACK error
-	if(sr & TWIHS_SR_NACK)	
-	{
-		hri_twihs_clear_IMR_reg(TIMERS_I2C.device.hw, TWIHS_IDR_TXRDY | TWIHS_IDR_TXCOMP | TWIHS_IDR_RXRDY);
-		
-		//Report fault
-		report_timer_nack();
-		
-		//Move to next timer
-		go_to_next_timer();
-	}
-	//Check for transmission completion
-	else if (sr & TWIHS_SR_TXCOMP)
-	{
-		hri_twihs_clear_IMR_reg(TIMERS_I2C.device.hw, TWIHS_IDR_TXRDY | TWIHS_IDR_TXCOMP | TWIHS_IDR_RXRDY);
-		timer_transmission_complete();
-	}
-	//Check for TX transmit ready
-	else if(sr & TWIHS_SR_TXRDY)
-	{
-		timer_tx();
-	}
-	//Check for RX received
-	else if(sr & TWIHS_SR_RXRDY)
-	{
-		timer_rx();
-	}
-}

@@ -10,6 +10,8 @@
 
 #ifndef HEAD_BOARD_H_
 #define HEAD_BOARD_H_
+
+#include <stdint.h>
 #include "system_parameters.h"
 #if !defined(CALIBRATION_MODE)
 #include "pc_comm_parser.h"
@@ -139,10 +141,14 @@ enum
 	NUM_LED_SEQUENCES = 24
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern VariableValue mag_cal_array[HB_NUM_MAG_CAL];
 
-void init_head_board();
-void process_hb();
+void init_head_board(void);
+void process_hb(void);
 
 void set_led_sequence(int led_idx);
 
@@ -154,6 +160,10 @@ QcSessionStatus qc_session_arm(void);
 void qc_session_start_for_emission(void);
 void qc_session_stop(void);
 QcSessionStatus qc_session_get_status(void);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 

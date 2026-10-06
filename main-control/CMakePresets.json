@@ -35,9 +35,22 @@
         "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/microchip-studio-arm-gcc-6.3.1.cmake",
         "CMAKE_BUILD_TYPE": "CalibrationDebug"
       }
+    },
+    {
+      "name": "host-debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/cmake/host-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
     }
   ],
   "buildPresets": [
+    {
+      "name": "host-debug",
+      "configurePreset": "host-debug",
+      "targets": ["gryphon_control_host"]
+    },
     {
       "name": "debug",
       "configurePreset": "debug",

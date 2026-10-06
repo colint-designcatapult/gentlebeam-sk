@@ -12,6 +12,7 @@
 #define HVPS_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "system_parameters.h"
 
 #define HVPS_RX_SYNC_COUNT	8
@@ -139,12 +140,18 @@ typedef enum hvpsKvState
 	HVPS_KV_STATE_REGULATING
 } HvpskVState;
 
-void init_hvps();
-void process_hvps();
+struct timer_task;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void init_hvps(void);
+void process_hvps(void);
 void hvps_req_timer(const struct timer_task *const timer_task);
 
-void init_hvps_check();
-bool update_hvps_check();
+void init_hvps_check(void);
+bool update_hvps_check(void);
 
 void enable_grid(bool on);
 void enable_ecc(bool on);
@@ -159,5 +166,9 @@ void enable_fast_warmup(bool en);
 void queue_hvps_cmd(HvpsCmd cmd, float param_f, uint32_t param_i);
 
 extern VariableValue hvps_status[NUM_HVPS_STATUS];
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* HVPS_H_ */

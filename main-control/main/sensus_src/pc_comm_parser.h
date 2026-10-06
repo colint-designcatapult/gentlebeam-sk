@@ -156,9 +156,11 @@ enum faultResFields
 	FAULT_RES_COUNT
 };
 
+#ifndef __cplusplus
 #define FAULT_PACKET_BYTES (PC_MIN_PACKET_SIZE + (FAULT_RES_COUNT * 4u))
 _Static_assert(FAULT_PACKET_BYTES == 204u, "fault packet layout must be 204 bytes");
 _Static_assert(FAULT_PACKET_BYTES <= PC_TX_PACKET_CAPACITY, "fault packet exceeds TX capacity");
+#endif
 
 enum directiveCmdFields
 {

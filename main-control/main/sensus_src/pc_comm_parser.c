@@ -7,7 +7,6 @@
 *	Description:
 */
 
-#include <atmel_start.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -15,6 +14,7 @@
 #include <lwip/debug.h>
 #include <lwip/stats.h>
 #include <lwip/udp.h>
+#include <lwip/sys.h>
 #include "checksum.h"
 #include "pc_comm_parser.h"
 #include "pc_msg_processing.h"
@@ -33,7 +33,8 @@ static struct udp_pcb *udp_extra_rx_pcb;
 volatile bool pc_rx_buffered;
 bool queue_pc_tx;
 ip_addr_t last_ip_addr;
-int last_port;
+u16_t last_port;
+static struct udp_pcb *last_rx_pcb;
 PacketType_t p_type = PCCOM_INVALID_PACKET;
 uint32_t packet_id;
 
@@ -53,7 +54,7 @@ int response_data_count[PACKET_TYPE_COUNT];
 
 static void udp_comm_init();
 static void udp_receive_callback(void *arg, struct udp_pcb *upcb,
-struct pbuf *p, const ip_addr_t *addr, u16_t port);
+struct pbuf *p, ip_addr_t *addr, u16_t port);
 static PacketType_t check_pc_packet();
 static void send_response_packet(int byte_count, void* output_payload);
 
@@ -64,9 +65,9 @@ void pc_comm_init()
 	pc_rx_buffered = false;
 	queue_pc_tx = false;
 	last_port = 0;
+	last_rx_pcb = NULL;
 	last_ip_addr.addr = 0;
 	p_type = PCCOM_INVALID_PACKET;
-	packet_id = 0;
 	
 	//Default initialize all values before individuals
 	for(int i = 0; i < PACKET_TYPE_COUNT; i++)
@@ -251,14 +252,16 @@ static void udp_comm_init()
 
 
 static void udp_receive_callback(void *arg, struct udp_pcb *upcb,
-struct pbuf *p, const ip_addr_t *addr, u16_t port)
+struct pbuf *p, ip_addr_t *addr, u16_t port)
 {
 	LWIP_UNUSED_ARG(arg);
 	if(p == NULL) return;
 	
 	
-	//Verify that port is valid
-	if(port != (u16_t)network_config[NETWORK_BASE_PORT] && port != (u16_t)network_config[NETWORK_CONSOLE_PORT] && port!= (u16_t)network_config[NETWORK_EXTRA_PORT])
+	//Accept commands received on one of the configured PC ports.
+	if(upcb == NULL || (upcb->local_port != (u16_t)network_config[NETWORK_BASE_PORT] &&
+	   upcb->local_port != (u16_t)network_config[NETWORK_CONSOLE_PORT] &&
+	   upcb->local_port != (u16_t)network_config[NETWORK_EXTRA_PORT]))
 	{
 		pbuf_free(p);
 		return;
@@ -298,9 +301,10 @@ struct pbuf *p, const ip_addr_t *addr, u16_t port)
 	//Copy payload to rx buffer for parsing
 	memcpy(pc_rx_buffer, p->payload, (size_t)p->len);
 	
-	//Set variables for parsing
+	//Retain the sender endpoint and PCB for the matching response.
 	last_ip_addr = *addr;
-	last_port = (int)port;
+	last_port = port;
+	last_rx_pcb = upcb;
 	pc_rx_buf_byte_count = (int)p->len;
 	pc_rx_buffered = true;
 	pbuf_free(p);
@@ -410,7 +414,6 @@ void send_pc_response()
 //Respond to the PC with the given payload
 static void send_response_packet(int byte_count, void* output_payload)
 {
-	struct udp_pcb *upcb;
 	struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, byte_count, PBUF_RAM);
 	
 	if(p == NULL) {
@@ -418,29 +421,12 @@ static void send_response_packet(int byte_count, void* output_payload)
 	}
 	
 	//Copy payload for transmission
-	memcpy(p->payload, pc_tx_buffer, byte_count);
+	memcpy(p->payload, output_payload, byte_count);
 	
-	//Respond to the port which sent the initial command
-	if(last_port == network_config[NETWORK_BASE_PORT])
+	if(last_rx_pcb != NULL)
 	{
-		upcb = udp_base_rx_pcb;
+		udp_sendto(last_rx_pcb, p, &last_ip_addr, last_port);
 	}
-	else if(last_port == network_config[NETWORK_CONSOLE_PORT])
-	{
-		upcb = udp_console_rx_pcb;
-	}
-	else if(last_port == network_config[NETWORK_EXTRA_PORT])
-	{
-		upcb = udp_extra_rx_pcb;
-	}
-	else
-	{
-		//Error, ignore and return
-		return;
-	}
-	
-	udp_sendto(upcb, p, IP_ADDR_BROADCAST, (u16_t)last_port);
-	//udp_sendto(upcb, p, ((ip_addr_t *)&last_ip_addr), (u16_t)last_port);
 	pbuf_free(p);
 }
 

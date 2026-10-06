@@ -8,6 +8,7 @@
 */
 
 #include <atmel_start.h>
+#include <lwip/sys.h>
 #include "hal_atomic.h"
 #include "ext_dac.h"
 #include "ext_timers.h"
@@ -954,7 +955,7 @@ static void run_setup_state(EventType ev)
 static void goto_ready_state()
 {
 	//Restart standby timer
-	standby_deci_seconds = STANDBY_TICKS;
+	standby_deci_seconds = READY_STANDBY_TICKS;
 
 	//Pause timers in case we are stopping existing treatment (does not affect new treatment)
 	pause_ext_timers();

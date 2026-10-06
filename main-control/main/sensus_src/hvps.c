@@ -8,16 +8,38 @@
 */
 
 #include <atmel_start.h>
-#include <regex.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
 #include "faults.h"
+#include "hvps.h"
 #include "hvps_monitoring.h"
 #include "system_monitoring.h"
 #include "system_parameters.h"
 #include "state_machine.h"
-#include "hvps.h"
+
+
+#if defined(PERIPH_RUNTIME_BACKEND) && PERIPH_RUNTIME_BACKEND
+#define HVPS_IMPL(name) hvps_real_##name
+#else
+#define HVPS_IMPL(name) name
+#endif
+
+void HVPS_IMPL(init_hvps)(void);
+void HVPS_IMPL(process_hvps)(void);
+void HVPS_IMPL(hvps_req_timer)(const struct timer_task *const timer_task);
+void HVPS_IMPL(init_hvps_check)(void);
+bool HVPS_IMPL(update_hvps_check)(void);
+void HVPS_IMPL(enable_grid)(bool on);
+void HVPS_IMPL(enable_ecc)(bool on);
+void HVPS_IMPL(enable_hv)(bool on);
+void HVPS_IMPL(set_hvps_heater)(float mA);
+void HVPS_IMPL(set_hvps_kv)(float kv, float mA);
+void HVPS_IMPL(set_hvps_ma_lim)(float lim);
+void HVPS_IMPL(set_hvps_grid)(float grid_v);
+void HVPS_IMPL(enable_fast_warmup)(bool en);
+void HVPS_IMPL(queue_hvps_cmd)(HvpsCmd cmd, float param_f, uint32_t param_i);
+
 
 volatile uint16_t checksum = 0;
 
@@ -27,7 +49,9 @@ static struct timer_task VTIMER_hvps_req_timer;
 uint8_t hvps_tx_queue[MAX_HVPS_CMD_BYTES];
 uint8_t hvps_tx_buf[MAX_HVPS_CMD_BYTES];
 uint8_t hvps_rx_buf[HVPS_RX_BYTE_COUNT];
+#if !defined(PERIPH_RUNTIME_BACKEND) || !PERIPH_RUNTIME_BACKEND
 VariableValue hvps_status[NUM_HVPS_STATUS];
+#endif
 
 volatile uint32_t hvps_tx_idx = 0;
 volatile uint32_t hvps_rx_idx = 0;
@@ -59,7 +83,7 @@ float hvps_warmup_target = ;
 float hvps_condition_target = ;*/
 
 
-void init_hvps()
+void HVPS_IMPL(init_hvps)(void)
 {
 	usart_async_get_io_descriptor(&HVPS_UART, &hvps_io);
 	
@@ -74,15 +98,15 @@ void init_hvps()
 	
 	//TBD TODO initialize HVPS parameters here
 	hvps_tx_ready = true;
-	queue_hvps_cmd(HVPS_CMD_VERSION_REQUEST, 0, 0);
+	HVPS_IMPL(queue_hvps_cmd)(HVPS_CMD_VERSION_REQUEST, 0, 0);
 	
 	VTIMER_hvps_req_timer.interval = 100;
-	VTIMER_hvps_req_timer.cb = hvps_req_timer;
+	VTIMER_hvps_req_timer.cb = HVPS_IMPL(hvps_req_timer);
 	VTIMER_hvps_req_timer.mode = TIMER_TASK_REPEAT;
 	timer_add_task(&VTIMER, &VTIMER_hvps_req_timer);
 }
 
-void hvps_req_timer(const struct timer_task *const timer_task)
+void HVPS_IMPL(hvps_req_timer)(const struct timer_task *const timer_task)
 {
 	hvps_read_req = true;
 	system_status[SS_SYS_RUNTIME].u += 100;
@@ -94,13 +118,13 @@ static void hvps_check_timer(const struct timer_task *const timer_task)
 	queue_sm_event(EVENT_HVPS_CHECK);
 }
 
-void init_hvps_check()
+void HVPS_IMPL(init_hvps_check)(void)
 {
 	hcm = HCM_HV_CHECK_INIT;
-	update_hvps_check();
+	HVPS_IMPL(update_hvps_check)();
 }
 
-bool update_hvps_check()
+bool HVPS_IMPL(update_hvps_check)(void)
 {
 	switch(hcm)
 	{
@@ -110,7 +134,7 @@ bool update_hvps_check()
 			break;
 		case HCM_CLEAR_FAULT:
 			//Clear faults to try and unlatch any HW faults
-			queue_hvps_cmd(HVPS_CMD_CLEAR_FAULTS, 0, 0);
+			HVPS_IMPL(queue_hvps_cmd)(HVPS_CMD_CLEAR_FAULTS, 0, 0);
 			VTIMER_hvps_check_timer.interval = 50;
 			break;
 		case HCM_HV_CHECK_CLEAR:
@@ -119,7 +143,7 @@ bool update_hvps_check()
 			VTIMER_hvps_check_timer.interval = 150;
 			break;
 		case HCM_HV_CHECK_EN:
-			queue_hvps_cmd(HVPS_CMD_INTERLOCK_TEST, 0, 123);	//TBD TODO magic number
+			HVPS_IMPL(queue_hvps_cmd)(HVPS_CMD_INTERLOCK_TEST, 0, 123);	//TBD TODO magic number
 			VTIMER_hvps_check_timer.interval = 150;
 			break;
 		case HCM_HV_CHECK_SET:
@@ -131,7 +155,7 @@ bool update_hvps_check()
 			VTIMER_hvps_check_timer.interval = 50;
 			break;
 		case HCM_GRID_CHECK_EN:
-			queue_hvps_cmd(HVPS_CMD_INTERLOCK_TEST, 0, 456);	//TBD TODO magic number
+			HVPS_IMPL(queue_hvps_cmd)(HVPS_CMD_INTERLOCK_TEST, 0, 456);	//TBD TODO magic number
 			VTIMER_hvps_check_timer.interval = 150;
 			break;
 		case HCM_GRID_CHECK_SET:
@@ -166,7 +190,7 @@ bool update_hvps_check()
 	}
 }
 
-void process_hvps()
+void HVPS_IMPL(process_hvps)(void)
 {
 	//Discard a partial frame after a gap so a resumed connection starts at sync.
 	if((hvps_rx_idx > 0) &&
@@ -270,76 +294,61 @@ static void reset_hvps_rx_frame(void)
 	hvps_rx_expected_bytes = HVPS_RX_BYTE_COUNT;
 }
 
-void queue_hvps_cmd(HvpsCmd cmd, float param_f, uint32_t param_i)
+void HVPS_IMPL(queue_hvps_cmd)(HvpsCmd cmd, float param_f, uint32_t param_i)
 {
-	//Make sure there is enough space for next command
-	if((hvps_tx_idx+HVPS_TX_BYTE_COUNT) >= MAX_HVPS_CMD_BYTES)
-	{
-		report_typed_fault1(FAULT_HVPS_COMM, "HVPS command exceeded the %u-byte command buffer.", MAKE_ARG(MAX_HVPS_CMD_BYTES));
-		return;
-	}
-	
-	uint32_t queue_addr = 0;
-	uint32_t *queue_ptr;
-	uint32_t hvps_crc = 0;	
-	
-	//Add sync bytes
-	queue_addr = &hvps_tx_queue;
-	queue_addr += hvps_tx_idx;
-	queue_ptr = (uint32_t *)(queue_addr);
-	*queue_ptr = 0xFFFFFFFF;
-	queue_addr += sizeof(uint32_t);
-	queue_ptr = (uint32_t *)(queue_addr);
-	*queue_ptr = 0xFFFFFFFF;
-	queue_addr += sizeof(uint32_t);
-	
-	
-	//Add cmd bytes
-	queue_ptr = (uint32_t *)(queue_addr);
-	*queue_ptr = cmd;
-	hvps_crc += cmd;
-	queue_addr += sizeof(uint32_t);
-	
-	//Add float param bytes
-	VariableValue fparam;
-	fparam.f = param_f;
-	queue_ptr = (uint32_t *)(queue_addr);
-	*queue_ptr = fparam.u;
-	hvps_crc += fparam.u;
-	queue_addr += sizeof(uint32_t);
-	
-	//Add int param bytes
-	queue_ptr = (uint32_t *)(queue_addr);
-	*queue_ptr = param_i;
-	hvps_crc += param_i;
-	queue_addr += sizeof(uint32_t);
-	
-	//Add crc param bytes
-	//TBD TODO calculate checksum here
-	queue_ptr = (uint32_t *)(queue_addr);
-	*queue_ptr = hvps_crc;
-	queue_addr += sizeof(uint32_t);
-	
-	//Update byte count
-	hvps_tx_idx += HVPS_TX_BYTE_COUNT;
+    // Make sure there is enough space for next command
+    if((hvps_tx_idx + HVPS_TX_BYTE_COUNT) >= MAX_HVPS_CMD_BYTES)
+    {
+        report_typed_fault1(FAULT_HVPS_COMM, "HVPS command exceeded the %u-byte command buffer.", MAKE_ARG(MAX_HVPS_CMD_BYTES));
+        return;
+    }
+    
+    // Use a pointer for arithmetic to ensure 64-bit safety
+    uint32_t *queue_ptr = (uint32_t *)(&hvps_tx_queue[hvps_tx_idx]);
+    uint32_t hvps_crc = 0;  
+    
+    // Add sync bytes
+    *queue_ptr++ = 0xFFFFFFFF;
+    *queue_ptr++ = 0xFFFFFFFF;
+    
+    // Add cmd bytes
+    *queue_ptr++ = cmd;
+    hvps_crc += cmd;
+    
+    // Add float param bytes
+    VariableValue fparam;
+    fparam.f = param_f;
+    *queue_ptr++ = fparam.u;
+    hvps_crc += fparam.u;
+    
+    // Add int param bytes
+    *queue_ptr++ = param_i;
+    hvps_crc += param_i;
+    
+    // Add crc param bytes
+    // TBD TODO calculate checksum here
+    *queue_ptr++ = hvps_crc;
+    
+    // Update byte count
+    hvps_tx_idx += HVPS_TX_BYTE_COUNT;
 }
 
-void enable_ecc(bool on)
+void HVPS_IMPL(enable_ecc)(bool on)
 {
 	gpio_set_pin_level(IO_EMISSION_EN, on);
 }
 
-void enable_hv(bool on)
+void HVPS_IMPL(enable_hv)(bool on)
 {
 	gpio_set_pin_level(IO_HV_EN, on);
 }
 
-void enable_grid(bool on)
+void HVPS_IMPL(enable_grid)(bool on)
 {
 	gpio_set_pin_level(IO_GRID_ENn, on);
 }
 
-void set_hvps_heater(float mA)
+void HVPS_IMPL(set_hvps_heater)(float mA)
 {
 	//Check to make sure we have a valid heater current
 	if(isnan(mA) || mA > MAX_HEATER_MA)
@@ -350,18 +359,18 @@ void set_hvps_heater(float mA)
 	//If we have a low heater value, disable the heater
 	if(mA <= 0)
 	{
-		queue_hvps_cmd(HVPS_CMD_SET_FIL, 0, 0);
+		HVPS_IMPL(queue_hvps_cmd)(HVPS_CMD_SET_FIL, 0, 0);
 		hvps_expected_val[HVPS_EXPECTED_FIL] = 0;
 	}
 	//Otherwise write the new heater value
 	else
 	{
-		queue_hvps_cmd(HVPS_CMD_SET_FIL, mA, (uint32_t)fast_warmup_enabled);
+		HVPS_IMPL(queue_hvps_cmd)(HVPS_CMD_SET_FIL, mA, (uint32_t)fast_warmup_enabled);
 		hvps_expected_val[HVPS_EXPECTED_FIL] = mA;
 	}
 }
 
-void set_hvps_kv(float kv, float mA)
+void HVPS_IMPL(set_hvps_kv)(float kv, float mA)
 {	
 	//Check to make sure we have a valid kv
 	if(kv > MAX_KV || kv < MIN_KV || isnan(kv))
@@ -386,11 +395,11 @@ void set_hvps_kv(float kv, float mA)
 	hvps_expected_val[HVPS_EXPECTED_MA] = mA;
 
 	//Queue command to write KV and MA values
-	queue_hvps_cmd(HVPS_CMD_SET_KV, kv, 0);
-	queue_hvps_cmd(HVPS_CMD_SET_PWR, power, 0);
+	HVPS_IMPL(queue_hvps_cmd)(HVPS_CMD_SET_KV, kv, 0);
+	HVPS_IMPL(queue_hvps_cmd)(HVPS_CMD_SET_PWR, power, 0);
 }
 
-void set_hvps_ma_lim(float lim)
+void HVPS_IMPL(set_hvps_ma_lim)(float lim)
 {
 	/*
 	//Check that limit is valid
@@ -399,20 +408,20 @@ void set_hvps_ma_lim(float lim)
 		return;
 	}*/
 	
-	queue_hvps_cmd(HVPS_CMD_SET_MA_LIM, lim, 0);
+	HVPS_IMPL(queue_hvps_cmd)(HVPS_CMD_SET_MA_LIM, lim, 0);
 }
 
-void set_hvps_grid(float grid_v)
+void HVPS_IMPL(set_hvps_grid)(float grid_v)
 {
 	/*
 	TBD TODO
 	check that grid_v is valid value
 	*/
 	hvps_expected_val[HVPS_EXPECTED_GRID] = grid_v;
-	queue_hvps_cmd(HVPS_CMD_SET_GRID, grid_v, 0);	
+	HVPS_IMPL(queue_hvps_cmd)(HVPS_CMD_SET_GRID, grid_v, 0);	
 }
 
-void enable_fast_warmup(bool en)
+void HVPS_IMPL(enable_fast_warmup)(bool en)
 {
 	fast_warmup_enabled = en;
 }
