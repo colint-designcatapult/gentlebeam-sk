@@ -1,0 +1,271 @@
+DOCUMENT_PATH: /home/runner/work/gentlebeam-sk/gentlebeam-sk/cnc/voxelray-gentlebeamcnc/docs/CH_3_05_05_02_02_DHF_HRC_0028_Heracles_GentleBeam_Internal_and_External.pdf
+TOTAL_PAGES: 10
+
+===== PAGE 1 START =====
+—=
+Cee ee
+[pa | abuar-20es [Document Type: [Rect | MN
+Heracles Internal and External GUI Software Failure Modes
+and Effects Analysis
+COMPANY CONFIDENTIAL, Page 1 of 10
+===== PAGE 1 END =====
+
+===== PAGE 2 START =====
+—
+
+Z—~
+
+[pate: (| osar-200s [Document Type: [Recod | NN
+Contents
+1: PULPOSE oe. eseeeseesesesescsesesensrsesesenecscscscessssacscsscacacessavacacaauanevassssesesecacacssessaacsceasacacacuavevavscseneecacacsesscacacsceasavacaseavavasacaeenesasacaeeececaciteeavaratseeneteseenenes O
+2: SCOPE oo. eeeseeeseseesesesesseecseseucseseseseacacsesesueacacatarsessucacacsesesusacacsvensusesacsesueacacsesesusueacacacsesueasacaesesusaseceeesusasacsessucasacacsessasacacsesesasecereneesesasetsteeasateeenenenes O
+3: Abbreviations and Definitions ...........ssscssecsesseesessesseessseseesneessseseessessessnessesnsesesscsuessussisesssssessussnecsussiessusssssueasecseesnasssssiessecssessnesietsessiecsessecsessssseees O
+A; OVEIVIOW.....sescesssessesssessecssecnsesnecsscssessscsnecsucensesscsussuessecsnecsucsnsesscsuesncsnecsucssessussucsueciuecsecsusesessuesuecsuessessscsssssiesnessecsnecsucssesseesnecieenseessstsesseesnecseeeneeseesies
+5: REfEreN CS... ee ecssesseessecseesneesseesecsessecsuecseesscssesscsnesnecsuessscsusesscsusssscsuecssssncesesscsuecsuesssesssesessuesnecsuessessueesecseanecssesnecsusssessessecsiessessusesecsessecssecneeseees 4
+6: SFMEA Matix ......ccssesseesecssesneessesseesessecsuecssesscenessscsnecsucsuecnscsucesscsuesuscsuscsscsncessssucsuecsucenecsusessssucsucsuecscsneesnssuesnecsucanecsuceneesuesnecinecnecsneesessseanecanecnessnees D
+7: SFMEA Risk Prioritization ........scssecsssssscseecneesneseenecsessscsnecnecsncesessnecsecanscsscanecsecsuesuecsucenscsueescsueauecsuecnecsnecsucanesnecsueenecsueesecsnessessnecnecsnecseesnessecsneeneessees O
+8: SFMEA Risk Acceptability ..............ccccsesessssssssescsesesesssscsessnsassravavansessssssususasssssssusisasscsstesasasscavsesesssesaesssissssstesesisissssutecasacscsesesasessvavsisessssetesetisicassesees D.
+Q: Record History... eeeecceseseseseecesesesescscseeerscsesenscscseseescscsesscecscscsaeavavacscseseresacsesesacscsesasecacsesasavavacacsesesracsesesecscsesececacaeseeacstatseeseerersseeeetstssetetseeteteaes 10
+10: Record Review and Approval ..........cecsccceseseeseseseessescsesessescscsesesseacassesesnsseacasaeseseeaceceesnensssscseeneueasaesesneasasessnsesessasesensesnsasesetenesisaestsesasetatseseseeeeees 10
+COMPANY CONFIDENTIAL Page 2 of 10
+===== PAGE 2 END =====
+
+===== PAGE 3 START =====
+=
+—~
+‘women owen [wie [P|
+EMPYREAN
+1: Purpose
+The purpose of this Software Modes and Effects Analysis (SFMEA) is to evaluate the potential failure modes in the Internal and External GUI
+Software, understand their effects on the system, patient, and other users, prioritize risks, and recommend corrective actions to mitigate those
+risks. The purpose is to ensure the safety and effectiveness of the device throughout its lifecycle.
+2: Scope
+The scope of this SFMEA covers the Internal and External GUI Software, derived from its design. This document to be continuously maintained
+and updated throughout the lifecycle of the medical device, as potential software failure modes are addressed and mitigated to achieve an
+acceptable or As Low As Possible level of risk.
+3: Abbreviations and Definitions
+Abbreviaton/Termn
+ALAP. As Low As Possible
+Software Design Document
+SFMEA Software Failure Modes and Effects Analysis
+4: Overview
+The Internal GUI console provides a means for the user to maintain demographic patient data, including treatment plans, and perform imaging. It
+communicates with the record and verify component, flange camera stream, imaging component and robotic arm controller.
+The internal GUI software runs on the All-In-One console located on the base of the system.
+The external GUI console provides a means for the user to activate and monitor the treatment. It communicates with the main control board,
+treatment head camera and imaging head camera.
+The external GUI software runs on the external tablet console located outside the room.
+COMPANY CONFIDENTIAL Page 3 of 10
+===== PAGE 3 END =====
+
+===== PAGE 4 START =====
+—
+——
+‘oom [owieones — [ewiow [PS
+EMPYREAN
+5: References
+Document ID / Reference Document Title
+Number
+DHF-HRC-0033, Rev. 1 Heracles Internal GUI Software Design Document (SDD)
+DHF-HRC-0042, Rev. 1 Heracles External GUI Software Design Document (SDD)
+QSP-017, Rev. 1 Risk Management Procedure
+COMPANY CONFIDENTIAL Page 4 of 10
+===== PAGE 4 END =====
+
+===== PAGE 5 START =====
+—
+—~.
+=—~
+EMPYREAN
+[Date: [05-Mar-2025 | DocumentType: [Record |
+6: SFMEA Matrix
+Design Foreseeable Initial Initial Initial Risk Risk Controls Description | Residual Residual Residual Risk
+Item Title Sequence of Probability of | Severity of Index (Rl) / Probability of | Severity of | Index (RI) /
+Events: Occurrence — Harm -S Initial Risk Occurrence - Harm -S Residual Risk
+Pp Acceptability P Acceptability
+H10SG- Calculate Miscalculation of | The calculation Over- Defect in 3 - Probable 12/ Zone 2 1. Firmware will reject
+683 Emission Emission logic has a bug | exposure to | software ALAP the treatment plan if the
+Duration Duration radiation duration is equal or more
+that 300 sec
+2. Unit test + code review
+H10SG- Calculate Miscalculation of | The calculation under- Defect in 3 - Probable Unit test + code review
+683 Emission Emission logic has a bug | exposure to | software
+Duration Duration radiation
+H10TG- Validate Failure to Failure in Over- Defect in 3- Probable 12/ Zone 2 Unit test + code review
+276 Active validate active collimator exposure to | software ALAP
+Collimator collimator identification radiation
+the system to
+treat patient
+with wrong
+collimator
+H10TG- Validate Failure to Failure in Under- Defect in 3 - probable Unit test + code review
+276 Active validate active collimator exposure to | software
+Collimator collimator identification radiation
+the system to.
+treat patient
+with wrong
+collimator
+H10TG- Stop Stop Emission User pressed Over- Defect in 3- probable 12/Zone 2 1. E-Stop physical switch
+263 Emission Failed the stop button | exposure to | software ALAP 2. Unit test + code review
+and emission radiation
+fails to stop
+COMPANY CONFIDENTIAL Page 5 of 10
+===== PAGE 5 END =====
+
+===== PAGE 6 START =====
+=
+—~.
+Z—~
+EMPYREAN
+Fone: ———_—_‘[osaanas [Bocoment Type: [Reed
+Design Design Failure Mode Foreseeable Initial Initial Initial Risk Risk Controls Description | Residual Residual Residual Risk
+Item ID | Item Title Sequence of Probability of | Severity of Index (RI) / Probability of | Severity of | Index (RI) /
+Events Occurrence — Harm -S Initial Risk Occurrence - Harm -S Residual Risk
+Pp Acceptability P ‘Acceptability
+H10TG- Record Failure to Record | Delivered no data Database 3 - probable 12/ Zone 2 1. Data will be saved to
+257 Treatment Delivered Dose Treatment recorded, communication ALAP file and can be restored
+Delivered | aftertreatment | Dose is not impacting | failure 2. Alert prompt of data
+Dose recorded after future not saved is displayed to
+treatment treatments the user
+Treatment data that might 3. Unit test + code review
+does not exist result in
+in the next Over-
+radiation
+H10TG- Record Failure to Record | Delivered no data Defect in 3- probable 12/Zone 2 Unit test + code review
+257 Treatment Delivered Dose Treatment recorded, software ALAP
+Delivered | after treatment | Dose is not impacting
+Dose recorded after future
+treatment treatments:
+Treatment data | that might
+does not exist result in
+in the next Over-
+session exposure to
+radiation
+H10TG- Record Record Faulty Incorrectly no data Defect in 3- probable 12/ Zone 2 Unit test + code review
+257 Treatment Data delivered dose recorded, software ALAP
+Delivered recorded in the | impacting
+Dose database future
+treatments
+that might
+result in
+Over-
+radiation
+H10TG- Beam On Failure to start User pressed Treatment Hardware- 3- probable Unit test + code review:
+255 process emission the Beam-On is not software
+button and the delivered communication
+emission failure
+fails to start
+COMPANY CONFIDENTIAL, Page 6 of 10
+===== PAGE 6 END =====
+
+===== PAGE 7 START =====
+—
+—~.
+Z—~
+EMPYREAN
+fone: aswnaoas —[Bocument Tye: [Reine |
+Design | Design Failure Mode | Foreseeable Initial Initial Initial Risk Risk Controls Description | Residual Residual | Residual Risk
+Item 1D | Item Title Sequence of Probability of | Severityof | index (RI) / Probability of | Severity of | Index (Rl) /
+Events Occurrence- | Harm-S Initial Risk Occurrence- | Harm-S | Residual Risk
+P Acceptability Pp Acceptability
+H10TG- | Retrieve | Wrongpatient | The operator | Wrong Defect in 3- probable 12/Zone2 — | Unit test + code review
+274 treated data sent tothe | loads patient | patient software ALAP.
+patient application data to the details and
+details external treatment
+console plan are
+and the displayed
+external that might
+console result
+displays wrong | in over-
+patient data exposure to
+radiation
+H10SG- | Calculate | Miscalculation of | The calculation | Over- Defect in 3- probable 12/Zone2 | 1. Firmware will reject
+683 Emission | Emission logichas a bug | exposure to | software ALAP. the treatment plan if the
+Duration Duration radiation duration is equal or more
+that 300 sec
+2. Unit test + code review
+H10SG- | Calculate | Miscalculation of | The calculation | under- Defect in 3- probable Unit test + code review
+683 Emission Emission logichasabug | exposure to | software
+Duration _| Duration radiation
+Hi0TG- | Validate Failure to Failure in Over- Defect in 3- probable 12/Zone2 — | Unit test + code review
+276 Active validate active | collimator exposure to | software ALAP
+Collimator | collimator identification | radiation
+cause
+the system to.
+treat patient
+with wrong
+collimator
+COMPANY CONFIDENTIAL Page 7 of 10
+===== PAGE 7 END =====
+
+===== PAGE 8 START =====
+=
+—
+Z—~
+EMPYREAN
+
+‘owe ————‘(oswan.zs —[DesumentTrpe: [Reeos
+7: SFMEA Risk Prioritization
+The Risk Index (RI) is a critical factor in prioritizing corrective actions. It provides a relative indication of the identified failure indicating whether
+the risk requires further mitigation or control.
+RI is calculated as follows (see QSP-017 risk management, referenced in section 5):
+
+e¢ RI= Probability of Occurrence (P) X Severity (S)
+; Severity Rank
+Using Px S=RI — — -
+Negligible | Minor | Major | Critical | Catastrophic
+Occuencenank | i | 2 | 2 | «| 5 |
+Highlytikey [5 | Zone2 | Zone? |
+Very likey | 4 [zoneM| Zone2 | Zone? |
+Probable | 2] Zone’ [uzonet| Zone2 | Zone2 |
+|___ Rarely _| 2 | Zone1 | Zone1 | Zone1 | Zone2 | Zone2 |
+
+improbabie | 1 | Zonet | Zone4 | Zonet Zone i] Zone? _
+
+COMPANY CONFIDENTIAL Page 8 of 10
+===== PAGE 8 END =====
+
+===== PAGE 9 START =====
+—
+jocument Title: leracles Internal an :xternal —=<.
+Za
+EMPYREAN
+‘Date: ——*(OBAIAR-2005 | Dooument Type: [Record
+8: SFMEA Risk Acceptability
+The following Risk Zones define the 3 levels of Risk Acceptability:
+Risk Evaluation Actions Method
+Reduce risks within this region to a Zone 2 or Zone 1 risk with control measures or
+design improvements. If none of these are feasible, document that the risk has been
+reduced as far as possible and evaluate whether the benefit outweighs the residual risk
+or eliminate the feature or design completely.
+Reduce all Zone 2 risks with risk control measure(s). If the Zone 2 risk directly results
+ALAP from design and/or manufacturing failures, pursue additional controls, or design
+improvements to reduce the risk. If none of these are feasible, document that the risk
+Zone 2 has been reduced as low as possible and evaluate whether the benefit outweighs the
+residual risk.
+Within this region, the level of risk is considered low and considered to be acceptable
+once the risk has been reduced as far as possible. Reduction of risk to as far as
+possible can be demonstrated through conformance to requirements or specification
+and/or implementation of risk control measure in the risk management documents.
+COMPANY CONFIDENTIAL Page 9 of 10
+===== PAGE 9 END =====
+
+===== PAGE 10 START =====
+=
+—~
+a
+EMPYREAN
+9: Record History
+[Revision | RevDato [Author | Description of Changes
+05-MAR-2025 Initial Revision
+10: Record Review and Approval
+[Author | ‘Author Function Signature and Date
+Reviewer/ Signature and Date
+Approver(s)
+Principal Software Quality oo crea sore ey:
+Adi Fishman Systems Engineer / Quality AAI Fish abe se ese,
+Assurance
+End of Document
+COMPANY CONFIDENTIAL Page 10 of 10
+===== PAGE 10 END =====
+

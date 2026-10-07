@@ -1,0 +1,43 @@
+DOCUMENT_PATH: /home/runner/work/gentlebeam-sk/gentlebeam-sk/cnc/voxelray-gentlebeamcnc/docs/CH_3_05_05_02_02_DHF_HRC_0028_Heracles_GentleBeam_Internal_and_External.pdf
+TOTAL_PAGES: 10
+
+===== PAGE 1 START =====
+
+===== PAGE 1 END =====
+
+===== PAGE 2 START =====
+
+===== PAGE 2 END =====
+
+===== PAGE 3 START =====
+
+===== PAGE 3 END =====
+
+===== PAGE 4 START =====
+
+===== PAGE 4 END =====
+
+===== PAGE 5 START =====
+
+===== PAGE 5 END =====
+
+===== PAGE 6 START =====
+
+===== PAGE 6 END =====
+
+===== PAGE 7 START =====
+
+===== PAGE 7 END =====
+
+===== PAGE 8 START =====
+
+===== PAGE 8 END =====
+
+===== PAGE 9 START =====
+
+===== PAGE 9 END =====
+
+===== PAGE 10 START =====
+
+===== PAGE 10 END =====
+
