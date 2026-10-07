@@ -1,7 +1,7 @@
 {
-  ".": "5.0.0",
-  "head-interface/main": "5.0.0",
-  "backup-timers": "5.0.0",
-  "hvps-interface/bootloader": "5.0.0",
-  "main-control/bootloader": "5.0.0"
+  ".": "5.1.0",
+  "head-interface/main": "5.1.0",
+  "backup-timers": "6.0.0",
+  "hvps-interface/bootloader": "6.0.0",
+  "main-control/bootloader": "6.0.0"
 }

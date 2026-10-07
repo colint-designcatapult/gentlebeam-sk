@@ -3,7 +3,7 @@ name = "GentleBeam SK"
 include_docs = ["docs/architecture/*.sdoc", "docs/sfmea/*.sdoc"]
 output_dir = "docs/output"
 grammars = { "@grammar" = "docs/meta/grammar.sgra" }
-version = "5.0.1-{HASH}.{BUILD}" # x-release-please-version
+version = "5.1.0-{HASH}.{BUILD}" # x-release-please-version
 
 [gen_docx]
 enabled = true
