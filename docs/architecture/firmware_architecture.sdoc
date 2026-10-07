@@ -1,0 +1,346 @@
+[DOCUMENT]
+TITLE: Firmware Architecture Description for GBSK
+UID: DHF-GBSK-0031
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this document is to describe the top-level architecture for the firmware components, developed by Voxel Ray, for the GBSK system.
+
+This document presents the firmware components from multiple points of view, describing the system context, physical mapping to processors, logical software items including SOUP components, developer configurations, and other viewpoints.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes the firmware components for the GBSK system at a high-level. The document does not address requirements, electro-mechanical designs, detailed software designs, or verification protocols (all of which are covered by other project documents).
+
+\*The term Software relates to both software and firmware subsystems.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Terms and Definitions
+
+[TEXT]
+STATEMENT: >>>
+Table 1: Terms and Definitions
+
+.. list-table::
+   :header-rows: 1
+
+   * - Term
+     - Definition
+   * - Architecture
+     - Organizational structure of a system or component.
+   * - CM
+     - Configuration Management
+   * - Configuration Item (CI)
+     - Entity that can be uniquely identified at a given reference point.
+   * - Design History File (DHF)
+     - A compilation of specific records that describe the design history of a product.
+   * - FW
+     - Firmware
+   * - HVPS
+     - High Voltage Power Supply
+   * - ISR
+     - Interrupt Service Routine
+   * - LED
+     - Light Emitting Diode
+   * - LWIP
+     - Light Weight IP (Commercial company name)
+   * - OTS
+     - Off-the-shelf
+   * - PC
+     - Personal Computer
+   * - PRS
+     - Product Requirements Specification
+   * - Safety
+     - Freedom from unacceptable risk.
+   * - SBOM
+     - Software Bill of Materials
+   * - SDP
+     - Software Development Plan
+   * - SOP
+     - Standard Operating Procedure
+   * - Software of Unknown Provenance (SOUP)
+     - Software item that is already developed and generally available and that has not been developed for the purpose of being incorporated into the medical device (also known as “off-the-shelf software”) or software item previously developed for which adequate records of the development processes are not available.
+   * - SRS
+     - Software Requirements Specification
+   * - ST
+     - Commercial Company Name
+   * - SW
+     - Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[[SECTION]]
+TITLE: Voxel Ray References
+
+[TEXT]
+STATEMENT: >>>
+Table 2: References
+
+.. list-table::
+   :header-rows: 1
+
+   * - Document Identifier
+     - Document Title
+   * - EMS-SOP-057
+     - Software Design Control SOP
+   * - DHF-GBSK-0001, Rev. 2
+     - GBSK SDP
+   * - DHF-GBSK-0002
+     - VoxelRay PRS
+   * - DHF-GBSK-0017, Rev 1
+     - GBSK Backup Timer FW SRS
+   * - DHF-GBSK-0023, Rev 1
+     - GBSK Head Interface FW SRS
+   * - DHF-GBSK-0019, Rev 1
+     - GBSK HVPS Interface Application FW SRS
+   * - DHF-GBSK-0021, Rev 1
+     - GBSK FW HVPS Interface Bootloader FW SRS
+   * - DHF-GBSK-0015, Rev 1
+     - GBSK FW Main Control Bootloader FW SRS
+   * - DHF-GBSK-0013, Rev 1
+     - GBSK FW Main Control Application FW SRS
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Standard and Regulatory References
+
+[TEXT]
+STATEMENT: >>>
+Table 3: Standards and Regulatory References
+
+.. list-table::
+   :header-rows: 1
+
+   * - #
+     - Standard
+   * - 1.
+     - IEC 62304 Edition 1.1 2015-06, recognition #13-79
+   * - 2.
+     - ISO 14971 Medical devices — Application of risk management to medical devices Third edition 2019-12
+   * - 3.
+     - 21 CFR Part 820 Subpart 820.30 - FDA Quality System Regulation
+   * - 4.
+     - ISO 13485:2016 Clause 7.3 - Medical devices – Quality management systems – Requirements for regulatory purposes
+<<<
+
+[[/SECTION]]
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Context View
+
+[TEXT]
+STATEMENT: >>>
+The firmware components developed by Voxel Ray for the GBSK are comprised of several individual sets of firmware. The list and description of these firmware components is detailed in Table 4: System Context Diagram Elements.
+
+These firmware components are used to control and interface with various hardware subsystems of the overall device, including with one another. Figure 1: Context View Diagram below depicts the Context View of the system and shows the interaction of the various pieces of firmware with each other, as well as the system PC software components. The PC software components are grouped into a dashed box as the architecture for the PC software is out of scope for this document.
+
+.. image:: _assets/fw_figure_1_context_view.jpeg
+   :alt: Figure 1: context view
+   :width: 100%
+
+Figure 1: Context View Diagram
+
+System Context Diagram Elements
+
+.. list-table::
+   :header-rows: 1
+
+   * - Element
+     - Description
+   * - Main Control Application Firmware
+     - This firmware is responsible for serving as the main control hub for the GBSK’s radiation emission. It is responsible for coordinating the functionalities of various sub-systems of the GBSK and serves as a communication bridge to the suite of GBSK PC software.
+   * - Main Control Bootloader Firmware
+     - This firmware is responsible for updating the Main Control Application Firmware.
+   * - Backup Timer Firmware
+     - This firmware is responsible for terminating the emission if the main control application fails to terminate emission. It receives commands and provides feedback to the main control application firmware.
+   * - HVPS Interface Application Firmware
+     - This firmware is responsible for interfacing with the HVPS. It receives commands and provides feedback to the main control application firmware.
+   * - HVPS Interface Bootloader Firmware
+     - The firmware is responsible for updating the HVPS Interface Application Firmware.
+   * - Head Interface Firmware
+     - This firmware is responsible for interface with hardware components on the treatment head of the system. It receives commands and provides feedback to the main control application firmware.
+
+Table 4: System Context Diagram Elements
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Physical View
+
+[TEXT]
+STATEMENT: >>>
+The various firmware components of the GBSK system exist in a distributed nature. The specialization of hardware functionality and limited processing power of the microcontroller units utilized to run each task result in architecture which benefits from a more physically distributed nature.
+
+Due to this physically distributed nature of the system, where multiple pieces of firmware are running on distinct boards and distinct microcontroller units, the development of the GBSK firmware is done on “bare metal” without the utilization of real-time operating systems. This physical parallelization negated the need for more complex software-based task allocation with a trade-off for additional initial development efforts. Additionally, the introduction of many asynchronous ISR-based processing reduces the need for scheduling and context switching. The synchronous functions are designed to be quite short and are only performed when asynchronous flags or data updates trigger them to be run.
+
+Figure 2: Physical View Diagram shown below maps the firmware subsystems onto physical subcomponents. Table 5: Physical View Diagram – Software Items and Table 6: Physical View Diagram Hardware Elements discuss the elements of the diagram.
+
+.. image:: _assets/fw_figure_2_physical_view.jpeg
+   :alt: Figure 2: physical view
+   :width: 100%
+
+Figure 2: Physical View Diagram
+
+Physical View Diagram – Software Items
+
+.. list-table::
+   :header-rows: 1
+
+   * - SW Item
+     - Description
+     - Processor and Hardware
+     - Implementation Language
+   * - Main Control Application Firmware
+     - This firmware is responsible for serving as the main control hub for the GBSK’s radiation emission
+     - Main Control Microcontroller located on Main Control Board
+     - C
+   * - Main Control Bootloader Firmware
+     - This firmware is responsible for updating the Main Control Application Firmware.
+     - Main Control Microcontroller located on Main Control Board. This is the same physical unit where the application firmware resides
+     - C
+   * - Backup Timer Firmware
+     - This firmware is responsible for terminating the emission if the main control application fails to terminate emission.
+     - Timer Microcontrollers located on Main Control Board (an individual but identical copy of the firmware resides on each of the two timer microcontrollers)
+     - C
+   * - HVPS Interface Application Firmware
+     - This firmware is responsible for interfacing with the HVPS
+     - HVPS Interface Microcontroller located on HVPS Interface Board
+     - C
+   * - HVPS Interface Bootloader Firmware
+     - The firmware is responsible for updating the HVPS Interface Application Firmware.
+     - HVPS Interface Microcontroller located on HVPS Interface Board. This is the same physical unit where the application firmware resides
+     - C
+   * - Head Interface Firmware
+     - This firmware is responsible for interface with hardware components on the treatment head of the system
+     - Head Board Microcontroller located on the Head board
+     - C
+
+Table 5: Physical View Diagram – Software Items
+
+Physical View Diagram – Hardware Elements
+
+.. list-table::
+   :header-rows: 1
+
+   * - Element
+     - Description
+   * - Main Control Board
+     - The electronics board inside of the GBSK system which is used for treatment control. It contains the main control microcontroller, as well as two backup timer microcontrollers
+   * - Main Control Microcontroller
+     - The microcontroller on the Main Control Board which runs the Main Control Application Firmware and the Main Control Bootloader Firmware
+   * - Backup Timer 1 Microcontroller
+     - One of the microcontrollers on the Main Control Board which runs a copy of the Backup Timer Firmware.
+   * - Backup Timer 2 Microcontroller
+     - One of the microcontrollers on the Main Control Board which runs a copy of the Backup Timer Firmware.
+   * - HVPS Interface Board
+     - The electronics board inside of the GBSK system which interfaces with the high voltage power supply. It contains the HVPS Interface Microcontroller.
+   * - HVPS Interface Microcontroller
+     - The microcontroller on the HVPS Interface Board which runs the HVPS Interface Application Firmware and the HVPS Interface Bootloader Firmware
+   * - Head Board
+     - The electronics board inside of the GBSK system which interfaces with components on the treatment head
+   * - Head Board Microcontroller
+     - The microcontroller on the Head Board which runs the Head Interface Firmware
+
+Table 6: Physical View Diagram Hardware Elements
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Logical View
+
+[TEXT]
+STATEMENT: >>>
+Logical View describes the software items including SOUP for each subsystem.
+
+The firmware developed by Voxel Ray sits on top of hardware abstraction layers and middleware layers. The firmware utilizes these libraries to either access lower-level hardware or perform “common” or “rote” tasks without having to re-implement ready-made code. The source code files for these layers are directly included in the code and are not pre-compiled. See Figure 3: Logical View Diagram: Abstraction Layering for the logical view of this implementation.
+
+In terms of how the application-level code is structured and performs during runtime, the system is divided between “synchronous” and “asynchronous” tasks. The synchronous tasks are those which are predefined and run in a specific order within a main loop. The tasks do not have a priority order and are usually simply gated by flags which are set or modified by the asynchronous tasks. The asynchronous tasks are dependent on external factors such as serial communication or changing hardware input signals. These tasks trigger interrupt service routines, or ISRs, which asynchronously modify flags and data used by the synchronous functions. See Figure 4: Logical View Diagram: Process Sequencing below for the interaction between the synchronous and asynchronous processes.
+
+.. image:: _assets/fw_figure_3_abstraction_layering.jpeg
+   :alt: Figure 3: abstraction layering
+   :width: 100%
+
+Figure 3: Logical View Diagram: Abstraction Layering
+
+.. image:: _assets/fw_figure_4_process_sequencing.jpeg
+   :alt: Figure 4: process sequencing
+   :width: 100%
+
+Figure 4: Logical View Diagram: Process Sequencing
+
+The following table lists all the SOUP packages used for significant functionality. The full list of SOUP packages and versions present is found in the Software Bill of Materials (SBOM).
+
+.. list-table::
+   :header-rows: 1
+
+   * - SOUP
+     - Developer
+     - Version
+     - Release Date
+     - Purpose
+   * - LWIP
+     - Swedish Institute of Computer Science
+     - 1.4.0
+     - 2011
+     - Provides a middleware layer of Ethernet communication to help application-level code interface with lower-level code
+   * - Atmel Software Framework
+     - Microchip
+     - 4
+     - 2018
+     - Provides driver code for interfacing with low-level peripherals internal to microcontrollers
+   * - STM Hardware Abstraction Layers
+     - ST Microelectronics
+     - 1.9
+     - 2020
+     - Provides driver code for interfacing with low-level peripherals internal to microcontrollers
+   * - MCUboot
+     - MCUboot Project
+     - 2.4.0
+     - 2026
+     - Provides a secure bootloader for 32-bits microcontrollers
+
+Table 7: Logical View Diagram SOUP Items
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Manufacturing /Service View
+
+[TEXT]
+STATEMENT: >>>
+Voxel Ray Manufacturing and Service personnel are provided with tools and data that can be used to access a device’s maintenance interface. Personnel can load new versions of the Main Control Application Firmware via the Main Control Bootloader Firmware. Personnel can load new versions of the HVPS Interface Application Firmware via the HVPS Interface Bootloader Firmware. Both sets of bootloader firmware are interfaced by the user via the GBSK’s PC software. See Figure 5: Manufacturing/Service View Diagram below.
+
+.. image:: _assets/fw_figure_5_manufacturing_service_view.jpeg
+   :alt: Figure 5: manufacturing service view
+   :width: 100%
+
+Figure 5: Manufacturing/Service View Diagram
+<<<
+
+[[/SECTION]]

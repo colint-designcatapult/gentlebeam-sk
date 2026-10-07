@@ -75,3 +75,49 @@ ELEMENTS:
   RELATIONS:
   - TYPE: Parent
     ROLE: Verifies
+- TAG: SFMEA
+  PROPERTIES:
+    VIEW_STYLE: Narrative
+  FIELDS:
+  - TITLE: UID
+    TYPE: String
+    REQUIRED: True
+  - TITLE: INITIAL_P
+    TYPE: SingleChoice(1 - Improbable, 2 - Rarely, 3 - Probable, 4 - Very Likely, 5 - Highly Likely)
+    REQUIRED: True
+  - TITLE: INITIAL_S
+    TYPE: SingleChoice(1 - Negligible, 2 - Minor, 3 - Major, 4 - Critical, 5 - Catastrophic)
+    REQUIRED: True
+  - TITLE: INITIAL_RI
+    TYPE: String
+    REQUIRED: True
+  - TITLE: RESIDUAL_P
+    TYPE: SingleChoice(1 - Improbable, 2 - Rarely, 3 - Probable, 4 - Very Likely, 5 - Highly Likely)
+    REQUIRED: True
+  - TITLE: RESIDUAL_S
+    TYPE: SingleChoice(1 - Negligible, 2 - Minor, 3 - Major, 4 - Critical, 5 - Catastrophic)
+    REQUIRED: True
+  - TITLE: RESIDUAL_RI
+    TYPE: String
+    REQUIRED: True
+  - TITLE: TITLE
+    TYPE: String
+    REQUIRED: True
+  - TITLE: FAILURE_MODE
+    TYPE: String
+    REQUIRED: True
+  - TITLE: FORESEEABLE_SEQUENCE_OF_EVENTS
+    TYPE: String
+    REQUIRED: True
+  - TITLE: EFFECT
+    TYPE: String
+    REQUIRED: True
+  - TITLE: CAUSES
+    TYPE: String
+    REQUIRED: True
+  - TITLE: RISK_CONTROLS
+    TYPE: String
+    REQUIRED: True
+  RELATIONS:
+  - TYPE: Parent
+    ROLE: Refines

@@ -1,0 +1,906 @@
+[DOCUMENT]
+TITLE: GBSK FW Software Failure Modes and Effects Analysis
+UID: DHF-GBSK-0024
+
+[GRAMMAR]
+IMPORT_FROM_FILE: @grammar
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this Software Failure Modes and Effects Analysis (SFMEA) is to evaluate the potential failure modes in the GBSK Firmware systems, understand their effects on the system, patient, and other users, prioritize risks, and recommend corrective actions to mitigate those risks. The purpose is to ensure the safety and effectiveness of the device throughout its lifecycle.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+The scope of this SFMEA covers the GBSK Firmware systems, derived from their design. This document is to be continuously maintained and updated throughout the lifecycle of the medical device, as potential software failure modes are addressed and mitigated to achieve an acceptable or As Low As Possible level of risk.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+.. list-table::
+   :header-rows: 1
+
+   * - Abbreviation/Term
+     - Definition
+   * - ALAP
+     - As Low As Possible
+   * - FW
+     - Firmware
+   * - P
+     - Probability of occurrence.
+   * - S
+     - Severity of harm.
+   * - RI
+     - Risk Index
+   * - INITIAL_P
+     - Initial Probability of Occurrence - P
+   * - INITIAL_S
+     - Initial Severity of Harm - S
+   * - INITIAL_RI
+     - Initial Risk Index (RI) / Initial Risk Acceptability
+   * - RESIDUAL_P
+     - Residual Probability of Occurrence - P
+   * - RESIDUAL_S
+     - Residual Severity of Harm - S
+   * - RESIDUAL_RI
+     - Residual Risk Index (RI) / Residual Risk Acceptability
+   * - SDD
+     - Software Design Document
+   * - SFMEA
+     - Software Failure Modes and Effects Analysis
+   * - SW
+     - Software
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The Main Control Application firmware serves as the main logical control for system operation.
+
+The main control application firmware monitors all the inputs from the various connections on the board hardware. It can also be used to set and control many of the components that the main control board interfaces with. For off-the-shelf components, the main control application can set/enable the motor controller drivers for the cooling system pump and fans, and can enable the ion pump controller.
+
+The Main Control Bootloader firmware allows the system to update the main control application firmware. The Main Control Bootloader firmware runs on the main control MCU of the main control board.
+
+The HVPS Interface Application firmware is used to control and receive feedback from HVPS.
+
+The HVPS interface application firmware reports data back to and receives commands from the main control application firmware. The HVPS interface application firmware contains routines to ramp up the filament current, as well as the high voltage. It contains a PID loop for regulating the emission output to a given setpoint.
+
+The HVPS interface application firmware runs on the MCU of the HVPS interface board.
+
+The HVPS Interface Bootloader firmware allows the system to be able to update the HVPS Interface application firmware. The HVPS Interface Bootloader firmware runs on the MCU of the HVPS interface board.
+
+The Head Interface firmware is used to read various input data from peripherals such as cooling system sensors, magnetometers, and collimator identification. This firmware sends feedback information to the main control application firmware. The head interface firmware can also set various patterns to the head base LED ring for visual indication. The pattern is based on commands received from the main control application firmware. The head interface FW can also enable/disable alignment lasers or illumination LEDs based on membrane keypad inputs.
+
+The Backup Timer firmware is used to interface with the main control firmware and count the registered course of time once prompted. If the set period has elapsed, the timer firmware will trigger the timer MCU to terminate the X-Ray emission.
+
+The Backup Timer firmware runs on the Timer MCUs located on the main control board.
+
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: SFMEA Matrix
+
+[[SECTION]]
+TITLE: Main Control APP
+
+[SFMEA]
+UID: SFMEA-FW-1
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: State: Emission
+FAILURE_MODE: >>>
+FW does not transition to the termination state following a manual PC stop command.
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. During emission, user manually presses the "stop" command on the PC.
+2. PC sends command to FW
+3. No stop command is received by the FW
+4. X-ray emission continues
+<<<
+EFFECT: >>>
+Unwanted X-Ray exposure to the patient
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Mechanism - Backup timers
+2. Mechanism - Emergency Stop buttons
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWMC-203
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-2
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: Backup Timer Communication
+FAILURE_MODE: >>>
+FW does not receive data from the backup timers
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. Upon emission, the backup timers are signaled to begin
+2. Timer does not respond
+3. FW has no comparison for its master timer
+4. X-Ray emission lasts for imprecise amount of time
+<<<
+EFFECT: >>>
+X-Ray exposure happens for an unwanted amount of time.
+<<<
+CAUSES: >>>
+1. Firmware Defect
+2. Connection to timers is compromised
+3. Backup Timer FW defect
+<<<
+RISK_CONTROLS: >>>
+1. Mechanism - two backup timers.
+2. Code solution - I2C monitors for NACK signal to report a fault
+3. Code solution - FW throws fault with no communication
+4. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWMC-179
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-3
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: PC Ethernet Communication
+FAILURE_MODE: >>>
+FW does not receive data from the PC
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The FW is operating in a given state
+2. Communication between the FW and the PC is lost
+3. State of operation cannot be changed by the user
+4. Unwanted operation, including but not limited to X-Ray emission, continues as previously activated
+<<<
+EFFECT: >>>
+Operation continues without ability to change through the GUI, such as X-Ray emission
+<<<
+CAUSES: >>>
+1. FW Defect
+2. UDP packet is lost
+<<<
+RISK_CONTROLS: >>>
+1. Mechanism - Emergency Stops can stop the system entirely
+2. Code solution - automatic sensing and onboard timers should automatically transition the state
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWMC-183
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-4
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: External Watchdog
+FAILURE_MODE: >>>
+Firmware is caught in a function and the system does not react or respond
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The FW is in normal operation and accesses a function
+2. An interrupt or bug occurs
+3. The FW cannot escape the function
+4. Machine operation stalls
+<<<
+EFFECT: >>>
+X-Ray emission continues without stopping
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Code solution - Watchdog triggers a reset if no refresh signal is sent from FW
+2. Mechanism - Emergency Stops can stop emission
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWMC-299
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-5
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: Output Signals
+FAILURE_MODE: >>>
+X-Ray Indicator's sound does not happen during emission
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The FW transitions to emission state
+2. X-Ray emission from the head begins
+3. Indicator does not beep
+4. Emission completes
+<<<
+EFFECT: >>>
+Operators and bystanders may be exposed to X-Ray emission if nearby and unaware
+<<<
+CAUSES: >>>
+1. Firmware Defect
+2. Connection is compromised
+<<<
+RISK_CONTROLS: >>>
+1. Code solution - software displays overtemperature fault
+2. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWMC-176
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-6
+INITIAL_P: 3 - Probable
+INITIAL_S: 3 - Major
+INITIAL_RI: 9/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 3 - Major
+RESIDUAL_RI: 3/ Zone 1 Acceptable
+TITLE: General System Monitoring: Fan Control
+FAILURE_MODE: >>>
+Control of the fans fails
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. FW attempts to control the fan level
+2. Fans do not adjust to the appropriate level
+3. System temperature rises
+4. System components operate outside their specified operating temperatures
+5. System overheats
+<<<
+EFFECT: >>>
+System components are strained/damaged
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Code solution - software displays overtemperature fault
+2. System temperature shown in PC app GUI
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWMC-188
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-7
+INITIAL_P: 3 - Probable
+INITIAL_S: 2 - Minor
+INITIAL_RI: 6/ Zone 1 Acceptable
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 2 - Minor
+RESIDUAL_RI: 2/ Zone 1 Acceptable
+TITLE: System Status (Telemetry)
+FAILURE_MODE: >>>
+System data is not reported to the PC
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. FW attempts to send system data
+2. System data is arranged incorrectly for transmission
+3. GUI is unable to display system data
+<<<
+EFFECT: >>>
+"Source of truth" data is not provided to the GUI for monitoring
+<<<
+CAUSES: >>>
+1. Firmware Defect
+2. Connection is compromised
+<<<
+RISK_CONTROLS: >>>
+1. Code solution - software communicates via UDP so data is constantly sent
+2. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWMC-207
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-8
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: HVPS Interface Board Communication
+FAILURE_MODE: >>>
+HVPS cannot be communicated with and controlled
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. FW attempts to communicate to the HVPS
+2. Transmission data has no feedback or reaction
+3. HVPS operates at unintended level of power
+<<<
+EFFECT: >>>
+HVPS operates at unintended level of power
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Firmware performs an HVPS Interlock test prior to initiating a new treatment
+2. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWMC-182
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-9
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: Head Interface Board Communication
+FAILURE_MODE: >>>
+Headboard cannot be communicated with and controlled
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. FW attempts to communicate to the HVPS
+2. Transmission data has no feedback or reaction
+3. HVPS operates at unintended level of power
+<<<
+EFFECT: >>>
+Feedback from the Headboard is not monitored for the system
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Firmware performs an HVPS Interlock test prior to initiating a new treatment
+2. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWMC-181
+  ROLE: Refines
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Head Interface FW
+
+[SFMEA]
+UID: SFMEA-FW-10
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 3 - Major
+RESIDUAL_RI: 3/ Zone 1 Acceptable
+TITLE: Control Communication Data
+FAILURE_MODE: >>>
+Incorrect Collimator
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. Operator installs collimator
+2. Collimator is incorrect one
+3. Collimator is defective
+4. Firmware detects collimator
+5. Emission occurs in an unintended collimator
+<<<
+EFFECT: >>>
+The treatment area of the X-Ray dose will be in an undesired shape.
+<<<
+CAUSES: >>>
+1. Collimator ID is programmed incorrectly
+2. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Visual feedback of collimator type in the GUI
+2. Label descriptions on collimator
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FHI-34
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-11
+INITIAL_P: 3 - Probable
+INITIAL_S: 3 - Major
+INITIAL_RI: 9/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 2 - Minor
+RESIDUAL_RI: 2/ Zone 1 Acceptable
+TITLE: Indicator LED Data
+FAILURE_MODE: >>>
+The color of the LEDs is incorrect for the given operational state
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. Main Control App FW is changing to a state that changes the LED pattern
+2. Signal fails to reach the Head Interface FW
+3. Head LEDs do not change
+<<<
+EFFECT: >>>
+Head LEDs do not match the color and pattern of the chassis LEDs
+<<<
+CAUSES: >>>
+1. Firmware Defect
+2. Connection is compromised
+<<<
+RISK_CONTROLS: >>>
+1. Visual Display on external GUI shows the system state.
+2. Operator training should occur
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FHI-38
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-12
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 3 - Major
+RESIDUAL_RI: 3/ Zone 1 Acceptable
+TITLE: Magnetometers
+FAILURE_MODE: >>>
+Magnetometer Reading is incorrect
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The FW takes a reading of sensor
+2. The reading is incorrect
+3. The steering magnets are adjusted for with the incorrect data
+<<<
+EFFECT: >>>
+Magnets steer emissions in undesired direction and the patient receives unnecessary X-Ray exposure
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. There are 2 magnetometers for redundancy
+2. Main FW sends a calibration procedure for the magnets
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FHI-29
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-13
+INITIAL_P: 3 - Probable
+INITIAL_S: 2 - Minor
+INITIAL_RI: 6/ Zone 1 Acceptable
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 2 - Minor
+RESIDUAL_RI: 2/ Zone 1 Acceptable
+TITLE: Temperature Sensor
+FAILURE_MODE: >>>
+Temperature reading is not accurate
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The FW takes a temperature reading
+2. The FW is interpolated
+3. The interpolated data is converted to temperature
+<<<
+EFFECT: >>>
+The interpolated data is not accurate
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Enough steps are added to the lookup table data values for acceptable resolution
+2. Tolerances compensate resolution loss
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FHI-32
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-14
+INITIAL_P: 3 - Probable
+INITIAL_S: 2 - Minor
+INITIAL_RI: 6/ Zone 1 Acceptable
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 2 - Minor
+RESIDUAL_RI: 2/ Zone 1 Acceptable
+TITLE: Flow Sensor
+FAILURE_MODE: >>>
+Flow Sensor Reading is not detected
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The FW takes a reading of sensor
+2. The reading is incorrect
+3. The flow data is not reported
+<<<
+EFFECT: >>>
+Cooling system status is unknown
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Code Solution - Overtemperature fault is thrown
+2. Additional cooling systems employed
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FHI-30
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-15
+INITIAL_P: 3 - Probable
+INITIAL_S: 2 - Minor
+INITIAL_RI: 6/ Zone 1 Acceptable
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 2 - Minor
+RESIDUAL_RI: 2/ Zone 1 Acceptable
+TITLE: Pressure Sensor
+FAILURE_MODE: >>>
+Pressure Sensor Reading is not detected
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The FW takes a reading of sensor
+2. The reading is incorrect
+3. The flow data is not reported
+<<<
+EFFECT: >>>
+Cooling system status is unknown
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Code Solution - Overtemperature fault is thrown
+2. Additional cooling systems employed
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FHI-31
+  ROLE: Refines
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: HVPS Interface FW
+
+[SFMEA]
+UID: SFMEA-FW-16
+INITIAL_P: 3 - Probable
+INITIAL_S: 3 - Major
+INITIAL_RI: 9/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: Emission Limit Output
+FAILURE_MODE: >>>
+Emission current limit signal is not set
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The FW sets the current limit signal
+2. Current limit is not set
+3. Emission current can go higher than desired
+<<<
+EFFECT: >>>
+Newly flashed program is unusable or has a hidden bug
+<<<
+CAUSES: >>>
+1. Firmware defect
+2. Corrupted data transmission
+3. Hardware processing error
+<<<
+RISK_CONTROLS: >>>
+1. Code Solution - Overcurrent fault is thrown if excessive and stopping output
+2. Mechanical solution - Emergency Stop switches
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWHVPS-119
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-17
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: External DAC communication
+FAILURE_MODE: >>>
+The external DAC (Digital to Analog Converter) fails
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The FW sends the command to control the external DAC
+2. The DAC processes bad data
+3. The DAC controls the HVPS incorrectly
+<<<
+EFFECT: >>>
+HVPS is controlled incorrectly
+<<<
+CAUSES: >>>
+1. Firmware Defect
+2. Connection is compromised
+<<<
+RISK_CONTROLS: >>>
+1. Code Solution - Feedback signals will throw a fault if operation is unsafe or out of bounds
+2. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWHVPS-111
+  ROLE: Refines
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Main Application Bootloader FW
+
+[SFMEA]
+UID: SFMEA-FW-18
+INITIAL_P: 3 - Probable
+INITIAL_S: 3 - Major
+INITIAL_RI: 9/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 2 - Minor
+RESIDUAL_RI: 2/ Zone 1 Acceptable
+TITLE: Flash Memory Processing
+FAILURE_MODE: >>>
+Bootloader loads corrupted data to Flash memory
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The bootloader attempts to program flash with new data
+2. Data gets corrupted on transmission or during flash
+3. Program is loaded incorrectly
+<<<
+EFFECT: >>>
+Newly flashed program is unusable or has a hidden bug
+<<<
+CAUSES: >>>
+1. Firmware defect
+2. Corrupted data transmission
+3. Hardware processing error
+<<<
+RISK_CONTROLS: >>>
+1. CRC implemented to check loaded file
+2. Flash memory control requires firmware to lock and unlock memory for manipulation
+3. Unit Test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWMCBOOT-15
+  ROLE: Refines
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: HVPS Bootloader FW
+
+[SFMEA]
+UID: SFMEA-FW-19
+INITIAL_P: 3 - Probable
+INITIAL_S: 3 - Major
+INITIAL_RI: 9/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 2 - Minor
+RESIDUAL_RI: 2/ Zone 1 Acceptable
+TITLE: Flash Memory Processing
+FAILURE_MODE: >>>
+Bootloader loads corrupted data to Flash memory
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The bootloader attempts to program flash with new data
+2. Data gets corrupted on transmission or during flash
+3. Program is loaded incorrectly
+<<<
+EFFECT: >>>
+Newly flashed program is unusable or has a hidden bug
+<<<
+CAUSES: >>>
+1. Firmware defect
+2. Corrupted data transmission
+3. Hardware processing error
+<<<
+RISK_CONTROLS: >>>
+1. CRC implemented to check loaded file
+2. Flash memory control requires firmware to lock and unlock memory for manipulation
+3. Unit Test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWHVPSIB-13
+  ROLE: Refines
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Backup Timer FW
+
+[SFMEA]
+UID: SFMEA-FW-20
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: Time Keeping
+FAILURE_MODE: >>>
+Timer does not stop
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. The timer is engaged by the start command
+2. The timer counts until the stop time
+3. Interrupt does not occur to trigger the stop of the timer
+4. Timer continues counting
+<<<
+EFFECT: >>>
+Emission continues without stopping
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Mechanism - Dedicated 32.768kHz crystal
+2. Mechanism - 2nd timer in case one fails
+3. Code solution - Interrupt based
+4. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWT-29
+  ROLE: Refines
+
+[SFMEA]
+UID: SFMEA-FW-21
+INITIAL_P: 3 - Probable
+INITIAL_S: 4 - Critical
+INITIAL_RI: 12/ Zone 2 ALAP
+RESIDUAL_P: 1 - Improbable
+RESIDUAL_S: 4 - Critical
+RESIDUAL_RI: 4/ Zone 1 Acceptable
+TITLE: Communication Protocol
+FAILURE_MODE: >>>
+Timer does not communicate correctly
+<<<
+FORESEEABLE_SEQUENCE_OF_EVENTS: >>>
+1. Main Control App FW sends a command to the Timer FW
+2. The Timer FW does not respond accurately
+3. The Main Control App FW does not have accurate timer behavior
+<<<
+EFFECT: >>>
+X-Ray emission can continue without a pause command.
+<<<
+CAUSES: >>>
+1. Firmware Defect
+<<<
+RISK_CONTROLS: >>>
+1. Code solution - CRC is implemented for data packets
+2. Mechanism - Emergency Stops can stop emission
+3. Unit test + Code Review
+<<<
+RELATIONS:
+- TYPE: Parent
+  VALUE: SW-H1FWT-32
+  ROLE: Refines
+
+[[/SECTION]]
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+.. list-table::
+   :header-rows: 1
+
+   * - Document ID / Reference Number
+     - Document Title
+   * - DHF-GBSK-0069, Rev. 1
+     - GBSK Main Control Application FW SDD
+   * - DHF-GBSK-0078, Rev. 1
+     - GBSK Main Control Bootloader FW SDD
+   * - DHF-GBSK-0096, Rev. 1
+     - GBSK HVPS Interface Application FW SDD
+   * - DHF-GBSK-0105, Rev. 1
+     - GBSK HVPS Interface Bootloader FW SDD
+   * - DHF-GBSK-0087, Rev. 1
+     - GBSK Backup Timer FW SDD
+   * - DHF-HRC-0114, Rev. 1
+     - GBSK Head Interface FW SDD
+   * - QSP-017, Rev. 1
+     - Risk Management Procedure
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: SFMEA Risk Prioritization
+
+[TEXT]
+STATEMENT: >>>
+The Risk Index (RI) is a critical factor in prioritizing corrective actions. It provides a relative indication of the identified failure indicating whether the risk requires further mitigation or control.
+
+RI is calculated as follows (see QSP-017 risk management, referenced in section 5):
+
+RI = Probability of Occurrence (P) X Severity (S)
+
+.. image:: _assets/risk_prioritization.jpeg
+   :alt: Risk index matrix by occurrence rank and severity rank
+   :width: 100%
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: SFMEA Risk Acceptability
+
+[TEXT]
+STATEMENT: >>>
+The following Risk Zones define the 3 levels of Risk Acceptability:
+
+.. image:: _assets/risk_acceptability.jpeg
+   :alt: Risk evaluation actions for unacceptable, ALAP, and acceptable risk zones
+   :width: 100%
+<<<
+
+[[/SECTION]]
