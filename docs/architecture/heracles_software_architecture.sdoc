@@ -1,5 +1,5 @@
 [DOCUMENT]
-TITLE: Software Architecture Description for GentleBeam System (Heracles Project)
+TITLE: Software Architecture Description for GentleBeam System (Gentlebeam SK Project)
 UID: DHF-HRC-0004
 METADATA:
   COMPONENT: heracles-software-architecture
@@ -9,7 +9,7 @@ TITLE: Purpose
 
 [TEXT]
 STATEMENT: >>>
-The purpose of this document is to describe the top-level architecture for the software components developed by Empyrean Medical Systems for the Voxel Ray GentleBeam system, known as Project Heracles.
+The purpose of this document is to describe the top-level architecture for the software components developed by Empyrean Medical Systems for the Voxel Ray GentleBeam system, known as Project Gentlebeam SK.
 
 This document presents the software components from multiple points of view, describing the system context and logical software items, including SOUP (Software of Unknown Provenance) components, developer configurations, and other viewpoints.
 <<<
@@ -21,7 +21,7 @@ TITLE: Scope
 
 [TEXT]
 STATEMENT: >>>
-This document describes the software components for the Voxel Ray GentleBeam system, known as Project Heracles, at a high-level. The document does not address requirements, electro-mechanical designs, detailed software designs, or verification protocols (all of which other project documents cover).
+This document describes the software components for the Voxel Ray GentleBeam system, known as Project Gentlebeam SK, at a high-level. The document does not address requirements, electro-mechanical designs, detailed software designs, or verification protocols (all of which other project documents cover).
 
 The term Software relates to both software and firmware subsystems.
 <<<
@@ -87,11 +87,11 @@ TITLE: References
 STATEMENT: >>>
 4.1 Empyrean Medical Systems References
 
-- DHF-HRC-0001, Rev. 2: Heracles SDP
+- DHF-HRC-0001, Rev. 2: Gentlebeam SK SDP
 - DHF-HRC-0002: VoxelRay PRS
-- DHF-HRC-0007, Rev. 3: Heracles External GUI SRS
-- DHF-HRC-0009, Rev. 3: Heracles Record and Verify SRS
-- DHF-HRC-0005, Rev. 3: Heracles Internal GUI SRS
+- DHF-HRC-0007, Rev. 3: Gentlebeam SK External GUI SRS
+- DHF-HRC-0009, Rev. 3: Gentlebeam SK Record and Verify SRS
+- DHF-HRC-0005, Rev. 3: Gentlebeam SK Internal GUI SRS
 
 4.2 Standard and Regulatory References
 
@@ -108,19 +108,19 @@ TITLE: Context View
 
 [TEXT]
 STATEMENT: >>>
-The Heracles (AKA GentleBeam) software consists of the following components: Heracles Internal SW, Heracles External SW, and Record and Verify SW.
+The Gentlebeam SK (AKA GentleBeam) software consists of the following components: Gentlebeam SK Internal SW, Gentlebeam SK External SW, and Record and Verify SW.
 
-These software components provide the operator with interfaces that enable the delivery of superficial radiation therapy to patients using the Heracles system.
+These software components provide the operator with interfaces that enable the delivery of superficial radiation therapy to patients using the Gentlebeam SK system.
 
 The interfaces include managing patients' demographics, acquiring images, and controlling and monitoring the delivery of the radiation treatment.
 
-The following software services support the Heracles system:
+The following software services support the Gentlebeam SK system:
 
 **Patient Demographic Data Service**: Manages patient demographics data. Enables RTTs to create, view, and update patient details including name, DOB, SSN (or other form of ID), address, etc.
 
 **Patient Clinical Data Service**: Manages patient clinical related information including diagnosis (site name), prescriptions, treatment plans, and treatments history.
 
-**Image Acquisition Service**: Allows acquiring medical images using the imaging probe integrated within the Heracles device.
+**Image Acquisition Service**: Allows acquiring medical images using the imaging probe integrated within the Gentlebeam SK device.
 
 **Maintenance Service**: Provides the ability to perform system maintenance tasks such as quality checks and daily warmups.
 
@@ -139,6 +139,25 @@ The following software services support the Heracles system:
 **DB Service**: Provides API for creating, retrieving, and updating data.
 
 **Auth Service**: Provides authorization and authentication services.
+
+**Context View Diagram Description:**
+
+The Context View illustrates the system architecture organized around two user roles (RTT and Physicist) who interact with the system through separate interfaces:
+
+*Internal System Path (On-Site Control):*
+- C&C Internal UI → C&C Internal Core Services (Patient Demographic Data Service, Patient Clinical Data Service, Users Auth Service, Maintenance Service, System Configuration Service, Document Service, Image Acquisition Service, Log Service, DAL)
+
+*External System Path (Remote Control):*
+- C&C External UI → C&C External Core Services (Patient Clinical Data Service, X-Ray Service)
+
+*Shared Infrastructure:*
+- Record and Verify (containing DB Service and Auth Service)
+- Gentlebeam SK Database (PostgreSQL)
+- Imaging Server (Acquisition and Storage)
+- Gryphon Board (X-Ray Controller)
+- Storage/Drive systems
+
+The internal and external paths interface with the Record and Verify component for data persistence and authentication services. The Image Acquisition Service connects to the imaging server, while the X-Ray Service interfaces with the Gryphon Board controller.
 <<<
 
 [[/SECTION]]
@@ -152,11 +171,20 @@ Physical View maps software subsystems onto physical subcomponents. The system F
 
 The following describes the physical distribution of software items across processors:
 
-**Heracles C&C Internal software**: Addresses functionalities related to patient imaging, demographic data management, clinical data management, treatment data management, image acquisition, user access, clinical workflows, and system setup and services. Runs on Windows .NET using C#.
+**Gentlebeam SK C&C Internal software**: Addresses functionalities related to patient imaging, demographic data management, clinical data management, treatment data management, image acquisition, user access, clinical workflows, and system setup and services. Runs on Windows .NET using C#.
 
-**Heracles C&C External software**: Used to activate and monitor the radiation for the treated patient and to provide tools for RTT and physicists to perform quality checks, system calibration, and service maintenance. This software runs on a console outside the treatment room to provide the operator with a safe work environment. Runs on Windows .NET using C#.
+**Gentlebeam SK C&C External software**: Used to activate and monitor the radiation for the treated patient and to provide tools for RTT and physicists to perform quality checks, system calibration, and service maintenance. This software runs on a console outside the treatment room to provide the operator with a safe work environment. Runs on Windows .NET using C#.
 
-**Heracles Record and Verify**: Provides APIS to save, update and retrieve data from the database. Runs on Windows using Node JS.
+**Gentlebeam SK Record and Verify**: Provides APIS to save, update and retrieve data from the database. Runs on Windows using Node JS.
+
+**Physical View Diagram Description:**
+
+The Physical View diagram maps software subsystems onto physical subcomponents and deployment environments. The diagram shows the allocation of software components to hardware/processor elements:
+
+- *Green boxes* in the diagram indicate **System Firmware** and **Image Acquisition** components, which are out of scope for this document
+- Software components are distributed across Windows .NET and Windows Node.js environments
+- The mapping illustrates the deployment topology showing where each software subsystem executes
+- Physical connectivity and data flow paths between components on different processors are depicted
 <<<
 
 [[/SECTION]]
@@ -168,7 +196,7 @@ TITLE: Logical View
 STATEMENT: >>>
 Logical View describes the software items, including SOUP (Software of Unknown Provenance), for each subsystem.
 
-The Heracles system architecture comprises integrated software services organized to support radiation therapy operations. Each component is designed to interact with others through well-defined interfaces.
+The Gentlebeam SK system architecture comprises integrated software services organized to support radiation therapy operations. Each component is designed to interact with others through well-defined interfaces.
 
 **SOUP Packages and Libraries:**
 
@@ -177,6 +205,16 @@ The following lists the SOUP packages used for significant functionality. The fu
 **.NET Framework (Version 8.0)**: Programs written for .NET Framework execute in a software environment named the CLR (Common Language Runtime).
 
 **Prisma Client (Version 5.22.0)**: Provides Postgres database communication capabilities.
+
+**Logical View Diagram Description:**
+
+The Logical View diagram describes the software items, including SOUP (Software of Unknown Provenance), for each subsystem. The diagram presents a hierarchical decomposition showing:
+
+- *Top-level row* containing the primary software subsystems (Internal Core, External Core, Record and Verify)
+- *Central vertical connections* showing inter-subsystem dependencies and data flow
+- *Lower grouped boxes* representing subordinate software items and libraries within each subsystem
+- *SOUP packages and third-party components* integrated at various levels of the architecture
+- The logical decomposition illustrates how high-level architectural components are subdivided into smaller, manageable software items and how external/third-party libraries are integrated
 <<<
 
 [[/SECTION]]

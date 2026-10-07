@@ -1,5 +1,5 @@
 [DOCUMENT]
-TITLE: Heracles Internal and External GUI Software Failure Modes and Effects Analysis
+TITLE: Gentlebeam SK Internal and External GUI Software Failure Modes and Effects Analysis
 UID: DHF-HRC-0028
 METADATA:
   COMPONENT: heracles-gui-sfmea
@@ -58,10 +58,10 @@ TITLE: References
 [TEXT]
 STATEMENT: >>>
 Document ID / Reference Number: DHF-HRC-0033, Rev. 1
-Document Title: Heracles Internal GUI Software Design Document (SDD)
+Document Title: Gentlebeam SK Internal GUI Software Design Document (SDD)
 
 Document ID / Reference Number: DHF-HRC-0042, Rev. 1
-Document Title: Heracles External GUI Software Design Document (SDD)
+Document Title: Gentlebeam SK External GUI Software Design Document (SDD)
 
 Document ID / Reference Number: QSP-017, Rev. 1
 Document Title: Risk Management Procedure
