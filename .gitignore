@@ -1,2 +1,5 @@
 .metadata/
 /artifacts/sbom/
+__pycache__/
+**/*.pyc
+results.xml
