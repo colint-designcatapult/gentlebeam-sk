@@ -1,0 +1,254 @@
+[DOCUMENT]
+TITLE: Software Architecture Description for GentleBeam System (Heracles Project)
+UID: DHF-HRC-0004
+METADATA:
+  COMPONENT: heracles-software-architecture
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this document is to describe the top-level architecture for the software components developed by Empyrean Medical Systems for the Voxel Ray GentleBeam system, known as Project Heracles.
+
+This document presents the software components from multiple points of view, describing the system context and logical software items, including SOUP (Software of Unknown Provenance) components, developer configurations, and other viewpoints.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+This document describes the software components for the Voxel Ray GentleBeam system, known as Project Heracles, at a high-level. The document does not address requirements, electro-mechanical designs, detailed software designs, or verification protocols (all of which other project documents cover).
+
+The term Software relates to both software and firmware subsystems.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Terms and Definitions
+
+[TEXT]
+STATEMENT: >>>
+**Architecture**: Organizational structure of a system or component.
+
+**CM**: Configuration Management
+
+**Configuration Item (CI)**: Entity that can be uniquely identified at a given reference point.
+
+**Design History File (DHF)**: A compilation of specific records that describe the design history of a product.
+
+**SW**: Software
+
+**OTS**: Off-the-shelf
+
+**Process**: Any activity that receives inputs and converts them into outputs.
+
+**Product**: Components, manufacturing materials, in-process devices, finished devices, and returned devices.
+
+**PRS**: Product Requirements Specification
+
+**Regulatory Requirement**: A statutory requirement delineated within local, state, federal, or international regulations, applicable to the QMS, and employed for the manufacture of medical devices.
+
+**Safety**: Freedom from unacceptable risk.
+
+**Safety Defect**: An anomaly indicating a product malfunction that may affect the safe operation of the product and may pose harm to patients and/or users of the product.
+
+**SBOM**: Software Bill of Materials
+
+**Software Item**: Any identifiable part of a computer program, i.e., source code, object code, control code, control data, or a collection of these items.
+
+**Software System**: Integrated collection of software items organized to accomplish a specific function or set of functions.
+
+**Software Unit**: Software item that is not subdivided into other items (defined by the manufacturer).
+
+**SOP**: Standard Operating Procedure
+
+**Software of Unknown Provenance (SOUP)**: Software item that is already developed and generally available and that has not been developed for the purpose of being incorporated into the medical device (also known as "off-the-shelf software") or software item previously developed for which adequate records of the development processes are not available.
+
+**Specification**: Any requirement with which a product, process, service, or other activity must conform.
+
+**RTT**: Radiation Therapy Technician
+
+**C&C**: Command and Control
+
+**DAL**: Data Access Layer
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+4.1 Empyrean Medical Systems References
+
+- DHF-HRC-0001, Rev. 2: Heracles SDP
+- DHF-HRC-0002: VoxelRay PRS
+- DHF-HRC-0007, Rev. 3: Heracles External GUI SRS
+- DHF-HRC-0009, Rev. 3: Heracles Record and Verify SRS
+- DHF-HRC-0005, Rev. 3: Heracles Internal GUI SRS
+
+4.2 Standard and Regulatory References
+
+1. IEC 62304 Edition 1.1 2015-06, recognition #13-79
+2. ISO 14971 Medical devices — Application of risk management to medical devices Third edition 2019-12
+3. 21 CFR Part 820 Subpart 820.30 - FDA Quality System Regulation
+4. ISO 13485:2016 Clause 7.3 - Medical devices – Quality management systems – Requirements for regulatory purposes
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Context View
+
+[TEXT]
+STATEMENT: >>>
+The Heracles (AKA GentleBeam) software consists of the following components: Heracles Internal SW, Heracles External SW, and Record and Verify SW.
+
+These software components provide the operator with interfaces that enable the delivery of superficial radiation therapy to patients using the Heracles system.
+
+The interfaces include managing patients' demographics, acquiring images, and controlling and monitoring the delivery of the radiation treatment.
+
+The following software services support the Heracles system:
+
+**Patient Demographic Data Service**: Manages patient demographics data. Enables RTTs to create, view, and update patient details including name, DOB, SSN (or other form of ID), address, etc.
+
+**Patient Clinical Data Service**: Manages patient clinical related information including diagnosis (site name), prescriptions, treatment plans, and treatments history.
+
+**Image Acquisition Service**: Allows acquiring medical images using the imaging probe integrated within the Heracles device.
+
+**Maintenance Service**: Provides the ability to perform system maintenance tasks such as quality checks and daily warmups.
+
+**System Configuration Service**: Provides the ability to program the system's calibration values.
+
+**Users Authorization and Authentication Service**: Manages user logins and role-based access. This module ensures that only legitimate users gain access to specific resources within the system. It verifies the identity of a user (authentication) and determines the resources a user is allowed to access and the operations they can perform (authorization).
+
+**Document Service**: Manages patient clinical related documentation like photos, reports, letters of consent etc.
+
+**Log Service**: Maintains the system logs and errors sequence created by the system.
+
+**DAL Service**: Data access layer. Interface with the record and verify component.
+
+**X-ray Service**: Responsible for the initiating, terminating, and monitoring the radiation delivery of the selected patient's treatment plan.
+
+**DB Service**: Provides API for creating, retrieving, and updating data.
+
+**Auth Service**: Provides authorization and authentication services.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Physical View
+
+[TEXT]
+STATEMENT: >>>
+Physical View maps software subsystems onto physical subcomponents. The system FW and image acquisition components are marked as out of scope, as their architecture is not detailed in this document.
+
+The following describes the physical distribution of software items across processors:
+
+**Heracles C&C Internal software**: Addresses functionalities related to patient imaging, demographic data management, clinical data management, treatment data management, image acquisition, user access, clinical workflows, and system setup and services. Runs on Windows .NET using C#.
+
+**Heracles C&C External software**: Used to activate and monitor the radiation for the treated patient and to provide tools for RTT and physicists to perform quality checks, system calibration, and service maintenance. This software runs on a console outside the treatment room to provide the operator with a safe work environment. Runs on Windows .NET using C#.
+
+**Heracles Record and Verify**: Provides APIS to save, update and retrieve data from the database. Runs on Windows using Node JS.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Logical View
+
+[TEXT]
+STATEMENT: >>>
+Logical View describes the software items, including SOUP (Software of Unknown Provenance), for each subsystem.
+
+The Heracles system architecture comprises integrated software services organized to support radiation therapy operations. Each component is designed to interact with others through well-defined interfaces.
+
+**SOUP Packages and Libraries:**
+
+The following lists the SOUP packages used for significant functionality. The full list of SOUP packages and versions present is found in the Software Bill of Materials (SBOM):
+
+**.NET Framework (Version 8.0)**: Programs written for .NET Framework execute in a software environment named the CLR (Common Language Runtime).
+
+**Prisma Client (Version 5.22.0)**: Provides Postgres database communication capabilities.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Manufacturing / Service View
+
+[TEXT]
+STATEMENT: >>>
+Empyrean Medical Systems Manufacturing and Service personnel are provided with tools and data that can be used to access a device's maintenance interface.
+
+1. Maintenance Operations
+
+a. Device Provisioning
+   i. Assigning unique identifiers such as serial numbers, software versions, and firmware details during manufacturing or deployment.
+   ii. Configuring default settings for integration into the clinical environment.
+
+b. Diagnostics and Debugging
+   i. Logging errors and warnings into the system for troubleshooting.
+   ii. Providing debugging tools to engineers, such as diagnostic UI modules.
+
+c. Event detection and logging
+   i. Logging events using Sysmon service
+
+2. Updates and Patches
+
+a. The device will receive at least 1 yearly update during preventative maintenance. The device will receive updates and security patches at any point in time once one will be necessary.
+
+b. All updates will be performed by a trained service engineer using physical USB drive to deliver the updates to the device. The updates will be executed by an administrative user.
+
+c. Patching the application components to address new features, security vulnerabilities, or performance improvements.
+
+d. Updating dependent SOUP libraries when necessary.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Record History
+
+[TEXT]
+STATEMENT: >>>
+**Revision 1** - Date: 10-DEC-2024 - Author: Limor Erez - Initial Release
+
+**Revision 2** - Date: 16-OCT-2025 - Author: Limor Erez - New Features: User Authorization, Virtual Keyboard. Enhancements: UI Usability changes. Robotic Arm Control has been removed (only hand guided movement is enabled). Imaging and cybersecurity controls were added.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Record Review and Approval
+
+[TEXT]
+STATEMENT: >>>
+Author: Limor Erez
+Author Function: Director, Software and Products
+
+Reviewer/Approver(s):
+- Yonatan Vainer (CTO / PMO)
+- Adi Fishman (Software & Systems QA/RA Engineer)
+
+Electronically signed by: Limor Erez
+Reason: I am the author
+Date: Nov 1, 2025 18:48:13 GMT+2
+
+Electronically signed by: Yonatan Vainer
+Reason: I am the approver
+Date: Nov 1, 2025 18:49:57 GMT+2
+
+Electronically signed by: Adi Fishman
+Reason: I am the approver
+Date: Nov 1, 2025 12:51:06 EDT
+<<<
+
+[[/SECTION]]

@@ -1,0 +1,192 @@
+[DOCUMENT]
+TITLE: Heracles Internal and External GUI Software Failure Modes and Effects Analysis
+UID: DHF-HRC-0028
+METADATA:
+  COMPONENT: heracles-gui-sfmea
+
+[[SECTION]]
+TITLE: Purpose
+
+[TEXT]
+STATEMENT: >>>
+The purpose of this Software Failure Modes and Effects Analysis (SFMEA) is to evaluate the potential failure modes in the Internal and External GUI Software, understand their effects on the system, patient, and other users, prioritize risks, and recommend corrective actions to mitigate those risks. The purpose is to ensure the safety and effectiveness of the device throughout its lifecycle.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Scope
+
+[TEXT]
+STATEMENT: >>>
+The scope of this SFMEA covers the Internal and External GUI Software, derived from its design. This document is to be continuously maintained and updated throughout the lifecycle of the medical device, as potential software failure modes are addressed and mitigated to achieve an acceptable or As Low As Possible (ALAP) level of risk.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Abbreviations and Definitions
+
+[TEXT]
+STATEMENT: >>>
+ALAP                   As Low As Possible
+SDD                    Software Design Document
+SFMEA                  Software Failure Modes and Effects Analysis
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Overview
+
+[TEXT]
+STATEMENT: >>>
+The Internal GUI console provides a means for the user to maintain demographic patient data, including treatment plans, and perform imaging. It communicates with the record and verify component, flange camera stream, imaging component and robotic arm controller.
+
+The internal GUI software runs on the All-In-One console located on the base of the system.
+
+The external GUI console provides a means for the user to activate and monitor the treatment. It communicates with the main control board, treatment head camera and imaging head camera.
+
+The external GUI software runs on the external tablet console located outside the room.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: References
+
+[TEXT]
+STATEMENT: >>>
+Document ID / Reference Number: DHF-HRC-0033, Rev. 1
+Document Title: Heracles Internal GUI Software Design Document (SDD)
+
+Document ID / Reference Number: DHF-HRC-0042, Rev. 1
+Document Title: Heracles External GUI Software Design Document (SDD)
+
+Document ID / Reference Number: QSP-017, Rev. 1
+Document Title: Risk Management Procedure
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: SFMEA Matrix
+
+[TEXT]
+STATEMENT: >>>
+The following table presents the SFMEA analysis for identified failure modes in the Internal and External GUI Software:
+
+Key Failure Modes Identified:
+
+1. H10SG-683 - Calculate Emission Duration
+   Failure Mode: Miscalculation of Emission Duration
+   Sequence of Events: Calculation logic has a bug
+   Initial Severity: Critical (4)
+   Initial Probability: Probable (3)
+   Risk Controls: Firmware will reject treatment plans exceeding 300 sec; Unit test + code review
+   Residual Risk: Acceptable
+
+2. H10TG-276 - Validate Active Collimator
+   Failure Mode: Failure to validate active collimator
+   Sequence of Events: Incorrect collimator identification causing system to treat patient with wrong collimator
+   Initial Severity: Critical (4)
+   Initial Probability: Probable (3)
+   Risk Controls: Unit test + code review
+   Residual Risk: Acceptable
+
+3. H10TG-263 - Stop Emission
+   Failure Mode: Emission Failed to stop
+   Sequence of Events: User pressed the stop button and emission fails to stop
+   Initial Severity: Critical (4)
+   Initial Probability: Probable (3)
+   Risk Controls: E-Stop physical switch; Unit test + code review
+   Residual Risk: Acceptable
+
+4. H10TG-257 - Record Treatment Delivered Dose
+   Failure Mode: Failure to Record Treatment Delivered Dose
+   Sequence of Events: Delivered no data recorded after treatment
+   Initial Severity: Critical (4)
+   Initial Probability: Probable (3)
+   Risk Controls: Data saved to file for restoration; Alert prompt displayed to user; Unit test + code review
+   Residual Risk: Acceptable
+
+5. H10TG-257 - Record Treatment Delivered Dose (Faulty Record)
+   Failure Mode: Faulty Record Data delivered
+   Sequence of Events: Incorrectly recorded dose data in the database
+   Initial Severity: Critical (4)
+   Initial Probability: Probable (3)
+   Risk Controls: Unit test + code review
+   Residual Risk: Acceptable
+
+6. H10TG-255 - Beam On Process
+   Failure Mode: Failure to start emission
+   Sequence of Events: User pressed the Beam-On button and emission fails to start
+   Initial Severity: Major (3)
+   Initial Probability: Probable (3)
+   Risk Controls: Unit test + code review
+   Residual Risk: Acceptable
+
+7. H10TG-274 - Retrieve treated patient details
+   Failure Mode: Wrong patient sent to application
+   Sequence of Events: Operator loads patient data to external console; external console displays wrong patient data
+   Initial Severity: Critical (4)
+   Initial Probability: Probable (3)
+   Risk Controls: Unit test + code review
+   Residual Risk: Acceptable
+
+All identified failure modes have been assessed and assigned appropriate risk control measures.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: SFMEA Risk Prioritization
+
+[TEXT]
+STATEMENT: >>>
+The SFMEA matrix above prioritizes identified failure modes based on their initial risk index (RI), which is calculated as the product of the probability of occurrence and the severity of potential harm. Items with higher risk indices receive priority for risk control measures.
+
+All identified failure modes have been assessed and assigned appropriate risk control measures. Initial risk indices ranging from 9 to 12 have been addressed through design features, testing protocols, and code review processes to reduce residual risk to acceptable levels.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: SFMEA Risk Acceptability
+
+[TEXT]
+STATEMENT: >>>
+Risk acceptability is determined based on the residual risk index following implementation of control measures. The following acceptability zones are applied:
+
+- Zone 1: Acceptable Risk (RI ≤ 4)
+- Zone 2: ALAP (As Low As Possible) - Risk is acceptable but continuous improvement is expected (RI 5-8)
+- Zone 3: Unacceptable Risk (RI ≥ 9) - Requires additional controls
+
+All residual risk indices have been reduced to Zone 1 (Acceptable) through implementation of the recommended risk controls. Ongoing validation through unit testing, code review, and integration testing ensures that risk mitigation effectiveness is maintained throughout the product lifecycle.
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Record History
+
+[TEXT]
+STATEMENT: >>>
+**Revision 1** - Date: 05-MAR-2025 - Author: Initial Revision
+<<<
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Record Review and Approval
+
+[TEXT]
+STATEMENT: >>>
+Author: Adi Fishman
+Author Function: Principal Software Quality Systems Engineer / Quality Assurance
+
+Reviewer/Approver(s):
+- Signature and Date: [To be completed]
+<<<
+
+[[/SECTION]]
